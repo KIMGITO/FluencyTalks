@@ -35,7 +35,7 @@ export default function Settings() {
         <Card className="space-y-3"><h2 className="font-semibold">Blocked people</h2><BlockedList /></Card>
         <Card className="space-y-3"><h2 className="font-semibold">Session</h2><Button variant="secondary" onClick={signOut}>Log out</Button></Card>
         <Card className="space-y-3"><h2 className="font-semibold">Your data</h2><p className="text-sm text-muted">Download a copy of everything we store about you.</p><Button variant="secondary" onClick={onExport}>Export my data</Button></Card>
-        <Card className="space-y-3"><h2 className="font-semibold text-danger">Delete account</h2><p className="text-sm text-muted">Permanently removes your account, messages and profile.</p><Button variant="danger" onClick={onDelete}>Delete account</Button></Card>
+        <Card className="space-y-3"><h2 className="font-semibold text-danger">Delete account</h2><p className="text-sm text-muted">Permanently removes your account, messages and profile. <Link to="/data-deletion" className="underline">How deletion works</Link></p><Button variant="danger" onClick={onDelete}>Delete account</Button></Card>
       </div>
     </>
   );

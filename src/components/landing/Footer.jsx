@@ -28,6 +28,7 @@ const cols = [
 const legal = [
   { label: 'Privacy', to: '/privacy' },
   { label: 'Terms', to: '/terms' },
+  { label: 'Data deletion', to: '/data-deletion' },
 ];
 
 const CSS = `
