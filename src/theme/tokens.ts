@@ -7,7 +7,8 @@
  */
 export const fonts = {
   sans: "'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif",
-  display: "'Bricolage Grotesque', 'Figtree', system-ui, sans-serif",
+  // Matches the landing page headlines (Georgia serif).
+  display: "Georgia, 'Times New Roman', serif",
 };
 
 export const fontSizes = {
@@ -25,7 +26,7 @@ export const radii = { sm: '0.5rem', md: '0.875rem', lg: '1.25rem', xl: '1.75rem
 
 export const shadows = {
   card: '0 1px 2px rgb(var(--c-ink) / 0.06), 0 4px 16px rgb(var(--c-ink) / 0.06)',
-  pop: '0 12px 40px rgb(var(--c-ink) / 0.18)',
+  pop: '0 12px 40px rgb(var(--c-deep) / 0.25)',
 } as const;
 
 /** Breakpoints drive Tailwind AND the useBreakpoint hook. Facebook-style: 3 / 2 / 1 columns. */
@@ -43,25 +44,29 @@ export const levelColors = { A1: 'lvl-a', A2: 'lvl-a', B1: 'lvl-b', B2: 'lvl-b',
 type Palette = Record<string, string>;
 export const themes: Record<'light' | 'dark', Palette> = {
   light: {
-    bg: '246 247 251', surface: '255 255 255', 'surface-2': '238 240 248', border: '222 226 238',
-    ink: '18 22 46', muted: '98 106 138', 'on-brand': '255 255 255',
-    brand: '61 90 254', 'brand-soft': '226 231 255', accent: '255 176 32', aqua: '0 200 190',
-    success: '22 163 98', danger: '229 57 74', 'lvl-a': '22 163 98', 'lvl-b': '61 90 254', 'lvl-c': '168 85 247', 'lvl-n': '255 140 0',
+    bg: '247 248 253', surface: '255 255 255', 'surface-2': '236 242 252', border: '221 227 243',
+    ink: '23 22 58', muted: '91 90 126', 'on-brand': '255 255 255',
+    brand: '43 42 122', 'brand-soft': '230 244 255', accent: '255 106 77', aqua: '18 181 166',
+    sun: '255 200 61', deep: '27 26 85',
+    success: '22 163 98', danger: '229 57 74',
+    'lvl-a': '14 165 150', 'lvl-b': '43 42 122', 'lvl-c': '255 106 77', 'lvl-n': '240 170 20',
   },
   dark: {
-    bg: '11 13 26', surface: '20 23 42', 'surface-2': '30 34 58', border: '44 49 79',
-    ink: '236 239 255', muted: '148 156 190', 'on-brand': '255 255 255',
-    brand: '107 130 255', 'brand-soft': '34 42 96', accent: '255 190 66', aqua: '45 220 210',
-    success: '52 211 140', danger: '255 99 114', 'lvl-a': '52 211 140', 'lvl-b': '107 130 255', 'lvl-c': '192 132 252', 'lvl-n': '255 170 60',
+    bg: '14 13 40', surface: '24 23 68', 'surface-2': '36 35 94', border: '56 55 120',
+    ink: '240 240 255', muted: '160 160 205', 'on-brand': '255 255 255',
+    brand: '124 122 240', 'brand-soft': '40 39 108', accent: '255 129 102', aqua: '45 212 198',
+    sun: '255 211 94', deep: '27 26 85',
+    success: '52 211 140', danger: '255 99 114',
+    'lvl-a': '45 212 198', 'lvl-b': '124 122 240', 'lvl-c': '255 129 102', 'lvl-n': '255 211 94',
   },
 };
 
 /** Gradients reference theme variables, so they follow light/dark automatically. */
 export const gradients = {
   brand: 'linear-gradient(135deg, rgb(var(--c-brand)) 0%, rgb(var(--c-aqua)) 100%)',
-  spark: 'linear-gradient(135deg, rgb(var(--c-accent)) 0%, rgb(var(--c-danger)) 100%)',
-  hero: 'radial-gradient(60rem 30rem at 15% -10%, rgb(var(--c-brand) / 0.25), transparent), radial-gradient(40rem 25rem at 90% 0%, rgb(var(--c-aqua) / 0.2), transparent)',
-  ring: 'conic-gradient(from 180deg, rgb(var(--c-aqua)), rgb(var(--c-brand)), rgb(var(--c-accent)), rgb(var(--c-aqua)))',
+  spark: 'linear-gradient(135deg, rgb(var(--c-accent)) 0%, rgb(var(--c-sun)) 100%)',
+  hero: 'radial-gradient(60rem 30rem at 15% -10%, rgb(var(--c-brand) / 0.25), transparent), radial-gradient(40rem 25rem at 90% 0%, rgb(var(--c-aqua) / 0.2), transparent), radial-gradient(35rem 20rem at 60% 110%, rgb(var(--c-accent) / 0.15), transparent)',
+  ring: 'conic-gradient(from 180deg, rgb(var(--c-aqua)), rgb(var(--c-brand)), rgb(var(--c-accent)), rgb(var(--c-sun)), rgb(var(--c-aqua)))',
 } as const;
 
 export const motion = { fast: '120ms', base: '200ms', slow: '320ms', ease: 'cubic-bezier(.2,.8,.2,1)' } as const;
