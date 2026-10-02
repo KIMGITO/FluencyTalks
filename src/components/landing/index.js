@@ -1,0 +1,14 @@
+export { default as GlobalStyles } from './GlobalStyles';
+export { default as Header } from './Header';
+export { default as Hero } from './Hero';
+export { default as Stats } from './Stats';
+export { default as About } from './About';
+export { default as HowItWorks } from './HowItWorks';
+export { default as Languages } from './Languages';
+export { default as Split } from './Split';
+export { default as Features } from './Features';
+export { default as Testimonial } from './Testimonial';
+export { default as Faq } from './Faq';
+export { default as Cta } from './Cta';
+export { default as Footer } from './Footer';
+export { default as ImageSection } from './ImageSection';
