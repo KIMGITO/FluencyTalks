@@ -1,141 +1,274 @@
 import { Link } from 'react-router-dom';
-import { Button, Logo, ThemeToggle, Card } from '@/components/ui';
-import { LanguageChip } from '@/components/features';
 
-// Swap this for your own image later.
-const HERO_IMAGE =
-  'https://plus.unsplash.com/premium_photo-1661962617265-b88538dc15e4?w=1600&auto=format&fit=crop&q=70&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzN8fHN0dWRlbnRhcyUyMGluJTIwbGlicmFyeXxlbnwwfHwwfHx8MA%3D%3D';
-
-/* Small icon set (stroke icons, no dependency). */
-const icons = {
-  book: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></>,
-  chat: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
-  globe: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
+/* ---------- Brand tokens (change here, everything updates) ---------- */
+const NAME = 'Lumina Academy';
+const C = {
+  indigo: '#2b2a7a',
+  indigoDeep: '#1b1a55',
+  coral: '#ff6a4d',
+  teal: '#12b5a6',
+  sun: '#ffc83d',
+  sky: '#e6f4ff',
+  blush: '#fff0ea',
+  mint: '#e3f8f4',
+  ink: '#17163a',
+  muted: '#5b5a7e',
+  white: '#ffffff',
+};
+const FONT = "'Trebuchet MS', 'Segoe UI', system-ui, sans-serif";
+const SERIF = "Georgia, 'Times New Roman', serif";
+const img = (id, w = 1200) => `https://images.unsplash.com/${id}?w=${w}&auto=format&fit=crop&q=75`;
+const IMG = {
+  hero: img('photo-1523240795612-9a054b0db644', 1600),
+  about: img('photo-1522202176988-66273c2fd55f'),
+  lecture: img('photo-1524178232363-1fb2b075b655'),
+  library: img('photo-1481627834876-b7833e8f5570'),
+  class: img('photo-1427504494785-3a9ca7044f45'),
+  kids: img('photo-1503676260728-1c00da094a0b'),
 };
 
-function Icon({ name, className = 'h-4 w-4' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      {icons[name]}
-    </svg>
-  );
-}
+/* ---------- Shared style helpers ---------- */
+const wrap = { maxWidth: 1160, margin: '0 auto', padding: '0 24px' };
+const section = (bg, pad = '88px 0') => ({ background: bg, padding: pad });
+const h2 = { fontFamily: SERIF, fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.15, margin: '0 0 14px', color: C.ink };
+const lead = { fontSize: 18, lineHeight: 1.65, color: C.muted, maxWidth: 560, margin: 0 };
+const btn = (bg, color, extra = {}) => ({
+  display: 'inline-block', background: bg, color, padding: '14px 30px', borderRadius: 999,
+  fontWeight: 800, fontSize: 16, textDecoration: 'none', border: '2px solid transparent', ...extra,
+});
+const photo = (src, extra = {}) => ({
+  backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center', ...extra,
+});
+const grid = (min, gap = 28) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap });
 
-const mainNav = [
-  { label: 'How it works', href: '#how-it-works', icon: 'book', badge: 'bg-brand' },
-  { label: 'Languages', href: '#languages', icon: 'globe', badge: 'bg-aqua' },
-  { label: 'Community', href: '#community', icon: 'chat', badge: 'bg-accent' },
+const nav = [
+  ['About', '#about'], ['Programs', '#programs'], ['How to enroll', '#enroll'], ['Stories', '#stories'], ['Contact', '#contact'],
 ];
 
-const sectionNav = [
-  { label: 'Start practicing', to: '/signup' },
-  { label: 'How it works', href: '#how-it-works' },
-  { label: 'Languages', href: '#languages' },
-  { label: 'Log in', to: '/login' },
+const programs = [
+  { t: 'Language & Literature', d: 'Speak, read and write with confidence in more than 12 languages.', bg: C.coral, src: IMG.class },
+  { t: 'Science & Technology', d: 'Hands-on labs and coding studios from beginner to advanced.', bg: C.teal, src: IMG.lecture },
+  { t: 'Business & Leadership', d: 'Practical diplomas taught by people who run real companies.', bg: C.indigo, src: IMG.library },
+  { t: 'Junior Academy', d: 'Playful, structured learning for ages 6 to 14.', bg: C.sun, src: IMG.kids, dark: true },
 ];
 
 const steps = [
-  { icon: 'chat', badge: 'bg-brand', title: 'Message a speaker', body: 'Pick a language and start a chat with a native speaker or a fluent learner.' },
-  { icon: 'book', badge: 'bg-aqua', title: 'Get corrected in the chat', body: 'Your partner fixes mistakes right in the conversation, so you see the right form straight away.' },
-  { icon: 'globe', badge: 'bg-accent', title: 'Save phrases, keep going', body: 'Keep the phrases you want to remember and build a daily practice habit.' },
+  ['Choose a program', 'Browse our programs and pick the one that fits your goals.', C.coral],
+  ['Apply online', 'Fill in a ten-minute form. No entrance fee.', C.teal],
+  ['Meet your advisor', 'Get a study plan and schedule built around your week.', C.sun],
+  ['Start learning', 'Join your first class and meet your cohort.', C.indigo],
 ];
+
+const stats = [['25,000+', 'Graduates worldwide'], ['120', 'Expert instructors'], ['94%', 'Complete their program'], ['18', 'Years of teaching']];
+
+const faqs = [
+  ['Do I need prior experience?', 'No. Every program has a beginner track with placement support.'],
+  ['Can I study part-time?', 'Yes. Evening, weekend and online options are available for most programs.'],
+  ['Is financial aid available?', 'Scholarships and monthly payment plans are open to all applicants.'],
+];
+
+function Logo({ light }) {
+  return (
+    <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+      <span style={{ width: 38, height: 38, borderRadius: '50% 50% 50% 8px', background: `linear-gradient(135deg, ${C.coral}, ${C.sun})`, display: 'grid', placeItems: 'center', fontWeight: 900, color: C.white, fontSize: 20 }}>L</span>
+      <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 22, color: light ? C.white : C.indigo }}>{NAME}</span>
+    </Link>
+  );
+}
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-bg text-ink">
-      {/* Top bar */}
-      <header className="bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+    <div style={{ fontFamily: FONT, color: C.ink, background: C.white, lineHeight: 1.5 }}>
+      {/* Announcement bar */}
+      <div style={{ background: C.coral, color: C.white, textAlign: 'center', padding: '10px 16px', fontSize: 14, fontWeight: 700 }}>
+        Autumn intake is open. Applications close 30 November.
+      </div>
+
+      {/* Header */}
+      <header style={{ background: C.white, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 2px 0 rgba(43,42,122,0.08)' }}>
+        <div style={{ ...wrap, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '14px 24px' }}>
           <Logo />
-          <div className="flex items-center gap-2">
-            <nav className="mr-4 hidden items-center gap-5 text-sm font-semibold lg:flex">
-              {mainNav.map((item) => (
-                <a key={item.label} href={item.href} className="flex items-center gap-2 hover:text-brand">
-                  <span className={`grid h-7 w-7 place-items-center rounded-full text-on-brand ${item.badge}`}>
-                    <Icon name={item.icon} className="h-3.5 w-3.5" />
-                  </span>
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-            <ThemeToggle />
-            <Link to="/login"><Button variant="ghost">Log in</Button></Link>
-            <Link to="/signup"><Button className="rounded-full px-6 font-bold">Sign up</Button></Link>
+          <nav style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontWeight: 700, fontSize: 15 }}>
+            {nav.map(([l, h]) => <a key={l} href={h} style={{ color: C.ink, textDecoration: 'none' }}>{l}</a>)}
+          </nav>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link to="/login" style={btn('transparent', C.indigo, { padding: '10px 20px', borderColor: C.indigo })}>Log in</Link>
+            <Link to="/signup" style={btn(C.indigo, C.white, { padding: '10px 22px' })}>Apply now</Link>
           </div>
         </div>
       </header>
 
-      {/* Dark section bar */}
-      <div className="bg-ink text-bg">
-        <nav className="mx-auto flex max-w-6xl items-center gap-6 overflow-x-auto whitespace-nowrap px-4 py-3 text-sm">
-          <span className="opacity-60">On this page</span>
-          {sectionNav.map((item) =>
-            item.to ? (
-              <Link key={item.label} to={item.to} className="font-semibold hover:underline underline-offset-8">{item.label}</Link>
-            ) : (
-              <a key={item.label} href={item.href} className="font-semibold hover:underline underline-offset-8">{item.label}</a>
-            )
-          )}
-        </nav>
-      </div>
-
-      {/* Photo banner, curved bottom edge, brand-blue wash */}
-      <section
-        className="relative overflow-hidden  bg-cover bg-center  bg-surface-2"
-        style={{ backgroundImage: `url(${HERO_IMAGE})`, borderRadius: '0 0 50% 0' }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-brand/60 via-brand/50 to-brand/5" aria-hidden="true" />
-        <div className="relative mx-auto max-w-6xl px-4 pb-32 pt-16 text-on-brand md:pb-40 md:pt-24">
-          
-          <h1 className="mt-5 max-w-2xl font-display text-4xl font-extrabold md:text-5xl">
-            Learn a language by  talking.
+      {/* Hero */}
+      <section style={{ ...photo(IMG.hero), position: 'relative', borderRadius: '0 0 0 120px', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(100deg, ${C.indigoDeep} 15%, rgba(43,42,122,0.82) 50%, rgba(18,181,166,0.35) 100%)` }} />
+        <div style={{ ...wrap, position: 'relative', padding: '110px 24px 130px' }}>
+          <span style={{ display: 'inline-block', background: C.sun, color: C.ink, fontWeight: 800, fontSize: 14, padding: '6px 16px', borderRadius: 999 }}>
+            Enrolling now for 2027
+          </span>
+          <h1 style={{ fontFamily: SERIF, fontSize: 'clamp(38px, 6.5vw, 72px)', lineHeight: 1.05, color: C.white, margin: '22px 0 20px', maxWidth: 760 }}>
+            Learn from people who love to teach.
           </h1>
-          <p className="mt-4 max-w-xl text-lg opacity-90">
-            Message native speakers and fluent learners, get corrected as you chat, and build a habit that sticks.
+          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 20, maxWidth: 540, margin: '0 0 36px' }}>
+            Small classes, real mentors and programs built around your life. Start a diploma, a language or a new career this term.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/signup" className="rounded-full bg-on-brand px-7 py-3 font-bold text-brand shadow-pop transition hover:opacity-90">
-              Start for free
-            </Link>
-            <Link to="/login" className="rounded-full border border-on-brand/60 px-7 py-3 font-bold text-on-brand transition hover:bg-on-brand/10">
-              I have an account
-            </Link>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <Link to="/signup" style={btn(C.coral, C.white)}>Start your application</Link>
+            <a href="#programs" style={btn('transparent', C.white, { borderColor: C.white })}>Explore programs</a>
           </div>
         </div>
       </section>
 
-     
-
-      {/* How it works */}
-      <section id="how-it-works" className="scroll-mt-6 bg-surface-2">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <h2 className="font-display text-3xl font-extrabold md:text-4xl">How it works</h2>
-          <ol className="mt-10 grid gap-6 md:grid-cols-3">
-            {steps.map((step, i) => (
-              <li key={step.title} className="rounded-lg bg-surface p-6 shadow-card">
-                <span className={`grid h-12 w-12 place-items-center rounded-full text-on-brand ${step.badge}`}>
-                  <Icon name={step.icon} className="h-5 w-5" />
-                </span>
-                <h3 className="mt-5 font-display text-xl font-bold">{i + 1}. {step.title}</h3>
-                <p className="mt-2 text-muted">{step.body}</p>
-              </li>
-            ))}
-          </ol>
+      {/* Stats band, overlapping the hero */}
+      <section style={{ ...wrap, marginTop: -56, position: 'relative', zIndex: 2 }}>
+        <div style={{ ...grid(180, 0), background: C.sun, borderRadius: 24, overflow: 'hidden' }}>
+          {stats.map(([n, l], i) => (
+            <div key={l} style={{ padding: '26px 24px', textAlign: 'center', background: i % 2 ? '#ffd45f' : C.sun }}>
+              <div style={{ fontFamily: SERIF, fontSize: 38, fontWeight: 700, color: C.indigoDeep }}>{n}</div>
+              <div style={{ fontWeight: 700, color: C.ink }}>{l}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Closing call to action */}
-      <section id="community" className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20">
-        <div className="flex flex-col items-start justify-between gap-6 rounded-xl bg-gradient-to-br from-brand to-aqua p-8 text-on-brand md:flex-row md:items-center md:p-12">
+      {/* About */}
+      <section id="about" style={section(C.white, '100px 0 88px')}>
+        <div style={{ ...wrap, ...grid(320, 56), alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', top: -18, left: -18, width: '70%', height: '70%', background: C.teal, borderRadius: 28 }} />
+            <div style={photo(IMG.about, { position: 'relative', height: 440, borderRadius: 28, borderBottomRightRadius: 120 })} />
+          </div>
           <div>
-            <h2 className="font-display text-3xl font-extrabold">Ready for your first conversation?</h2>
-            <p className="mt-2 opacity-90">Create a free account and message someone today.</p>
+            <h2 style={h2}>A school that treats you like a person, not a seat number.</h2>
+            <p style={{ ...lead, marginBottom: 20 }}>
+              For 18 years we have kept classes small and teachers close. You get feedback every week, a mentor who knows your goals, and a community that cheers you on.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'grid', gap: 12, fontWeight: 700 }}>
+              {[['Accredited diplomas and certificates', C.coral], ['Classes of 15 students or fewer', C.teal], ['Campus, online and hybrid study', C.sun]].map(([t, c]) => (
+                <li key={t} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: c, flex: 'none' }} />{t}
+                </li>
+              ))}
+            </ul>
+            <a href="#contact" style={btn(C.indigo, C.white)}>Book a campus visit</a>
           </div>
-          <Link to="/signup" className="rounded-full bg-on-brand px-8 py-3 font-bold text-brand shadow-pop transition hover:opacity-90">
-            Sign up free
-          </Link>
         </div>
       </section>
+
+      {/* Programs: full-colour photo tiles */}
+      <section id="programs" style={section(C.sky)}>
+        <div style={wrap}>
+          <h2 style={h2}>Programs for every stage</h2>
+          <p style={{ ...lead, marginBottom: 44 }}>Pick a subject, pick a pace. Each program ends with a recognised qualification.</p>
+          <div style={grid(250, 0)}>
+            {programs.map((p) => (
+              <div key={p.t} style={{ background: p.bg, color: p.dark ? C.ink : C.white }}>
+                <div style={photo(p.src, { height: 190, opacity: 0.95 })} />
+                <div style={{ padding: '24px 26px 32px', minHeight: 170 }}>
+                  <h3 style={{ fontFamily: SERIF, fontSize: 24, margin: '0 0 8px' }}>{p.t}</h3>
+                  <p style={{ margin: 0, fontSize: 16, opacity: 0.95 }}>{p.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How to enroll: timeline */}
+      <section id="enroll" style={section(C.white)}>
+        <div style={wrap}>
+          <h2 style={{ ...h2, textAlign: 'center' }}>Enrolling takes four steps</h2>
+          <p style={{ ...lead, margin: '0 auto 56px', textAlign: 'center' }}>Most students are in class within two weeks of applying.</p>
+          <div style={grid(220, 32)}>
+            {steps.map(([t, d, c], i) => (
+              <div key={t} style={{ textAlign: 'center' }}>
+                <div style={{ width: 76, height: 76, borderRadius: '50%', background: c, color: c === C.sun ? C.ink : C.white, display: 'grid', placeItems: 'center', fontFamily: SERIF, fontSize: 32, fontWeight: 700, margin: '0 auto 18px', boxShadow: `0 0 0 8px ${c}33` }}>{i + 1}</div>
+                <h3 style={{ fontSize: 19, margin: '0 0 6px' }}>{t}</h3>
+                <p style={{ margin: 0, color: C.muted }}>{d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why us: split image + colour blocks */}
+      <section style={{ ...grid(340, 0), background: C.indigoDeep }}>
+        <div style={photo(IMG.lecture, { minHeight: 420 })} />
+        <div style={{ padding: '72px 48px', color: C.white }}>
+          <h2 style={{ ...h2, color: C.white }}>Learn your way</h2>
+          <div style={{ display: 'grid', gap: 22, marginTop: 28 }}>
+            {[['Live classes', 'Join on campus or from home, with recordings for every session.', C.sun],
+              ['Personal mentors', 'One advisor follows your progress from day one.', C.coral],
+              ['Career support', 'CV reviews, interview practice and employer introductions.', C.teal]].map(([t, d, c]) => (
+              <div key={t} style={{ borderLeft: `6px solid ${c}`, paddingLeft: 18 }}>
+                <div style={{ fontWeight: 800, fontSize: 18, color: c }}>{t}</div>
+                <div style={{ opacity: 0.88 }}>{d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonial */}
+      <section id="stories" style={section(C.blush)}>
+        <div style={{ ...wrap, ...grid(300, 48), alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: SERIF, fontSize: 90, lineHeight: 0.6, color: C.coral }}>“</div>
+            <p style={{ fontFamily: SERIF, fontSize: 'clamp(22px, 3vw, 30px)', lineHeight: 1.4, margin: '0 0 22px' }}>
+              I arrived unable to order a coffee in Spanish. A year later I was leading client meetings. The teachers never let me give up.
+            </p>
+            <div style={{ fontWeight: 800 }}>Amina Odhiambo</div>
+            <div style={{ color: C.muted }}>Diploma in Language & Literature, class of 2025</div>
+          </div>
+          <div style={photo(IMG.class, { height: 360, borderRadius: '140px 28px 28px 28px', boxShadow: `18px 18px 0 ${C.sun}` })} />
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={section(C.white, '80px 0')}>
+        <div style={{ ...wrap, maxWidth: 820 }}>
+          <h2 style={{ ...h2, textAlign: 'center', marginBottom: 32 }}>Questions, answered</h2>
+          {faqs.map(([q, a], i) => (
+            <details key={q} style={{ borderBottom: `2px solid ${[C.coral, C.teal, C.sun][i]}`, padding: '18px 4px' }}>
+              <summary style={{ fontWeight: 800, fontSize: 18, cursor: 'pointer' }}>{q}</summary>
+              <p style={{ margin: '10px 0 0', color: C.muted }}>{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section id="contact" style={{ background: `linear-gradient(120deg, ${C.coral}, ${C.sun})`, padding: '80px 0', textAlign: 'center' }}>
+        <div style={wrap}>
+          <h2 style={{ ...h2, color: C.indigoDeep, fontSize: 'clamp(30px, 5vw, 50px)' }}>Your next chapter starts here.</h2>
+          <p style={{ ...lead, color: C.ink, margin: '0 auto 30px' }}>Apply in ten minutes, or talk to an advisor first.</p>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/signup" style={btn(C.indigoDeep, C.white)}>Apply now</Link>
+            <a href="mailto:admissions@lumina.edu" style={btn(C.white, C.indigoDeep)}>Talk to an advisor</a>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ background: C.indigoDeep, color: 'rgba(255,255,255,0.8)', padding: '64px 0 28px' }}>
+        <div style={{ ...wrap, ...grid(200, 40) }}>
+          <div>
+            <Logo light />
+            <p style={{ marginTop: 16, maxWidth: 280 }}>Small classes, big goals. Teaching since 2008.</p>
+          </div>
+          {[['Programs', ['Languages', 'Science & Tech', 'Business', 'Junior Academy']],
+            ['School', ['About us', 'Admissions', 'Scholarships', 'Careers']],
+            ['Contact', ['12 Campus Road, Nairobi', 'admissions@lumina.edu', '+254 700 000 000', 'Mon to Fri, 8am to 5pm']]].map(([h, items], i) => (
+            <div key={h}>
+              <div style={{ color: [C.sun, C.coral, C.teal][i], fontWeight: 800, marginBottom: 14 }}>{h}</div>
+              <div style={{ display: 'grid', gap: 8 }}>{items.map((t) => <span key={t}>{t}</span>)}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ ...wrap, marginTop: 44, paddingTop: 22, borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, fontSize: 14 }}>
+          <span>© 2026 {NAME}. All rights reserved.</span>
+          <span>Privacy · Terms · Accessibility</span>
+        </div>
+      </footer>
     </div>
   );
 }
