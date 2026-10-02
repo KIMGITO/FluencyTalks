@@ -88,7 +88,7 @@ export default function Landing() {
         <div className="relative mx-auto max-w-6xl px-4 pb-32 pt-16 text-on-brand md:pb-40 md:pt-24">
           
           <h1 className="mt-5 max-w-2xl font-display text-4xl font-extrabold md:text-5xl">
-            Learn a language by actually talking.
+            Learn a language by talking.
           </h1>
           <p className="mt-4 max-w-xl text-lg opacity-90">
             Message native speakers and fluent learners, get corrected as you chat, and build a habit that sticks.
