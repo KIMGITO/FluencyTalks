@@ -4,11 +4,20 @@ import { useAuthStore } from '@/store/authStore';
 type Provider = 'google' | 'apple' | 'facebook';
 
 const Svg = ({ children }: { children: ReactNode }) => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">{children}</svg>
+  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" aria-hidden="true">{children}</svg>
 );
 
 /* Provider logos keep their official brand colours. Apple uses currentColor so it works in dark mode. */
 const providers: { id: Provider; label: string; icon: ReactNode }[] = [
+  {
+    id: 'facebook',
+    label: 'Continue with Facebook',
+    icon: (
+      <Svg>
+        <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.95h-1.52c-1.49 0-1.96.93-1.96 1.88V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12z" />
+      </Svg>
+    ),
+  },
   {
     id: 'google',
     label: 'Continue with Google',
@@ -30,15 +39,7 @@ const providers: { id: Provider; label: string; icon: ReactNode }[] = [
       </Svg>
     ),
   },
-  {
-    id: 'facebook',
-    label: 'Continue with Facebook',
-    icon: (
-      <Svg>
-        <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.95h-1.52c-1.49 0-1.96.93-1.96 1.88V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12z" />
-      </Svg>
-    ),
-  },
+  
 ];
 
 export function SocialButtons() {
@@ -51,17 +52,21 @@ export function SocialButtons() {
   };
 
   return (
-    <div className="grid gap-3">
+    <div className="mx-auto grid w-full max-w-xs gap-4">
       {providers.map((p) => (
         <button
           key={p.id}
           type="button"
           disabled={pending !== null}
+          aria-busy={pending === p.id}
           onClick={() => go(p.id)}
-          className="relative flex h-12 w-full items-center justify-center rounded-md border border-border bg-surface px-12 text-sm font-semibold text-ink shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-pop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-auto py-3  w-full items-center justify-center rounded-full border border-border bg-surface text-sm font-semibold text-ink shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-pop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span className="absolute left-4 grid h-6 w-6 place-items-center">{p.icon}</span>
-          {pending === p.id ? 'Connecting…' : p.label}
+          {/* Fixed-width inner row: icons share one vertical line, labels share another, and the pair stays centred */}
+          <span className="flex w-52 items-center gap-3">
+            {p.icon}
+            <span className="truncate text-left">{pending === p.id ? 'Connecting…' : p.label}</span>
+          </span>
         </button>
       ))}
     </div>

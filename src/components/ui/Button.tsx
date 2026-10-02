@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import type { ButtonHTMLAttributes } from 'react';
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; full?: boolean; loading?: boolean };
 const variants = {
-  primary: 'bg-grad-brand text-on-brand hover:opacity-90',
+  primary: 'bg-brand text-on-brand hover:opacity-90',
   secondary: 'bg-surface-2 text-ink hover:bg-border',
   ghost: 'text-muted hover:bg-surface-2 hover:text-ink',
   danger: 'bg-danger text-on-brand hover:opacity-90',
