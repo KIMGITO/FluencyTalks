@@ -95,7 +95,7 @@ export default function Landing() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/signup" className="rounded-full bg-on-brand px-7 py-3 font-bold text-brand shadow-pop transition hover:opacity-90">
-              Start practicing free
+              Start for free
             </Link>
             <Link to="/login" className="rounded-full border border-on-brand/60 px-7 py-3 font-bold text-on-brand transition hover:bg-on-brand/10">
               I have an account
