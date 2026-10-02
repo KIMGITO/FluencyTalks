@@ -20,7 +20,7 @@ const sizes: Record<InputSize, { input: string; label: string; message: string }
 };
 
 export const Input = forwardRef<HTMLInputElement, Props>(
-  ({ label, error, size = 'md', className, id, ...rest }, ref) => {
+  ({ label, error, size = 'sm', className, id, ...rest }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
     const errorId = `${inputId}-error`;

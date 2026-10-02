@@ -26,14 +26,6 @@ export default function Login() {
           Log in to pick up your conversations where you left off.
         </p>
 
-        <SocialButtons />
-
-        <div className="flex items-center gap-3 text-xs font-semibold text-muted">
-          <span className="h-px flex-1 bg-border" />
-          or log in with email
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
         <form onSubmit={submit} className="space-y-4">
           <Input
             id="email"
@@ -75,6 +67,14 @@ export default function Login() {
             Log in
           </Button>
         </form>
+        <div className="flex w-full h-14 items-center my-4">
+          <div className="h-px flex-1 border border-0.5 border-ink/20"></div>
+          <span className="px-4 text-sm font-semibold text-ink uppercase tracking-wider">
+            OR
+          </span>
+          <div className="h-px border border-0.5 border-ink/20 flex-1 "></div>
+        </div>
+        <SocialButtons />
 
         <p className="text-center text-sm text-muted">
           New to FluencyTalks?{' '}
