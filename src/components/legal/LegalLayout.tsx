@@ -158,9 +158,9 @@ export default function LegalLayout({
       <style>{CSS}</style>
 
       <header className="lg-bar">
-        <div className="lg-bar-in">
+        <div className="lg-bar-in flex justify-between items-center">
           <Logo />
-          <nav className="lg-links" aria-label="Legal pages">
+          <nav className="lg-links flex" aria-label="Legal pages">
             {LINKS.map(([l, to]) => (
               <Link
                 key={to}
@@ -172,7 +172,6 @@ export default function LegalLayout({
               </Link>
             ))}
           </nav>
-          <span className="lg-chip">{title}</span>
           <Link to="/" className="lg-back">
             Home
           </Link>
