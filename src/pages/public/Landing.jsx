@@ -1,5 +1,5 @@
 import { GlobalStyles, Header, Hero, Stats, About, HowItWorks, Languages, Split, Features, Testimonial, Faq, Cta, Footer } from '@/components/landing';
-import { C, FONT } from '@/components/landing/theme';
+import { C, FONT } from '@/theme/theme';
 
 export default function Landing() {
   return (

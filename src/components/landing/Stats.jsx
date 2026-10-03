@@ -1,4 +1,4 @@
-import { C, SERIF, wrap } from './theme';
+import { C, SERIF, wrap } from '../../theme/theme';
 import { Reveal, Count } from './Reveal';
 
 // [value, suffix, decimals, long label, short label]
@@ -15,7 +15,14 @@ const CSS = `
 
 export default function Stats() {
   return (
-    <section style={{ ...wrap, marginTop: 'calc(-1 * clamp(20px, 2vw, 30px))', position: 'relative', zIndex: 0 }}>
+    <section
+      style={{
+        ...wrap,
+        marginTop: 'calc(-1 * clamp(20px, 2vw, 30px))',
+        position: 'relative',
+        zIndex: 0,
+      }}
+    >
       <style>{CSS}</style>
       <Reveal>
         <div
@@ -37,10 +44,27 @@ export default function Stats() {
                 borderLeft: i ? '1px solid rgba(27,26,85,0.14)' : 0,
               }}
             >
-              <div style={{ fontFamily: SERIF, fontSize: 'clamp(20px, 5.4vw, 38px)', fontWeight: 700, lineHeight: 1.1, color: C.deep }}>
+              <div
+                style={{
+                  fontFamily: SERIF,
+                  fontSize: 'clamp(20px, 5.4vw, 38px)',
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                  color: C.deep,
+                }}
+              >
                 <Count to={to} suffix={suf} dec={dec} />
               </div>
-              <div style={{ marginTop: 2, fontWeight: 700, fontSize: 'clamp(10px, 1.7vw, 16px)', lineHeight: 1.25, color: C.ink, opacity: 0.85 }}>
+              <div
+                style={{
+                  marginTop: 2,
+                  fontWeight: 700,
+                  fontSize: 'clamp(10px, 1.7vw, 16px)',
+                  lineHeight: 1.25,
+                  color: C.ink,
+                  opacity: 0.85,
+                }}
+              >
                 <span className="ft-st-long">{long}</span>
                 <span className="ft-st-short">{short}</span>
               </div>

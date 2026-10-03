@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { C, NAME, wrap } from './theme';
+import { C, NAME, wrap } from '../../theme/theme';
 import { Logo } from '@/components/ui';
 
 

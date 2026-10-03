@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { C, IMG, wrap, h2, lead, btn, photo } from './theme';
+import { C, IMG, wrap, h2, lead, btn, photo } from '../../theme/theme';
 import { Reveal } from './Reveal';
 export default function Cta() {
   return (

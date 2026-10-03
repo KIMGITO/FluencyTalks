@@ -5,16 +5,32 @@
  *           -> (b) Tailwind theme (tailwind.config.ts)
  * Colors are "R G B" triplets so Tailwind opacity modifiers (bg-brand/20) work.
  */
+
 export const fonts = {
-  sans: "'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif",
-  // Matches the landing page headlines (Georgia serif).
-  display: "Georgia, 'Times New Roman', serif",
-};
+  sans: "'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  display: "'Bricolage Grotesque', 'Figtree', system-ui, sans-serif",
+  serif: "Georgia, 'Times New Roman', serif",
+  mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+} as const;
+
+export const fontWeights = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+  extrabold: '800',
+} as const;
 
 export const fontSizes = {
-  xs: ['0.75rem', '1.1rem'], sm: ['0.875rem', '1.35rem'], base: ['1rem', '1.55rem'],
-  lg: ['1.125rem', '1.7rem'], xl: ['1.375rem', '1.9rem'], '2xl': ['1.75rem', '2.2rem'],
-  '3xl': ['2.25rem', '2.6rem'], '4xl': ['3rem', '3.2rem'], '5xl': ['4rem', '4.1rem'],
+  xs: ['0.75rem', { lineHeight: '1.1rem', letterSpacing: '-0.01em' }],
+  sm: ['0.875rem', { lineHeight: '1.35rem', letterSpacing: '-0.01em' }],
+  base: ['1rem', { lineHeight: '1.55rem', letterSpacing: '-0.011em' }],
+  lg: ['1.125rem', { lineHeight: '1.7rem', letterSpacing: '-0.015em' }],
+  xl: ['1.375rem', { lineHeight: '1.9rem', letterSpacing: '-0.02em' }],
+  '2xl': ['1.75rem', { lineHeight: '2.2rem', letterSpacing: '-0.025em' }],
+  '3xl': ['2.25rem', { lineHeight: '2.6rem', letterSpacing: '-0.03em' }],
+  '4xl': ['3rem', { lineHeight: '3.2rem', letterSpacing: '-0.035em' }],
+  '5xl': ['4rem', { lineHeight: '4.1rem', letterSpacing: '-0.04em' }],
 } as const;
 
 export const spacing = {

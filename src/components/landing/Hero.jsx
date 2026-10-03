@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { C, IMG, SERIF, wrap, btn, photo, bubble } from './theme';
+import { C, IMG, SERIF, wrap, btn, photo, bubble } from '../../theme/theme';
 import { Words } from './Reveal';
 
 const slides = [
@@ -134,22 +134,6 @@ export default function Hero() {
                   minHeight: 420,
                 }}
               >
-                <span
-                  style={{
-                    display: 'inline-block',
-                    background: C.sun,
-                    color: C.ink,
-                    fontWeight: 800,
-                    fontSize: 14,
-                    padding: '6px 16px',
-                    borderRadius: 999,
-                    ...(on
-                      ? { animation: 'ftUp .7s .05s both' }
-                      : { opacity: 0 }),
-                  }}
-                >
-                  {s.tag}
-                </span>
                 <h1
                   style={{
                     fontFamily: SERIF,
@@ -184,6 +168,7 @@ export default function Hero() {
                       ? { animation: 'ftUp .8s 1.1s both' }
                       : { opacity: 0 }),
                   }}
+                  className="flex justify-center "
                 >
                   <Link to="/signup" style={btn(C.coral, C.white)}>
                     Start talking free

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { C, IMG, wrap, h2, btn, photo } from './theme';
+import { C, IMG, wrap, h2, btn, photo } from '../../theme/theme';
 import { Reveal } from './Reveal';
 
 const roles = {
@@ -14,7 +14,7 @@ const roles = {
   speaker: {
     tab: 'I speak it well',
     title: 'Share your language',
-    body: 'Meet people worldwide and earn rewards for every helpful session.',
+    body: 'Meet people worldwide and earn rewards for every helpful session.', 
     points: ['Help from anywhere', 'Earn rewards', 'Set your own hours'],
     cta: 'Join as a speaker',
   },
@@ -65,13 +65,13 @@ export default function Split() {
                 >
                   <h3 style={{ margin: '0 0 10px', fontSize: 'clamp(22px, 3.2vw, 30px)', lineHeight: 1.2, color: C.white }}>{v.title}</h3>
                   <p style={{ margin: '0 auto 20px', maxWidth: 520, fontSize: 'clamp(16px, 2vw, 18px)', lineHeight: 1.65, color: 'rgba(255,255,255,0.88)' }}>{v.body}</p>
-                  <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px clamp(14px, 3vw, 26px)', fontWeight: 700, fontSize: 'clamp(14px, 1.7vw, 15px)', color: C.white }}>
+                  {/* <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px clamp(14px, 3vw, 26px)', fontWeight: 700, fontSize: 'clamp(14px, 1.7vw, 15px)', color: C.white }}>
                     {v.points.map((p) => (
                       <li key={p} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.sun, flex: 'none' }} />{p}
                       </li>
                     ))}
-                  </ul>
+                  </ul> */}
                 </div>
               );
             })}
