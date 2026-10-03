@@ -184,23 +184,6 @@ export default function HowItWorks() {
       <div style={wrap}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 64px)' }}>
-            <span
-              style={{
-                fontFamily: FONT,
-                fontWeight: 700,
-                fontSize: 13,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: C.coral,
-                background: C.blush,
-                padding: '6px 14px',
-                borderRadius: 999,
-                display: 'inline-block',
-                marginBottom: 12,
-              }}
-            >
-              Simple Process
-            </span>
             <h2 style={{ ...h2, textAlign: 'center' }}>
               Your first conversation in four steps
             </h2>

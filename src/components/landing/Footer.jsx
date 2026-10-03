@@ -8,21 +8,10 @@ const cols = [
   ['Product', [
     { label: 'How it works', hash: '#how' },
     { label: 'Languages', hash: '#languages' },
-    { label: 'Pricing', to: '/pricing' },
-    { label: 'Voice rooms', to: '/signup' },
+     { label: 'Help and FAQ', hash: '#faq' },
+     { label: 'kimanthidennis02@gmail.com', href: 'mailto:kimanthidennis@gmail.com' },
   ]],
-  ['Community', [
-    { label: 'Become a speaker', hash: '#speakers' },
-    { label: 'Guidelines', to: '/guidelines' },
-    { label: 'Safety', to: '/safety' },
-    { label: 'Blog', to: '/blog' },
-  ]],
-  ['Company', [
-    { label: 'About us', to: '/about' },
-    { label: 'Careers', to: '/careers' },
-    { label: 'Help and FAQ', hash: '#faq' },
-    { label: 'help@fluencytalks.com', href: 'mailto:help@fluencytalks.com' },
-  ]],
+  
 ];
 
 const legal = [
