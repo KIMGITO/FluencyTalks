@@ -75,7 +75,7 @@ export default function Header() {
           right: 0,
           height: '3px',
           width: `${scrollProgress * 100}%`,
-          background: `linear-gradient(90deg, ${C.coral}, ${C.sun}, ${C.teal})`,
+          background: ` ${C.indigo}`,
           zIndex: 50,
           transition: 'width 0.1s linear',
         }}

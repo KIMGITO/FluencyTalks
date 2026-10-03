@@ -1,10 +1,17 @@
+import { Link } from "react-router-dom";
+
 export const Logo = ({ compact }: { compact?: boolean }) => (
+  <Link
+              to="/"
+              style={{ textDecoration: 'none' }}
+              aria-label="FluencyTalks Home"
+            >
   <span className="flex items-center gap-2">
     <span className="flex h-9 w-9 items-center justify-center overflow-hidden">
-      <img 
-        src="/favicon.png" 
-        alt="FluencyTalks Logo" 
-        className="h-full w-full object-contain" 
+      <img
+        src="/favicon.png"
+        alt="FluencyTalks Logo"
+        className="h-full w-full object-contain"
       />
     </span>
     {!compact && (
@@ -13,4 +20,5 @@ export const Logo = ({ compact }: { compact?: boolean }) => (
       </span>
     )}
   </span>
+  </Link>
 );

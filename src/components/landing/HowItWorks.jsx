@@ -13,8 +13,8 @@ const steps = [
     accent: C.teal,
   },
   {
-    title: 'Talk and get corrected',
-    body: 'Chat by text, voice or video. Mistakes are fixed naturally as you go.',
+    title: ' Get corrected',
+    body: 'Chat by text and get friendly corrections in the moment.',
     accent: C.coral,
   },
   {
