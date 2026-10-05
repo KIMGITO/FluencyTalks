@@ -16,8 +16,8 @@ export function CountryPicker({ value, timezone, onChange }:
   return (
     <Select label="Country" searchable value={value ?? AUTO}
       onChange={(e) => onChange(e.target.value === AUTO ? null : e.target.value)}>
-      <option value={AUTO}>{suggested ? `From my timezone (${suggested} · ${flagOf(suggested)} ${suggestedName})` : 'From my timezone'}</option>
-      {countries.map((c) => <option key={c.code} value={c.code}>{c.code} · {flagOf(c.code)} {c.name}</option>)}
+      <option value={AUTO}>{suggested ? `From my timezone (${suggested}  ${flagOf(suggested)} ${suggestedName})` : 'From my timezone'}</option>
+      {countries.map((c) => <option key={c.code} value={c.code}>{c.code}  {flagOf(c.code)} {c.name}</option>)}
     </Select>
   );
 }

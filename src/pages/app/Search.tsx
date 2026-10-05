@@ -7,7 +7,7 @@ import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { searchMessages, searchPeople, type SearchScope } from '@/services';
-import { useLanguageStore, useLanguages } from '@/store/languageStore';
+import { useDisplayLocales, useLanguageStore, useLanguages } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { MessageHit, Person } from '@/types/db';
 
@@ -24,7 +24,7 @@ const PREVIEW = 5;                                   // rows the mixed "All" tab
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const me = useProfileStore((s) => s.me); const myLanguages = useProfileStore((s) => s.languages);
-  const languages = useLanguages(); const labelOf = useLanguageStore((s) => s.labelOf);
+  const languages = useLanguages(); const labelOf = useLanguageStore((s) => s.labelOf); const locales = useDisplayLocales();
 
   const query = params.get('q') ?? '';
   const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? 'all') as Tab;
@@ -123,9 +123,9 @@ export default function Search() {
       </div>
 
       {idle ? (
-        <EmptyState title="Search FluencyTalks" text="Find anyone by name or @username, even people you don't follow — or look back through your chats." action={
+        <EmptyState title="Search FluencyTalks" text="Find anyone by name or username  or look back through your chats." action={
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">{quick.map((c) => (
-            <Button key={c} size="sm" variant="secondary" onClick={() => patch({ tab: 'people', lang: c, role: 'native' })}>{labelOf({ language_id: c })} speakers</Button>
+            <Button key={c} size="sm" variant="secondary" onClick={() => patch({ tab: 'people', lang: c, role: 'native' })}>{labelOf({ language_id: c }, locales)} speakers</Button>
           ))}</div>
         } />
       ) : (

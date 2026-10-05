@@ -4,20 +4,25 @@ import { languageLabel, sortKey } from '@/lib/languages';
 import type { DisplayLanguage, FullProfile, Language, MyProfile, UserLanguage } from '@/types/db';
 
 /**
- * The pickable languages, English name never shown, native name when the browser can draw
- * it. `is_supported_learning` is filtered in SQL so a disabled language never reaches the
- * client, and the order is by the name the user actually reads.
+ * Every seeded language, common 100 first. `is_supported_learning` no longer hides
+ * rows from the client — it only decides what shows *before* the "More languages…"
+ * expander. Priority: supported first (English order), then the rest (English order).
  */
-export const listLanguages = async (): Promise<DisplayLanguage[]> => {
-  const { data } = await supabase
+export const listLanguages = async (onlySupported = false): Promise<DisplayLanguage[]> => {
+  let q = supabase
     .from('languages')
     .select('id, iso_639_1, english_name, native_name, is_supported_learning')
-    .eq('is_supported_learning', true)
+    .order('is_supported_learning', { ascending: false })
     .order('english_name');
+  if (onlySupported) q = q.eq('is_supported_learning', true);
+  const { data } = await q;
   return (data as Language[] ?? [])
     .map((l) => ({ ...l, label: languageLabel(l) }))
-    .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+    .sort((a, b) => Number(b.is_supported_learning) - Number(a.is_supported_learning) || sortKey(a).localeCompare(sortKey(b)));
 };
+
+/** The common-first subset pickers show before "More languages…". */
+export const listCommonLanguages = (): Promise<DisplayLanguage[]> => listLanguages(true);
 // People search lives in ./search (one central place for the /search page).
 export const getProfile = (username: string) => rpc<FullProfile | null>('get_profile', { p_username: username });
 /** Only the ISO 639-3 id travels; native_name/english_name are display fields and are dropped here. */

@@ -4,11 +4,11 @@ import { Avatar, Button, Card, EmptyState, Spinner } from '@/components/ui';
 import { CountryBadge, FollowButton, LanguageChip, MessageButton, UserMenu } from '@/components/features';
 import { getProfile } from '@/services';
 import { useCountries } from '@/store/countryStore';
-import { useLanguageStore } from '@/store/languageStore';
+import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import type { FullProfile } from '@/types/db';
 
 export default function UserProfile() {
-  const { username = '' } = useParams(); const labelOf = useLanguageStore((s) => s.labelOf);
+  const { username = '' } = useParams(); const labelOf = useLanguageStore((s) => s.labelOf); const locales = useDisplayLocales();
   useCountries();
   const [profile, setProfile] = useState<FullProfile | null | undefined>(undefined);
   useEffect(() => { setProfile(undefined); getProfile(username).then(setProfile).catch(() => setProfile(null)); }, [username]);
@@ -33,7 +33,7 @@ export default function UserProfile() {
         {!r.is_me && <UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} />}
       </div>
       {profile.bio && <p className="text-sm leading-relaxed">{profile.bio}</p>}
-      <div className="ft-chips">{profile.languages.map((l) => <LanguageChip key={`${l.language_id}-${l.role}`} language={labelOf(l)} level={l.level} />)}</div>
+      <div className="ft-chips">{profile.languages.map((l) => <LanguageChip key={`${l.language_id}-${l.role}`} language={labelOf(l, locales)} level={l.level} />)}</div>
       <div className="flex flex-wrap items-center gap-1.5">
         {r.is_me ? <><Link to="/profile/edit"><Button variant="secondary" size="sm">Edit profile</Button></Link><Link to="/settings"><Button variant="ghost" size="sm">Settings</Button></Link></>
           : <><FollowButton userId={profile.id} initial={r.following} /><MessageButton userId={profile.id} />{r.follows_me && <span className="text-xs text-muted">Follows you</span>}</>}

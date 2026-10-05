@@ -25,6 +25,54 @@ const canRender = (s: string) => {
   return s.trim().length > 0;
 };
 
+/** BCP-47 tag the browser's Intl API understands, from the row we store. */
+const bcp47Of = (l: { id?: string; iso_639_1?: string | null }): string => {
+  const two = l.iso_639_1?.trim().toLowerCase();
+  if (two && /^[a-z]{2}$/.test(two)) return two;
+  // No alpha-2 in the standard: map the well-known macrolanguages / variants.
+  const id = l.id?.trim().toLowerCase() ?? '';
+  if (id === 'cmn' || id === 'yue') return 'zh';
+  if (id === 'nob') return 'nb';
+  if (id === 'fil' || id === 'tgl') return 'tl';
+  if (id === 'hat') return 'ht';
+  if (id === 'baq') return 'eu';
+  return id || 'en';
+};
+
+const displayCache = new Map<string, string>();
+
+/**
+ * A language name in the viewer's language: first their native language(s), then
+ * English, then the autonym. Uses the browser's Intl.DisplayNames (no dependency),
+ * so a Swahili speaker reads "Kijapani", an English speaker reads "Japanese",
+ * and nobody ever sees only "日本語" unless it IS their language.
+ */
+export const languageIn = (
+  l: { id?: string; iso_639_1?: string | null; english_name?: string | null; native_name?: string | null } | null | undefined,
+  locales?: string | string[],
+): string => {
+  if (!l) return '';
+  const want = (Array.isArray(locales) ? locales : [locales]).filter(Boolean) as string[];
+  const key = `${bcp47Of(l)}|${want.join(',')}`;
+  const hit = displayCache.get(key);
+  if (hit) return hit;
+  let out = '';
+  try {
+    const DN = (Intl as unknown as { DisplayNames?: new (l: string[], o: { type: string }) => { of: (t: string) => string | undefined } }).DisplayNames;
+    if (DN && want.length) {
+      // Longest match first: exact native tag beats bare 'en'.
+      for (const loc of want) {
+        try { out = new DN([loc], { type: 'language' }).of(bcp47Of(l)) ?? ''; } catch { out = ''; }
+        if (out) break;
+      }
+    }
+  } catch { out = ''; }
+  if (!out) out = l.english_name ?? '';
+  if (!out && l.native_name && canRender(l.native_name)) out = l.native_name;
+  displayCache.set(key, out);
+  return out;
+};
+
 /**
  * What the user reads: the autonym first, English only as a fallback. A language whose
  * native name is missing, blank or not renderable in this browser falls back instead of

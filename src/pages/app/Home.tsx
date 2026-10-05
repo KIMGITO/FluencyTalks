@@ -5,7 +5,7 @@ import { ProfileCard } from '@/components/features';
 import { Avatar, Button, Card, Divider, EmptyState, Spinner } from '@/components/ui';
 import { homeFeed, listFollowRequests, respondFollowRequest, type MiniUser } from '@/services';
 import { useCountries } from '@/store/countryStore';
-import { useLanguageStore } from '@/store/languageStore';
+import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
 
@@ -16,7 +16,7 @@ import type { FeedPerson } from '@/types/db';
  * only has to decide how to draw the line between the two.
  */
 export default function Home() {
-  const { me, languages } = useProfileStore(); const labelOf = useLanguageStore((s) => s.labelOf);
+  const { me, languages } = useProfileStore(); const labelOf = useLanguageStore((s) => s.labelOf); const locales = useDisplayLocales();
   useCountries();                              // flags need the country names
   const [requests, setRequests] = useState<(MiniUser & { follower_id: string })[]>([]);
   const [answering, setAnswering] = useState<string | null>(null); const [answerError, setAnswerError] = useState('');
@@ -42,7 +42,7 @@ export default function Home() {
   };
   const drop = (id: string) => setHidden((h) => [...h, id]);
   const subtitle = learning.length
-    ? `People who speak ${learning.map((l) => labelOf(l)).join(' and ')}, or who are learning it too`
+    ? `Find people to practice with.`
     : 'Add the languages you are learning to get matched with the right people';
 
   return (

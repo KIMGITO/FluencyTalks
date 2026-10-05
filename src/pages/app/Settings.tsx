@@ -48,7 +48,7 @@ export default function Settings() {
 
         {tab === 'profile' && (<>
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Profile card</h2>
-            <p className="text-sm text-muted">How you appear to other learners — name, photo, bio, languages and country.</p>
+            <p className="text-sm text-muted">How you appear to others: Name, Photo, Bio, Languages and Country.</p>
             <div className="flex flex-wrap gap-1.5">
               <Link to="/profile/edit"><Button variant="secondary" size="sm">Edit profile and languages</Button></Link>
               <Link to="/profile"><Button variant="secondary" size="sm">View my profile card</Button></Link>
