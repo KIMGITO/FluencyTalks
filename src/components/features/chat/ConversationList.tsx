@@ -11,7 +11,7 @@ export function ConversationList() {
     <div className="space-y-3">
       <div className="flex gap-2">{([['active', 'Chats'], ['request', `Requests${requests.length ? ` (${requests.length})` : ''}`]] as const).map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)} className={tabClass(tab === k)}>{label}</button>))}</div>
-      {!rows.length ? <EmptyState title={tab === 'active' ? 'No chats yet' : 'No requests'} text={tab === 'active' ? 'Find someone in Discover and say hello.' : 'Messages from people you don\'t follow appear here first.'} /> : (
+      {!rows.length ? <EmptyState title={tab === 'active' ? 'No chats yet' : 'No requests'} text={tab === 'active' ? 'Search for someone and say hello.' : 'Messages from people you don\'t follow appear here first.'} /> : (
         <ul className="ft-card divide-y divide-border">{rows.map((c) => (
           <li key={c.conversation_id}><Link to={`/messages/${c.conversation_id}`} className="flex items-center gap-2.5 p-2.5 hover:bg-surface-2 md:p-3">
             <Avatar name={c.other_name} src={c.other_avatar} size="sm" />

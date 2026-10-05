@@ -4,6 +4,12 @@ export interface UserLanguage { language_code: string; role: Role; level: LevelC
 export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; is_private: boolean; followers_count: number; languages: UserLanguage[]; follow_status: 'pending' | 'accepted' | null }
 export interface FullProfile extends Omit<Person, 'follow_status'> { following_count: number; relationship: { is_me: boolean; following: 'pending' | 'accepted' | null; follows_me: boolean } }
 export interface Message { id: string; conversation_id: string; sender_id: string; body: string; reply_to: string | null; created_at: string; edited_at: string | null; deleted_at: string | null }
+/** Row from search_messages: one message inside a chat the viewer belongs to, with both people on it. */
+export interface MessageHit {
+  message_id: string; conversation_id: string; body: string; created_at: string;
+  sender_id: string; sender_name: string; sender_username: string; sender_avatar: string | null;
+  other_id: string; other_name: string; other_username: string; other_avatar: string | null;
+}
 export interface ConversationRow { conversation_id: string; other_user_id: string; other_name: string; other_username: string; other_avatar: string | null; last_body: string | null; last_at: string; unread_count: number; status: 'active' | 'request' | 'ignored' }
 export interface LanguageRef { code: string; name: string; native_name: string; rtl: boolean }
 export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; is_private: boolean; onboarding_done: boolean; role: string; followers_count: number; following_count: number }

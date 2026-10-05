@@ -29,7 +29,7 @@ export default function Home() {
               <Button size="sm" onClick={() => answer(r.follower_id, true)}>Accept</Button><Button size="sm" variant="secondary" onClick={() => answer(r.follower_id, false)}>Decline</Button></div>))}</Card>)}
         {people === null ? <div className="flex justify-center p-6"><Spinner /></div>
           : people.length ? people.map((p) => <ProfileCard key={p.id} person={p} />)
-          : <EmptyState title="No matches yet" text="Browse everyone in Discover." action={<Link to="/discover"><Button size="sm">Open Discover</Button></Link>} />}
+          : <EmptyState title="No matches yet" text="Search for anyone by name or @username." action={<Link to="/search"><Button size="sm">Search people</Button></Link>} />}
       </div>
     </>
   );

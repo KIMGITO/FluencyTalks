@@ -13,7 +13,7 @@ export default function UserProfile() {
 
   if (profile === undefined) return <div className="flex justify-center p-8"><Spinner /></div>;
   // Same screen for "doesn't exist" and "blocked you": blocking stays silent.
-  if (profile === null) return <EmptyState title="Profile unavailable" text="This profile doesn't exist or isn't available." action={<Link to="/discover"><Button>Browse people</Button></Link>} />;
+  if (profile === null) return <EmptyState title="Profile unavailable" text="This profile doesn't exist or isn't available." action={<Link to="/search"><Button>Search people</Button></Link>} />;
   const r = profile.relationship;
   return (
     <Card className="flex flex-col gap-3">

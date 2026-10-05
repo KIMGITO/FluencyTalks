@@ -33,20 +33,21 @@ src/
     ui/         Generic primitives: Button, Input, Avatar, Card, Logo, Spinner, ThemeToggle, Tabs
     features/   Domain components: LanguageChip, ProfileCard, SocialButtons, NotificationBell
       chat/     ChatThread, MessageBubble, ReactionBar, CorrectionDialog/Card, Composer ...
+      search/   SearchBox, SearchFilters, PersonResult, MessageResult
       admin/    AdminReports, AdminUsers, AdminActivity, ReportCard, ModerationDialog
     layout/     AppShell, TopBar, Sidebar, RightRail, BottomNav, AuthLayout, PageHeader
   pages/
     public/     Landing, NotFound
     auth/       Login, Signup, ForgotPassword, ResetPassword
-    app/        Home, Discover, Messages, Profile, Settings, Phrasebook, FollowList, Admin
+    app/        Home, Search, Messages, Profile, Settings, Phrasebook, FollowList, Admin
   router/       Routes + ProtectedRoute + AdminRoute (admins and moderators only)
   store/        Zustand: authStore, themeStore, profileStore, languageStore, chatStore, notificationStore
-  hooks/        useBreakpoint
+  hooks/        useBreakpoint, useUnreadCount, useDebouncedValue
   lib/          supabase.ts (the only file that creates the client), translate.ts (the only file that talks to a translation provider)
   data/         mock.ts (temporary seed data, delete once real queries exist)
 supabase/migrations/   Schema as code, applied in order (see Backend section)
 supabase/functions/    delete-account (Edge Function)
-  services/     Typed wrappers over Postgres functions (people, social, messaging, safety, account, phrasebook, history)
+  services/     Typed wrappers over Postgres functions (people, social, messaging, safety, account, phrasebook, history, search)
   types/        db.ts shared types
 ```
 
@@ -64,6 +65,7 @@ Run the migrations in order in the SQL editor (or `supabase db push`):
 | 0006 | `save_phrase`, `accept_correction` (accepts and saves the corrected phrase atomically) |
 | 0007 | `list_notifications`, `count_unread_notifications`; admin read functions `admin_report_queue`, `admin_search_users`, `admin_recent_actions` |
 | 0008 | `translation_history` (every Translate tap, deduped and traced to its message), `save_translation`, `list_my_corrections`, reaction emoji limit 8 → 40 (ZWJ/skin tones), translations added to `export_my_data` |
+| 0009 | Central search: `search_people` rewritten (leading `@` allowed, wildcards escaped, relevance order, role/level filters that work on their own, `p_scope` "people you follow") and `search_messages` added so `/search` can search your own chats |
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
@@ -81,7 +83,7 @@ Frontend usage: `import { searchPeople, follow, sendMessage } from '@/services'`
 | Screen | Uses |
 |---|---|
 | Onboarding / Edit profile | `save_profile`, `set_my_languages`, avatar upload, consent records. New users are redirected to `/onboarding` until `onboarding_done` |
-| Discover | `search_people` (language, role, level, name), 300 ms debounce, "Show more" paging |
+| Search `/search` | The one search screen, reached from the nav tab (there is no search box in the header). One field plus **All / People / Messages** tabs and filters for language, role, level and "everyone / people you follow". Finds anyone by name or `@username` — including people you don't follow — and messages inside your own chats. Query, tab and filters live in the URL (`?q=&tab=&lang=&role=&level=&scope=`), so a search is shareable and Back works; 300 ms debounce, "Show more" paging, an exact `@handle` shown as a profile hit and the matched words highlighted in message hits. Backed by `search_people` + `search_messages` |
 | Home | follow requests, suggestions = native speakers of your first learning language |
 | Profile `/u/:username` | `get_profile`; blocked and missing profiles look identical |
 | Follow / Message / Block / Report | `FollowButton`, `MessageButton`, `UserMenu` (used on cards, profiles and chat headers) |
@@ -142,7 +144,7 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 ## Roadmap
 
 1. ✅ Profile editing + languages (CEFR levels) wired to Supabase
-2. ✅ Discover with filters, follow/unfollow, private profiles, followers and following lists
+2. ✅ Search page with tabs and filters, follow/unfollow, private profiles, followers and following lists
 3. ✅ **Block + report** (RLS already hides blocked users from profiles), moderation screens
 4. Text chat with message requests ✅, reactions ✅, notifications ✅. Still to do: typing indicators, read receipts
 5. ✅ In-chat corrections, phrasebook, tap-to-translate
@@ -152,7 +154,7 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 ## Known gaps in this scaffold
 
 - Not yet installed or build-tested, and the SQL has not been run against a live database; apply migrations to a throwaway Supabase project first.
-- Discover/Home still use mock data; services exist but pages are not wired yet.
+- Search/Home still use mock data; services exist but pages are not wired yet.
 - Reaction removals arrive over realtime without RLS filtering (Supabase limitation for DELETE events); they carry only message, user and emoji ids, and the client ignores ones for messages it doesn't have.
 - Followers and following lists link to profiles but don't show a Follow button per row (`list_follows` doesn't return the viewer's follow status). Add it to the function if you want that.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.

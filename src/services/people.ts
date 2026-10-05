@@ -1,10 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
-import type { FullProfile, LanguageRef, Person, UserLanguage } from '@/types/db';
+import type { FullProfile, LanguageRef, UserLanguage } from '@/types/db';
 
 export const listLanguages = async () => (await supabase.from('languages').select('*').order('name')).data as LanguageRef[] ?? [];
-export const searchPeople = (f: { query?: string; language?: string; role?: string; level?: string; offset?: number } = {}) =>
-  rpc<Person[]>('search_people', { p_query: f.query ?? null, p_language: f.language ?? null, p_role: f.role ?? null, p_level: f.level ?? null, p_offset: f.offset ?? 0 });
+// People search lives in ./search (one central place for the /search page).
 export const getProfile = (username: string) => rpc<FullProfile | null>('get_profile', { p_username: username });
 export const setMyLanguages = (languages: UserLanguage[]) => rpc('set_my_languages', { p_languages: languages });
 export const saveProfile = (p: { username: string; displayName: string; bio: string; timezone: string; isPrivate: boolean; avatarUrl?: string }) =>

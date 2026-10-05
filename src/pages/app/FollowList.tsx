@@ -29,7 +29,7 @@ export default function FollowList({ kind }: { kind: 'followers' | 'following' }
   };
 
   if (profile === undefined || (!locked && profile && !users)) return <div className="flex justify-center p-8"><Spinner /></div>;
-  if (profile === null) return <EmptyState title="Profile unavailable" text="This profile doesn't exist or isn't available." action={<Link to="/discover"><Button>Browse people</Button></Link>} />;
+  if (profile === null) return <EmptyState title="Profile unavailable" text="This profile doesn't exist or isn't available." action={<Link to="/search"><Button>Search people</Button></Link>} />;
   return (
     <>
       <PageHeader title={profile.display_name} subtitle={`@${profile.username}`} />

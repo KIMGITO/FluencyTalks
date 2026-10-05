@@ -46,6 +46,8 @@ export default function Footer() {
             </ul>
           </nav>
         ))}
+
+        <p>FluencyTalks connects language learners, expats, and students with native and fluent speakers for real-world conversation. Practice your target language, send text messages, receive real-time peer corrections, and build your personalized phrasebook to fast-track your journey to true fluency.</p>
       </div>
 
       <div className="ft-fbar" style={{ ...wrap, marginTop: 'clamp(28px, 4vw, 40px)', paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.15)', fontSize: 14 }}>

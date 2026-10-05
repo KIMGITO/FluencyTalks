@@ -1,8 +1,8 @@
-import { Home, Compass, MessageCircle, BookMarked, User, Settings, Shield, type LucideIcon } from 'lucide-react';
+import { Home, Search, MessageCircle, BookMarked, User, Settings, Shield, type LucideIcon } from 'lucide-react';
 export interface NavItem { to: string; label: string; icon: LucideIcon; desktopOnly?: boolean; staffOnly?: boolean }
 export const navItems: NavItem[] = [
   { to: '/home', label: 'Home', icon: Home },
-  { to: '/discover', label: 'Discover', icon: Compass },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/messages', label: 'Messages', icon: MessageCircle },
   { to: '/phrasebook', label: 'Phrasebook', icon: BookMarked, desktopOnly: true },
   { to: '/profile', label: 'Profile', icon: User },
