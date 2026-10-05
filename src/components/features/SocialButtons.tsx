@@ -44,10 +44,13 @@ const providers: { id: Provider; label: string; icon: ReactNode }[] = [
 
 export function SocialButtons() {
   const signInWithProvider = useAuthStore((s) => s.signInWithProvider);
+  const error = useAuthStore((s) => s.error);
   const [pending, setPending] = useState<Provider | null>(null);
+  const [attempted, setAttempted] = useState(false);
 
   const go = async (id: Provider) => {
     setPending(id);
+    setAttempted(true);
     try { await signInWithProvider(id); } finally { setPending(null); }
   };
 
@@ -69,6 +72,15 @@ export function SocialButtons() {
           </span>
         </button>
       ))}
+      {/* OAuth failures (e.g. a redirect URL the dashboard has not allow-listed) land here. */}
+      {attempted && error && (
+        <p
+          role="alert"
+          className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-medium text-danger"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }

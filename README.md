@@ -21,7 +21,7 @@ cp .env.example .env        # add your Supabase URL + anon key
 npm run dev
 ```
 
-Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Add `http://localhost:5173/**` to the redirect URLs.
+Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://fluency-talks.vercel.app` and allow-list **both** `http://localhost:5173/**` and `https://fluency-talks.vercel.app/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`.
 
 ## Folder map
 
