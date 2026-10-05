@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <>
-      <PageHeader title={`Hi, ${me?.display_name ?? 'there'}`} subtitle={subtitle} />
+      <PageHeader title={` ${me?.display_name?.toUpperCase() ?? 'Welcome'}`} subtitle={subtitle} />
       <div className="flex flex-col gap-2">
         {requests.length > 0 && (
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Follow requests</h2>{requests.map((r) => (

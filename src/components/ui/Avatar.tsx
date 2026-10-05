@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-const sizes = { sm: 'h-8 w-8 text-sm', md: 'h-10 w-10 text-base', lg: 'h-16 w-16 text-xl', xl: 'h-24 w-24 text-3xl' };
+const sizes = { xs: 'h-7 w-7 text-xs', sm: 'h-8 w-8 text-sm', md: 'h-10 w-10 text-base', lg: 'h-16 w-16 text-xl', xl: 'h-24 w-24 text-3xl' };
 export function Avatar({ name, src, size = 'md', online, ring }: { name: string; src?: string | null; size?: keyof typeof sizes; online?: boolean; ring?: boolean }) {
   const inner = src
     ? <img src={src} alt={name} className={clsx('rounded-full object-cover', sizes[size])} />

@@ -8,7 +8,7 @@ import Login from '@/pages/auth/Login'; import Signup from '@/pages/auth/Signup'
 import ForgotPassword from '@/pages/auth/ForgotPassword'; import ResetPassword from '@/pages/auth/ResetPassword';
 import Onboarding from '@/pages/app/Onboarding'; import Home from '@/pages/app/Home'; import Search from '@/pages/app/Search';
 import Messages from '@/pages/app/Messages'; import Profile from '@/pages/app/Profile'; import UserProfile from '@/pages/app/UserProfile';
-import EditProfile from '@/pages/app/EditProfile'; import Settings from '@/pages/app/Settings'; import Phrasebook from '@/pages/app/Phrasebook';
+import EditProfile from '@/pages/app/EditProfile'; import Settings from '@/pages/app/Settings'; import Learning from '@/pages/app/Learning';
 import FollowList from '@/pages/app/FollowList'; import Admin from '@/pages/app/Admin';
 
 export const router = createBrowserRouter([
@@ -28,7 +28,8 @@ export const router = createBrowserRouter([
       { path: '/messages', element: <Messages /> }, { path: '/messages/:id', element: <Messages /> },
       { path: '/profile', element: <Profile /> }, { path: '/profile/edit', element: <EditProfile /> },
       { path: '/u/:username', element: <UserProfile /> },
-      { path: '/u/:username/followers', element: <FollowList kind="followers" /> }, { path: '/u/:username/following', element: <FollowList kind="following" /> }, { path: '/settings', element: <Settings /> }, { path: '/phrasebook', element: <Phrasebook /> },
+      { path: '/u/:username/followers', element: <FollowList kind="followers" /> }, { path: '/u/:username/following', element: <FollowList kind="following" /> }, { path: '/settings', element: <Settings /> }, { path: '/learning', element: <Learning /> },
+      { path: '/phrasebook', element: <Navigate to="/learning" replace /> },   // Phrasebook became Learning; old links keep working
       { element: <AdminRoute />, children: [{ path: '/admin', element: <Admin /> }] },
     ] },
   ] },

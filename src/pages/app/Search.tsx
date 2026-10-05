@@ -113,11 +113,14 @@ export default function Search() {
   return (
     <>
       <PageHeader title="Search" subtitle="Find people to talk to, or something you said" />
-      <div className="mb-3"><SearchBox value={text} onChange={(v) => patch({ q: v })} /></div>
-      <div className="mb-3"><Tabs value={tab} onChange={(key) => patch({ tab: key })} items={tabs} /></div>
-      {tab !== 'messages' && (
-        <SearchFilters value={{ language, role, level, scope }} onChange={(p) => patch({ lang: p.language ?? '', role: p.role ?? '', level: p.level ?? '', scope: p.scope === 'following' ? 'following' : '' })} />
-      )}
+      <div className="mb-2"><SearchBox value={text} onChange={(v) => patch({ q: v })} /></div>
+      {/* Single compact toolbar: tabs left, filter button right — no card, no second row. */}
+      <div className="sticky top-[var(--layout-topbarH)] z-10 -mx-1 mb-2 flex items-center gap-2 bg-bg/95 px-1 py-1.5 backdrop-blur">
+        <div className="min-w-0 flex-1 overflow-x-auto"><Tabs value={tab} onChange={(key) => patch({ tab: key })} items={tabs} /></div>
+        {tab !== 'messages' && (
+          <SearchFilters value={{ language, role, level, scope }} onChange={(p) => patch({ lang: p.language ?? '', role: p.role ?? '', level: p.level ?? '', scope: p.scope === 'following' ? 'following' : '' })} />
+        )}
+      </div>
 
       {idle ? (
         <EmptyState title="Search FluencyTalks" text="Find anyone by name or @username, even people you don't follow — or look back through your chats." action={

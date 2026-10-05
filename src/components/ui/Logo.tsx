@@ -1,3 +1,4 @@
+import { C } from "@/theme/theme";
 import { Link } from "react-router-dom";
 
 export const Logo = ({ compact }: { compact?: boolean }) => (
@@ -16,7 +17,7 @@ export const Logo = ({ compact }: { compact?: boolean }) => (
     </span>
     {!compact && (
       <span className="font-display text-xl font-bold">
-        Fluency<span className="ft-gradient-text">Talks</span>
+        Fluency<span className="ft-gradient-text" style={{color: C.indigo}} >Talks</span>
       </span>
     )}
   </span>

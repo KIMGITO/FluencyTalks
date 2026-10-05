@@ -5,6 +5,8 @@ import type { ConversationRow, Correction, Message, Reaction } from '@/types/db'
 
 let unsub: (() => void) | null = null;
 
+export const isGone = (m: { deleted_at?: string | null; body?: string | null }) => !!m.deleted_at || m.body === '[deleted]';
+
 const loadJson = (key: string): Record<string, string[]> | Record<string, true> => {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
 };
@@ -35,7 +37,7 @@ export const useChatStore = create<S>((set, get) => ({
   open: async (id) => {
     set({ openId: id });
     await get().loadLists();                                   // lists first so the header never flashes "unavailable"
-    const list = (await getMessages(id)).reverse();            // API is newest-first; UI wants oldest-first
+    const list = (await getMessages(id)).filter((m) => !isGone(m)).reverse(); // deleted never enter state
     set((s) => ({ messages: { ...s.messages, [id]: list } }));
     await Promise.all([get().loadCorrections(id), get().loadReactions(id), markRead(id)]); await get().loadLists();
   },
@@ -48,6 +50,7 @@ export const useChatStore = create<S>((set, get) => ({
   },
   respond: async (id, accept) => { await respondMessageRequest(id, accept); await get().loadLists(); },
   append: (m) => set((s) => {
+    if (isGone(m)) return s; // deleted never enter state (read status first)
     const list = s.messages[m.conversation_id];
     if (!list) return s;                                       // not opened yet: lists refresh via loadLists()
     return list.some((x) => x.id === m.id) ? s : { messages: { ...s.messages, [m.conversation_id]: [...list, m] } };
@@ -56,6 +59,7 @@ export const useChatStore = create<S>((set, get) => ({
   applyUpdate: (m) => set((s) => {
     const list = s.messages[m.conversation_id];
     if (!list) return s;
+    if (isGone(m)) return { messages: { ...s.messages, [m.conversation_id]: list.filter((x) => x.id !== m.id) }, drafts: Object.fromEntries(Object.entries(s.drafts).map(([k, v]) => [k, v?.id === m.id ? null : v])) };
     return { messages: { ...s.messages, [m.conversation_id]: list.some((x) => x.id === m.id) ? list.map((x) => (x.id === m.id ? m : x)) : [...list, m] } };
   }),
   loadCorrections: async (convId) => {
@@ -114,11 +118,11 @@ export const useChatStore = create<S>((set, get) => ({
     saveJson('ft-hidden', hidden);
     return { hidden };
   }),
-  /** Delete-for-everyone: server mutates body -> '[deleted]'; bubble stays as placeholder. */
+  /** Delete-for-everyone: message vanishes everywhere (no placeholder). */
   deleteForEveryone: async (convId, messageId) => {
-    await deleteMessage(messageId);
-    const cur = (get().messages[convId] ?? []).find((m) => m.id === messageId);
-    if (cur) get().applyUpdate({ ...cur, body: '[deleted]', deleted_at: new Date().toISOString() });
+    set((s) => ({ messages: { ...s.messages, [convId]: (s.messages[convId] ?? []).filter((m) => m.id !== messageId) }, pins: { ...s.pins, [convId]: (s.pins[convId] ?? []).filter((x) => x !== messageId) }, drafts: { ...s.drafts, [convId]: s.drafts[convId]?.id === messageId ? null : s.drafts[convId] } }));
+    try { await deleteMessage(messageId); } catch { /* optimistic: stays gone */ }
+    get().loadLists();
   },
   setReply: (convId, m) => set((s) => ({ drafts: { ...s.drafts, [convId]: m } })),
   startRealtime: () => {

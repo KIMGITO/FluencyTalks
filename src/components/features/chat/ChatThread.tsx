@@ -10,7 +10,7 @@ import { blockUser, savePhrase, saveTranslation } from '@/services';
 import { groupByDay, isClusterStart } from '@/lib/chatGroups';
 import type { Message } from '@/types/db';
 import { useAuthStore } from '@/store/authStore';
-import { useChatStore } from '@/store/chatStore';
+import { isGone, useChatStore } from '@/store/chatStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { usePresence } from '@/hooks/usePresence';
@@ -30,11 +30,12 @@ export function ChatThread({ id }: { id: string }) {
   const { onlineIds, peerTyping, touchTyping } = usePresence(list ? id : null, peerId, myId ?? null);
   const peerOnline = peerId ? onlineIds.includes(peerId) : false;
   useEffect(() => { open(id); return close; }, [id]);
-  const visible = (list ?? []).filter((m) => !hidden[m.id]);
+  const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
   const byId = new Map(visible.map((m) => [m.id, m]));
   const pinnedIds = pins[id] ?? [];
-  const pinnedMsgs = pinnedIds.map((pid) => byId.get(pid)).filter((m): m is Message => !!m);
-  const replyTarget = drafts[id] ?? null;
+  const pinnedMsgs = pinnedIds.map((pid) => byId.get(pid)).filter((m): m is Message => !!m && !isGone(m));
+  const rawReply = drafts[id] ?? null;
+  const replyTarget = rawReply && isGone(rawReply) ? null : rawReply;
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [visible.length, replyTarget?.id, peerTyping]);
 
   if (!list) return <div className="flex justify-center p-8"><Spinner /></div>;
@@ -59,14 +60,14 @@ export function ChatThread({ id }: { id: string }) {
       {!!pinnedMsgs.length && (
         <button onClick={() => setShowPins((v) => !v)} className="flex items-center gap-2 truncate border-b border-border bg-brand-soft px-3 py-1.5 text-left text-xs text-brand">
           <Pin size={13} className="shrink-0" />
-          <span className="min-w-0 flex-1 truncate">{pinnedMsgs.length === 1 ? (pinnedMsgs[0].deleted_at ? 'This message was deleted.' : pinnedMsgs[0].body) : `${pinnedMsgs.length} pinned messages`}</span>
+          <span className="min-w-0 flex-1 truncate">{pinnedMsgs.length === 1 ? pinnedMsgs[0].body : `${pinnedMsgs.length} pinned messages`}</span>
         </button>)}
       {showPins && !!pinnedMsgs.length && (
         <div className="max-h-44 space-y-1.5 overflow-y-auto border-b border-border bg-surface p-2.5" role="list" aria-label="Pinned messages">
           {pinnedMsgs.map((m) => (
             <div key={m.id} role="listitem" className="flex cursor-pointer items-center gap-2 rounded-md bg-surface-2 px-2.5 py-1.5 text-xs hover:bg-brand-soft" onClick={() => jumpTo(m.id)}>
               <Pin size={12} className="shrink-0 text-brand" />
-              <span className="min-w-0 flex-1 truncate">{m.deleted_at ? 'This message was deleted.' : m.body}</span>
+              <span className="min-w-0 flex-1 truncate">{m.body}</span>
               <span aria-label="Unpin" role="button" tabIndex={0} className="shrink-0 rounded-full p-1 text-muted hover:text-danger"
                 onClick={(e) => { e.stopPropagation(); togglePin(id, m.id); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); togglePin(id, m.id); } }}><X size={13} /></span>

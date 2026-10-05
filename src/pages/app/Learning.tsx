@@ -19,7 +19,7 @@ const statusChip: Record<CorrectionHistory['status'], string> = {
 };
 const Loading = () => <div className="flex justify-center p-8"><Spinner /></div>;
 
-export default function Phrasebook() {
+export default function Learning() {
   const [tab, setTab] = useState<Tab>('phrases');
   const [size, setSize] = useState<TextSize>('tiny');
   // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
@@ -37,15 +37,15 @@ export default function Phrasebook() {
 
   return (
     <>
-      <PageHeader title="Phrasebook" subtitle="Phrases you saved, corrections and translations — each one links back to its chat" />
+      <PageHeader title="Learning" subtitle="Phrases you saved, corrections and translations — each one links back to its chat" />
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'phrases', label: 'Phrases' }, { key: 'corrections', label: 'Corrections' }, { key: 'translations', label: 'Translations' }]} />
-        <div className="flex overflow-hidden rounded-full border border-border" role="group" aria-label="Text size">
+        {/* <div className="flex overflow-hidden rounded-full border border-border" role="group" aria-label="Text size">
           {(['tiny', 'small'] as const).map((s) => (
             <button key={s} onClick={() => setSize(s)} aria-pressed={size === s}
               className={clsx('px-3 py-1.5 font-semibold', sizeClass[s], size === s ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-surface-2')}>
               {s === 'tiny' ? 'A Very small' : 'A Small'}</button>))}
-        </div>
+        </div> */}
       </div>
 
       {tab === 'phrases' && (!phrases ? <Loading /> : !phrases.length

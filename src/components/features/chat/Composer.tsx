@@ -12,9 +12,9 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
   return (
     <div className="border-t border-border p-2.5 md:p-3">
       {error && <p className="mb-2 text-sm text-danger">{error}</p>}
-      {replyTo && (
+      {replyTo && !replyTo.deleted_at && replyTo.body !== '[deleted]' && (
         <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-brand bg-brand-soft px-2.5 py-1.5 text-xs" aria-live="polite">
-          <div className="min-w-0 flex-1 truncate"><span className="font-semibold text-brand">Replying to </span><span className="text-ink">{replyTo.deleted_at ? 'This message was deleted.' : replyTo.body.slice(0, 120)}</span></div>
+          <div className="min-w-0 flex-1 truncate"><span className="font-semibold text-brand">Replying to </span><span className="text-ink">{replyTo.body.slice(0, 120)}</span></div>
           <button aria-label="Cancel reply" onClick={onCancelReply} className="shrink-0 rounded-full p-1 text-muted hover:bg-surface hover:text-ink"><X size={14} /></button>
         </div>)}
       <div className="flex items-end gap-2">

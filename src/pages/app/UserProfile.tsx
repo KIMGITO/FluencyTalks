@@ -35,7 +35,7 @@ export default function UserProfile() {
       {profile.bio && <p className="text-sm leading-relaxed">{profile.bio}</p>}
       <div className="ft-chips">{profile.languages.map((l) => <LanguageChip key={`${l.language_id}-${l.role}`} language={labelOf(l)} level={l.level} />)}</div>
       <div className="flex flex-wrap items-center gap-1.5">
-        {r.is_me ? <Link to="/profile/edit"><Button variant="secondary" size="sm">Edit profile</Button></Link>
+        {r.is_me ? <><Link to="/profile/edit"><Button variant="secondary" size="sm">Edit profile</Button></Link><Link to="/settings"><Button variant="ghost" size="sm">Settings</Button></Link></>
           : <><FollowButton userId={profile.id} initial={r.following} /><MessageButton userId={profile.id} />{r.follows_me && <span className="text-xs text-muted">Follows you</span>}</>}
       </div>
     </Card>

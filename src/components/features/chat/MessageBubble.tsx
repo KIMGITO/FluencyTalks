@@ -39,18 +39,19 @@ export function MessageBubble({ message, mine, myId, corrections, reactions, oth
     catch (e) { setTr({ state: 'error', text: (e as Error).message }); }
   };
   const alreadyMine = tr?.state === 'done' && tr.text.trim().toLowerCase() === message.body.trim().toLowerCase();
-  const deleted = !!message.deleted_at;
+  const gone = !!message.deleted_at || message.body === '[deleted]';
+  if (gone) return null;
   return (
     <div className={clsx('group flex flex-col gap-0.5', mine ? 'items-end' : 'items-start', showTail ? 'ft-cluster-gap' : 'ft-row-gap')}>
       <div ref={rowRef} className="ft-swipe-row relative flex w-full flex-col" style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
         <div className={clsx('ft-bubble', mine ? 'ft-bubble-out' : 'ft-bubble-in', showTail && 'ft-tail')}>
           {pinned && <p className="mb-0.5 flex items-center gap-1 text-2xs font-semibold uppercase tracking-wide opacity-70"><Pin size={10} /> Pinned</p>}
-          {replyTo && !deleted && (
+          {replyTo && !replyTo.deleted_at && replyTo.body !== '[deleted]' && (
             <div className={clsx('mb-1 max-w-full truncate rounded border-l-2 px-1.5 py-0.5 text-xs opacity-90', mine ? 'border-on-brand/60 bg-ink/10' : 'border-brand bg-brand-soft')}>
               <span className="font-semibold">{replyTo.sender_id === myId ? 'You' : otherName}: </span>
-              {replyTo.deleted_at ? 'This message was deleted.' : replyTo.body.slice(0, 90)}
+              {replyTo.body.slice(0, 90)}
             </div>)}
-          <p className={clsx('ft-selectable whitespace-pre-wrap break-words text-[0.9rem] leading-[1.32]', deleted && 'italic opacity-70')}>{deleted ? 'This message was deleted.' : message.body}</p>
+          <p className={clsx('ft-selectable whitespace-pre-wrap break-words text-[0.9rem] leading-[1.32]')}>{message.body}</p>
           <p className="ft-bubble-meta">{formatTime(message.created_at)}{message.edited_at && ' · edited'}</p>
           {/* Desktop hover: 3-dots trigger. Touch uses long-press (gesture hook). */}
           <button aria-label="Message options" onClick={() => setSheet(true)}
@@ -67,14 +68,15 @@ export function MessageBubble({ message, mine, myId, corrections, reactions, oth
           {tr.state === 'done' && (alreadyMine ? <p className="text-muted">This looks like it's already in your language.</p>
             : <><p className="ft-selectable whitespace-pre-wrap break-words">{tr.text}</p><p className="mt-0.5 text-2xs text-muted">Machine translation by MyMemory</p></>)}
         </div>)}
-      {!deleted && (<>
+      <>
         <ReactionBar reactions={reactions} myId={myId} onToggle={(emoji) => onReact(message, emoji)} />
         <div className="flex gap-3 px-1.5 text-xs leading-tight text-muted">
           {!mine && <button className="hover:text-brand" onClick={() => onCorrect(message)}>Correct</button>}
           {!mine && <button className="hover:text-brand disabled:opacity-60" disabled={tr?.state === 'loading'} onClick={translate}>{tr?.state === 'done' ? 'Hide translation' : 'Translate'}</button>}
           <button className="hover:text-brand disabled:text-success" disabled={saved}
             onClick={async () => { await onSave(message, tr?.state === 'done' && !alreadyMine ? tr.text : undefined); setSaved(true); }}>{saved ? 'Saved' : 'Save phrase'}</button>
-        </div></>)}
+        </div>
+      </>
       {corrections.map((c) => <CorrectionCard key={c.id} correction={c} original={message.body} isOwner={mine} correctorName={otherName} onAccept={onAccept} onDismiss={onDismiss} />)}
       {sheet && <MessageActions message={message} mine={mine} pinned={pinned} onClose={() => setSheet(false)}
         onReply={() => onReply(message)} onPin={() => onPin(message)}
