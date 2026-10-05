@@ -125,12 +125,12 @@ a:focus-visible,button:focus-visible{outline:3px solid rgb(var(--c-sun));outline
  * Link columns, hover slide on links, bottom legal bar + responsive stacks.
  * ========================================================================== */
 export const footerCSS = `
-.ft-foot{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:clamp(28px,4vw,56px)}
+.ft-foot{display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,56px)}
 .ft-flink{display:inline-block;padding:6px 0;color:rgba(255,255,255,.78);text-decoration:none;overflow-wrap:anywhere;transition:color .2s,transform .2s}
-.ft-flink:hover{color:#ffc83d;transform:translateX(3px)}
+.ft-flink:hover{color:${C.sun};transform:translateX(3px)}
 .ft-fbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 24px}
-@media(max-width:900px){.ft-foot{grid-template-columns:repeat(3,1fr)}.ft-fbrand{grid-column:1/-1}}
-@media(max-width:560px){.ft-foot{grid-template-columns:repeat(2,1fr);gap:32px 20px}.ft-fbar{flex-direction:column-reverse;text-align:center}}
+@media(max-width:900px){.ft-fbrand{flex:1 1 100%}}
+@media(max-width:560px){.ft-foot{gap:32px 20px}.ft-fbar{flex-direction:column-reverse;text-align:center}}
 `;
 
 /* ========================================================================== *
@@ -169,41 +169,51 @@ export const statsCSS = `
  * timeline. Uses raw palette (C) + font constants from theme.js.
  * ========================================================================== */
 export const howItWorksCSS = `
-/* -- Layout: 4-up grid that collapses in the media queries below ---------- */
+/* -- Layout: a wrapping flex row (4-up -> 2x2 -> stacked) ------------------- */
 .ft-steps-container {
   position: relative;
 }
 
 .ft-steps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: clamp(20px, 2.5vw, 36px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
   position: relative;
   z-index: 1;
+}
+
+/* Each step grows to share the row, so one flex rule covers every breakpoint */
+.ft-steps > li {
+  flex: 1 1 15rem;
+  min-width: 0;
+  height: 100%;
 }
 
 /* -- Step card: frosted panel with lift on hover -------------------------- */
 .ft-step-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgb(var(--c-surface) / 0.7);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgb(var(--c-surface) / 0.8);
   border-radius: 20px;
-  padding: clamp(20px, 2vw, 24px);
+  padding: clamp(16px, 2vw, 24px);
   height: 100%;
   display: flex;
   flex-direction: column;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
               box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
               border-color 0.35s ease;
-  box-shadow: 0 4px 20px rgba(23, 22, 58, 0.04);
+  box-shadow: 0 4px 20px rgb(var(--c-ink) / 0.04);
 }
 
 .ft-step-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgba(23, 22, 58, 0.1);
-  border-color: rgba(255, 106, 77, 0.3);
-  background: #ffffff;
+  box-shadow: 0 16px 36px rgb(var(--c-ink) / 0.1);
+  border-color: rgb(var(--c-accent) / 0.3);
+  background: rgb(var(--c-surface));
 }
 
 /* -- Header row: numbered badge + connector to the next card ------------- */
@@ -230,29 +240,29 @@ export const howItWorksCSS = `
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
               background-color 0.3s ease, 
               box-shadow 0.3s ease;
-  box-shadow: 0 6px 16px rgba(43, 42, 122, 0.25);
+  box-shadow: 0 6px 16px rgb(var(--c-brand) / 0.25);
 }
 
 .ft-step-card:hover .ft-num {
   background: ${C.coral};
   color: ${C.white};
   transform: scale(1.1) rotate(-4deg);
-  box-shadow: 0 8px 20px rgba(255, 106, 77, 0.35);
+  box-shadow: 0 8px 20px rgb(var(--c-accent) / 0.35);
 }
 
 /* Horizontal connecting line (desktop only) */
 .ft-step-connector {
   flex: 1;
   height: 3px;
-  margin-right: calc(-1 * (clamp(20px, 2.5vw, 36px) + clamp(20px, 2vw, 24px)));
-  background: linear-gradient(90deg, rgba(43, 42, 122, 0.3) 0%, rgba(43, 42, 122, 0.05) 100%);
+  margin-right: calc(-1 * (clamp(20px, 2.5vw, 36px) + clamp(16px, 2vw, 24px)));
+  background: linear-gradient(90deg, rgb(var(--c-brand) / 0.3) 0%, rgb(var(--c-brand) / 0.05) 100%);
   border-radius: 99px;
   transform-origin: left center;
   transition: background 0.3s ease;
 }
 
 .ft-step-card:hover .ft-step-connector {
-  background: linear-gradient(90deg, ${C.coral} 0%, rgba(255, 106, 77, 0.1) 100%);
+  background: linear-gradient(90deg, ${C.coral} 0%, rgb(var(--c-accent) / 0.1) 100%);
 }
 
 /* -- Copy: serif-ish display title + muted body --------------------------- */
@@ -274,12 +284,10 @@ export const howItWorksCSS = `
   margin: 0;
 }
 
-/* Tablet (641–1024px): 2 x 2 grid, connectors off */
+/* Tablet (641–1024px): two per row, connectors off */
 @media (max-width: 1024px) and (min-width: 641px) {
-  .ft-steps {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-  }
+  .ft-steps > li { flex: 1 1 18rem; }
+  .ft-steps { gap: 24px; }
   .ft-step-connector {
     display: none;
   }
@@ -288,18 +296,18 @@ export const howItWorksCSS = `
 /* Mobile (≤640px): vertical timeline card stack */
 @media (max-width: 640px) {
   .ft-steps {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
     max-width: 480px;
     margin: 0 auto;
   }
+  .ft-steps > li { flex: 1 1 100%; }
 
   .ft-step-connector {
     display: none;
   }
 
   .ft-step-card {
-    padding: 20px;
+    padding: 16px;
     border-radius: 18px;
   }
 
@@ -383,18 +391,19 @@ export const languagesCSS = `
   animation: ftUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; /* ftUp lives in theme.js CSS */
 }
 
-/* 3-column layout + scaled-down sizing for mobile screens */
+/* Mobile (≤640px): keep the flex row, just tighten it. A 3-column grid is
+   removed — flex-wrap reflows the pills naturally at any width and avoids the
+   cramped 3-up look on small phones. */
 @media (max-width: 640px) {
   .ft-lang-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
     padding: 0 4px;
   }
 
   .ft-lang-pill {
+    flex: 1 1 30%;
     min-width: 0 !important;
-    padding: 10px 4px !important;
+    padding: 10px 6px !important;
   }
 
   .ft-lang-word {
@@ -449,8 +458,8 @@ export const testimonialCSS = `
 
 /* -- Round prev/next buttons ---------------------------------------------- */
 .tst-nav-btn {
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.08);
+  background: rgb(var(--c-surface));
+  border: 1px solid rgb(var(--c-ink) / 0.1);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -458,14 +467,14 @@ export const testimonialCSS = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgb(var(--c-ink) / 0.05);
   transition: all 0.2s ease;
   color: ${C.ink};
 }
 .tst-nav-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  background: #ffffff;
+  box-shadow: 0 4px 12px rgb(var(--c-ink) / 0.12);
+  background: rgb(var(--c-surface));
 }
 
 /* -- Pagination dots: active dot stretches into a pill -------------------- */
@@ -473,7 +482,7 @@ export const testimonialCSS = `
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgb(var(--c-ink) / 0.2);
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
@@ -507,7 +516,9 @@ export const legalText = {
   color: 'rgb(var(--c-ink))',
 };
 
-/** Bullet list container (the `<Bullets>` helper): gap-only grid, no markers. */
+/** Bullet list container (the `<Bullets>` helper): gap-only grid, no markers.
+ *  Kept as a grid deliberately: `flexDirection`/`flexWrap` are strict literal
+ *  unions in CSSProperties, and a one-column list needs no layout switching. */
 export const legalList = {
   listStyle: 'none',
   margin: 0,

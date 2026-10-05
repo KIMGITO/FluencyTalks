@@ -5,7 +5,9 @@ import { themes, fontSizes, spacing, radii, fonts, breakpoints } from './src/the
 const colors = Object.fromEntries(Object.keys(themes.light).map((k) => [k, `rgb(var(--c-${k}) / <alpha-value>)`]));
 
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // Landing components are .jsx — they must be scanned or their utility
+  // classes (flex, grid, spacing) are never generated.
+  content: ['./index.html', './src/**/*.{ts,tsx,jsx,js}'],
   theme: {
     screens: Object.fromEntries(Object.entries(breakpoints).map(([k, v]) => [k, `${v}px`])),
     colors: { transparent: 'transparent', current: 'currentColor', ...colors },

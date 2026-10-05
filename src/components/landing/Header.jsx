@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { C, wrap, btn } from '../../theme/theme';
-import { Logo } from '@/components/ui';
+import { Avatar, Logo, ThemeToggle } from '@/components/ui';
+import { useAuthStore } from '@/store/authStore';
 
 // Navigation links configuration
 const NAV_ITEMS = [
@@ -12,10 +13,34 @@ const NAV_ITEMS = [
   { label: 'FAQ', href: '#faq' },
 ];
 
+/** Where the profile tab goes: straight into the app home. The profile store is
+ *  only populated inside ProtectedRoute, so we deliberately don't depend on it here. */
+function ProfileLink({ className, style, children, onClick }) {
+  return (
+    <Link to="/home" onClick={onClick} className={className} style={style}>
+      {children}
+    </Link>
+  );
+}
+
+/** Best available label/photo for the session, before the profile loads. */
+function useSessionIdentity(user) {
+  const meta = user?.user_metadata ?? {};
+  return {
+    name: meta.full_name || meta.name || meta.display_name || user?.email || 'You',
+    src: meta.avatar_url || meta.picture || null,
+  };
+}
+
 export default function Header() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Session-aware: signed-in members are offered their profile, never a login form.
+  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.loading);
+  const identity = useSessionIdentity(user);
+  const signedIn = !!user;
 
   // Track scroll progress for top indicator bar
   useEffect(() => {
@@ -86,18 +111,18 @@ export default function Header() {
           position: 'sticky',
           top: 0,
           zIndex: 40,
-          background: 'rgba(255, 255, 255, 0.94)',
+          background: 'rgb(var(--c-surface) / 0.92)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${
             isScrolled || isMenuOpen
-              ? 'rgba(43,42,122,0.12)'
-              : 'rgba(43,42,122,0.06)'
+              ? 'rgb(var(--c-brand) / 0.14)'
+              : 'rgb(var(--c-brand) / 0.08)'
           }`,
           boxShadow:
             isScrolled || isMenuOpen
-              ? '0 10px 30px -10px rgba(43,42,122,0.12)'
-              : '0 2px 8px -2px rgba(43,42,122,0.04)',
+              ? '0 10px 30px -10px rgb(var(--c-brand) / 0.14)'
+              : '0 2px 8px -2px rgb(var(--c-brand) / 0.05)',
           transition: 'all 0.25s ease-in-out',
         }}
       >
@@ -153,40 +178,71 @@ export default function Header() {
           <div
             style={{
               display: 'flex',
-              gap: isMobile ? '8px' : '12px',
+              gap: isMobile ? '8px' : '10px',
               alignItems: 'center',
             }}
           >
-            <Link
-              className="ft-desk"
-              to="/login"
-              style={btn('transparent', C.indigo, {
-                padding: '8px 18px',
-                fontSize: '14px',
-                fontWeight: '600',
-                borderRadius: '8px',
-                border: `1.5px solid ${C.indigo}`,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease',
-              })}
-            >
-              Log in
-            </Link>
+            {/* Signed out: log in + sign up. Signed in: one profile tab that
+                takes the member home, so they are never asked to log in again. */}
+            {authLoading ? null : signedIn ? (
+              <ProfileLink
+                className="ft-desk"
+                style={btn('transparent', C.indigo, {
+                  padding: '6px 14px 6px 6px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  borderRadius: '999px',
+                  border: `1.5px solid ${C.indigo}`,
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                })}
+              >
+                <Avatar
+                  name={identity.name}
+                  src={identity.src}
+                  size="sm"
+                />
+                Profile
+              </ProfileLink>
+            ) : (
+              <>
+                <Link
+                  className="ft-desk"
+                  to="/login"
+                  style={btn('transparent', C.indigo, {
+                    padding: '7px 16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    border: `1.5px solid ${C.indigo}`,
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.2s ease',
+                  })}
+                >
+                  Log in
+                </Link>
 
-            <Link
-              to="/signup"
-              style={btn(C.indigo, C.white, {
-                padding: isMobile ? '8px 14px' : '9px 18px',
-                fontSize: isMobile ? '14px' : '15px',
-                fontWeight: '600',
-                borderRadius: '8px',
-                whiteSpace: 'nowrap',
-                boxShadow: '0 2px 8px rgba(43, 42, 122, 0.2)',
-                transition: 'all 0.2s ease',
-              })}
-            >
-              {isMobile ? 'Sign up' : 'Sign up free'}
-            </Link>
+                <Link
+                  to="/signup"
+                  style={btn(C.indigo, C.white, {
+                    padding: isMobile ? '7px 13px' : '8px 16px',
+                    fontSize: isMobile ? '14px' : '15px',
+                    fontWeight: '600',
+                    borderRadius: '8px',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 8px rgb(var(--c-brand) / 0.2)',
+                    transition: 'all 0.2s ease',
+                  })}
+                >
+                  {isMobile ? 'Sign up' : 'Sign up free'}
+                </Link>
+              </>
+            )}
+
+            {signedIn && <ThemeToggle />}
 
             {/* Mobile Touch-Optimized Hamburger Button */}
             <button
@@ -205,8 +261,8 @@ export default function Header() {
                 height: '40px',
                 padding: 0,
                 borderRadius: '8px',
-                border: `1px solid ${isMenuOpen ? C.indigo : 'rgba(43,42,122,0.12)'}`,
-                background: isMenuOpen ? 'rgba(43,42,122,0.06)' : 'transparent',
+                border: `1px solid ${isMenuOpen ? C.indigo : 'rgb(var(--c-brand) / 0.12)'}`,
+                background: isMenuOpen ? 'rgb(var(--c-brand) / 0.06)' : 'transparent',
                 color: C.ink,
                 fontSize: '18px',
                 cursor: 'pointer',
@@ -224,10 +280,10 @@ export default function Header() {
             id="mobile-navigation"
             aria-label="Mobile Navigation"
             style={{
-              borderTop: '1px solid rgba(43,42,122,0.08)',
-              background: 'rgba(255, 255, 255, 0.98)',
+              borderTop: '1px solid rgb(var(--c-brand) / 0.08)',
+              background: 'rgb(var(--c-surface) / 0.98)',
               backdropFilter: 'blur(16px)',
-              boxShadow: '0 12px 24px -6px rgba(43,42,122,0.12)',
+              boxShadow: '0 12px 24px -6px rgb(var(--c-brand) / 0.12)',
               animation: 'ftDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) both',
             }}
           >
@@ -259,7 +315,7 @@ export default function Header() {
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor =
-                      'rgba(43,42,122,0.04)')
+                      'rgb(var(--c-brand) / 0.04)')
                   }
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.backgroundColor = 'transparent')
@@ -273,33 +329,60 @@ export default function Header() {
               <div
                 style={{
                   height: '1px',
-                  backgroundColor: 'rgba(43,42,122,0.08)',
+                  backgroundColor: 'rgb(var(--c-brand) / 0.08)',
                   margin: '8px 0 12px',
                 }}
               />
 
-              {/* Internal Route Link for Mobile Log in */}
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
-                  padding: '11px',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  fontSize: '15px',
-                  color: C.indigo,
-                  border: `1.5px solid ${C.indigo}`,
-                  textDecoration: 'none',
-                  textAlign: 'center',
-                  backgroundColor: 'transparent',
-                }}
-              >
-                Log in
-              </Link>
+              {/* Mobile account action — profile tab for members, log in for guests */}
+              {authLoading ? null : signedIn ? (
+                <ProfileLink
+                  onClick={() => setIsMenuOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '15px',
+                    color: C.ink,
+                    border: `1.5px solid ${C.indigo}`,
+                    textDecoration: 'none',
+                    backgroundColor: 'rgb(var(--c-brand) / 0.04)',
+                  }}
+                >
+                  <Avatar
+                    name={identity.name}
+                    src={identity.src}
+                    size="sm"
+                  />
+                  Go to my profile
+                </ProfileLink>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    padding: '11px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '15px',
+                    color: C.indigo,
+                    border: `1.5px solid ${C.indigo}`,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  Log in
+                </Link>
+              )}
             </nav>
           </div>
         )}

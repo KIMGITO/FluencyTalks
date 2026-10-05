@@ -1,16 +1,16 @@
-import { photo, wrap } from '../../theme/theme';
+import { photo, wrap, alpha } from '../../theme/theme';
 import { Reveal } from './Reveal';
 
 /**
  * Full-bleed photo section. On desktop the content sits on one side over a frosted-blur panel
  * that fades toward the photo. On mobile (.ft-fm) the frost covers the full width for legibility.
- * Props: img, side ('left' | 'right'), tint (6-digit hex).
+ * Props: img, side ('left' | 'right'), tint (a `--c-*` token name, so it follows light/dark).
  */
 export default function ImageSection({
   id,
   img,
   side = 'left',
-  tint = '#ffffff',
+  tint = 'surface',
   minHeight = 'clamp(420px, 52vw, 560px)',
   children,
 }) {
@@ -44,7 +44,7 @@ export default function ImageSection({
           bottom: 0,
           [side]: 0,
           width: 'max(72%, 640px)',
-          background: `linear-gradient(to ${toward}, ${tint}f2 0%, ${tint}d9 45%, ${tint}00 100%)`,
+          background: `linear-gradient(to ${toward}, ${alpha(tint, 0.95)} 0%, ${alpha(tint, 0.85)} 45%, ${alpha(tint, 0)} 100%)`,
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           WebkitMaskImage: mask,
@@ -57,7 +57,7 @@ export default function ImageSection({
         style={{
           position: 'absolute',
           inset: 0,
-          background: `${tint}e0`,
+          background: alpha(tint, 0.88),
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
         }}

@@ -47,9 +47,9 @@ export default function Phrasebook() {
 
       {tab === 'phrases' && (!phrases ? <Loading /> : !phrases.length
         ? <EmptyState title="Nothing saved yet" text="Tap “Save phrase” under any message, or accept a correction, and it will show up here." />
-        : <div className="space-y-2">{phrases.map((p) => (
-            <div key={p.id} className={clsx('ft-card flex items-start gap-3 p-3', sizeClass[size])}>
-              <div className="min-w-0 flex-1">
+        : <div className="flex flex-col gap-1.5">{phrases.map((p) => (
+            <div key={p.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
+              <div className="ft-selectable min-w-0 flex-1">
                 <p className="whitespace-pre-wrap break-words font-medium">{p.phrase}</p>
                 {p.translation && <p className="break-words text-muted">{p.translation}</p>}
                 <p className="mt-1 flex items-center gap-2 text-muted">{when(p.created_at)}{withConv(p.conversation_id)}</p>
@@ -59,23 +59,25 @@ export default function Phrasebook() {
 
       {tab === 'corrections' && (!corrections ? <Loading /> : !corrections.length
         ? <EmptyState title="No corrections yet" text="When someone corrects your message it is stored here with the original wording, the suggestion and the outcome." />
-        : <div className="space-y-2">{corrections.map((c) => (
-            <div key={c.id} className={clsx('ft-card space-y-1 p-3', sizeClass[size])}>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={clsx('rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide', statusChip[c.status])}>{c.status}</span>
+        : <div className="flex flex-col gap-1.5">{corrections.map((c) => (
+            <div key={c.id} className={clsx('ft-card ft-card-pad flex flex-col gap-1', sizeClass[size])}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className={clsx('rounded-full px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide', statusChip[c.status])}>{c.status}</span>
                 <span className="text-muted">from {c.corrector_name}</span>
                 <span className="ml-auto flex items-center gap-2 text-muted">{when(c.created_at)}{withConv(c.conversation_id)}</span>
               </div>
-              <p>You wrote: <span className="text-muted">{c.original_text}</span></p>
-              <div className="font-medium">Suggested: <DiffText original={c.original_text} corrected={c.suggested_text} /></div>
-              {c.note && <p className="text-muted">Note: {c.note}</p>}
+              <div className="ft-selectable">
+                <p>You wrote: <span className="text-muted">{c.original_text}</span></p>
+                <div className="font-medium">Suggested: <DiffText original={c.original_text} corrected={c.suggested_text} /></div>
+                {c.note && <p className="text-muted">Note: {c.note}</p>}
+              </div>
             </div>))}</div>)}
 
       {tab === 'translations' && (!translations ? <Loading /> : !translations.length
         ? <EmptyState title="No translations yet" text="Every message you translate is stored here automatically, traceable to the chat it came from." />
-        : <div className="space-y-2">{translations.map((t) => (
-            <div key={t.id} className={clsx('ft-card flex items-start gap-3 p-3', sizeClass[size])}>
-              <div className="min-w-0 flex-1">
+        : <div className="flex flex-col gap-1.5">{translations.map((t) => (
+            <div key={t.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
+              <div className="ft-selectable min-w-0 flex-1">
                 <p className="break-words text-muted">{t.source_text}</p>
                 <p className="break-words font-medium">{t.translated_text}{t.target_lang && <span className="ml-1 text-muted">({t.target_lang})</span>}</p>
                 <p className="mt-1 flex items-center gap-2 text-muted">{when(t.created_at)}{withConv(t.conversation_id)}</p>

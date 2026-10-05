@@ -34,8 +34,16 @@ export const fontSizes = {
   '5xl': ['4rem', { lineHeight: '4.1rem', letterSpacing: '-0.04em' }],
 } as const;
 
+/**
+ * Spacing scale. This REPLACES Tailwind's default scale (it is assigned to
+ * `theme.spacing`, not `theme.extend.spacing`), so every step we want to use
+ * must exist here. The half steps and `px` below are the ones the UI relies on
+ * for tight chips, dividers and icon buttons — without them those classes
+ * silently generate no CSS at all.
+ */
 export const spacing = {
-  0: '0', 1: '0.25rem', 2: '0.5rem', 3: '0.75rem', 4: '1rem', 5: '1.25rem', 6: '1.5rem', 7: '1.75rem',
+  0: '0', px: '1px', 0.5: '0.125rem', 1: '0.25rem', 1.5: '0.375rem', 2: '0.5rem', 2.5: '0.625rem',
+  3: '0.75rem', 3.5: '0.875rem', 4: '1rem', 4.5: '1.125rem', 5: '1.25rem', 6: '1.5rem', 7: '1.75rem',
   8: '2rem', 9: '2.25rem', 10: '2.5rem', 12: '3rem', 14: '3.5rem', 16: '4rem', 20: '5rem', 24: '6rem',
 } as const;
 
@@ -51,8 +59,10 @@ export const breakpoints = { sm: 640, md: 768, lg: 1100, xl: 1400 } as const;
 
 /** Layout dimensions used by AppShell (exposed as --layout-* variables). */
 export const layout = {
-  topbarH: '3.5rem', bottomNavH: '3.5rem',
-  sidebarW: '17.5rem', sidebarCompactW: '4.5rem', railW: '20rem', feedMaxW: '42rem',
+  topbarH: '3.25rem', bottomNavH: '3.5rem',
+  sidebarW: '15.5rem', sidebarCompactW: '4rem', railW: '18.5rem', feedMaxW: '40rem',
+  // Density knobs so cards stay compact on phones and roomy on laptops/tablets.
+  cardPad: '0.75rem', cardPadLg: '1rem',
 } as const;
 
 /** Language-learning level palette (CEFR). */

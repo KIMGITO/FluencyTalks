@@ -21,15 +21,15 @@ export default function Home() {
   return (
     <>
       <PageHeader title={`Hi, ${me?.display_name ?? 'there'}`} subtitle={target ? `Native ${nameOf(target.language_code)} speakers you can practice with` : 'People you might enjoy talking with'} />
-      <div className="space-y-4">
+      <div className="flex flex-col gap-2">
         {requests.length > 0 && (
-          <Card className="space-y-3"><h2 className="font-semibold">Follow requests</h2>{requests.map((r) => (
-            <div key={r.follower_id} className="flex items-center gap-3"><Avatar name={r.display_name} src={r.avatar_url} size="sm" />
-              <Link to={`/u/${r.username}`} className="flex-1 truncate font-medium">{r.display_name}</Link>
+          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Follow requests</h2>{requests.map((r) => (
+            <div key={r.follower_id} className="flex items-center gap-2"><Avatar name={r.display_name} src={r.avatar_url} size="sm" />
+              <Link to={`/u/${r.username}`} className="min-w-0 flex-1 truncate text-sm font-medium">{r.display_name}</Link>
               <Button size="sm" onClick={() => answer(r.follower_id, true)}>Accept</Button><Button size="sm" variant="secondary" onClick={() => answer(r.follower_id, false)}>Decline</Button></div>))}</Card>)}
         {people === null ? <div className="flex justify-center p-6"><Spinner /></div>
           : people.length ? people.map((p) => <ProfileCard key={p.id} person={p} />)
-          : <EmptyState title="No matches yet" text="Browse everyone in Discover." action={<Link to="/discover"><Button>Open Discover</Button></Link>} />}
+          : <EmptyState title="No matches yet" text="Browse everyone in Discover." action={<Link to="/discover"><Button size="sm">Open Discover</Button></Link>} />}
       </div>
     </>
   );

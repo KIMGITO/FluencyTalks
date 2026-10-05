@@ -30,16 +30,16 @@ export function MessageBubble({ message, mine, myId, corrections, reactions, oth
   const alreadyMine = tr?.state === 'done' && tr.text.trim().toLowerCase() === message.body.trim().toLowerCase();
   return (
     <div className={clsx('flex flex-col gap-1', mine ? 'items-end' : 'items-start')}>
-      <div className={clsx('max-w-[80%] rounded-lg px-4 py-2', mine ? 'bg-grad-brand text-on-brand' : 'bg-surface-2 text-ink')}>
-        <p className={clsx('whitespace-pre-wrap break-words', message.deleted_at && 'italic opacity-70')}>{message.deleted_at ? 'Message deleted' : message.body}</p>
-        <p className="mt-1 text-xs opacity-70">{formatTime(message.created_at)}{message.edited_at && ' · edited'}</p>
+      <div className={clsx('max-w-[80%] rounded-lg px-3 py-1.5 md:px-4 md:py-2', mine ? 'bg-grad-brand text-on-brand' : 'bg-surface-2 text-ink')}>
+        <p className={clsx('ft-selectable whitespace-pre-wrap break-words', message.deleted_at && 'italic opacity-70')}>{message.deleted_at ? 'Message deleted' : message.body}</p>
+        <p className="mt-0.5 text-2xs opacity-70">{formatTime(message.created_at)}{message.edited_at && ' · edited'}</p>
       </div>
       {tr && (
         <div className="ft-card max-w-[80%] px-3 py-2 text-sm" aria-live="polite">
           {tr.state === 'loading' && <p className="text-muted">Translating…</p>}
           {tr.state === 'error' && <p className="text-danger">{tr.text}</p>}
           {tr.state === 'done' && (alreadyMine ? <p className="text-muted">This looks like it's already in your language.</p>
-            : <><p className="whitespace-pre-wrap break-words">{tr.text}</p><p className="mt-1 text-xs text-muted">Machine translation by MyMemory</p></>)}
+            : <><p className="ft-selectable whitespace-pre-wrap break-words">{tr.text}</p><p className="mt-1 text-2xs text-muted">Machine translation by MyMemory</p></>)}
         </div>)}
       {!message.deleted_at && (<>
         <ReactionBar reactions={reactions} myId={myId} onToggle={(emoji) => onReact(message, emoji)} />

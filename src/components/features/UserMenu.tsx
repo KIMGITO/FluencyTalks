@@ -14,9 +14,9 @@ export function UserMenu({ userId, name, conversationId, onBlocked }: { userId: 
     <div className="relative">
       <Button variant="ghost" size="sm" aria-label="More options" onClick={() => setOpen(!open)}><MoreHorizontal size={20} /></Button>
       {open && (
-        <div className="ft-card absolute right-0 z-30 mt-2 w-48 p-2 shadow-pop">
-          <button className="w-full rounded-md p-2 text-left hover:bg-surface-2" onClick={() => { setOpen(false); setReport(true); }}>Report</button>
-          <button className="w-full rounded-md p-2 text-left text-danger hover:bg-surface-2" onClick={block}>Block</button>
+        <div className="ft-menu right-0 mt-1.5">
+          <button className="ft-menu-item" onClick={() => { setOpen(false); setReport(true); }}>Report</button>
+          <button className="ft-menu-item text-danger hover:bg-danger/10" onClick={block}>Block</button>
         </div>)}
       <ReportDialog open={report} onClose={() => setReport(false)} userId={userId} conversationId={conversationId} />
     </div>

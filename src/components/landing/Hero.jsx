@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { C, IMG, SERIF, wrap, btn, photo, bubble } from '../../theme/theme';
 import { heroCSS } from '../../theme/componentStyles';
 import { Words } from './Reveal';
+import { useJoinLink } from './useJoinLink';
 
 const slides = [
   {
@@ -44,6 +45,7 @@ const arrow = {
 export default function Hero() {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const join = useJoinLink();
   const n = slides.length;
   const tx = useRef(0);
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function Hero() {
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: `linear-gradient(100deg, ${C.deep} 12%, rgba(43,42,122,0.8) 50%, rgba(18,181,166,0.3) 100%)`,
+                  background: `linear-gradient(100deg, ${C.deep} 12%, rgb(var(--c-brand) / 0.8) 50%, rgb(var(--c-aqua) / 0.3) 100%)`,
                 }}
               />
               <div
@@ -158,8 +160,8 @@ export default function Hero() {
                   }}
                   className="flex justify-center "
                 >
-                  <Link to="/signup" style={btn(C.coral, C.white)}>
-                    Start talking free
+                  <Link to={join.to} style={btn(C.coral, C.white)}>
+                    {join.signedIn ? 'Go to your profile' : 'Start talking free'}
                   </Link>
                   <a
                     href="#how"

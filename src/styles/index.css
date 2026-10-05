@@ -8,9 +8,27 @@
   body { @apply bg-bg text-ink antialiased; transition: background-color var(--motion-base); }
   h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
   :focus-visible { outline: 2px solid rgb(var(--c-brand)); outline-offset: 2px; }
+
+  /* Facebook-style: app chrome is not selectable, so a drag never highlights
+     the UI. Real content (chat, phrasebook, legal copy) opts back in, and form
+     fields must stay selectable or typing/editing breaks. */
+  body { -webkit-user-select: none; user-select: none; }
+  input, textarea, [contenteditable='true'], .ft-selectable, .ft-selectable * {
+    -webkit-user-select: text; user-select: text;
+  }
 }
 @layer components {
+  /* Compact by default; `--layout-cardPadLg` on md+ so laptops/tablets breathe. */
   .ft-card { @apply bg-surface rounded-lg border border-border shadow-card; }
+  .ft-card-pad { padding: var(--layout-cardPad); }
+  @media (min-width: 768px) { .ft-card-pad { padding: var(--layout-cardPadLg); } }
+  /* Horizontal chip/pill row that wraps — used instead of a grid where the
+     items are a simple flowing list. */
+  .ft-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center; }
+  /* Compact dropdown menu: flex column, works identically on every width. */
+  .ft-menu { @apply ft-card absolute z-40 overflow-hidden p-1 shadow-pop; min-width: 11rem; max-width: min(18rem, calc(100vw - 1.5rem)); }
+  .ft-menu-item { @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-ink transition-colors; }
+  .ft-menu-item:hover { @apply bg-surface-2; }
   .ft-gradient-text { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .ft-avatar-ring { background: var(--grad-ring); padding: 2px; border-radius: var(--radius-full); }
   .ft-hero-bg { background-image: var(--grad-hero); }

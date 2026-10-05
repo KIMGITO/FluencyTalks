@@ -19,11 +19,13 @@ const items = [
 ];
 export default function Features() {
   return (
-    <ImageSection img={IMG.online} side="right" tint="#1b1a55" minHeight={560}>
+    <ImageSection img={IMG.online} side="right" tint="deep" minHeight={560}>
       <h2 style={{ ...h2, color: C.sun }}>
         Everything you need to keep going
       </h2>
-      <div style={{ display: 'grid', gap: 26, marginTop: 28 }}>
+      {/* Flex column — a one-column grid adds nothing here, and flex keeps the
+          buttons at their natural height across every breakpoint. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 26, marginTop: 28 }}>
         {items.map(([t, d, c]) => (
           <div
             key={t}

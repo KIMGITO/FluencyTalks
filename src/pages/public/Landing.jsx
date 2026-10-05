@@ -3,7 +3,7 @@ import { C, FONT } from '@/theme/theme';
 
 export default function Landing() {
   return (
-    <div style={{ fontFamily: FONT, color: C.ink, background: C.white, lineHeight: 1.5, overflowX: 'hidden' }}>
+    <div style={{ fontFamily: FONT, color: C.ink, background: C.surface, lineHeight: 1.5, overflowX: 'hidden' }}>
       <GlobalStyles />
       <Header />
       <Hero />

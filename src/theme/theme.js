@@ -1,10 +1,30 @@
 export const NAME = 'FluencyTalks';
-export const C = { indigo: '#2b2a7a', deep: '#1b1a55', coral: '#ff6a4d', teal: '#12b5a6', sun: '#ffc83d', sky: '#e6f4ff', blush: '#fff0ea', ink: '#17163a', muted: '#5b5a7e', white: '#ffffff' };
+
+/**
+ * Landing palette, expressed through the app's design tokens (`--c-*`, injected
+ * by theme/inject.ts) instead of raw hex. This is the single change that makes
+ * the whole marketing site follow the app's light/dark theme: the `C.*` names
+ * below are kept so component code reads the same, but the values now resolve
+ * through CSS variables.
+ */
+const tok = (name) => `rgb(var(--c-${name}))`;
+/** Token colour at a given alpha: alpha('accent', 0.9) -> rgb(var(--c-accent) / 0.9) */
+export const alpha = (token, a) => `rgb(var(--c-${token}) / ${a})`;
+
+export const C = {
+  indigo: tok('brand'), deep: tok('deep'), coral: tok('accent'), teal: tok('aqua'),
+  sun: tok('sun'), sky: tok('brand-soft'), blush: 'rgb(var(--c-accent) / 0.12)',
+  ink: tok('ink'), muted: tok('muted'),
+  // Always white: used for text on top of dark panels and photos, so it must
+  // NOT flip to a dark value in dark mode. Page backgrounds use C.surface.
+  white: '#ffffff', surface: tok('surface'),
+};
 
 /** Typography definitions aligned with tokens.ts & index.html Google Fonts */
-export const FONT = "'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif";
-export const DISPLAY = "'Bricolage Grotesque', 'Figtree', system-ui, sans-serif";
-export const SERIF = "Georgia, 'Times New Roman', serif";
+export const FONT = 'var(--font-sans)';
+export const DISPLAY = 'var(--font-display)';
+export const SERIF = 'var(--font-serif)';
+
 
 const img = (id, w = 1600) => `https://images.unsplash.com/${id}?w=${w}&auto=format&fit=crop&q=75`;
 export const IMG = {
@@ -27,12 +47,12 @@ a[style*="999px"]:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(0
 .ft-pop{transition:transform .3s cubic-bezier(.3,1.6,.5,1),box-shadow .3s;cursor:pointer}
 .ft-pop:hover{transform:translateY(-8px) rotate(-2deg) scale(1.06);box-shadow:0 14px 28px rgba(0,0,0,.35)}
 .ft-lift{transition:transform .3s}.ft-lift:hover{transform:translateY(-8px)}
-.ft-nav a{position:relative; font-weight: 600;}.ft-nav a:after{content:'';position:absolute;left:0;bottom:-5px;height:3px;width:0;background:#ff6a4d;transition:width .25s}.ft-nav a:hover:after{width:100%}
-.ft-arrow{transition:background .25s,transform .25s}.ft-arrow:hover{background:#ffc83d!important;color:#17163a!important;transform:scale(1.1)}
-details summary{transition:color .2s}details summary:hover{color:#ff6a4d}
+.ft-nav a{position:relative; font-weight: 600;}.ft-nav a:after{content:'';position:absolute;left:0;bottom:-5px;height:3px;width:0;background:${C.coral};transition:width .25s}.ft-nav a:hover:after{width:100%}
+.ft-arrow{transition:background .25s,transform .25s}.ft-arrow:hover{background:${C.sun}!important;color:${C.ink}!important;transform:scale(1.1)}
+details summary{transition:color .2s}details summary:hover{color:${C.coral}}
 section[id]{scroll-margin-top:72px}
-a:focus-visible,button:focus-visible,[role=button]:focus-visible,summary:focus-visible{outline:3px solid #ffc83d;outline-offset:3px;border-radius:8px}
-.ft-burger{display:none;place-items:center;width:44px;height:44px;border-radius:12px;border:2px solid #2b2a7a;background:transparent;color:#2b2a7a;font-size:20px;font-weight:800;cursor:pointer}
+a:focus-visible,button:focus-visible,[role=button]:focus-visible,summary:focus-visible{outline:3px solid ${C.sun};outline-offset:3px;border-radius:8px}
+.ft-burger{display:none;place-items:center;width:44px;height:44px;border-radius:12px;border:2px solid ${C.indigo};background:transparent;color:${C.indigo};font-size:20px;font-weight:800;cursor:pointer}
 .ft-fm{display:none}
 @media(max-width:900px){.ft-desk{display:none!important}.ft-burger{display:grid}}
 @media(max-width:800px){.ft-bub{display:none}.ft-frost{display:none}.ft-fm{display:block}}

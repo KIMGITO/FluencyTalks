@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { C, IMG, wrap, h2, btn, photo } from '../../theme/theme';
+import { C, IMG, wrap, h2, btn, photo, alpha } from '../../theme/theme';
 import { Reveal } from './Reveal';
+import { useJoinLink } from './useJoinLink';
 
 const roles = {
   learner: {
@@ -22,13 +23,14 @@ const roles = {
 
 export default function Split() {
   const [role, setRole] = useState('learner');
+  const join = useJoinLink();
   const r = roles[role];
 
   return (
     <section id="speakers" style={{ position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
       {/* Photo + one even frost layer keeps text readable at every width */}
       <div style={{ ...photo(IMG.hero), position: 'absolute', inset: 0, animation: 'ftDrift 22s ease-in-out infinite alternate' }} />
-      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${C.deep}e6 0%, ${C.sky}f2 100%)`, backdropFilter: 'blur(1px)', WebkitBackdropFilter: 'blur(6px)' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, ${alpha('deep', 0.9)} 0%, ${alpha('brand-soft', 0.95)} 100%)`, backdropFilter: 'blur(1px)', WebkitBackdropFilter: 'blur(6px)' }} />
 
       <div style={{ ...wrap, position: 'relative', maxWidth: 760, padding: 'clamp(56px, 9vw, 96px) 24px' }}>
         <Reveal>
@@ -78,10 +80,16 @@ export default function Split() {
           </div>
 
           <div style={{ marginTop: 'clamp(24px, 4vw, 34px)' }}>
-            <Link to={`/signup?role=${role}`} style={btn(C.coral, C.white)}>{r.cta}</Link>
-            <p style={{ margin: '16px 0 0', fontSize: 14, color: 'rgba(255,255,255,0.75)' }}>
-              Already a member? <Link to="/login" style={{ color: C.sun, fontWeight: 800 }}>Log in</Link>
-            </p>
+            {join.signedIn ? (
+              <Link to={join.to} style={btn(C.sun, C.ink)}>Go to your profile</Link>
+            ) : (
+              <>
+                <Link to={`/signup?role=${role}`} style={btn(C.coral, C.white)}>{r.cta}</Link>
+                <p style={{ margin: '16px 0 0', fontSize: 14, color: 'rgba(255,255,255,0.75)' }}>
+                  Already a member? <Link to="/login" style={{ color: C.sun, fontWeight: 800 }}>Log in</Link>
+                </p>
+              </>
+            )}
           </div>
         </Reveal>
       </div>

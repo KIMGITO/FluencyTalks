@@ -42,8 +42,8 @@ export default function FollowList({ kind }: { kind: 'followers' | 'following' }
       {locked ? <EmptyState title="This account is private" text={`Follow @${profile.username} and get accepted to see who they follow and who follows them.`} />
         : !users?.length ? <EmptyState title={kind === 'followers' ? 'No followers yet' : 'Not following anyone yet'} />
         : (<ul className="ft-card divide-y divide-border">{users.map((u) => (
-            <li key={u.id}><Link to={`/u/${u.username}`} className="flex items-center gap-3 p-4 hover:bg-surface-2">
-              <Avatar name={u.display_name} src={u.avatar_url} /><div className="min-w-0"><p className="truncate font-semibold">{u.display_name}</p><p className="truncate text-sm text-muted">@{u.username}</p></div>
+            <li key={u.id}><Link to={`/u/${u.username}`} className="flex items-center gap-2.5 p-2.5 hover:bg-surface-2 md:p-3">
+              <Avatar name={u.display_name} src={u.avatar_url} size="sm" /><div className="min-w-0"><p className="truncate text-sm font-semibold">{u.display_name}</p><p className="truncate text-xs text-muted">@{u.username}</p></div>
             </Link></li>))}</ul>)}
       {!locked && more && <div className="mt-4 flex justify-center"><Button variant="secondary" loading={busy} onClick={showMore}>Show more</Button></div>}
     </>

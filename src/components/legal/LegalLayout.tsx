@@ -143,7 +143,7 @@ export default function LegalLayout({
               {updated && <span className="lg-upd">Updated {updated}</span>}
             </div>
 
-            <article key={cur.id} className="lg-in">
+            <article key={cur.id} className="lg-in ft-selectable">
               {cur.tagline && <div className="lg-tag">{cur.tagline}</div>}
               <h2 id="lg-h" className="lg-h">
                 {cur.heading}

@@ -25,21 +25,23 @@ export default function Stats() {
       <Reveal>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+            display: 'flex',
+            flexWrap: 'wrap',
             borderRadius: 'clamp(16px, 3vw, 24px)',
             overflow: 'hidden',
-            background: `linear-gradient(110deg, ${C.sun} 0%, #ffd45f 50%, #ffb84d 100%)`,
-            boxShadow: '0 14px 32px rgba(43,42,122,0.22)',
+            background: `linear-gradient(110deg, ${C.sun} 0%, rgb(var(--c-sun) / 0.85) 50%, rgb(var(--c-accent) / 0.75) 100%)`,
+            boxShadow: '0 14px 32px rgb(var(--c-brand) / 0.22)',
           }}
         >
           {stats.map(([to, suf, dec, long, short], i) => (
             <div
               key={long}
               style={{
-                padding: 'clamp(12px, 3vw, 26px) clamp(4px, 1.2vw, 12px)',
+                flex: '1 1 40%',
+                minWidth: 0,
+                padding: 'clamp(10px, 2.4vw, 22px) clamp(4px, 1.2vw, 12px)',
                 textAlign: 'center',
-                borderLeft: i ? '1px solid rgba(27,26,85,0.14)' : 0,
+                borderLeft: i ? '1px solid rgb(var(--c-deep) / 0.14)' : 0,
               }}
             >
               <div

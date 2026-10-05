@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { C, DISPLAY, FONT, wrap, h2, lead, btn, blob } from '../../theme/theme';
 import { languagesCSS } from '../../theme/componentStyles';
 import { Reveal } from './Reveal';
+import { useJoinLink } from './useJoinLink';
 
 const hellos = [
   ['Hola', C.coral, 'Spanish', '1,240'],
@@ -20,6 +21,7 @@ const hellos = [
 
 export default function Languages() {
   const [lang, setLang] = useState(null);
+  const join = useJoinLink();
 
   return (
     <section
@@ -99,21 +101,21 @@ export default function Languages() {
           })}
         </div>
 
-        <div style={{ minHeight: 80, marginTop: 32, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div className="min-h-20 mt-8 flex items-center justify-center">
           {lang && (
-            <div key={lang.l} className="flex flex-col gap-4">
-              <span style={{color: C.white}}>
+            <div key={lang.l} className="flex flex-col items-center gap-3">
+              <span style={{ color: C.white }}>
                 <b style={{ color: C.sun, fontSize: '1.1em' }}>{lang.online}</b> {lang.l} speakers are online now.
               </span>
               <Link
-                to="/signup"
+                to={join.to}
                 style={btn(C.sun, C.ink, {
                   padding: '10px 22px',
                   marginLeft: 12,
-                  boxShadow: '0 4px 14px rgba(255,200,61,0.3)',
+                  boxShadow: '0 4px 14px rgb(var(--c-sun) / 0.3)',
                 })}
               >
-                Practice {lang.l}
+                {join.signedIn ? 'Go to your profile' : `Practice ${lang.l}`}
               </Link>
             </div>
           )}

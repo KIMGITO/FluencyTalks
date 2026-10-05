@@ -55,7 +55,7 @@ export function SocialButtons() {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-xs gap-4">
+    <div className="mx-auto flex w-full max-w-xs flex-col gap-2.5">
       {providers.map((p) => (
         <button
           key={p.id}

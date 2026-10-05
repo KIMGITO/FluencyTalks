@@ -27,14 +27,16 @@ export default function Discover() {
   return (
     <>
       <PageHeader title="Discover" subtitle="Find people to practice with" />
-      <div className="ft-card mb-4 grid gap-3 p-4 sm:grid-cols-3">
-        <div className="sm:col-span-2"><Input aria-label="Search" placeholder="Search by name or username" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
-        <Select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value)}><option value="">Any language</option>{languages.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</Select>
-        <Select aria-label="Role" value={role} onChange={(e) => setRole(e.target.value)}><option value="">Native or learning</option><option value="native">Native speakers</option><option value="learning">Learners</option></Select>
-        <Select aria-label="Level" value={level} onChange={(e) => setLevel(e.target.value)}><option value="">Any level</option>{LEARNER_LEVELS.map((l) => <option key={l}>{l}</option>)}</Select>
+      {/* Filters wrap as a flex row — no grid needed at any width, and each
+          control grows to share the line instead of forcing a fixed column. */}
+      <div className="ft-card ft-card-pad mb-3 flex flex-wrap gap-1.5">
+        <div className="min-w-[10rem] flex-[2_1_10rem]"><Input aria-label="Search" placeholder="Search by name or username" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
+        <div className="min-w-[8rem] flex-1"><Select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value)}><option value="">Any language</option>{languages.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</Select></div>
+        <div className="min-w-[8rem] flex-1"><Select aria-label="Role" value={role} onChange={(e) => setRole(e.target.value)}><option value="">Native or learning</option><option value="native">Native speakers</option><option value="learning">Learners</option></Select></div>
+        <div className="min-w-[6rem] flex-1"><Select aria-label="Level" value={level} onChange={(e) => setLevel(e.target.value)}><option value="">Any level</option>{LEARNER_LEVELS.map((l) => <option key={l}>{l}</option>)}</Select></div>
       </div>
       {error && <p className="mb-3 text-danger">{error}</p>}
-      <div className="grid gap-4 xl:grid-cols-2">{people.map((p) => <ProfileCard key={p.id} person={p} onHidden={(id) => setPeople((l) => l.filter((x) => x.id !== id))} />)}</div>
+      <div className="flex flex-col gap-2">{people.map((p) => <ProfileCard key={p.id} person={p} onHidden={(id) => setPeople((l) => l.filter((x) => x.id !== id))} />)}</div>
       {loading && <div className="flex justify-center p-6"><Spinner /></div>}
       {!loading && !people.length && !error && <EmptyState title="No one matches yet" text="Try removing a filter or searching a different language." />}
       {!loading && more && <div className="mt-4 flex justify-center"><Button variant="secondary" onClick={() => run(people.length)}>Show more</Button></div>}
