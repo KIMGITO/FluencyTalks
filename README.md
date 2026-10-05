@@ -66,6 +66,8 @@ Run the migrations in order in the SQL editor (or `supabase db push`):
 | 0007 | `list_notifications`, `count_unread_notifications`; admin read functions `admin_report_queue`, `admin_search_users`, `admin_recent_actions` |
 | 0008 | `translation_history` (every Translate tap, deduped and traced to its message), `save_translation`, `list_my_corrections`, reaction emoji limit 8 → 40 (ZWJ/skin tones), translations added to `export_my_data` |
 | 0009 | Central search: `search_people` rewritten (leading `@` allowed, wildcards escaped, relevance order, role/level filters that work on their own, `p_scope` "people you follow") and `search_messages` added so `/search` can search your own chats |
+| 0010 | `country_code` on profiles + `home_feed()` (partners first, everyone else after, with the reason for the match) |
+| 0011 | **ISO 639-3 everywhere.** `languages` rebuilt around its standard 3-letter `id` (`iso_639_1`, `english_name`, `native_name`, `is_supported_learning`); `user_languages.language_id` replaces the free-text `language_code`, FK `ON DELETE CASCADE`; `saved_phrases` and `translation_history` re-pointed at the same table; `search_people`/`home_feed` match on ids; person payloads carry both display names. Existing rows are mapped, so no profile loses a language. `supabase/seed.sql` loads the curated list of 100 languages |
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.

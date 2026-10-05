@@ -8,21 +8,23 @@ import type { Correction, Message, Reaction } from '@/types/db';
 
 interface Props {
   message: Message; mine: boolean; myId: string; corrections: Correction[]; reactions: Reaction[]; otherName: string;
-  translateTo: string;   // language code the viewer wants translations in (their native language)
+  translateTo: string;   // ISO 639-3 id of the language the viewer wants translations in (their native one)
+  translateApi: string;  // the same language as the translation API names it (usually its iso_639_1)
   onCorrect: (m: Message) => void; onSave: (m: Message, translation?: string) => Promise<unknown>; onReact: (m: Message, emoji: string) => Promise<void>;
   onAccept: (c: Correction) => Promise<void>; onDismiss: (c: Correction) => Promise<void>;
   onTranslated?: (m: Message, translated: string, targetLang: string) => unknown;   // history write, fire-and-forget
 }
 type Translation = { state: 'loading' | 'done' | 'error'; text: string };
-export function MessageBubble({ message, mine, myId, corrections, reactions, otherName, translateTo, onCorrect, onSave, onReact, onAccept, onDismiss, onTranslated }: Props) {
+export function MessageBubble({ message, mine, myId, corrections, reactions, otherName, translateTo, translateApi, onCorrect, onSave, onReact, onAccept, onDismiss, onTranslated }: Props) {
   const [saved, setSaved] = useState(false); const [tr, setTr] = useState<Translation | null>(null);
   const translate = async () => {
     if (tr?.state === 'done') return setTr(null);   // second tap hides it
     setTr({ state: 'loading', text: '' });
     try {
-      const out = await translateText(message.body, translateTo);
+      const out = await translateText(message.body, translateTo, translateApi);
       setTr({ state: 'done', text: out });
-      // Store every completed translation for the history tab (skips "already your language").
+      // Store every completed translation for the history tab (skips "already your language"),
+      // keyed by the ISO 639-3 id rather than whatever the API was called with.
       if (out.trim().toLowerCase() !== message.body.trim().toLowerCase()) onTranslated?.(message, out, translateTo);
     }
     catch (e) { setTr({ state: 'error', text: (e as Error).message }); }

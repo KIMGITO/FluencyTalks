@@ -1,6 +1,7 @@
 export type Role = 'native' | 'learning';
 export type LevelCode = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Native';
-export interface UserLanguage { language_code: string; role: Role; level: LevelCode }
+/** One of my languages. Only the ISO 639-3 id is stored; the names are for display. */
+export interface UserLanguage { language_id: string; role: Role; level: LevelCode; native_name?: string | null; english_name?: string | null }
 export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; followers_count: number; languages: UserLanguage[]; follow_status: 'pending' | 'accepted' | null }
 /** Why someone is in the Home feed: they can teach me, we practise together, or we share nothing. */
 export type MatchKind = 'native' | 'learning' | 'other';
@@ -16,12 +17,13 @@ export interface MessageHit {
   other_id: string; other_name: string; other_username: string; other_avatar: string | null;
 }
 export interface ConversationRow { conversation_id: string; other_user_id: string; other_name: string; other_username: string; other_avatar: string | null; last_body: string | null; last_at: string; unread_count: number; status: 'active' | 'request' | 'ignored' }
-export interface LanguageRef { code: string; name: string; native_name: string; rtl: boolean }
+/** A row of public.languages; `id` is the ISO 639-3 code. Re-exported from lib/languages. */
+export type { Language, DisplayLanguage } from '@/lib/languages';
 export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; followers_count: number; following_count: number }
 export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; created_at: string }
-export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_code: string | null; source_message_id: string | null; created_at: string }
+export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_id: string | null; source_message_id: string | null; created_at: string }
 /** One "Translate" tap, stored forever; source_message_id traces it back to the chat. */
-export interface TranslationRecord { id: string; source_text: string; translated_text: string; target_lang: string | null; source_message_id: string | null; created_at: string }
+export interface TranslationRecord { id: string; source_text: string; translated_text: string; language_id: string | null; source_message_id: string | null; created_at: string }
 /** Row from list_my_corrections: a correction that was applied to one of my messages. */
 export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
 export interface Reaction { message_id: string; user_id: string; emoji: string }

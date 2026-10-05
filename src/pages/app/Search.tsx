@@ -7,7 +7,7 @@ import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { searchMessages, searchPeople, type SearchScope } from '@/services';
-import { useLanguageStore } from '@/store/languageStore';
+import { useLanguageStore, useLanguages } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { MessageHit, Person } from '@/types/db';
 
@@ -24,7 +24,7 @@ const PREVIEW = 5;                                   // rows the mixed "All" tab
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const me = useProfileStore((s) => s.me); const myLanguages = useProfileStore((s) => s.languages);
-  const languages = useLanguageStore((s) => s.list); const nameOf = useLanguageStore((s) => s.name);
+  const languages = useLanguages(); const labelOf = useLanguageStore((s) => s.labelOf);
 
   const query = params.get('q') ?? '';
   const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? 'all') as Tab;
@@ -87,8 +87,8 @@ export default function Search() {
   const exact = handle && people[0]?.username?.toLowerCase() === handle ? people[0] : null;      // the "@name" someone typed
   const isMe = !!me?.username && !!handle && handle === me.username.toLowerCase();
   const quick = useMemo(() => {                                                       // shortcuts for an empty box
-    const mine = myLanguages.filter((l) => l.role === 'learning').map((l) => l.language_code);
-    return (mine.length ? mine : languages.slice(0, 6).map((l) => l.code)).slice(0, 6);
+    const mine = myLanguages.filter((l) => l.role === 'learning').map((l) => l.language_id);
+    return (mine.length ? mine : languages.slice(0, 6).map((l) => l.id)).slice(0, 6);
   }, [myLanguages, languages]);
 
   const personRows = <div className="flex flex-col gap-2">
@@ -122,7 +122,7 @@ export default function Search() {
       {idle ? (
         <EmptyState title="Search FluencyTalks" text="Find anyone by name or @username, even people you don't follow — or look back through your chats." action={
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">{quick.map((c) => (
-            <Button key={c} size="sm" variant="secondary" onClick={() => patch({ tab: 'people', lang: c, role: 'native' })}>{nameOf(c)} speakers</Button>
+            <Button key={c} size="sm" variant="secondary" onClick={() => patch({ tab: 'people', lang: c, role: 'native' })}>{labelOf({ language_id: c })} speakers</Button>
           ))}</div>
         } />
       ) : (

@@ -1,7 +1,11 @@
+import { normalizeCode, providerCode } from '@/lib/languages';
+
 /**
  * Tap-to-translate. The ONLY file that talks to a translation provider, so it can be swapped
  * (DeepL, your own backend) without touching UI code.
  * Provider today: MyMemory (free, no key). The text of a message is sent to it ONLY when the user taps "Translate".
+ * `target` is the ISO 639-3 id we store ('jpn'); the provider needs its own vocabulary, so
+ * the mapping to an alpha-2 code happens here and nowhere else.
  */
 const ENDPOINT = 'https://api.mymemory.translated.net/get';
 const CONTACT_EMAIL = import.meta.env.VITE_TRANSLATE_EMAIL as string | undefined;   // optional: raises MyMemory's free daily quota
@@ -11,7 +15,8 @@ const cache = new Map<string, string>();
 
 export class TranslateError extends Error {}
 const bytes = (s: string) => new TextEncoder().encode(s).length;
-const apiCode = (code: string) => (code === 'zh' ? 'zh-CN' : code);   // our language codes are ISO 639-1
+/** MyMemory's Chinese needs the region; everything else takes the plain alpha-2 code. */
+const apiCode = (iso3: string) => { const c = providerCode(iso3); return c === 'zh' ? 'zh-CN' : c; };
 const decode = (s: string) => new DOMParser().parseFromString(s, 'text/html').documentElement.textContent ?? s;   // the API returns HTML entities
 
 function split(part: string): string[] {
@@ -31,15 +36,19 @@ function chunk(text: string): string[] {
   return out;
 }
 
-/** Source language is auto-detected; `target` is one of our language codes (en, es, zh ...). */
-export async function translateText(text: string, target: string): Promise<string> {
-  const key = `${target}:${text}`; const hit = cache.get(key); if (hit) return hit;
+/** Source language is auto-detected; `target` is the ISO 639-3 id we store (eng, jpn, cmn ...).
+ *  `provider` is the same language as the translation API names it -- normally the table's
+ *  iso_639_1, resolved by the caller from the language store so this file stays store-free. */
+export async function translateText(text: string, target: string, provider?: string): Promise<string> {
+  const iso3 = normalizeCode(target) ?? 'eng';   // an id the standard does not have falls back to English
+  const api = provider || providerCode(iso3);
+  const key = `${iso3}:${text}`; const hit = cache.get(key); if (hit) return hit;
   const chunks = chunk(text.trim());
   if (chunks.length > MAX_CHUNKS) throw new TranslateError('This message is too long to translate.');
   const out: string[] = [];
   for (const q of chunks) {
     const url = new URL(ENDPOINT);
-    url.searchParams.set('q', q); url.searchParams.set('langpair', `Autodetect|${apiCode(target)}`);
+    url.searchParams.set('q', q); url.searchParams.set('langpair', `Autodetect|${apiCode(api)}`);
     if (CONTACT_EMAIL) url.searchParams.set('de', CONTACT_EMAIL);
     let res: Response;
     try { res = await fetch(url); } catch { throw new TranslateError("Couldn't reach the translation service."); }

@@ -16,7 +16,7 @@ import type { FeedPerson } from '@/types/db';
  * only has to decide how to draw the line between the two.
  */
 export default function Home() {
-  const { me, languages } = useProfileStore(); const nameOf = useLanguageStore((s) => s.name);
+  const { me, languages } = useProfileStore(); const labelOf = useLanguageStore((s) => s.labelOf);
   useCountries();                              // flags need the country names
   const [requests, setRequests] = useState<(MiniUser & { follower_id: string })[]>([]);
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
@@ -36,7 +36,7 @@ export default function Home() {
   const answer = async (id: string, accept: boolean) => { await respondFollowRequest(id, accept); setRequests((r) => r.filter((x) => x.follower_id !== id)); };
   const drop = (id: string) => setHidden((h) => [...h, id]);
   const subtitle = learning.length
-    ? `People who speak ${learning.map((l) => nameOf(l.language_code)).join(' and ')}, or who are learning it too`
+    ? `People who speak ${learning.map((l) => labelOf(l)).join(' and ')}, or who are learning it too`
     : 'Add the languages you are learning to get matched with the right people';
 
   return (

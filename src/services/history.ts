@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
 import type { CorrectionHistory, TranslationRecord } from '@/types/db';
 
-/** Stores a completed translation; deduped per (user, text, lang) in SQL. Fire-and-forget from the chat. */
+/** Stores a completed translation; deduped per (user, text, language) in SQL. Fire-and-forget from the chat. `languageCode` is an ISO 639-3 id. */
 export const saveTranslation = (t: { source: string; translated: string; languageCode?: string; sourceMessageId?: string }) =>
   rpc<string>('save_translation', { p_source: t.source, p_translated: t.translated, p_lang: t.languageCode ?? null, p_source_message: t.sourceMessageId ?? null });
 

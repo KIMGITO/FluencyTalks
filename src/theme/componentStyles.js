@@ -124,13 +124,31 @@ a:focus-visible,button:focus-visible{outline:3px solid rgb(var(--c-sun));outline
  * LANDING FOOTER — src/components/landing/Footer.jsx    classes: `ft-foot*`
  * Link columns, hover slide on links, bottom legal bar + responsive stacks.
  * ========================================================================== */
-export const footerCSS = `
-.ft-foot{display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,56px)}
-.ft-flink{display:inline-block;padding:6px 0;color:rgba(255,255,255,.78);text-decoration:none;overflow-wrap:anywhere;transition:color .2s,transform .2s}
-.ft-flink:hover{color:${C.sun};transform:translateX(3px)}
-.ft-fbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 24px}
-@media(max-width:900px){.ft-fbrand{flex:1 1 100%}}
-@media(max-width:560px){.ft-foot{gap:32px 20px}.ft-fbar{flex-direction:column-reverse;text-align:center}}
+export const footerCSS = `.ft-foot {
+  display: grid;width: 100%;box-sizing: border-box;gap: clamp(28px, 4vw, 56px);align-items: start;/* Small screens (mobile): 3 grid columns */grid-template-columns: repeat(3, 1fr);
+}/* Brand logo section spans all 3 columns on mobile */.ft-foot .ft-fbrand {grid-column: 1 / -1;}/* Medium screens (tablets): 2 columns layout */@media (min-width: 640px) and (max-width: 1023px) {.ft-foot {  grid-template-columns: repeat(2, 1fr);}}
+
+/* Laptops & Big Screens: 3 columns layout */
+@media (min-width: 1024px) {.ft-foot {  grid-template-columns: repeat(3, 1fr);}
+}
+
+/* Description spans full width across all grid columns at the bottom */
+.ft-foot .ft-fdesc {grid-column: 1 / -1;
+}
+
+/* Footer Links & Hover States */
+.ft-flink {display: inline-block;padding: 6px 0;color: rgba(255, 255, 255, 0.78);text-decoration: none;overflow-wrap: anywhere;transition: color 0.2s, transform 0.2s;
+}
+
+.ft-flink:hover {color: ${C.sun};transform: translateX(3px);
+}
+
+/* Bottom Bar */
+.ft-fbar {display: flex;justify-content: space-between;align-items: center;flex-wrap: wrap;gap: 12px 24px;
+}
+
+@media (max-width: 560px) {.ft-foot {  gap: 32px 20px;}.ft-fbar {  flex-direction: column-reverse;  text-align: center;}
+}
 `;
 
 /* ========================================================================== *

@@ -10,13 +10,17 @@ import { blockUser, savePhrase, saveTranslation } from '@/services';
 import type { Message } from '@/types/db';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
+import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 
 export function ChatThread({ id }: { id: string }) {
   const nav = useNavigate(); const myId = useAuthStore((s) => s.user?.id);
   const { open, close, messages, corrections, reactions, active, requests, send, respond, suggest, accept, dismiss, react } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
   const [correcting, setCorrecting] = useState<Message | null>(null);
-  const translateTo = useProfileStore((s) => s.languages.find((l) => l.role === 'native')?.language_code ?? 'en');   // translate into my native language
+  // ISO 639-3 id of the language I want translations in; 'eng' when no native language is set.
+  const translateTo = useProfileStore((s) => s.languages.find((l) => l.role === 'native')?.language_id ?? 'eng');
+  const providerOf = useLanguageStore((s) => s.provider);
+  const translateApi = providerOf(translateTo);   // the same language as the translation API names it
   const row = [...active, ...requests].find((c) => c.conversation_id === id); const list = messages[id];
   const isRequest = requests.some((c) => c.conversation_id === id);
   useEffect(() => { open(id); return close; }, [id]);
@@ -33,7 +37,7 @@ export function ChatThread({ id }: { id: string }) {
       </header>
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {!list.length && <p className="text-center text-muted">Say hello in the language you're practicing.</p>}
-        {list.map((m) => <MessageBubble key={m.id} message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name} translateTo={translateTo}
+        {list.map((m) => <MessageBubble key={m.id} message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name} translateTo={translateTo} translateApi={translateApi}
           onCorrect={setCorrecting} onSave={(msg, translation) => savePhrase({ phrase: msg.body, translation, sourceMessageId: msg.id })} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDismiss={dismiss}
           onTranslated={(msg, out, lang) => { saveTranslation({ source: msg.body, translated: out, languageCode: lang, sourceMessageId: msg.id }).catch(() => undefined); }} />)}
         <div ref={endRef} />

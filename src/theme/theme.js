@@ -61,6 +61,7 @@ a:focus-visible,button:focus-visible,[role=button]:focus-visible,summary:focus-v
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}`;
 
 export const wrap = { maxWidth: 1160, margin: '0 auto', padding: '0 24px' };
+export const descStyle = { gridColumn: '1 / -1',margin: '16px 0 0',paddingTop: 24,borderTop: '1px solid rgba(255, 255, 255, 0.1)',lineHeight: 1.65,font: FONT,opacity: 0.85};
 export const h2 = { fontFamily: DISPLAY, fontWeight: 700, fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.15, margin: '0 0 14px', color: C.ink, letterSpacing: '-0.02em' };
 export const lead = { fontFamily: FONT, fontWeight: 400, fontSize: 'clamp(16px, 2vw, 18px)', lineHeight: 1.65, color: C.muted, maxWidth: 560, margin: 0 };
 export const btn = (bg, color, extra = {}) => ({ display: 'inline-block', background: bg, color, padding: 'clamp(8px, 1.6vw, 10px) clamp(20px, 3vw, 30px)', borderRadius: 999, fontWeight: 700, fontSize: 16, textDecoration: 'none', border: '2px solid transparent', fontFamily: FONT, ...extra });

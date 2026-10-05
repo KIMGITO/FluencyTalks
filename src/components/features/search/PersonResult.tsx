@@ -7,7 +7,7 @@ import type { Person } from '@/types/db';
 
 /** Someone whose @handle is exactly what was typed, shown above the list the way Facebook puts the matching profile on top. */
 export function PersonResult({ person }: { person: Person }) {
-  const nameOf = useLanguageStore((s) => s.name);
+  const labelOf = useLanguageStore((s) => s.labelOf);
   return (
     <Link to={`/u/${person.username}`} className="block">
       <Card className="flex items-center gap-3 transition hover:bg-surface-2">
@@ -19,7 +19,7 @@ export function PersonResult({ person }: { person: Person }) {
             <CountryBadge code={person.country_code} timezone={person.timezone} />
           </p>
           {!!person.languages.length && (
-            <div className="ft-chips mt-1">{person.languages.slice(0, 4).map((l) => <LanguageChip key={`${l.language_code}-${l.role}`} language={nameOf(l.language_code)} level={l.level} />)}</div>
+            <div className="ft-chips mt-1">{person.languages.slice(0, 4).map((l) => <LanguageChip key={`${l.language_id}-${l.role}`} language={labelOf(l)} level={l.level} />)}</div>
           )}
         </div>
         <span className="shrink-0 text-sm font-semibold text-brand">View profile</span>

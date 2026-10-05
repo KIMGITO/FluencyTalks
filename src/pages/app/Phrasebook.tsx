@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout';
 import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
 import { DiffText } from '@/components/features';
 import { deletePhrase, deleteTranslation, listMyCorrections, listPhrases, listTranslations } from '@/services';
+import { useLanguageStore } from '@/store/languageStore';
 import type { CorrectionHistory, SavedPhrase, TranslationRecord } from '@/types/db';
 
 type Tab = 'phrases' | 'corrections' | 'translations';
@@ -21,6 +22,8 @@ const Loading = () => <div className="flex justify-center p-8"><Spinner /></div>
 export default function Phrasebook() {
   const [tab, setTab] = useState<Tab>('phrases');
   const [size, setSize] = useState<TextSize>('tiny');
+  // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
+  const nameOf = useLanguageStore((s) => s.name);
   const [phrases, setPhrases] = useState<(SavedPhrase & { conversation_id: string | null })[] | null>(null);
   const [corrections, setCorrections] = useState<CorrectionHistory[] | null>(null);
   const [translations, setTranslations] = useState<(TranslationRecord & { conversation_id: string | null })[] | null>(null);
@@ -79,7 +82,7 @@ export default function Phrasebook() {
             <div key={t.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
               <div className="ft-selectable min-w-0 flex-1">
                 <p className="break-words text-muted">{t.source_text}</p>
-                <p className="break-words font-medium">{t.translated_text}{t.target_lang && <span className="ml-1 text-muted">({t.target_lang})</span>}</p>
+                <p className="break-words font-medium">{t.translated_text}{t.language_id && <span className="ml-1 text-muted">({nameOf(t.language_id)})</span>}</p>
                 <p className="mt-1 flex items-center gap-2 text-muted">{when(t.created_at)}{withConv(t.conversation_id)}</p>
               </div>
               <Button variant="ghost" size="sm" aria-label="Delete translation" onClick={async () => { await deleteTranslation(t.id); setTranslations(translations.filter((x) => x.id !== t.id)); }}><Trash2 size={16} /></Button>
