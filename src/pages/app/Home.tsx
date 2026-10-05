@@ -19,6 +19,7 @@ export default function Home() {
   const { me, languages } = useProfileStore(); const labelOf = useLanguageStore((s) => s.labelOf);
   useCountries();                              // flags need the country names
   const [requests, setRequests] = useState<(MiniUser & { follower_id: string })[]>([]);
+  const [answering, setAnswering] = useState<string | null>(null); const [answerError, setAnswerError] = useState('');
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
   const [hidden, setHidden] = useState<string[]>([]);   // blocked from this card: drop the row
 
@@ -33,7 +34,12 @@ export default function Home() {
     return { partners: rows.filter((p) => p.match_kind !== 'other'), others: rows.filter((p) => p.match_kind === 'other') };
   }, [people, hidden]);
 
-  const answer = async (id: string, accept: boolean) => { await respondFollowRequest(id, accept); setRequests((r) => r.filter((x) => x.follower_id !== id)); };
+  // Follow back = accept their request AND follow them (mutual). Cancel = drop their request.
+  const answer = async (id: string, accept: boolean) => {
+    setAnswering(id); setAnswerError('');
+    try { await respondFollowRequest(id, accept); setRequests((r) => r.filter((x) => x.follower_id !== id)); }
+    catch (e) { setAnswerError((e as Error).message); } finally { setAnswering(null); }
+  };
   const drop = (id: string) => setHidden((h) => [...h, id]);
   const subtitle = learning.length
     ? `People who speak ${learning.map((l) => labelOf(l)).join(' and ')}, or who are learning it too`
@@ -44,10 +50,14 @@ export default function Home() {
       <PageHeader title={` ${me?.display_name?.toUpperCase() ?? 'Welcome'}`} subtitle={subtitle} />
       <div className="flex flex-col gap-2">
         {requests.length > 0 && (
-          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Follow requests</h2>{requests.map((r) => (
+          <Card className="flex flex-col gap-2">
+            <h2 className="font-semibold">Follow requests</h2>
+            {answerError && <p className="text-sm text-danger">{answerError}</p>}
+            {requests.map((r) => (
             <div key={r.follower_id} className="flex items-center gap-2"><Avatar name={r.display_name} src={r.avatar_url} size="sm" />
-              <Link to={`/u/${r.username}`} className="min-w-0 flex-1 truncate text-sm font-medium">{r.display_name}</Link>
-              <Button size="sm" onClick={() => answer(r.follower_id, true)}>Accept</Button><Button size="sm" variant="secondary" onClick={() => answer(r.follower_id, false)}>Decline</Button></div>))}</Card>)}
+              <Link to={`/u/${r.username}`} className="min-w-0 flex-1 truncate text-sm font-medium">{r.display_name}<span className="block truncate text-xs font-normal text-muted">@{r.username} wants to follow you</span></Link>
+              <Button size="sm" loading={answering === r.follower_id} onClick={() => answer(r.follower_id, true)}>Follow back</Button>
+              <Button size="sm" variant="secondary" disabled={answering === r.follower_id} onClick={() => answer(r.follower_id, false)}>Cancel</Button></div>))}</Card>)}
 
         {people === null ? <div className="flex justify-center p-6"><Spinner /></div> : (
           <>
