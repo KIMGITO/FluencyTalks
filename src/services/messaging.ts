@@ -44,9 +44,10 @@ export interface ReactionEvent { added: boolean; reaction: Reaction }
 
 /** Everything I'm allowed to see arrives on one channel (RLS filters by membership and blocks).
  *  Realtime, part 1 of 2 (the other is services/notifications.ts). Reaction DELETE events carry only the primary key (message, user, emoji), which is all we need. */
-export function subscribeToInbox(onMessage: (m: Message) => void, onCorrection?: (c: Correction) => void, onReaction?: (e: ReactionEvent) => void) {
+export function subscribeToInbox(onMessage: (m: Message) => void, onCorrection?: (c: Correction) => void, onReaction?: (e: ReactionEvent) => void, onUpdate?: (m: Message) => void) {
   const ch = supabase.channel('inbox')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => onMessage(p.new as Message))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (p) => { (onUpdate ?? onMessage)(p.new as Message); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'message_corrections' }, (p) => { if (p.eventType !== 'DELETE') onCorrection?.(p.new as Correction); })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'message_reactions' }, (p) => onReaction?.({ added: true, reaction: p.new as Reaction }))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'message_reactions' }, (p) => onReaction?.({ added: false, reaction: p.old as Reaction }))

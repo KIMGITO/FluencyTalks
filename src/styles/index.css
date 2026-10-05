@@ -38,4 +38,50 @@
   @media (min-width: 768px)  { .ft-shell { grid-template-columns: var(--layout-sidebarCompactW) minmax(0,1fr); } }
   @media (min-width: 1100px) { .ft-shell { grid-template-columns: var(--layout-sidebarW) minmax(0,1fr) var(--layout-railW); } }
 }
+/* Global scrollbar suppression: scrolling stays functional, no visible track. */
+@layer base {
+  * { scrollbar-width: none; -ms-overflow-style: none; }
+  *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+}
+@layer components {
+  /* ---- Chat bubbles: compact density + directional edge-pointer tails ---- */
+  .ft-thread { @apply flex-1 overflow-y-auto overscroll-contain; position: relative; padding: 0.5rem 0.5rem 0.75rem; }
+  @media (min-width: 768px) { .ft-thread { padding: 0.75rem 1rem 1rem; } }
+  .ft-daybadge {
+    @apply mx-auto w-fit max-w-[90%] truncate rounded-full border border-border bg-surface px-3 py-1 text-2xs font-semibold text-muted shadow-card;
+    position: sticky; top: 0.25rem; z-index: 10;
+  }
+  .ft-cluster-gap { margin-top: 0.65rem; }
+  .ft-row-gap { margin-top: 2px; }
+  .ft-bubble {
+    position: relative; max-width: min(82%, 32rem);
+    padding: 0.3rem 0.6rem 0.28rem; line-height: 1.32; font-size: 0.9rem;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  @media (min-width: 768px) { .ft-bubble { padding: 0.4rem 0.75rem 0.35rem; } }
+  /* Tail corner is sharp (zero radius = zero corner padding) so the pointer joins flush with the edge. */
+  .ft-bubble-in { @apply bg-surface-2 text-ink; border-radius: 0 0.9rem 0.9rem 0.9rem; box-shadow: 0 1px 1px rgb(var(--c-ink) / 0.06); }
+  .ft-bubble-out { background: rgb(var(--c-brand)); color: rgb(var(--c-on-brand)); border-radius: 0.9rem 0 0.9rem 0.9rem; }
+  /* Edge-pointer tails: same paint as the bubble, top edge exactly flush with the
+     bubble top, tucked 1px under the bubble horizontally to hide any seam.
+     Only on .ft-tail (cluster start). Corner radius is zero on the tail side. */
+  .ft-tail::before { content: ''; position: absolute; top: 0; width: 9px; height: 12px; }
+  .ft-bubble-in.ft-tail::before { left: -8px; background: rgb(var(--c-surface-2)); clip-path: polygon(100% 0, 100% 100%, 0 0); }
+  .ft-bubble-out.ft-tail::before { right: -8px; background: rgb(var(--c-brand)); clip-path: polygon(0 0, 100% 0, 0 100%); }
+  /* Floating typing dots. */
+  @keyframes ft-blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  .ft-typing-dot { width: 5px; height: 5px; border-radius: 9999px; background: rgb(var(--c-brand)); animation: ft-blink 1.2s infinite; }
+  .ft-bubble-meta { font-size: 0.62rem; line-height: 0.9rem; opacity: 0.7; margin-top: 1px; text-align: right; }
+  .ft-bubble-in .ft-bubble-meta { text-align: right; }
+  /* Swipe-to-reply sliding row (pure touch/pointer, no deps). */
+  .ft-swipe-row { touch-action: pan-y; will-change: transform; }
+  /* Mobile full-viewport thread layer; desktop floats as a card in the 3-col shell. */
+  .ft-thread-shell { @apply flex flex-col overflow-hidden bg-bg; position: fixed; inset: 0; z-index: 30; border: 0; height: 100dvh; }
+  @media (min-width: 768px) {
+    .ft-thread-shell { position: relative; z-index: auto; border-radius: var(--radius-lg); border: 1px solid rgb(var(--c-border)); background: rgb(var(--c-surface)); box-shadow: var(--shadow-card); height: calc(100dvh - var(--layout-topbarH) - var(--space-8)); }
+  }
+  /* Bottom action sheet (long-press on touch). */
+  @keyframes ft-sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ft-sheet { animation: ft-sheet-up var(--motion-base) var(--motion-ease); }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

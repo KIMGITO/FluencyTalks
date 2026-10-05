@@ -28,12 +28,18 @@ const legal = [
 function FooterLink({ label, to, hash, href }) {
   if (to)
     return (
-      <Link className="ft-flink" to={to}>
+      <Link
+        className="ft-flink transition-colors duration-200 hover:text-white"
+        to={to}
+      >
         {label}
       </Link>
     );
   return (
-    <a className="ft-flink" href={hash || href}>
+    <a
+      className="ft-flink transition-colors duration-200 hover:text-white"
+      href={hash || href}
+    >
       {label}
     </a>
   );
@@ -50,44 +56,37 @@ export default function Footer() {
       }}
     >
       <style>{footerCSS}</style>
-      <div className="ft-foot" style={wrap}>
-        <div className="ft-fbrand">
+
+      {/* Main Responsive Grid Layout Container */}
+      <div
+        className=" grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
+        style={wrap}
+      >
+        {/* Col 1: Brand & Logo Panel */}
+        <div className="ft-fbrand flex flex-col gap-4">
           <Logo light />
           <p
-            style={{
-              margin: '16px 0 0',
-              maxWidth: 300,
-              lineHeight: 1.65,
-              font: FONT,
-            }}
+            className="max-w-[300px] leading-relaxed text-sm opacity-90"
+            style={{ font: FONT }}
           >
             Practice any language by talking with the people who speak it.
           </p>
         </div>
 
+        {/* Col 2: Dynamic Navigation Lists */}
         {cols.map(([heading, links]) => (
-          <nav key={heading} aria-label={heading}>
+          <nav
+            key={heading}
+            aria-label={heading}
+            className="flex flex-col gap-4"
+          >
             <h3
-              style={{
-                margin: '0 0 16px',
-                fontSize: 15,
-                fontWeight: 800,
-                letterSpacing: '0.04em',
-                color: C.sun,
-              }}
+              className="text-base font-extrabold uppercase tracking-wider"
+              style={{ color: C.sun }}
             >
               {heading}
             </h3>
-            <ul
-              style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
+            <ul className="m-0 flex flex-col gap-2.5 p-0 list-none">
               {links.map((l) => (
                 <li key={l.label}>
                   <FooterLink {...l} />
@@ -97,31 +96,44 @@ export default function Footer() {
           </nav>
         ))}
 
-        <p className="ft-fdesc" style={descStyle}>
-          FluencyTalks connects language learners, expats, and students with
-          native and fluent speakers for real-world conversation. Practice your
-          target language, send text messages, receive real-time peer
-          corrections, and build your personalized phrasebook to fast-track your
-          journey to true fluency.
-        </p>
+        <div className='w-full md:col-span-2 lg:col-span-1'>
+          <h3
+              className="text-base font-extrabold uppercase tracking-wider"
+              style={{ color: C.sun }}
+            >
+              Description
+            </h3>
+          <div
+            className="ft-fdesc m-0 text-sm leading-relaxed opacity-80 "
+            style={descStyle}
+          >
+            FluencyTalks connects language learners, expats, and students with
+            native and fluent speakers for real-world conversation. Practice
+            your target language, send text messages, receive real-time peer
+            corrections, and build your personalized phrasebook to fast-track
+            your journey to true fluency.
+          </div>
+        </div>
       </div>
 
+      {/* Bottom Horizontal Attribution/Legal Utility Bar */}
       <div
-        className="ft-fbar"
+        className="ft-fbar flex flex-col gap-4 border-t border-white/15 pt-5 text-sm sm:flex-row sm:justify-between sm:items-center"
         style={{
           ...wrap,
           marginTop: 'clamp(28px, 4vw, 40px)',
-          paddingTop: 20,
-          borderTop: '1px solid rgba(255,255,255,0.15)',
-          fontSize: 14,
         }}
       >
         <span>
           © {new Date().getFullYear()} {NAME}. All rights reserved.
         </span>
-        <span style={{ display: 'flex', gap: 20 }}>
+        <span className="flex items-center gap-5">
           {legal.map((l) => (
-            <Link key={l.label} className="ft-flink" to={l.to}>
+            <Link
+              key={l.label}
+              className="ft-flink transition-colors duration-200 hover:text-white"
+              to={l.to}
+            >
               {l.label}
             </Link>
           ))}
