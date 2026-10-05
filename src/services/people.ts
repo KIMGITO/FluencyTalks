@@ -6,8 +6,8 @@ export const listLanguages = async () => (await supabase.from('languages').selec
 // People search lives in ./search (one central place for the /search page).
 export const getProfile = (username: string) => rpc<FullProfile | null>('get_profile', { p_username: username });
 export const setMyLanguages = (languages: UserLanguage[]) => rpc('set_my_languages', { p_languages: languages });
-export const saveProfile = (p: { username: string; displayName: string; bio: string; timezone: string; isPrivate: boolean; avatarUrl?: string }) =>
-  rpc('save_profile', { p_username: p.username, p_display_name: p.displayName, p_bio: p.bio, p_timezone: p.timezone, p_is_private: p.isPrivate, p_avatar_url: p.avatarUrl ?? null });
+export const saveProfile = (p: { username: string; displayName: string; bio: string; timezone: string; isPrivate: boolean; avatarUrl?: string; countryCode?: string | null }) =>
+  rpc('save_profile', { p_username: p.username, p_display_name: p.displayName, p_bio: p.bio, p_timezone: p.timezone, p_is_private: p.isPrivate, p_avatar_url: p.avatarUrl ?? null, p_country: p.countryCode ?? null });
 
 /** Uploads to avatars/<uid>/avatar-<ts>.<ext> (storage policy restricts writes to your own folder). Returns the public URL. */
 export async function uploadAvatar(userId: string, file: File) {

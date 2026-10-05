@@ -2,15 +2,22 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Card } from '@/components/ui';
 import { LanguageChip } from './LanguageChip';
+import { CountryBadge } from './CountryBadge';
+import { MatchBadge } from './MatchBadge';
 import { FollowButton } from './FollowButton';
 import { MessageButton } from './MessageButton';
 import { UserMenu } from './UserMenu';
 import { useLanguageStore } from '@/store/languageStore';
-import type { Person } from '@/types/db';
+import type { FeedPerson, Person } from '@/types/db';
 
-export function ProfileCard({ person, onHidden }: { person: Person; onHidden?: (id: string) => void }) {
+/** `match` is only passed by the Home feed; search and follow lists omit it. */
+export function ProfileCard({ person, match, onHidden }: {
+  person: FeedPerson | Person; match?: { kind: FeedPerson['match_kind']; language?: string | null }; onHidden?: (id: string) => void;
+}) {
   const nameOf = useLanguageStore((s) => s.name); const [hidden, setHidden] = useState(false);
   if (hidden) return null;
+  const kind = match?.kind ?? ('match_kind' in person ? person.match_kind : 'other');
+  const language = match?.language ?? ('match_language' in person ? person.match_language : null);
   return (
     // Compact row: small avatar, tight gaps, actions inline with the chips.
     <Card className="flex flex-col gap-2">
@@ -19,9 +26,13 @@ export function ProfileCard({ person, onHidden }: { person: Person; onHidden?: (
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Link to={`/u/${person.username}`} className="truncate font-semibold leading-tight">{person.display_name}</Link>
+            <MatchBadge kind={kind} language={language} />
             <UserMenu userId={person.id} name={person.display_name} onBlocked={() => { setHidden(true); onHidden?.(person.id); }} />
           </div>
-          <p className="truncate text-xs text-muted">@{person.username}</p>
+          <p className="flex items-center gap-1.5 truncate text-xs text-muted">
+            <span className="truncate">@{person.username}</span>
+            <CountryBadge code={person.country_code} timezone={person.timezone} />
+          </p>
           {person.bio && <p className="mt-1 line-clamp-2 text-sm leading-snug">{person.bio}</p>}
         </div>
       </div>

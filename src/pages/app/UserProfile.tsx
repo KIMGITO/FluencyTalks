@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Avatar, Button, Card, EmptyState, Spinner } from '@/components/ui';
-import { FollowButton, LanguageChip, MessageButton, UserMenu } from '@/components/features';
+import { CountryBadge, FollowButton, LanguageChip, MessageButton, UserMenu } from '@/components/features';
 import { getProfile } from '@/services';
+import { useCountries } from '@/store/countryStore';
 import { useLanguageStore } from '@/store/languageStore';
 import type { FullProfile } from '@/types/db';
 
 export default function UserProfile() {
   const { username = '' } = useParams(); const nameOf = useLanguageStore((s) => s.name);
+  useCountries();
   const [profile, setProfile] = useState<FullProfile | null | undefined>(undefined);
   useEffect(() => { setProfile(undefined); getProfile(username).then(setProfile).catch(() => setProfile(null)); }, [username]);
 
@@ -21,7 +23,11 @@ export default function UserProfile() {
         <Avatar name={profile.display_name} src={profile.avatar_url} size="lg" ring />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-bold">{profile.display_name}</h1>
-          <p className="truncate text-sm text-muted">@{profile.username}{profile.timezone && ` · ${profile.timezone}`}</p>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate text-sm text-muted">
+            <span className="truncate">@{profile.username}</span>
+            <CountryBadge code={profile.country_code} timezone={profile.timezone} showName />
+            {profile.timezone && <span className="truncate">· {profile.timezone}</span>}
+          </p>
           <p className="mt-0.5 text-xs text-muted"><Link to={`/u/${profile.username}/followers`} className="hover:underline"><b className="text-ink">{profile.followers_count}</b> followers</Link> · <Link to={`/u/${profile.username}/following`} className="hover:underline"><b className="text-ink">{profile.following_count}</b> following</Link></p>
         </div>
         {!r.is_me && <UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} />}

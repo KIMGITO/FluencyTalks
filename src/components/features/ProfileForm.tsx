@@ -2,8 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button, Input, Select, Textarea } from '@/components/ui';
 import { LanguagePicker } from './LanguagePicker';
+import { CountryPicker } from './CountryPicker';
 import { MAX_AVATAR_BYTES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
+import { useCountries } from '@/store/countryStore';
 import { useProfileStore } from '@/store/profileStore';
 import { recordConsent, uploadAvatar } from '@/services';
 
@@ -13,9 +15,12 @@ const zones = (): string[] => (Intl as unknown as { supportedValuesOf?: (k: stri
 /** Used for onboarding and for editing your profile. */
 export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onDone: () => void }) {
   const user = useAuthStore((s) => s.user)!; const { me, languages, save } = useProfileStore();
+  useCountries();                                   // the country picker needs the list
   const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [username, setUsername] = useState(me?.username ?? ''); const [displayName, setDisplayName] = useState(me?.display_name ?? '');
   const [bio, setBio] = useState(me?.bio ?? ''); const [tz, setTz] = useState(me?.timezone ?? localTz); const [isPrivate, setPrivate] = useState(me?.is_private ?? false);
+  // null = "no country of my own": the timezone serves it, until the user picks one here.
+  const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
   const [langs, setLangs] = useState(languages); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
 
@@ -28,7 +33,7 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
     setBusy(true);
     try {
       const avatarUrl = file ? await uploadAvatar(user.id, file) : undefined;
-      await save({ username, displayName: displayName.trim() || username, bio, timezone: tz, isPrivate, avatarUrl }, langs);
+      await save({ username, displayName: displayName.trim() || username, bio, timezone: tz, isPrivate, avatarUrl, countryCode: country }, langs);
       if (mode === 'onboarding') await Promise.all([recordConsent('age_18', '1'), recordConsent('terms', '1'), recordConsent('privacy', '1')]);
       onDone();
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
@@ -43,6 +48,7 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
       <Input id="displayName" label="Display name" value={displayName} maxLength={60} onChange={(e) => setDisplayName(e.target.value)} />
       <Textarea label="About you" rows={3} maxLength={300} value={bio} placeholder="Interests, why you're learning, what you can help with" onChange={(e) => setBio(e.target.value)} />
       <Select label="Timezone" value={tz} onChange={(e) => setTz(e.target.value)}>{[...new Set([tz, ...zones()])].map((z) => <option key={z}>{z}</option>)}</Select>
+      <CountryPicker value={country} timezone={tz} onChange={setCountry} />
       <LanguagePicker value={langs} onChange={setLangs} />
       <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={isPrivate} onChange={(e) => setPrivate(e.target.checked)} /><span><b>Private profile.</b> People must request to follow you.</span></label>
       {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 18 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
