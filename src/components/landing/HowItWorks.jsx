@@ -1,4 +1,5 @@
-import { C, DISPLAY, FONT, wrap, h2, lead } from '../../theme/theme';
+import { C, wrap, h2, lead } from '../../theme/theme';
+import { howItWorksCSS } from '../../theme/componentStyles';
 import { Reveal } from './Reveal';
 
 const steps = [
@@ -24,150 +25,6 @@ const steps = [
   },
 ];
 
-/* Clean, modern, vertical-to-horizontal responsive timeline CSS */
-const CSS = `
-.ft-steps-container {
-  position: relative;
-}
-
-.ft-steps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(20px, 2.5vw, 36px);
-  position: relative;
-  z-index: 1;
-}
-
-.ft-step-card {
-  position: relative;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 20px;
-  padding: clamp(20px, 2vw, 24px);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.35s ease;
-  box-shadow: 0 4px 20px rgba(23, 22, 58, 0.04);
-}
-
-.ft-step-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgba(23, 22, 58, 0.1);
-  border-color: rgba(255, 106, 77, 0.3);
-  background: #ffffff;
-}
-
-.ft-step-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.ft-num {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border-radius: 16px;
-  background: ${C.indigo};
-  color: ${C.white};
-  font-family: ${DISPLAY};
-  font-size: 20px;
-  font-weight: 800;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
-              background-color 0.3s ease, 
-              box-shadow 0.3s ease;
-  box-shadow: 0 6px 16px rgba(43, 42, 122, 0.25);
-}
-
-.ft-step-card:hover .ft-num {
-  background: ${C.coral};
-  color: ${C.white};
-  transform: scale(1.1) rotate(-4deg);
-  box-shadow: 0 8px 20px rgba(255, 106, 77, 0.35);
-}
-
-/* Horizontal connecting line (Desktop) */
-.ft-step-connector {
-  flex: 1;
-  height: 3px;
-  margin-right: calc(-1 * (clamp(20px, 2.5vw, 36px) + clamp(20px, 2vw, 24px)));
-  background: linear-gradient(90deg, rgba(43, 42, 122, 0.3) 0%, rgba(43, 42, 122, 0.05) 100%);
-  border-radius: 99px;
-  transform-origin: left center;
-  transition: background 0.3s ease;
-}
-
-.ft-step-card:hover .ft-step-connector {
-  background: linear-gradient(90deg, ${C.coral} 0%, rgba(255, 106, 77, 0.1) 100%);
-}
-
-.ft-step-title {
-  font-family: ${DISPLAY};
-  font-size: clamp(18px, 1.8vw, 21px);
-  font-weight: 800;
-  line-height: 1.25;
-  color: ${C.ink};
-  margin: 0 0 10px;
-  letter-spacing: -0.02em;
-}
-
-.ft-step-body {
-  font-family: ${FONT};
-  font-size: clamp(14px, 1.5vw, 15px);
-  line-height: 1.6;
-  color: ${C.muted};
-  margin: 0;
-}
-
-/* Tablet Layout (2 x 2 Grid) */
-@media (max-width: 1024px) and (min-width: 641px) {
-  .ft-steps {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-  }
-  .ft-step-connector {
-    display: none;
-  }
-}
-
-/* Mobile Layout (Vertical Timeline Card Stack) */
-@media (max-width: 640px) {
-  .ft-steps {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-
-  .ft-step-connector {
-    display: none;
-  }
-
-  .ft-step-card {
-    padding: 20px;
-    border-radius: 18px;
-  }
-
-  .ft-step-header {
-    margin-bottom: 14px;
-  }
-
-  .ft-num {
-    width: 42px;
-    height: 42px;
-    font-size: 18px;
-    border-radius: 14px;
-  }
-}
-`;
 
 export default function HowItWorks() {
   return (
@@ -180,7 +37,7 @@ export default function HowItWorks() {
         overflow: 'hidden',
       }}
     >
-      <style>{CSS}</style>
+      <style>{howItWorksCSS}</style>
       <div style={wrap}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 64px)' }}>

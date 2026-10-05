@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { C, NAME, wrap } from '../../theme/theme';
+import { C, NAME,FONT, wrap } from '../../theme/theme';
+import { footerCSS } from '../../theme/componentStyles';
 import { Logo } from '@/components/ui';
 
 
@@ -20,13 +21,6 @@ const legal = [
   { label: 'Data deletion', to: '/data-deletion' },
 ];
 
-const CSS = `
-.ft-foot{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:clamp(28px,4vw,56px)}
-.ft-flink{display:inline-block;padding:6px 0;color:rgba(255,255,255,.78);text-decoration:none;overflow-wrap:anywhere;transition:color .2s,transform .2s}
-.ft-flink:hover{color:#ffc83d;transform:translateX(3px)}
-.ft-fbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 24px}
-@media(max-width:900px){.ft-foot{grid-template-columns:repeat(3,1fr)}.ft-fbrand{grid-column:1/-1}}
-@media(max-width:560px){.ft-foot{grid-template-columns:repeat(2,1fr);gap:32px 20px}.ft-fbar{flex-direction:column-reverse;text-align:center}}`;
 
 function FooterLink({ label, to, hash, href }) {
   if (to) return <Link className="ft-flink" to={to}>{label}</Link>;
@@ -36,12 +30,12 @@ function FooterLink({ label, to, hash, href }) {
 export default function Footer() {
   return (
     <footer style={{ background: C.deep, color: 'rgba(255,255,255,0.8)', padding: 'clamp(44px, 7vw, 64px) 0 20px', fontSize: 15 }}>
-      <style>{CSS}</style>
+      <style>{footerCSS}</style>
 
       <div className="ft-foot" style={wrap}>
         <div className="ft-fbrand">
           <Logo light />
-          <p style={{ margin: '16px 0 0', maxWidth: 300, lineHeight: 1.65 }}>Practice any language by talking with the people who speak it.</p>
+          <p style={{ margin: '16px 0 0', maxWidth: 300, lineHeight: 1.65, font: FONT.Figtree }}>Practice any language by talking with the people who speak it.</p>
         </div>
 
         {cols.map(([heading, links]) => (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { C, IMG, SERIF, wrap, btn, photo, bubble } from '../../theme/theme';
+import { heroCSS } from '../../theme/componentStyles';
 import { Words } from './Reveal';
 
 const slides = [
@@ -39,19 +40,6 @@ const arrow = {
   padding: 0,
 };
 
-/* Control layout + small-screen rules (inline styles cannot respond to screen size) */
-const CSS = `
-.ft-ctl{display:flex;align-items:center;gap:14px}
-.ft-prev{order:0}.ft-next{order:1}.ft-dots{order:2;margin-left:8px}
-@media(max-width:700px){
-  .ft-hero{border-radius:0!important}
-  .ft-hzoom{transform:scale(1.2)}
-  .ft-ctlw{bottom:72px!important}
-  .ft-ctl{justify-content:space-between;gap:8px}
-  .ft-dots{order:1;margin-left:0}
-  .ft-next{order:2}
-  .ft-arrow{width:38px!important;height:38px!important;font-size:18px!important}
-}`;
 
 export default function Hero() {
   const [idx, setIdx] = useState(0);
@@ -84,7 +72,7 @@ export default function Hero() {
         background: C.deep,
       }}
     >
-      <style>{CSS}</style>
+      <style>{heroCSS}</style>
       <div
         style={{
           display: 'flex',
@@ -220,7 +208,7 @@ export default function Hero() {
         className="ft-ctlw"
         style={{ position: 'absolute', left: 0, right: 0, bottom: 40 }}
       >
-        <div className="ft-ctl" style={wrap}>
+        {/* <div className="ft-ctl" style={wrap}>
           <button
             className="ft-arrow ft-prev"
             aria-label="Previous slide"
@@ -270,7 +258,7 @@ export default function Hero() {
               </button>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

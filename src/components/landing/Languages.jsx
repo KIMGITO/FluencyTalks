@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { C, DISPLAY, FONT, wrap, h2, lead, btn, blob } from '../../theme/theme';
+import { languagesCSS } from '../../theme/componentStyles';
 import { Reveal } from './Reveal';
 
 const hellos = [
@@ -16,109 +17,6 @@ const hellos = [
   ['안녕', C.teal, 'Korean', '510'],
 ];
 
-const CSS = `
-.ft-lang-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  align-items: stretch;
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.ft-lang-pill {
-  position: relative;
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.22s ease,
-              outline 0.15s ease;
-}
-
-/* Hover effect on desktop */
-@media (hover: hover) {
-  .ft-lang-pill:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
-  }
-}
-
-/* Tactile touch feedback on mobile tap */
-.ft-lang-pill:active {
-  transform: scale(0.95) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Active state selection */
-.ft-lang-pill.is-active {
-  outline: 3px solid ${C.white};
-  outline-offset: 3px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.ft-online-banner {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: ${C.white};
-  font-family: ${FONT};
-  font-size: 18px;
-  animation: ftUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* 3-Column Layout & Scaled Sizing for Mobile Screens */
-@media (max-width: 640px) {
-  .ft-lang-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 0 4px;
-  }
-
-  .ft-lang-pill {
-    min-width: 0 !important;
-    padding: 10px 4px !important;
-  }
-
-  .ft-lang-word {
-    font-size: clamp(14px, 4vw, 18px) !important;
-    line-height: 1.15 !important;
-  }
-
-  .ft-lang-sub {
-    font-size: 10px !important;
-    margin-top: 2px !important;
-    letter-spacing: 0.02em !important;
-  }
-
-  .ft-online-banner {
-    flex-direction: column;
-    gap: 12px;
-    font-size: 15px;
-    padding: 16px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .ft-online-banner a {
-    margin-left: 0 !important;
-    width: 100%;
-    text-align: center;
-    box-sizing: border-box;
-  }
-}
-`;
 
 export default function Languages() {
   const [lang, setLang] = useState(null);
@@ -134,7 +32,7 @@ export default function Languages() {
         overflow: 'hidden',
       }}
     >
-      <style>{CSS}</style>
+      <style>{languagesCSS}</style>
       <div style={blob(C.coral, 380, { top: -100, right: -80 })} />
       <div style={blob(C.teal, 320, { bottom: -120, left: -80 })} />
 

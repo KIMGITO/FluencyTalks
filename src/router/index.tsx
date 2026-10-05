@@ -2,7 +2,8 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { ProtectedRoute } from './ProtectedRoute'; import { AdminRoute } from './AdminRoute';
 import Landing from '@/pages/public/Landing'; import NotFound from '@/pages/public/NotFound';
-import Privacy from '@/pages/public/Privacy'; import Terms from '@/pages/public/Terms'; import DataDeletion from '@/pages/public/DataDeletion';
+import Privacy from '@/pages/public/Privacy'; import Terms from '@/pages/public/Terms'; 
+import DeleteForm from '@/pages/public/DataDeletion';
 import Login from '@/pages/auth/Login'; import Signup from '@/pages/auth/Signup';
 import ForgotPassword from '@/pages/auth/ForgotPassword'; import ResetPassword from '@/pages/auth/ResetPassword';
 import Onboarding from '@/pages/app/Onboarding'; import Home from '@/pages/app/Home'; import Discover from '@/pages/app/Discover';
@@ -18,7 +19,7 @@ export const router = createBrowserRouter([
   { path: '/reset-password', element: <ResetPassword /> },
   { path: '/privacy', element: <Privacy /> },
   { path: '/terms', element: <Terms /> },
-  { path: '/data-deletion', element: <DataDeletion /> },
+  { path: '/data-deletion', element: <DeleteForm /> },
   { element: <ProtectedRoute />, children: [
     { path: '/onboarding', element: <Onboarding /> },
     { element: <AppShell />, children: [

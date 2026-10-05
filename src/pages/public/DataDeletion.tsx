@@ -41,5 +41,5 @@ const sections = [
 ];
 
 export default function DeleteRequest() {
-  return <LegalLayout title="Delete my data" active="/delete-account" updated="3 October 2026" sections={sections} />;
+  return <LegalLayout title="Delete my data" active="/data-deletion" updated="3 October 2026" sections={sections} />;
 }

@@ -9,15 +9,15 @@ const Svg = ({ children }: { children: ReactNode }) => (
 
 /* Provider logos keep their official brand colours. Apple uses currentColor so it works in dark mode. */
 const providers: { id: Provider; label: string; icon: ReactNode }[] = [
-  {
-    id: 'facebook',
-    label: 'Continue with Facebook',
-    icon: (
-      <Svg>
-        <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.95h-1.52c-1.49 0-1.96.93-1.96 1.88V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12z" />
-      </Svg>
-    ),
-  },
+  // {
+  //   id: 'facebook',
+  //   label: 'Continue with Facebook',
+  //   icon: (
+  //     <Svg>
+  //       <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.95h-1.52c-1.49 0-1.96.93-1.96 1.88V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12z" />
+  //     </Svg>
+  //   ),
+  // },
   {
     id: 'google',
     label: 'Continue with Google',
@@ -30,15 +30,15 @@ const providers: { id: Provider; label: string; icon: ReactNode }[] = [
       </Svg>
     ),
   },
-  {
-    id: 'apple',
-    label: 'Continue with Apple',
-    icon: (
-      <Svg>
-        <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-      </Svg>
-    ),
-  },
+  // {
+  //   id: 'apple',
+  //   label: 'Continue with Apple',
+  //   icon: (
+  //     <Svg>
+  //       <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+  //     </Svg>
+  //   ),
+  // },
   
 ];
 

@@ -27,7 +27,7 @@ export default function Discover() {
   return (
     <>
       <PageHeader title="Discover" subtitle="Find people to practice with" />
-      <div className="ft-card mb-4 grid gap-3 p-4 sm:grid-cols-2">
+      <div className="ft-card mb-4 grid gap-3 p-4 sm:grid-cols-3">
         <div className="sm:col-span-2"><Input aria-label="Search" placeholder="Search by name or username" value={query} onChange={(e) => setQuery(e.target.value)} /></div>
         <Select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value)}><option value="">Any language</option>{languages.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</Select>
         <Select aria-label="Role" value={role} onChange={(e) => setRole(e.target.value)}><option value="">Native or learning</option><option value="native">Native speakers</option><option value="learning">Learners</option></Select>

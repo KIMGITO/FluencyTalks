@@ -1,4 +1,5 @@
 import { C, SERIF, wrap } from '../../theme/theme';
+import { statsCSS } from '../../theme/componentStyles';
 import { Reveal, Count } from './Reveal';
 
 // [value, suffix, decimals, long label, short label]
@@ -9,9 +10,6 @@ const stats = [
   [4.8, '/5', 1, 'Average session rating', 'Avg. rating'],
 ];
 
-const CSS = `
-.ft-st-short{display:none}
-@media(max-width:600px){.ft-st-long{display:none}.ft-st-short{display:inline}}`;
 
 export default function Stats() {
   return (
@@ -23,7 +21,7 @@ export default function Stats() {
         zIndex: 0,
       }}
     >
-      <style>{CSS}</style>
+      <style>{statsCSS}</style>
       <Reveal>
         <div
           style={{

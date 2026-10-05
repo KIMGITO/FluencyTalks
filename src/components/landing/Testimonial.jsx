@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { C, IMG, SERIF } from '../../theme/theme';
+import { testimonialCSS } from '../../theme/componentStyles';
 import ImageSection from './ImageSection';
 
 const TESTIMONIALS = [
@@ -71,57 +72,8 @@ export default function Testimonial() {
 
   return (
     <>
-      <style>
-        {`
-          @keyframes fadeInSlide {
-            from {
-              opacity: 0;
-              transform: translateY(12px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          .testimonial-content-animate {
-            animation: fadeInSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-          .nav-btn {
-            background: #ffffff;
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
-            color: ${C.ink};
-          }
-          .nav-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            background: #ffffff;
-          }
-          .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.15);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            padding: 0;
-          }
-          .dot.active {
-            width: 28px;
-            border-radius: 12px;
-            background: ${C.coral};
-          }
-        `}
-      </style>
+      {/* Sheet lives centrally: see theme/componentStyles.js → testimonialCSS */}
+      <style>{testimonialCSS}</style>
 
       <ImageSection
         id="stories"
@@ -202,7 +154,7 @@ export default function Testimonial() {
                 <button
                   key={item.id}
                   aria-label={`Go to slide ${idx + 1}`}
-                  className={`dot ${idx === currentIndex ? 'active' : ''}`}
+                  className={`tst-dot ${idx === currentIndex ? 'active' : ''}`}
                   onClick={() => handleSlideChange(idx)}
                 />
               ))}
@@ -211,14 +163,14 @@ export default function Testimonial() {
             {/* Prev / Next Buttons */}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                className="nav-btn"
+                className="tst-nav-btn"
                 onClick={handlePrev}
                 aria-label="Previous Testimonial"
               >
                 ‹
               </button>
               <button
-                className="nav-btn"
+                className="tst-nav-btn"
                 onClick={handleNext}
                 aria-label="Next Testimonial"
               >
