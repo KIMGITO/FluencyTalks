@@ -22,6 +22,7 @@ export const fontWeights = {
 } as const;
 
 export const fontSizes = {
+  '2xs': ['0.65rem', { lineHeight: '1rem', letterSpacing: '-0.01em' }],
   xs: ['0.75rem', { lineHeight: '1.1rem', letterSpacing: '-0.01em' }],
   sm: ['0.875rem', { lineHeight: '1.35rem', letterSpacing: '-0.01em' }],
   base: ['1rem', { lineHeight: '1.55rem', letterSpacing: '-0.011em' }],

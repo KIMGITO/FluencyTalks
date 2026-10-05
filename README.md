@@ -46,7 +46,7 @@ src/
   data/         mock.ts (temporary seed data, delete once real queries exist)
 supabase/migrations/   Schema as code, applied in order (see Backend section)
 supabase/functions/    delete-account (Edge Function)
-  services/     Typed wrappers over Postgres functions (people, social, messaging, safety, account)
+  services/     Typed wrappers over Postgres functions (people, social, messaging, safety, account, phrasebook, history)
   types/        db.ts shared types
 ```
 
@@ -63,6 +63,7 @@ Run the migrations in order in the SQL editor (or `supabase db push`):
 | 0005 | avatars bucket + policies, notifications (triggers), consents, `export_my_data`, function grants |
 | 0006 | `save_phrase`, `accept_correction` (accepts and saves the corrected phrase atomically) |
 | 0007 | `list_notifications`, `count_unread_notifications`; admin read functions `admin_report_queue`, `admin_search_users`, `admin_recent_actions` |
+| 0008 | `translation_history` (every Translate tap, deduped and traced to its message), `save_translation`, `list_my_corrections`, reaction emoji limit 8 → 40 (ZWJ/skin tones), translations added to `export_my_data` |
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
@@ -86,9 +87,9 @@ Frontend usage: `import { searchPeople, follow, sendMessage } from '@/services'`
 | Follow / Message / Block / Report | `FollowButton`, `MessageButton`, `UserMenu` (used on cards, profiles and chat headers) |
 | Messages | chat list + Requests tab, thread, realtime via one inbox channel, unread dot in nav |
 | Corrections | "Correct" on a partner's message opens a dialog with a live word-level diff. The learner sees the diff inline and taps **Accept and save** (saves to the phrasebook) or **Dismiss**. Updates arrive in realtime |
-| Phrasebook | "Save phrase" on any message, plus accepted corrections. List and delete at `/phrasebook` |
-| Reactions | Emoji chips under every message, tap to add or remove yours (`toggle_reaction`). Counts update in realtime from the same inbox channel |
-| Tap-to-translate | "Translate" under a partner's message shows it in your native language (falls back to English). If a translation is showing, "Save phrase" stores it with the phrase. See the privacy note below |
+| Phrasebook `/phrasebook` | Three tabs at **very small text** (with a text-size toggle): **Phrases** ("Save phrase" + accepted corrections), **Corrections** (every correction your messages received — original wording, suggestion, note, outcome, corrector) and **Translations** (every message you translated). Each row links back to the chat it came from |
+| Reactions | Emoji chips under every message, tap to add or remove yours (`toggle_reaction`). The picker is [`emoji-picker-react`](https://github.com/ealush/emoji-picker-react) (theme-aware, full emoji set — ZWJ and skin-tone sequences allowed, limit raised to 40 chars in 0008). Counts update in realtime from the same inbox channel |
+| Tap-to-translate | "Translate" under a partner's message shows it in your native language (falls back to English). Every completed translation is stored in your history (`save_translation`, deduped per text + language) and shows up in the Phrasebook's Translations tab, traceable to its message. If a translation is showing, "Save phrase" stores it with the phrase. See the privacy note below |
 | Notifications | Bell in the top bar with an unread badge (`list_notifications`, `mark_notifications_read`), realtime. Follows, follow requests, accepted requests, message requests and corrections link to the right screen |
 | Followers / following | `/u/:username/followers` and `/following` (`list_follows`), paged. Private accounts you don't follow show an explanation instead of a blank list |
 | Moderation | `/admin` for admins and moderators: report queue with message evidence, people search, activity log. Suspend, ban and reinstate always ask for a reason. Reached from the sidebar (desktop) or Settings (mobile) |

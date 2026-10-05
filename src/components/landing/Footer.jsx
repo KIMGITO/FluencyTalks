@@ -35,7 +35,7 @@ export default function Footer() {
       <div className="ft-foot" style={wrap}>
         <div className="ft-fbrand">
           <Logo light />
-          <p style={{ margin: '16px 0 0', maxWidth: 300, lineHeight: 1.65, font: FONT.Figtree }}>Practice any language by talking with the people who speak it.</p>
+          <p style={{ margin: '16px 0 0', maxWidth: 300, lineHeight: 1.65, font: FONT }}>Practice any language by talking with the people who speak it.</p>
         </div>
 
         {cols.map(([heading, links]) => (

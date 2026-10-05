@@ -9,6 +9,10 @@ export interface LanguageRef { code: string; name: string; native_name: string; 
 export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; is_private: boolean; onboarding_done: boolean; role: string; followers_count: number; following_count: number }
 export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; created_at: string }
 export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_code: string | null; source_message_id: string | null; created_at: string }
+/** One "Translate" tap, stored forever; source_message_id traces it back to the chat. */
+export interface TranslationRecord { id: string; source_text: string; translated_text: string; target_lang: string | null; source_message_id: string | null; created_at: string }
+/** Row from list_my_corrections: a correction that was applied to one of my messages. */
+export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
 export interface Reaction { message_id: string; user_id: string; emoji: string }
 export type NotificationType = 'follow' | 'follow_request' | 'follow_accepted' | 'message_request' | 'correction';
 export interface AppNotification {

@@ -6,7 +6,7 @@ import { UserMenu } from '../UserMenu';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
 import { CorrectionDialog } from './CorrectionDialog';
-import { blockUser, savePhrase } from '@/services';
+import { blockUser, savePhrase, saveTranslation } from '@/services';
 import type { Message } from '@/types/db';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
@@ -34,7 +34,8 @@ export function ChatThread({ id }: { id: string }) {
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {!list.length && <p className="text-center text-muted">Say hello in the language you're practicing.</p>}
         {list.map((m) => <MessageBubble key={m.id} message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name} translateTo={translateTo}
-          onCorrect={setCorrecting} onSave={(msg, translation) => savePhrase({ phrase: msg.body, translation, sourceMessageId: msg.id })} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDismiss={dismiss} />)}
+          onCorrect={setCorrecting} onSave={(msg, translation) => savePhrase({ phrase: msg.body, translation, sourceMessageId: msg.id })} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDismiss={dismiss}
+          onTranslated={(msg, out, lang) => { saveTranslation({ source: msg.body, translated: out, languageCode: lang, sourceMessageId: msg.id }).catch(() => undefined); }} />)}
         <div ref={endRef} />
       </div>
       {isRequest ? (
