@@ -12,7 +12,7 @@ export function UserMenu({ userId, name, conversationId, onBlocked }: { userId: 
   };
   return (
     <div className="relative">
-      <Button variant="ghost"  size="sm" aria-label="More options" onClick={() => setOpen(!open)}><MoreVertical size={20} /></Button>
+      <Button variant="ghost"  size="sm" aria-label="More options" onClick={() => setOpen(!open)}><MoreVertical size={16} /></Button>
       {open && (
         <div className="ft-menu right-0 mt-1.5">
           <button className="ft-menu-item" onClick={() => { setOpen(false); setReport(true); }}>Report</button>

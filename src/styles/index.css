@@ -30,7 +30,7 @@
   .ft-menu-item { @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-ink transition-colors; }
   .ft-menu-item:hover { @apply bg-surface-2; }
   .ft-gradient-text { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .ft-avatar-ring { background: var(--grad-ring); padding: 2px; border-radius: var(--radius-full); }
+  .ft-avatar-ring { background: var(--grad-brand); padding: 2px; border-radius: var(--radius-full); }
   .ft-hero-bg { background-image: var(--grad-hero); }
   .ft-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
   /* Facebook-style responsive grid: 3 cols (lg+) / 2 cols (md) / 1 col (mobile) */
