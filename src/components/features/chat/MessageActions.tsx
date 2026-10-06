@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { Pin, Reply, Trash2, UserX, Languages } from 'lucide-react';
 import type { Message } from '@/types/db';
 
-const QUICK = ['❤️', '😂', '😮', '😢', '🙏', '👍'];
+const QUICK = ['❤️', '😂', '😮', '😢', '👍'];
 
 interface Props {
   message: Message; 
@@ -12,14 +12,14 @@ interface Props {
   onClose: () => void;
   onReply: () => void; 
   onPin: () => void;
-  onTranslate: () => void; // New translator callback
+  onTranslate: () => void;
   onDeleteMe: () => void; 
   onDeleteAll: () => void;
   onReact: (emoji: string) => Promise<void>;
 }
 
-export function MessageActions({ 
-  message, mine, pinned, onClose, onReply, onPin, onTranslate, onDeleteMe, onDeleteAll, onReact 
+export function MessageActions({
+  message, mine, pinned, onClose, onReply, onPin, onTranslate, onDeleteMe, onDeleteAll, onReact
 }: Props) {
   const [error, setError] = useState('');
   const [reacting, setReacting] = useState(false);
@@ -27,15 +27,15 @@ export function MessageActions({
   if (message.deleted_at || message.body === '[deleted]') return null;
 
   const pick = async (emoji: string) => {
-    setReacting(true); 
+    setReacting(true);
     setError('');
-    try { 
-      await onReact(emoji); 
-      onClose(); 
-    } catch (e) { 
-      setError((e as Error).message); 
-    } finally { 
-      setReacting(false); 
+    try {
+      await onReact(emoji);
+      onClose();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setReacting(false);
     }
   };
 
@@ -59,13 +59,13 @@ export function MessageActions({
         {/* Mobile Pull Drag Indicator Strip */}
         <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-border md:hidden" />
 
-        {/* Quick Reactions Bar */}
+        {/* Quick Reactions Bar — long-press / 3-dots menu only, never under the bubble */}
         <div className="flex items-center justify-between gap-1 px-2 py-1 bg-surface-2/50 rounded-xl md:bg-transparent md:p-0" aria-label="Quick reactions">
           {QUICK.map((e) => (
-            <button 
-              key={e} 
-              disabled={reacting} 
-              onClick={() => pick(e)} 
+            <button
+              key={e}
+              disabled={reacting}
+              onClick={() => pick(e)}
               aria-label={`React ${e}`}
               className="rounded-lg p-2 text-xl transition active:scale-95 md:p-1 md:text-lg md:hover:scale-110 md:hover:bg-surface-2 disabled:opacity-50"
             >

@@ -8,7 +8,7 @@ const cols = [
   [
     'Product',
     [
-      { label: 'How it works', hash: '#how' },
+      // { label: 'How it works', hash: '#how' },
       { label: 'Languages', hash: '#languages' },
       { label: 'Help and FAQ', hash: '#faq' },
       {

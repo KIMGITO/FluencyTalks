@@ -4,6 +4,7 @@ import { Avatar, Button, Input, Select, Textarea } from '@/components/ui';
 import { LanguagePicker } from './LanguagePicker';
 import { CountryPicker } from './CountryPicker';
 import { MAX_AVATAR_BYTES } from '@/lib/constants';
+import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useCountries } from '@/store/countryStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -25,6 +26,9 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
 
   const pick = (f?: File) => { if (f && f.size > MAX_AVATAR_BYTES) return setError('Photo must be under 2 MB.'); setError(null); setFile(f ?? null); };
+  // Provider photo (Google etc) shows until the user picks a new one; initials when neither exists.
+  const providerAvatar = useProviderAvatar();
+  const preview = file ? URL.createObjectURL(file) : resolveAvatar(me?.avatar_url, providerAvatar);
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setError(null);
     if (!USERNAME_RE.test(username)) return setError('Username: 3 to 20 letters, numbers or underscores.');
@@ -41,8 +45,12 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
   return (
     <form onSubmit={submit} className="space-y-5">
       <div className="flex items-center gap-4">
-        <Avatar name={displayName || username || 'U'} src={file ? URL.createObjectURL(file) : me?.avatar_url} size="xl" ring />
-        <label className="text-sm text-brand"><input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} /><span className="cursor-pointer font-medium">Choose photo</span></label>
+        <Avatar name={displayName || username || 'U'} src={preview} size="xl" ring />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-brand"><input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} /><span className="cursor-pointer font-medium">Choose photo</span></label>
+          {file && <button type="button" className="text-left text-xs text-muted hover:text-danger" onClick={() => pick(undefined)}>Remove (use {providerAvatar ? 'Google photo' : 'initials'} instead)</button>}
+          {!file && !me?.avatar_url && providerAvatar && <p className="text-xs text-muted">Showing your Google photo. Choose one to replace it.</p>}
+        </div>
       </div>
       <Input id="username" label="Username" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} required />
       <Input id="displayName" label="Display name" value={displayName} maxLength={60} onChange={(e) => setDisplayName(e.target.value)} />

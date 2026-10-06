@@ -3,11 +3,10 @@ import clsx from 'clsx';
 import { Check, CheckCheck, MoreVertical, Pin } from 'lucide-react';
 import { CorrectionCard } from './CorrectionCard';
 import { MessageActions } from './MessageActions';
-import { ReactionBar } from './ReactionBar';
 import { useMessageGestures } from '@/hooks/useMessageGestures';
 import { formatTime } from '@/lib/format';
 import { translateText } from '@/lib/translate';
-import type { Correction, Message, Reaction } from '@/types/db';
+import type { Correction, Message } from '@/types/db';
 
 /** WhatsApp-style delivery state for one of my messages. Peer side never shows ticks. */
 export type TickState = 'sent' | 'delivered' | 'read';
@@ -25,7 +24,7 @@ export function MessageTicks({ state }: { state: TickState }) {
 
 interface Props {
   message: Message; mine: boolean; myId: string;
-  corrections: Correction[]; reactions: Reaction[]; otherName: string;
+  corrections: Correction[]; otherName: string;
   pinned: boolean; showTail: boolean; replyTo?: Message | null;
   tick?: TickState;   // only set for my messages: sent / delivered / read
   translateTo: string;   // ISO 639-3 id of the language the viewer wants translations in (their native one)
@@ -37,7 +36,7 @@ interface Props {
   onTranslated?: (m: Message, translated: string, targetLang: string) => unknown;   // history write, fire-and-forget
 }
 type Translation = { state: 'loading' | 'done' | 'error'; text: string };
-export function MessageBubble({ message, mine, myId, corrections, reactions, otherName, pinned, showTail, replyTo, tick, translateTo, translateApi, onCorrect, onSave, onReact, onAccept, onDismiss, onReply, onPin, onDeleteMe, onDeleteAll, onTranslated }: Props) {
+export function MessageBubble({ message, mine, myId, corrections, otherName, pinned, showTail, replyTo, tick, translateTo, translateApi, onCorrect, onSave, onReact, onAccept, onDismiss, onReply, onPin, onDeleteMe, onDeleteAll, onTranslated }: Props) {
   const [saved, setSaved] = useState(false); const [tr, setTr] = useState<Translation | null>(null);
   const [sheet, setSheet] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -85,7 +84,6 @@ export function MessageBubble({ message, mine, myId, corrections, reactions, oth
             : <><p className="ft-selectable whitespace-pre-wrap break-words">{tr.text}</p><p className="mt-0.5 text-2xs text-muted">Machine translation by MyMemory</p></>)}
         </div>)}
       <>
-        <ReactionBar reactions={reactions} myId={myId} onToggle={(emoji) => onReact(message, emoji)} />
         <div className="flex gap-3 px-1.5 text-xs leading-tight text-muted">
           {!mine && <button className="hover:text-brand" onClick={() => onCorrect(message)}>Correct</button>}
           {!mine && <button className="hover:text-brand disabled:opacity-60" disabled={tr?.state === 'loading'} onClick={translate}>{tr?.state === 'done' ? 'Hide translation' : 'Translate'}</button>}
@@ -95,7 +93,7 @@ export function MessageBubble({ message, mine, myId, corrections, reactions, oth
       </>
       {corrections.map((c) => <CorrectionCard key={c.id} correction={c} original={message.body} isOwner={mine} correctorName={otherName} onAccept={onAccept} onDismiss={onDismiss} />)}
       {sheet && <MessageActions message={message} mine={mine} pinned={pinned} onClose={() => setSheet(false)}
-        onReply={() => onReply(message)} onPin={() => onPin(message)}
+        onReply={() => onReply(message)} onPin={() => onPin(message)} onTranslate={translate}
         onDeleteMe={() => onDeleteMe(message)} onDeleteAll={() => onDeleteAll(message)}
         onReact={(emoji) => onReact(message, emoji)} />}
     </div>

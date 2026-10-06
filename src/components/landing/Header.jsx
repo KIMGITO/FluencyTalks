@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 
 // Navigation links configuration
 const NAV_ITEMS = [
-  { label: 'How it works', href: '#how' },
+  // { label: 'How it works', href: '#how' },
   { label: 'Languages', href: '#languages' },
   { label: 'For speakers', href: '#speakers' },
   { label: 'Stories', href: '#stories' },
@@ -188,11 +188,10 @@ export default function Header() {
               <ProfileLink
                 className="ft-desk"
                 style={btn('transparent', C.indigo, {
-                  padding: '6px 14px 6px 6px',
+                  padding: '2px',
                   fontSize: '14px',
                   fontWeight: '600',
                   borderRadius: '999px',
-                  border: `1.5px solid ${C.indigo}`,
                   whiteSpace: 'nowrap',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -205,7 +204,6 @@ export default function Header() {
                   src={identity.src}
                   size="sm"
                 />
-                Profile
               </ProfileLink>
             ) : (
               <>

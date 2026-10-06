@@ -18,7 +18,7 @@ import { usePresence } from '@/hooks/usePresence';
 
 export function ChatThread({ id }: { id: string }) {
   const nav = useNavigate(); const myId = useAuthStore((s) => s.user?.id);
-  const { open, close, messages, corrections, reactions, active, requests, send, respond, suggest, accept, dismiss, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
+  const { open, close, messages, corrections, active, requests, send, respond, suggest, accept, dismiss, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
   const [correcting, setCorrecting] = useState<Message | null>(null);
   const [showPins, setShowPins] = useState(false);
   // ISO 639-3 id of the language I want translations in; 'eng' when no native language is set.
@@ -37,8 +37,10 @@ export function ChatThread({ id }: { id: string }) {
   useEffect(() => subscribeToReceipts(id, setPeerReadAt), [id]);
   useEffect(() => { open(id); return close; }, [id]);
   const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
-  /** My message state: read when the peer opened the chat past it, delivered when
-   *  they're online (or anyone replied after it), sent otherwise. */
+  /** WhatsApp-style ticks for my messages:
+   *  1 grey tick (sent) = they were offline when I sent it,
+   *  2 grey ticks (delivered) = they are online (or replied after it),
+   *  2 blue ticks (read) = they opened the message (peer_read_at moved past it). */
   const tickFor = (m: Message): TickState => {
     if (peerReadAt && m.created_at <= peerReadAt) return 'read';
     if (peerOnline) return 'delivered';
@@ -94,7 +96,7 @@ export function ChatThread({ id }: { id: string }) {
             <div className="ft-daybadge my-2">{day.label}</div>
             {day.messages.map((m, i) => (
               <div key={m.id} id={`msg-${m.id}`}>
-                <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name}
+                <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} otherName={row.other_name}
                   pinned={pinnedIds.includes(m.id)} showTail={isClusterStart(i === 0 ? undefined : day.messages[i - 1], m)} replyTo={m.reply_to ? byId.get(m.reply_to) ?? null : null}
                   tick={m.sender_id === myId ? tickFor(m) : undefined}
                   translateTo={translateTo} translateApi={translateApi}
