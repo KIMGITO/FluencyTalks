@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { Clock4Icon, LogOut } from 'lucide-react';
 import { Avatar, Button, Card, EmptyState, Spinner } from '@/components/ui';
 import {
   CountryBadge,
@@ -16,6 +16,8 @@ import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FullProfile } from '@/types/db';
+import { actionBtn } from '@/components/features/ActionButtonStyle';
+import { C } from '@/theme/theme';
 
 export default function UserProfile() {
   const { username = '' } = useParams();
@@ -85,19 +87,27 @@ export default function UserProfile() {
             ring
           />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold">
+           <div className="flex items-center justify-between">
+             <h1 className="truncate text-xl font-bold">
               {profile.display_name}
             </h1>
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate text-sm text-muted">
-              <span className="truncate">@{profile.username}</span>
-              <CountryBadge
-                code={profile.country_code}
-                timezone={profile.timezone}
-                showName
-              />
-              {profile.timezone && (
-                <span className="truncate">· {profile.timezone}</span>
+             {profile.timezone && (
+                <span className="truncate flex items-end gap-0.5 text-aqua text-[10px] self-start ">
+                  {' '}
+                   <Clock4Icon size={16}/> {profile.timezone}
+                </span>
               )}
+           </div>
+            <p className="flex flex-col items-start gap-x-2 gap-y-0.5 truncate text-sm text-muted">
+              <div className="flex items-center gap-2">
+                <span className="truncate">@{profile.username}</span>
+                <CountryBadge
+                  code={profile.country_code}
+                  timezone={profile.timezone}
+                  showName
+                />
+              </div>
+             
             </p>
             <p className="mt-0.5 text-xs text-muted">
               <Link
@@ -124,7 +134,9 @@ export default function UserProfile() {
           )}
         </div>
         {profile.bio && (
-          <p className="text-sm leading-relaxed">{profile.bio}</p>
+          <div className="text-xs items-center text-ink flex flex-wrap md:w-1/2 lg:w-1/3 font-light leading-loose ">
+            <p> {profile.bio}</p>
+          </div>
         )}
         <div className="ft-chips">
           <LanguageChip
@@ -135,19 +147,27 @@ export default function UserProfile() {
             }))}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex  justify-end items-center gap-1.5">
           {r.is_me ? (
             <>
               <Link to="/profile/edit">
-                <Button variant="secondary" size="sm">
+                <Button
+                  size="sm"
+                  variant={'primary'}
+                  className={`${actionBtn} transition-colors`}
+                >
                   Edit profile
                 </Button>
               </Link>
-              <Link to="/settings">
-                <Button variant="ghost" size="sm">
+              {/* <Link to="/settings">
+                <Button
+                  size="sm"
+                  variant={'ghost'}
+                  className={`${actionBtn} transition-colors`}
+                >
                   Settings
                 </Button>
-              </Link>
+              </Link> */}
             </>
           ) : (
             <>
@@ -161,29 +181,33 @@ export default function UserProfile() {
         </div>
       </Card>
       {r.is_me && (
-        <Card className="flex flex-col gap-2">
-          <h2 className="flex items-center gap-2 font-semibold">
-            <LogOut size={15} /> Session & account
-          </h2>
-          {staff && (
-            <Link to="/admin">
-              <Button variant="secondary" size="sm" className="self-start">
-                Moderation
-              </Button>
-            </Link>
-          )}
-          <p className="text-sm text-muted">Sign out on this device.</p>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="self-start"
-            onClick={signOut}
-          >
-            Log out
-          </Button>
+        <Card className="flex flex-col gap-2 bg-danger/5 ">
+          <div className="flex  items-center justify-between ">
+            <div className="flex flex-col gap-1">
+              <h2 className="flex items-center gap-2 font-semibold  text-danger">
+                <LogOut size={15} /> Session & account
+              </h2>
+              {staff && (
+                <Link to="/admin">
+                  <Button variant="secondary" size="sm" className="self-start">
+                    Moderation
+                  </Button>
+                </Link>
+              )}
+              <p className="text-xs text-danger">Sign out on this device.</p>
+            </div>
+            <Button
+              // variant="danger"
+              size="sm"
+              className={`${actionBtn}  bg-danger  self-center`}
+              onClick={signOut}
+            >
+              Log out
+            </Button>
+          </div>
           <div className="border-t border-border pt-2">
             <p className="font-semibold text-danger">Delete account</p>
-            <p className="text-sm text-muted">
+            <p className="text-xs text-danger">
               Permanently removes your account, messages and profile.{' '}
               <Link to="/data-deletion" className="underline">
                 How deletion works
@@ -192,7 +216,8 @@ export default function UserProfile() {
             <Button
               variant="danger"
               size="sm"
-              className="mt-1 self-start"
+              className={`${actionBtn}  bg-danger  self-start mt-4`}
+
               onClick={onDelete}
             >
               Delete account
