@@ -37,7 +37,7 @@ export default function Learning() {
 
   return (
     <>
-      <PageHeader title="Learning" subtitle="Phrases you saved, corrections and translations — each one links back to its chat" />
+      <PageHeader title="Learning" subtitle="Phrases you saved, corrections and translations." />
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'phrases', label: 'Phrases' }, { key: 'corrections', label: 'Corrections' }, { key: 'translations', label: 'Translations' }]} />
         {/* <div className="flex overflow-hidden rounded-full border border-border" role="group" aria-label="Text size">

@@ -1,6 +1,7 @@
 import { rpc } from '@/lib/api';
+import type { UserLanguage } from '@/types/db';
 export type FollowStatus = 'pending' | 'accepted';
-export interface MiniUser { id: string; username: string; display_name: string; avatar_url: string | null }
+export interface MiniUser { id: string; username: string; display_name: string; avatar_url: string | null; languages?: UserLanguage[] }
 export const follow = (id: string) => rpc<FollowStatus>('follow_user', { p_target: id });
 export const unfollow = (id: string) => rpc('unfollow_user', { p_target: id });
 /** Answer a follow request. Accepting also follows the requester back (mutual follow). */
