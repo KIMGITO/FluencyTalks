@@ -40,5 +40,11 @@ export async function uploadAvatar(userId: string, file: File) {
 }
 
 export const getMyProfile = async (id: string) => (await supabase.from('profiles').select('*').eq('id', id).single()).data as MyProfile | null;
-export const getMyLanguages = async (id: string) =>
-  ((await supabase.from('user_languages').select('language_id,role,level').eq('user_id', id)).data ?? []) as UserLanguage[];
+export const getMyLanguages = async (id: string): Promise<UserLanguage[]> => {
+  const { data } = await supabase.from('user_languages').select('language_id,role,level,languages!inner(native_name,english_name)').eq('user_id', id);
+  type Row = { language_id: string; role: UserLanguage['role']; level: UserLanguage['level']; languages: { native_name: string | null; english_name: string | null } | { native_name: string | null; english_name: string | null }[] | null };
+  return ((data ?? []) as unknown as Row[]).map((r) => {
+    const lang = Array.isArray(r.languages) ? r.languages[0] ?? null : r.languages;
+    return { language_id: r.language_id, role: r.role, level: r.level, native_name: lang?.native_name ?? null, english_name: lang?.english_name ?? null };
+  });
+};

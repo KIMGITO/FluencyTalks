@@ -1,17 +1,33 @@
 import { useRef, useState } from 'react';
 import clsx from 'clsx';
-import { MoreVertical, Pin } from 'lucide-react';
+import { Check, CheckCheck, MoreVertical, Pin } from 'lucide-react';
 import { CorrectionCard } from './CorrectionCard';
+import { MessageActions } from './MessageActions';
 import { ReactionBar } from './ReactionBar';
 import { useMessageGestures } from '@/hooks/useMessageGestures';
 import { formatTime } from '@/lib/format';
 import { translateText } from '@/lib/translate';
 import type { Correction, Message, Reaction } from '@/types/db';
 
+/** WhatsApp-style delivery state for one of my messages. Peer side never shows ticks. */
+export type TickState = 'sent' | 'delivered' | 'read';
+
+/** Single grey tick = sent, double grey = delivered, double blue = read. */
+export function MessageTicks({ state }: { state: TickState }) {
+  const label = state === 'read' ? 'Read' : state === 'delivered' ? 'Delivered' : 'Sent';
+  const color = state === 'read' ? 'text-[#53bdeb]' : 'text-current opacity-60';
+  return (
+    <span aria-label={label} title={label} className={clsx('inline-flex shrink-0 items-center', color)}>
+      {state === 'sent' ? <Check size={14} /> : <CheckCheck size={15} />}
+    </span>
+  );
+}
+
 interface Props {
   message: Message; mine: boolean; myId: string;
   corrections: Correction[]; reactions: Reaction[]; otherName: string;
   pinned: boolean; showTail: boolean; replyTo?: Message | null;
+  tick?: TickState;   // only set for my messages: sent / delivered / read
   translateTo: string;   // ISO 639-3 id of the language the viewer wants translations in (their native one)
   translateApi: string;  // the same language as the translation API names it (usually its iso_639_1)
   onCorrect: (m: Message) => void; onSave: (m: Message, translation?: string) => Promise<unknown>; onReact: (m: Message, emoji: string) => Promise<void>;
@@ -21,7 +37,7 @@ interface Props {
   onTranslated?: (m: Message, translated: string, targetLang: string) => unknown;   // history write, fire-and-forget
 }
 type Translation = { state: 'loading' | 'done' | 'error'; text: string };
-export function MessageBubble({ message, mine, myId, corrections, reactions, otherName, pinned, showTail, replyTo, translateTo, translateApi, onCorrect, onSave, onReact, onAccept, onDismiss, onReply, onPin, onDeleteMe, onDeleteAll, onTranslated }: Props) {
+export function MessageBubble({ message, mine, myId, corrections, reactions, otherName, pinned, showTail, replyTo, tick, translateTo, translateApi, onCorrect, onSave, onReact, onAccept, onDismiss, onReply, onPin, onDeleteMe, onDeleteAll, onTranslated }: Props) {
   const [saved, setSaved] = useState(false); const [tr, setTr] = useState<Translation | null>(null);
   const [sheet, setSheet] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -52,7 +68,7 @@ export function MessageBubble({ message, mine, myId, corrections, reactions, oth
               {replyTo.body.slice(0, 90)}
             </div>)}
           <p className={clsx('ft-selectable whitespace-pre-wrap break-words text-[0.9rem] leading-[1.32]')}>{message.body}</p>
-          <p className="ft-bubble-meta">{formatTime(message.created_at)}{message.edited_at && ' · edited'}</p>
+          <p className="ft-bubble-meta flex items-center justify-end gap-1">{formatTime(message.created_at)}{message.edited_at && ' · edited'}{mine && tick && <MessageTicks state={tick} />}</p>
           {/* Desktop hover: 3-dots trigger. Touch uses long-press (gesture hook). */}
           <button aria-label="Message options" onClick={() => setSheet(true)}
             className={clsx('absolute top-1 hidden p-1 opacity-0 transition group-hover:opacity-100 focus:opacity-100 md:block',

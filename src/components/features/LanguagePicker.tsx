@@ -4,7 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { Button, Select } from '@/components/ui';
 import { LEARNER_LEVELS } from '@/lib/constants';
 import { normalizeCode } from '@/lib/languages';
-import { displayLabel, useDisplayLocales, useLanguages } from '@/store/languageStore';
+import { displayLabel, useDisplayLocales, useLanguages, useLanguageStore } from '@/store/languageStore';
 import type { DisplayLanguage, UserLanguage } from '@/types/db';
 
 const PAGE = 6;
@@ -66,6 +66,7 @@ function SearchRow({ value, onChange }: { value: string; onChange: (v: string) =
 export function LanguagePicker({ value, onChange }: { value: UserLanguage[]; onChange: (v: UserLanguage[]) => void }) {
   const list = useLanguages();
   const locales = useDisplayLocales();
+  const nativeName = useLanguageStore((s) => s.name);
   const native = usePaged(list, locales);
   const [learnSearch, setLearnSearch] = useState('');
   const [learnPage, setLearnPage] = useState(0);
@@ -108,6 +109,12 @@ export function LanguagePicker({ value, onChange }: { value: UserLanguage[]; onC
         </div>
         <Pager page={native.page} pages={native.pages} total={native.total} onPrev={native.prev} onMore={native.next} />
         {native.pages > 1 && <p className="mt-1 text-xs text-muted">Showing 20 A–Z — More hides these and shows the next 20.</p>}
+        {/* Support text: the languages you already picked, comma-separated, in their own names. */}
+        <p className="mt-1.5 text-xs text-muted" aria-live="polite">
+          {value.some((l) => l.role === 'native')
+            ? `Selected: ${value.filter((l) => l.role === 'native').map((l) => nativeName(l.language_id)).join(', ')}`
+            : 'Select the languages you speak natively.'}
+        </p>
       </section>
       <section aria-label="I'm learning">
         <p className="mb-2 text-sm font-medium text-muted">I’m learning</p>

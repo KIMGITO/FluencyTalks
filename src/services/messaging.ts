@@ -2,6 +2,24 @@ import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
 import type { ConversationRow, Correction, Message, Reaction } from '@/types/db';
 
+
+/** The other member's last_read_at: my messages at or before it have been read. Null when unknown. */
+export async function getPeerReadAt(conv: string): Promise<string | null> {
+  const { data } = await supabase.rpc('peer_read_at', { p_conv: conv });
+  return (data as string | null) ?? null;
+}
+
+/** Live peer read receipts: fires when the other member opens this chat (their last_read_at moves). */
+export function subscribeToReceipts(conv: string, onRead: (at: string) => void) {
+  const ch = supabase.channel(`receipts:${conv}`)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_members', filter: `conversation_id=eq.${conv}` }, (p) => {
+      const row = p.new as { user_id?: string; last_read_at?: string };
+      if (row?.last_read_at) onRead(row.last_read_at);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(ch); };
+}
+
 export const startConversation = (userId: string) => rpc<string>('start_conversation', { p_target: userId });
 export const sendMessage = (conv: string, body: string, replyTo?: string) => rpc<Message>('send_message', { p_conv: conv, p_body: body, p_reply_to: replyTo ?? null });
 export const listConversations = (status: 'active' | 'request' = 'active') => rpc<ConversationRow[]>('list_conversations', { p_status: status });

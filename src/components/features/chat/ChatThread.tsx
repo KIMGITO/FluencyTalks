@@ -6,9 +6,10 @@ import { UserMenu } from '../UserMenu';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
 import { CorrectionDialog } from './CorrectionDialog';
-import { blockUser, savePhrase, saveTranslation } from '@/services';
+import { blockUser, getPeerReadAt, savePhrase, saveTranslation, subscribeToReceipts } from '@/services';
 import { groupByDay, isClusterStart } from '@/lib/chatGroups';
 import type { Message } from '@/types/db';
+import type { TickState } from './MessageBubble';
 import { useAuthStore } from '@/store/authStore';
 import { isGone, useChatStore } from '@/store/chatStore';
 import { useLanguageStore } from '@/store/languageStore';
@@ -29,8 +30,21 @@ export function ChatThread({ id }: { id: string }) {
   const peerId = row?.other_user_id ?? null;
   const { onlineIds, peerTyping, touchTyping } = usePresence(list ? id : null, peerId, myId ?? null);
   const peerOnline = peerId ? onlineIds.includes(peerId) : false;
+  // Peer read receipt: my messages at or before this timestamp have been read.
+  // Loaded on open, then kept live via the conversation_members realtime channel.
+  const [peerReadAt, setPeerReadAt] = useState<string | null>(null);
+  useEffect(() => { setPeerReadAt(null); getPeerReadAt(id).then(setPeerReadAt).catch(() => undefined); }, [id]);
+  useEffect(() => subscribeToReceipts(id, setPeerReadAt), [id]);
   useEffect(() => { open(id); return close; }, [id]);
   const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
+  /** My message state: read when the peer opened the chat past it, delivered when
+   *  they're online (or anyone replied after it), sent otherwise. */
+  const tickFor = (m: Message): TickState => {
+    if (peerReadAt && m.created_at <= peerReadAt) return 'read';
+    if (peerOnline) return 'delivered';
+    const laterPeer = visible.some((x) => x.sender_id !== myId && x.created_at > m.created_at);
+    return laterPeer ? 'delivered' : 'sent';
+  };
   const byId = new Map(visible.map((m) => [m.id, m]));
   const pinnedIds = pins[id] ?? [];
   const pinnedMsgs = pinnedIds.map((pid) => byId.get(pid)).filter((m): m is Message => !!m && !isGone(m));
@@ -82,6 +96,7 @@ export function ChatThread({ id }: { id: string }) {
               <div key={m.id} id={`msg-${m.id}`}>
                 <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name}
                   pinned={pinnedIds.includes(m.id)} showTail={isClusterStart(i === 0 ? undefined : day.messages[i - 1], m)} replyTo={m.reply_to ? byId.get(m.reply_to) ?? null : null}
+                  tick={m.sender_id === myId ? tickFor(m) : undefined}
                   translateTo={translateTo} translateApi={translateApi}
                   onCorrect={setCorrecting} onSave={(msg, translation) => savePhrase({ phrase: msg.body, translation, sourceMessageId: msg.id })} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDismiss={dismiss}
                   onReply={(msg) => setReply(id, msg)} onPin={(msg) => togglePin(id, msg.id)}

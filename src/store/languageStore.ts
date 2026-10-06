@@ -39,10 +39,25 @@ export const useLanguageStore = create<S>((set, get) => ({
     const row = get().list.find((l) => l.id === normalizeCode(id));
     return languageIn(row, locales) || get().name(id);
   },
-  labelOf: (l, locales) =>
-    languageIn(l as DisplayLanguage, locales) ||
-    languageLabel(l) ||
-    get().name(l.language_id),
+  /** The native name of one of my languages: the autonym first (Español, not
+   *  Spanish), viewer-language name second, id last. Native languages must read
+   *  in their own correct name, so the autonym wins over Intl.DisplayNames. */
+  labelOf: (l, locales) => {
+    const row = get().list.find((x) => x.id === normalizeCode(l.language_id));
+    // l may carry null names (e.g. a fresh picker value); never let those wipe
+    // the looked-up row — prefer whichever side actually has a name.
+    const merged = {
+      ...l, ...row,
+      id: row?.id ?? l.language_id,
+      native_name: l.native_name ?? row?.native_name ?? null,
+      english_name: l.english_name ?? row?.english_name ?? null,
+    } as DisplayLanguage;
+    return (
+      languageLabel(merged) ||
+      languageIn(merged, locales) ||
+      get().name(l.language_id)
+    );
+  },
   provider: (id) =>
     providerCode(
       id,

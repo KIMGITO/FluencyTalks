@@ -28,16 +28,18 @@ export function NotificationBell() {
       </Button>
       {open && (<>
         <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-        <div className="ft-card absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] shadow-pop">
+        {/* Mobile: fixed full-width panel under the topbar so it can never overflow
+            the small viewport. Desktop: classic right-aligned dropdown. */}
+        <div className="ft-card fixed left-2 right-2 top-[calc(var(--layout-topbarH)+0.5rem)] z-40 shadow-pop sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <h2 className="font-semibold">Notifications</h2>
             {unread > 0 && <button className="text-sm text-brand hover:underline" onClick={() => markRead().catch(() => {})}>Mark all read</button>}
           </div>
           {!loaded ? <p className="p-4 text-sm text-muted">Loading…</p> : !items.length ? <p className="p-4 text-sm text-muted">You're all caught up.</p> : (
-            <ul className="max-h-96 divide-y divide-border overflow-y-auto">{items.map((n) => (
+            <ul className="max-h-[50dvh] divide-y divide-border overflow-y-auto overscroll-contain sm:max-h-96">{items.map((n) => (
               <li key={n.id}><button onClick={() => go(n)} className={clsx('flex w-full items-center gap-3 p-3 text-left hover:bg-surface-2', !n.read_at && 'bg-brand-soft/40')}>
                 <Avatar name={n.actor_name ?? '?'} src={n.actor_avatar} size="sm" />
-                <span className="min-w-0 flex-1 text-sm"><b>{n.actor_name ?? 'Someone'}</b> {verbs[n.type]}<span className="block text-xs text-muted">{formatTime(n.created_at)}</span></span>
+                <span className="min-w-0 flex-1 break-words text-sm"><b>{n.actor_name ?? 'Someone'}</b> {verbs[n.type]}<span className="block text-xs text-muted">{formatTime(n.created_at)}</span></span>
                 {!n.read_at && <span aria-label="Unread" className="h-3 w-3 shrink-0 rounded-full bg-brand" />}
               </button></li>))}</ul>)}
         </div></>)}

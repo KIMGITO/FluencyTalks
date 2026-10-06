@@ -25,18 +25,20 @@ const canRender = (s: string) => {
   return s.trim().length > 0;
 };
 
-/** BCP-47 tag the browser's Intl API understands, from the row we store. */
-const bcp47Of = (l: { id?: string; iso_639_1?: string | null }): string => {
+/** BCP-47 tag the browser's Intl API understands, from the row we store. Empty when
+ *  the row carries no usable code, so callers fall back to the stored names instead
+ *  of the Intl default (which would print "English" for every unknown row). */
+const bcp47Of = (l: { id?: string | null; language_id?: string | null; iso_639_1?: string | null }): string => {
   const two = l.iso_639_1?.trim().toLowerCase();
   if (two && /^[a-z]{2}$/.test(two)) return two;
   // No alpha-2 in the standard: map the well-known macrolanguages / variants.
-  const id = l.id?.trim().toLowerCase() ?? '';
+  const id = (l.id ?? l.language_id ?? '').trim().toLowerCase();
   if (id === 'cmn' || id === 'yue') return 'zh';
   if (id === 'nob') return 'nb';
   if (id === 'fil' || id === 'tgl') return 'tl';
   if (id === 'hat') return 'ht';
   if (id === 'baq') return 'eu';
-  return id || 'en';
+  return /^[a-z]{3}$/.test(id) ? id : '';
 };
 
 const displayCache = new Map<string, string>();
@@ -48,12 +50,14 @@ const displayCache = new Map<string, string>();
  * and nobody ever sees only "日本語" unless it IS their language.
  */
 export const languageIn = (
-  l: { id?: string; iso_639_1?: string | null; english_name?: string | null; native_name?: string | null } | null | undefined,
+  l: { id?: string | null; language_id?: string | null; iso_639_1?: string | null; english_name?: string | null; native_name?: string | null } | null | undefined,
   locales?: string | string[],
 ): string => {
   if (!l) return '';
+  const tag = bcp47Of(l);
+  if (!tag) return l.english_name ?? '';
   const want = (Array.isArray(locales) ? locales : [locales]).filter(Boolean) as string[];
-  const key = `${bcp47Of(l)}|${want.join(',')}`;
+  const key = `${tag}|${want.join(',')}`;
   const hit = displayCache.get(key);
   if (hit) return hit;
   let out = '';
@@ -62,7 +66,7 @@ export const languageIn = (
     if (DN && want.length) {
       // Longest match first: exact native tag beats bare 'en'.
       for (const loc of want) {
-        try { out = new DN([loc], { type: 'language' }).of(bcp47Of(l)) ?? ''; } catch { out = ''; }
+        try { out = new DN([loc], { type: 'language' }).of(tag) ?? ''; } catch { out = ''; }
         if (out) break;
       }
     }
