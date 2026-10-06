@@ -54,7 +54,6 @@ export default function HowItWorks() {
       <div style={{ ...wrap, position: 'relative' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 60px)' }}>
-            <span className="ft-how-eyebrow">How it works</span>
             <h2 style={{ ...h2, textAlign: 'center', marginTop: 16 }}>
               Your first conversation in four steps
             </h2>
