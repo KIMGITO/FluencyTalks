@@ -64,7 +64,7 @@ export default function Home() {
             {partners.length > 0 && partners.map((p) => <ProfileCard key={p.id} person={p} onHidden={drop} />)}
 
             {/* The line the brief asks for: partners above, the rest of the app below. */}
-            {partners.length > 0 && others.length > 0 && <Divider label="Everyone else" className="my-2" />}
+            {partners.length > 0 && others.length > 0 && <Divider label="Everyone else" className="my-2" position='ne' />}
 
             {partners.length === 0 && others.length === 0 && (
               <EmptyState title="No matches yet" text="Search for anyone by name or @username."

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { blockUser } from '@/services';
 import { ReportDialog } from './ReportDialog';
@@ -12,7 +12,7 @@ export function UserMenu({ userId, name, conversationId, onBlocked }: { userId: 
   };
   return (
     <div className="relative">
-      <Button variant="ghost" size="sm" aria-label="More options" onClick={() => setOpen(!open)}><MoreHorizontal size={20} /></Button>
+      <Button variant="ghost"  size="sm" aria-label="More options" onClick={() => setOpen(!open)}><MoreVertical size={20} /></Button>
       {open && (
         <div className="ft-menu right-0 mt-1.5">
           <button className="ft-menu-item" onClick={() => { setOpen(false); setReport(true); }}>Report</button>
