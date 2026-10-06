@@ -181,12 +181,28 @@ export const statsCSS = `
 
 
 /* ========================================================================== *
- * HOW-IT-WORKS TIMELINE — src/components/landing/HowItWorks.jsx
- * classes: `ft-steps*`, `ft-step-*`, `ft-num`
- * 4-column desktop grid with connector lines → 2x2 tablet → stacked mobile
- * timeline. Uses raw palette (C) + font constants from theme.js.
+ * HOW-IT-WORKS — src/components/landing/HowItWorks.jsx
+ * classes: `ft-steps*`, `ft-step-*`, `ft-how-eyebrow`
+ * Chat-thread cards: alternating tail radius (same motif as the Languages
+ * greeting pills + Hero bubbles), per-step accent rail + icon badge.
+ * 4-up desktop → 2x2 tablet → stacked mobile. Colours/type from tokens.
  * ========================================================================== */
 export const howItWorksCSS = `
+/* -- Eyebrow pill: same voice as Hero tag + CTA labels -------------------- */
+.ft-how-eyebrow {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgb(var(--c-brand-soft));
+  border: 1px solid rgb(var(--c-brand) / 0.22);
+  color: ${C.indigo};
+  font-family: ${FONT};
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* -- Layout: a wrapping flex row (4-up -> 2x2 -> stacked) ------------------- */
 .ft-steps-container {
   position: relative;
@@ -195,7 +211,7 @@ export const howItWorksCSS = `
 .ft-steps {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(20px, 2.5vw, 36px);
+  gap: clamp(20px, 2.5vw, 32px);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -210,108 +226,97 @@ export const howItWorksCSS = `
   height: 100%;
 }
 
-/* -- Step card: frosted panel with lift on hover -------------------------- */
+/* -- Step card: chat bubble with accent rail ------------------------------- */
 .ft-step-card {
+  --ft-accent: ${C.coral};
   position: relative;
-  background: rgb(var(--c-surface) / 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgb(var(--c-surface) / 0.8);
-  border-radius: 20px;
-  padding: clamp(16px, 2vw, 24px);
   height: 100%;
   display: flex;
   flex-direction: column;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+  gap: 12px;
+  padding: clamp(20px, 2.4vw, 28px);
+  border-radius: 26px;
+  background: rgb(var(--c-surface));
+  border: 1px solid rgb(var(--c-ink) / 0.09);
+  border-top: 5px solid var(--ft-accent);
+  box-shadow: 0 4px 20px rgb(var(--c-ink) / 0.05);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.35s ease;
-  box-shadow: 0 4px 20px rgb(var(--c-ink) / 0.04);
+}
+
+/* Alternate the chat tail, like the Languages pills + Hero bubbles */
+.ft-steps > li:nth-child(odd) .ft-step-card {
+  border-radius: 26px 26px 26px 8px;
+}
+.ft-steps > li:nth-child(even) .ft-step-card {
+  border-radius: 26px 26px 8px 26px;
 }
 
 .ft-step-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgb(var(--c-ink) / 0.1);
-  border-color: rgb(var(--c-accent) / 0.3);
-  background: rgb(var(--c-surface));
+  box-shadow: 0 18px 40px rgb(var(--c-ink) / 0.12);
+  border-color: rgb(var(--c-ink) / 0.14);
+  border-top-color: var(--ft-accent);
 }
 
-/* -- Header row: numbered badge + connector to the next card ------------- */
-.ft-step-header {
+/* -- Top row: icon badge + step kicker ------------------------------------- */
+.ft-step-top {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
-  position: relative;
 }
 
-.ft-num {
+.ft-step-icon {
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  background: ${C.indigo};
-  color: ${C.white};
-  font-family: ${DISPLAY};
-  font-size: 20px;
+  border-radius: 15px;
+  box-shadow: 0 6px 16px rgb(var(--c-ink) / 0.16);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ft-step-card:hover .ft-step-icon {
+  transform: scale(1.08) rotate(-5deg);
+}
+
+.ft-step-kicker {
+  font-family: ${FONT};
+  font-size: 12px;
   font-weight: 800;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
-              background-color 0.3s ease, 
-              box-shadow 0.3s ease;
-  box-shadow: 0 6px 16px rgb(var(--c-brand) / 0.25);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${C.muted};
 }
 
-.ft-step-card:hover .ft-num {
-  background: ${C.coral};
-  color: ${C.white};
-  transform: scale(1.1) rotate(-4deg);
-  box-shadow: 0 8px 20px rgb(var(--c-accent) / 0.35);
-}
-
-/* Horizontal connecting line (desktop only) */
-.ft-step-connector {
-  flex: 1;
-  height: 3px;
-  margin-right: calc(-1 * (clamp(20px, 2.5vw, 36px) + clamp(16px, 2vw, 24px)));
-  background: linear-gradient(90deg, rgb(var(--c-brand) / 0.3) 0%, rgb(var(--c-brand) / 0.05) 100%);
-  border-radius: 99px;
-  transform-origin: left center;
-  transition: background 0.3s ease;
-}
-
-.ft-step-card:hover .ft-step-connector {
-  background: linear-gradient(90deg, ${C.coral} 0%, rgb(var(--c-accent) / 0.1) 100%);
-}
-
-/* -- Copy: serif-ish display title + muted body --------------------------- */
+/* -- Copy: display title + muted body -------------------------------------- */
 .ft-step-title {
   font-family: ${DISPLAY};
-  font-size: clamp(18px, 1.8vw, 21px);
+  font-size: clamp(19px, 1.9vw, 22px);
   font-weight: 800;
   line-height: 1.25;
   color: ${C.ink};
-  margin: 0 0 10px;
+  margin: 0;
   letter-spacing: -0.02em;
 }
 
 .ft-step-body {
   font-family: ${FONT};
-  font-size: clamp(14px, 1.5vw, 15px);
-  line-height: 1.6;
+  font-size: clamp(14px, 1.5vw, 15.5px);
+  line-height: 1.65;
   color: ${C.muted};
   margin: 0;
 }
 
-/* Tablet (641–1024px): two per row, connectors off */
+/* Tablet (641–1024px): two per row */
 @media (max-width: 1024px) and (min-width: 641px) {
   .ft-steps > li { flex: 1 1 18rem; }
   .ft-steps { gap: 24px; }
-  .ft-step-connector {
-    display: none;
-  }
 }
 
-/* Mobile (≤640px): vertical timeline card stack */
+/* Mobile (≤640px): stacked thread with left accent rail */
 @media (max-width: 640px) {
   .ft-steps {
     gap: 14px;
@@ -320,24 +325,18 @@ export const howItWorksCSS = `
   }
   .ft-steps > li { flex: 1 1 100%; }
 
-  .ft-step-connector {
-    display: none;
-  }
-
-  .ft-step-card {
-    padding: 16px;
+  .ft-step-card,
+  .ft-steps > li:nth-child(odd) .ft-step-card,
+  .ft-steps > li:nth-child(even) .ft-step-card {
     border-radius: 18px;
+    border-top: 1px solid rgb(var(--c-ink) / 0.09);
+    border-left: 5px solid var(--ft-accent);
+    padding: 18px;
   }
 
-  .ft-step-header {
-    margin-bottom: 14px;
-  }
-
-  .ft-num {
+  .ft-step-icon {
     width: 42px;
     height: 42px;
-    font-size: 18px;
-    border-radius: 14px;
   }
 }
 `;
@@ -510,6 +509,17 @@ export const testimonialCSS = `
   width: 28px;
   border-radius: 12px;
   background: ${C.coral};
+}
+
+/* -- Solid content card: guarantees text sits on surface, never on the photo */
+.tst-card {
+  text-shadow: none;
+}
+@media (max-width: 640px) {
+  .tst-card {
+    padding: 20px !important;
+    border-radius: 20px !important;
+  }
 }
 `;
 

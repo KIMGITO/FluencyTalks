@@ -11,7 +11,7 @@ const TESTIMONIALS = [
     author: "Amina Odhiambo",
     role: "Learning French, member since 2025",
     img: IMG.team, // replace or keep dynamic per testimonial if needed
-    tint: "#fff0ea",
+    tint: "surface",
   },
   {
     id: 2,
@@ -20,7 +20,7 @@ const TESTIMONIALS = [
     author: "David Kim",
     role: "Learning German, member since 2025",
     img: IMG.team,
-    tint: "#f0f7ff",
+    tint: "surface",
   },
   {
     id: 3,
@@ -29,7 +29,7 @@ const TESTIMONIALS = [
     author: "Elena Rostova",
     role: "Learning Spanish, member since 2026",
     img: IMG.team,
-    tint: "#f3f0ff",
+    tint: "surface",
   },
 ];
 
@@ -82,7 +82,10 @@ export default function Testimonial() {
         tint={current.tint}
         minHeight={560}
       >
+        {/* Solid readable card: the frosted photo panel alone is too
+            translucent (blur mixes text with the drifting photo). */}
         <div
+          className="tst-card"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           style={{
@@ -91,6 +94,11 @@ export default function Testimonial() {
             justifyContent: 'space-between',
             height: '100%',
             position: 'relative',
+            background: C.surface,
+            border: '1px solid rgb(var(--c-ink) / 0.09)',
+            borderRadius: 26,
+            padding: 'clamp(22px, 3vw, 34px)',
+            boxShadow: '0 16px 40px rgb(var(--c-ink) / 0.12)',
           }}
         >
           {/* Quote Symbol */}
