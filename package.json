@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": " vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name fluencytalks"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
+    "wrangler": "^3.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

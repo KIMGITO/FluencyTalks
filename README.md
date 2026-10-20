@@ -21,7 +21,7 @@ cp .env.example .env        # add your Supabase URL + anon key
 npm run dev
 ```
 
-Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://thefluencytalks.com` and allow-list **both** `http://localhost:5173/**` and `https://thefluencytalks.com/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`. Custom domain + Vercel: add `thefluencytalks.com` (apex) and `www.thefluencytalks.com` in Vercel → Domains (`vercel.json` already 301-redirects every legacy/`www` host to the apex).
+Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://thefluencytalks.com` and allow-list **both** `http://localhost:5173/**` and `https://thefluencytalks.com/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`. Custom domain + Cloudflare Pages: add `thefluencytalks.com` (apex) and `www.thefluencytalks.com` in Cloudflare → Pages → Domains. `wrangler.toml` + `public/_redirects` 301-redirect every legacy/`www` host (`fluencytalks.com`, `www.fluencytalks.com`, `www.thefluencytalks.com`) to the apex `https://thefluencytalks.com`, and `/* → /index.html` handles React Router client-side routes.
 
 ## Folder map
 
@@ -142,6 +142,17 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 - Keep schema changes as SQL migrations (never click-edit tables in the dashboard).
 - Keep Supabase calls inside `lib/` and stores so swapping the backend touches few files.
 - Avoid Edge Functions and Supabase-only features where a plain Postgres approach works.
+
+## Deployment (Cloudflare Pages)
+
+1. Install deps and create `.env` from `.env.example` with your Supabase URL + anon key.
+2. `npm run build` → outputs to `dist/` (Vite). `public/_redirects` and `public/_headers` are copied into `dist/` automatically.
+3. Publish: `npm run deploy` (runs `npx wrangler pages deploy dist --project-name fluencytalks`)
+   - First time: run `npx wrangler pages project create fluencytalks` or create the project in the Cloudflare dashboard, then `npm run deploy` again.
+   - Or connect the repo in the Cloudflare dashboard: build command `npm run build`, build output `dist`.
+4. In the dashboard, add domains `thefluencytalks.com` (apex) and `www.thefluencytalks.com`. Also add legacy hosts `fluencytalks.com`, `www.fluencytalks.com` so `_redirects` can forward them.
+5. Add `VITE_*` environment variables at Settings → Environment variables → Production (all client-side vars already use the `VITE_` prefix).
+6. In Supabase → Authentication → URL Configuration, set Site URL to `https://thefluencytalks.com` and allow-list `https://thefluencytalks.com/**` under Redirect URLs. Add the OAuth callback `https://<project-ref>.supabase.co/auth/v1/callback` to your Google/GitHub/etc. provider credentials.
 
 ## Roadmap
 

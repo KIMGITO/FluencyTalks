@@ -1,0 +1,19 @@
+# Cloudflare Pages project config for Fluency Talks.
+#
+# Local dev:   npx wrangler pages dev dist
+# Deploy:      npm run deploy   (builds, then publishes dist/)
+#
+# In the Cloudflare dashboard:
+#   - Add both domains: thefluencytalks.com (apex) + www.thefluencytalks.com
+#   - Add legacy hosts: fluencytalks.com, www.fluencytalks.com, www.thefluencytalks.com
+#   - Set VITE_* environment variables (Settings → Environment variables → Production)
+#     so the Vite client can read them at build time.
+name = "fluencytalks"
+compatibility_date = "2024-11-01"
+
+[build]
+command = "npm run build"
+destination = "dist"
+
+[deploy]
+# `npx wrangler pages deploy dist` publishes this directory.
