@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/ui';
+import { EMAILS, mailto } from '@/lib/emails';
 
 export type LegalSection = { heading: string; body: ReactNode };
 
@@ -35,7 +36,7 @@ export const LegalPage = ({ title, summary, sections, placeholder }: {
         {placeholder ?? `Placeholder page — replace this text with the final ${title} before launch.`}
       </p>
       <p className="mt-6 text-sm text-muted">
-        Questions? Write to <a className="text-brand underline" href="mailto:help@fluencytalks.com">help@fluencytalks.com</a>.
+        Questions? Write to <a className="text-brand underline" href={mailto(EMAILS.support, { subject: 'Question about ' + title })}>{EMAILS.support}</a>.
       </p>
     </main>
   </div>

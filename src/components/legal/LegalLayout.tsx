@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { photo } from '@/theme/theme';
+import { EMAILS } from '@/lib/emails';
 import {
   legalCSS,       // <style> sheet for the whole legal shell
   legalPage,      // root page wrapper (font + colours)
@@ -41,7 +42,7 @@ export default function LegalLayout({
   title,
   active,
   updated,
-  contact = 'help@fluencytalks.com',
+  contact = EMAILS.support,
   sections,
 }) {
   const n = sections.length;

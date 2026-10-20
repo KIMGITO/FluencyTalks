@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { C, NAME, FONT, descStyle, wrap } from '../../theme/theme';
 import { footerCSS } from '../../theme/componentStyles';
 import { Logo } from '@/components/ui';
+import { EMAILS, mailto } from '@/lib/emails';
 
 /* hash = scrolls to a section on the landing page, to = router page, href = mailto/external */
 const cols = [
@@ -11,9 +12,26 @@ const cols = [
       // { label: 'How it works', hash: '#how' },
       { label: 'Languages', hash: '#languages' },
       { label: 'Help and FAQ', hash: '#faq' },
+    ],
+  ],
+  [
+    'Contact',
+    [
       {
-        label: 'kimanthidennis02@gmail.com',
-        href: 'mailto:kimanthidennis@gmail.com',
+        label: `Email us ${EMAILS.info}`,
+        href: mailto(EMAILS.info, { subject: `Hello ${NAME}` }),
+      },
+      {
+        label: `Support ${EMAILS.support}`,
+        href: mailto(EMAILS.support, { subject: 'Need help with FluencyTalks' }),
+      },
+      {
+        label: `Safety ${EMAILS.security}`,
+        href: mailto(EMAILS.security, { subject: 'Safety concern' }),
+      },
+      {
+        label: `Report abuse ${EMAILS.report}`,
+        href: mailto(EMAILS.report, { subject: 'Report abuse' }),
       },
     ],
   ],
@@ -59,7 +77,7 @@ export default function Footer() {
 
       {/* Main Responsive Grid Layout Container */}
       <div
-        className=" grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
+        className=" grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4"
         style={wrap}
       >
         {/* Col 1: Brand & Logo Panel */}

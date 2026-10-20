@@ -1,5 +1,6 @@
 import { C, wrap, h2 } from '../../theme/theme';
 import { Reveal } from './Reveal';
+import { EMAILS, mailto } from '@/lib/emails';
 const faqs = [
   [
     'Is FluencyTalks free?',
@@ -51,6 +52,19 @@ export default function Faq() {
             </details>
           </Reveal>
         ))}
+        <Reveal delay={faqs.length * 0.1}>
+          <p style={{ margin: '22px 0 0', color: C.muted }}>
+            Still stuck? Email us{' '}
+            <a href={mailto(EMAILS.support, { subject: 'Need help with FluencyTalks' })}>
+              {EMAILS.support}
+            </a>{' '}
+            or write to{' '}
+            <a href={mailto(EMAILS.info, { subject: 'General question' })}>
+              {EMAILS.info}
+            </a>
+            .
+          </p>
+        </Reveal>
       </div>
     </section>
   );

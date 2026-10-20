@@ -1,5 +1,6 @@
 import { IMG } from '@/theme/theme';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
+import { EMAILS } from '@/lib/emails';
 
 const sections = [
   { id: 'collect', short: 'What we collect', tagline: 'Information we collect', heading: 'Transparent data collection', img: IMG.friends, tint: '#fff0ea', side: 'left',
@@ -19,5 +20,5 @@ const sections = [
 ];
 
 export default function Privacy() {
-  return <LegalLayout title="Privacy Policy" active="/privacy" updated="3 October 2026" sections={sections} />;
+  return <LegalLayout title="Privacy Policy" active="/privacy" updated="3 October 2026" contact={EMAILS.privacy} sections={sections} />;
 }

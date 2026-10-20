@@ -8,6 +8,7 @@ import { isOAuthOnly } from '@/lib/session';
 import { useThemeStore } from '@/store/themeStore';
 import { exportMyData } from '@/services';
 import { BlockedList } from '@/components/features';
+import { EMAILS, mailto } from '@/lib/emails';
 import clsx from 'clsx';
 
 type Tab = 'profile' | 'privacy' | 'appearance';
@@ -68,7 +69,8 @@ export default function Settings() {
               <Button size="sm" className="self-start" onClick={async () => setMsg((await updatePassword(pw)) ? 'Password updated.' : '')}>Update password</Button></Card>
           )}
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Blocked people</h2><BlockedList /></Card>
-          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Your data</h2><p className="text-sm text-muted">Download a copy of everything we store about you.</p><Button variant="secondary" size="sm" className="self-start" onClick={onExport}>Export my data</Button></Card>
+          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Your data</h2><p className="text-sm text-muted">Download a copy of everything we store about you. For deletion or privacy requests email <a className="underline" href={mailto(EMAILS.privacy, { subject: 'Privacy request' })}>{EMAILS.privacy}</a>.</p><Button variant="secondary" size="sm" className="self-start" onClick={onExport}>Export my data</Button></Card>
+          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Need help?</h2><p className="text-sm text-muted">Contact support at <a className="underline" href={mailto(EMAILS.support, { subject: 'Need help with FluencyTalks' })}>{EMAILS.support}</a>. For urgent safety issues write to <a className="underline" href={mailto(EMAILS.security, { subject: 'Urgent safety issue' })}>{EMAILS.security}</a>.</p></Card>
         </>)}
 
         {tab === 'appearance' && (

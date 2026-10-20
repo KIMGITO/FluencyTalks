@@ -4,6 +4,7 @@ import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { SocialButtons } from '@/components/features';
 import { useAuthStore } from '@/store/authStore';
+import { EMAILS, mailto } from '@/lib/emails';
 
 export default function Login() {
   const { signIn, error } = useAuthStore();
@@ -88,6 +89,9 @@ export default function Login() {
           <Link className="font-bold text-brand hover:text-accent" to="/signup">
             Create a free account
           </Link>
+        </p>
+        <p className="text-center text-sm text-muted">
+          Trouble logging in? Email <a className="font-semibold text-brand hover:text-accent" href={mailto(EMAILS.support, { subject: 'Login help' })}>{EMAILS.support}</a>
         </p>
       </div>
     </AuthLayout>

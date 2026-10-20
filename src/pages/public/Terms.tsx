@@ -1,5 +1,6 @@
 import { IMG } from '@/theme/theme';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
+import { EMAILS } from '@/lib/emails';
 
 const sections = [
   { id: 'accept', short: 'Using FluencyTalks', tagline: 'Acceptance', heading: 'The basics', img: IMG.talk, tint: '#f0f7ff', side: 'left',
@@ -13,5 +14,5 @@ const sections = [
 ];
 
 export default function Terms() {
-  return <LegalLayout title="Terms of Service" active="/terms" updated="3 October 2026" sections={sections} />;
+  return <LegalLayout title="Terms of Service" active="/terms" updated="3 October 2026" contact={EMAILS.terms} sections={sections} />;
 }

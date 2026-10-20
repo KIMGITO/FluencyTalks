@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IMG } from '@/theme/theme';
 import { Input, Button } from '@/components/ui';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
+import { EMAILS, mailto } from '@/lib/emails';
 
 function DeleteForm() {
   const [email, setEmail] = useState('');
@@ -41,5 +42,46 @@ const sections = [
 ];
 
 export default function DeleteRequest() {
-  return <LegalLayout title="Delete my data" active="/data-deletion" updated="3 October 2026" sections={sections} />;
+  return (
+    <LegalLayout
+      title="Delete my data"
+      active="/data-deletion"
+      updated="3 October 2026"
+      contact={EMAILS.privacy}
+      sections={[
+        ...sections,
+        {
+          id: 'email',
+          short: 'Email us',
+          tagline: 'Prefer email',
+          heading: 'Request deletion by email',
+          img: IMG.online,
+          tint: '#f0f7ff',
+          side: 'right',
+          body: (
+            <>
+              <P>
+                Prefer email? Write to{' '}
+                <a href={mailto(EMAILS.privacy, { subject: 'Delete my data' })}>
+                  {EMAILS.privacy}
+                </a>{' '}
+                from your account email and we will confirm within 72 hours.
+              </P>
+              <P>
+                Safety issue? Contact{' '}
+                <a href={mailto(EMAILS.security, { subject: 'Safety concern' })}>
+                  {EMAILS.security}
+                </a>
+                . To flag abuse outside the app, write to{' '}
+                <a href={mailto(EMAILS.report, { subject: 'Report abuse' })}>
+                  {EMAILS.report}
+                </a>
+                .
+              </P>
+            </>
+          ),
+        },
+      ]}
+    />
+  );
 }
