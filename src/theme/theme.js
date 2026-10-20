@@ -1,4 +1,4 @@
-export const NAME = 'FluencyTalks';
+export const NAME = 'The Fluency Talks';
 
 /**
  * Landing palette, expressed through the app's design tokens (`--c-*`, injected

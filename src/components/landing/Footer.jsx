@@ -3,6 +3,7 @@ import { C, NAME, FONT, descStyle, wrap } from '../../theme/theme';
 import { footerCSS } from '../../theme/componentStyles';
 import { Logo } from '@/components/ui';
 import { EMAILS, mailto } from '@/lib/emails';
+import { SUPPORT_SUBJECT } from '@/lib/site';
 
 /* hash = scrolls to a section on the landing page, to = router page, href = mailto/external */
 const cols = [
@@ -23,7 +24,7 @@ const cols = [
       },
       {
         label: `Support ${EMAILS.support}`,
-        href: mailto(EMAILS.support, { subject: 'Need help with FluencyTalks' }),
+        href: mailto(EMAILS.support, { subject: SUPPORT_SUBJECT }),
       },
       {
         label: `Safety ${EMAILS.security}`,
@@ -125,7 +126,7 @@ export default function Footer() {
             className="ft-fdesc m-0 text-sm leading-relaxed opacity-80 "
             style={descStyle}
           >
-            FluencyTalks connects language learners, expats, and students with
+            The Fluency Talks connects language learners, expats, and students with
             native and fluent speakers for real-world conversation. Practice
             your target language, send text messages, receive real-time peer
             corrections, and build your personalized phrasebook to fast-track

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { C, wrap, btn } from '../../theme/theme';
+import { BRAND } from '@/lib/site';
 import { Avatar, Logo, ThemeToggle } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
@@ -140,7 +141,7 @@ export default function Header() {
           <Link
             to="/"
             style={{ textDecoration: 'none' }}
-            aria-label="FluencyTalks Home"
+            aria-label={`${BRAND} Home`}
           >
             <Logo />
           </Link>

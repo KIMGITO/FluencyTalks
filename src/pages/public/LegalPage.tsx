@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/ui';
+import { BRAND } from '@/lib/site';
 import { EMAILS, mailto } from '@/lib/emails';
 
 export type LegalSection = { heading: string; body: ReactNode };
@@ -14,7 +15,7 @@ export const LegalPage = ({ title, summary, sections, placeholder }: {
   <div className="min-h-screen bg-bg text-ink">
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-        <Link to="/" aria-label="FluencyTalks home"><Logo /></Link>
+        <Link to="/" aria-label={`${BRAND} home`}><Logo /></Link>
         <Link to="/" className="text-sm text-muted hover:text-brand">Back to home</Link>
       </div>
     </header>

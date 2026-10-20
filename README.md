@@ -1,8 +1,8 @@
-# FluencyTalks
+# The Fluency Talks
 
 > Practice a foreign language by actually talking to people who speak it well.
 
-FluencyTalks connects **language learners** (students abroad, expats, anyone studying a language) with **native and fluent speakers**. People follow each other, message, and help each other improve. This repo is the **web app frontend (MVP phase 1)**. Supabase is the backend for everything.
+The Fluency Talks connects **language learners** (students abroad, expats, anyone studying a language) with **native and fluent speakers**. People follow each other, message, and help each other improve. This repo is the **web app frontend (MVP phase 1)**. Supabase is the backend for everything.
 
 ## Intentions
 
@@ -21,7 +21,7 @@ cp .env.example .env        # add your Supabase URL + anon key
 npm run dev
 ```
 
-Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://fluency-talks.vercel.app` and allow-list **both** `http://localhost:5173/**` and `https://fluency-talks.vercel.app/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`.
+Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://thefluencytalks.com` and allow-list **both** `http://localhost:5173/**` and `https://thefluencytalks.com/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`. Custom domain + Vercel: add `thefluencytalks.com` (apex) and `www.thefluencytalks.com` in Vercel → Domains (`vercel.json` already 301-redirects every legacy/`www` host to the apex).
 
 ## Folder map
 
@@ -161,4 +161,4 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 - Followers and following lists link to profiles but don't show a Follow button per row (`list_follows` doesn't return the viewer's follow status). Add it to the function if you want that.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.
 - No i18n yet. Strings are inline and should move to translation files before launch.
-# FluencyTalks
+

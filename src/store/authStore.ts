@@ -36,7 +36,7 @@ const run = async (set: (s: Partial<AuthState>) => void, fn: () => Promise<{ err
   if (error) set({ error: error.message });
   return !error;
 };
-const PROD_ORIGIN = 'https://fluency-talks.vercel.app';
+const PROD_ORIGIN = 'https://thefluencytalks.com';
 const origin = () => (typeof window !== 'undefined' ? window.location.origin : PROD_ORIGIN);
 
 /** Clear cached per-user client state without importing stores statically (chatStore imports this file). */

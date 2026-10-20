@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { useSeo } from '@/hooks/useSeo';
 export default function ResetPassword() {
+  useSeo({ title: 'Choose a new password', description: 'Choose a new password for your The Fluency Talks account.', path: '/reset-password', noIndex: true });
   const { updatePassword, error } = useAuthStore(); const nav = useNavigate(); const [pw, setPw] = useState('');
   const submit = async (e: FormEvent) => { e.preventDefault(); if (await updatePassword(pw)) nav('/home'); };
   return (

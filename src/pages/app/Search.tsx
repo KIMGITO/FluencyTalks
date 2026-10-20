@@ -7,6 +7,7 @@ import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { searchMessages, searchPeople, type SearchScope } from '@/services';
+import { BRAND } from '@/lib/site';
 import { useDisplayLocales, useLanguageStore, useLanguages } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { MessageHit, Person } from '@/types/db';
@@ -123,7 +124,7 @@ export default function Search() {
       </div>
 
       {idle ? (
-        <EmptyState title="Search FluencyTalks" text="Find anyone by name or username  or look back through your chats." action={
+        <EmptyState title={`Search ${BRAND}`} text="Find anyone by name or username  or look back through your chats." action={
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">{quick.map((c) => (
             <Button key={c} size="sm" variant="secondary" onClick={() => patch({ tab: 'people', lang: c, role: 'native' })}>{labelOf({ language_id: c }, locales)} speakers</Button>
           ))}</div>

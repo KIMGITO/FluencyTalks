@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
 export default function ForgotPassword() {
+  useSeo({ title: 'Forgot password', description: 'Reset your The Fluency Talks password. We email you a secure reset link.', path: '/forgot-password', noIndex: true });
   const { sendPasswordReset, error } = useAuthStore(); const [email, setEmail] = useState(''); const [sent, setSent] = useState(false);
   const submit = async (e: FormEvent) => { e.preventDefault(); setSent(await sendPasswordReset(email)); };
   return (

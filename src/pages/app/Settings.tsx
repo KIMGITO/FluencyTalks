@@ -8,6 +8,7 @@ import { isOAuthOnly } from '@/lib/session';
 import { useThemeStore } from '@/store/themeStore';
 import { exportMyData } from '@/services';
 import { BlockedList } from '@/components/features';
+import { BRAND, SUPPORT_SUBJECT } from '@/lib/site';
 import { EMAILS, mailto } from '@/lib/emails';
 import clsx from 'clsx';
 
@@ -34,7 +35,7 @@ export default function Settings() {
   const [pw, setPw] = useState(''); const [email, setEmail] = useState(''); const [msg, setMsg] = useState('');
   const onExport = async () => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(await exportMyData(), null, 2)], { type: 'application/json' }));
-    const a = document.createElement('a'); a.href = url; a.download = 'fluencytalks-data.json'; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = 'the-fluency-talks-data.json'; a.click(); URL.revokeObjectURL(url);
   };
   return (
     <>
@@ -70,7 +71,7 @@ export default function Settings() {
           )}
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Blocked people</h2><BlockedList /></Card>
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Your data</h2><p className="text-sm text-muted">Download a copy of everything we store about you. For deletion or privacy requests email <a className="underline" href={mailto(EMAILS.privacy, { subject: 'Privacy request' })}>{EMAILS.privacy}</a>.</p><Button variant="secondary" size="sm" className="self-start" onClick={onExport}>Export my data</Button></Card>
-          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Need help?</h2><p className="text-sm text-muted">Contact support at <a className="underline" href={mailto(EMAILS.support, { subject: 'Need help with FluencyTalks' })}>{EMAILS.support}</a>. For urgent safety issues write to <a className="underline" href={mailto(EMAILS.security, { subject: 'Urgent safety issue' })}>{EMAILS.security}</a>.</p></Card>
+          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Need help?</h2><p className="text-sm text-muted">Contact support at <a className="underline" href={mailto(EMAILS.support, { subject: SUPPORT_SUBJECT })}>{EMAILS.support}</a>. For urgent safety issues write to <a className="underline" href={mailto(EMAILS.security, { subject: 'Urgent safety issue' })}>{EMAILS.security}</a>.</p></Card>
         </>)}
 
         {tab === 'appearance' && (

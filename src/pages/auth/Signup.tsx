@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { SocialButtons } from '@/components/features';
+import { useSeo } from '@/hooks/useSeo';
 import { useAuthStore } from '@/store/authStore';
 export default function Signup() {
+  useSeo({ title: 'Sign up', description: 'Create a free The Fluency Talks account and start practicing with native speakers today.', path: '/signup', noIndex: true });
   const { signUp, error } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

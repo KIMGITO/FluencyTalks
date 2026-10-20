@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
+import { BRAND } from '@/lib/site';
 
 /** The app's one search field: icon, clear button, Escape to reset. */
 export function SearchBox({ value, onChange, placeholder = 'Search people and chats…', autoFocus = true }: { value: string; onChange: (value: string) => void; placeholder?: string; autoFocus?: boolean }) {
@@ -11,7 +12,7 @@ export function SearchBox({ value, onChange, placeholder = 'Search people and ch
       <input
         ref={input} value={value} onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { onChange(''); input.current?.focus(); } }}
-        placeholder={placeholder} aria-label="Search FluencyTalks" autoComplete="off"
+        placeholder={placeholder} aria-label={`Search ${BRAND}`} autoComplete="off"
         className="w-full rounded-full border border-border bg-surface-2 py-2.5 pl-10 pr-10 text-base text-ink transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
       />
       {value && (

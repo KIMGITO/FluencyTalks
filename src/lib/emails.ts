@@ -1,5 +1,7 @@
+import { DOMAIN } from '@/lib/site';
+
 /**
- * Central contact emails for FluencyTalks.
+ * Central contact emails for The Fluency Talks.
  *
  * Every address is read from a `VITE_EMAIL_*` env variable so it can be
  * changed without a code deploy. Each has a safe `@thefluencytalks.com`
@@ -17,8 +19,6 @@ const pick = (value: unknown, fallback: string): string => {
   const v = typeof value === 'string' ? value.trim() : '';
   return v || fallback;
 };
-
-const DOMAIN = 'thefluencytalks.com';
 
 export const EMAILS = {
   /** General enquiries — "Email us info@thefluencytalks.com". */

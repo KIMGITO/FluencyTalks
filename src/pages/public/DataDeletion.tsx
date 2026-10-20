@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IMG } from '@/theme/theme';
 import { Input, Button } from '@/components/ui';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
+import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
 
 function DeleteForm() {
@@ -42,6 +43,7 @@ const sections = [
 ];
 
 export default function DeleteRequest() {
+  useSeo({ title: 'Delete my data', description: 'Request deletion of your The Fluency Talks account and data. What is removed, what happens next, and email alternative.', path: '/data-deletion' });
   return (
     <LegalLayout
       title="Delete my data"

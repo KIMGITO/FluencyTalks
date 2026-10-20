@@ -1,5 +1,5 @@
 /**
- * FluencyTalks design tokens — THE single source of truth.
+ * The Fluency Talks design tokens — THE single source of truth.
  * Nothing in components may hard-code a color, font, size, spacing or gradient.
  * tokens.ts -> (a) CSS variables injected at runtime (inject.ts)
  *           -> (b) Tailwind theme (tailwind.config.ts)

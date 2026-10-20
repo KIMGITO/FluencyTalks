@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# App (logged-in) + auth + onboarding must never be indexed.
+Disallow: /home
+Disallow: /search
+Disallow: /discover
+Disallow: /messages
+Disallow: /profile
+Disallow: /u/
+Disallow: /settings
+Disallow: /learning
+Disallow: /phrasebook
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://thefluencytalks.com/sitemap.xml

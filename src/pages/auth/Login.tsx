@@ -4,9 +4,12 @@ import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { SocialButtons } from '@/components/features';
 import { useAuthStore } from '@/store/authStore';
+import { BRAND } from '@/lib/site';
+import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
 
 export default function Login() {
+  useSeo({ title: 'Log in', description: `Log in to ${BRAND} to pick up your conversations where you left off.`, path: '/login', noIndex: true });
   const { signIn, error } = useAuthStore();
   const nav = useNavigate();
   const loc = useLocation() as { state?: { reason?: string } };
@@ -85,7 +88,7 @@ export default function Login() {
         <SocialButtons />
 
         <p className="text-center text-sm text-muted">
-          New to FluencyTalks?{' '}
+          New to {BRAND}?{' '}
           <Link className="font-bold text-brand hover:text-accent" to="/signup">
             Create a free account
           </Link>

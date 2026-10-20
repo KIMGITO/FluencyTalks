@@ -1,5 +1,6 @@
 import { IMG } from '@/theme/theme';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
+import { useSeo } from '@/hooks/useSeo';
 import { EMAILS } from '@/lib/emails';
 
 const sections = [
@@ -20,5 +21,6 @@ const sections = [
 ];
 
 export default function Privacy() {
+  useSeo({ title: 'Privacy Policy', description: 'How The Fluency Talks collects, uses, and protects your data. GDPR and CCPA principles, export and 30-day purge.', path: '/privacy' });
   return <LegalLayout title="Privacy Policy" active="/privacy" updated="3 October 2026" contact={EMAILS.privacy} sections={sections} />;
 }
