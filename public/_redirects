@@ -1,22 +1,11 @@
 # ---------------------------------------------------------------------------
 # Fluency Talks — Cloudflare Pages _redirects
 #
-# 1) Permanently redirect every legacy / alternate host to the canonical
-#    domain https://thefluencytalks.com, keeping the original path.
-#    Mirrors the host redirects previously in vercel.json.
-# 2) SPA fallback: anything that isn't a real file serves /index.html so
-#    React Router handles client-side routes. Must stay LAST.
+# SPA fallback: anything that isn't a real file serves /index.html so
+# React Router handles client-side routes. Must stay LAST.
 #
 # Format:  source  destination  status
 # ---------------------------------------------------------------------------
-
-# Redirects from old / www hosts to the canonical apex domain.
-http://fluencytalks.com/*      https://thefluencytalks.com/:splat  301
-https://fluencytalks.com/*     https://thefluencytalks.com/:splat  301
-http://www.fluencytalks.com/*  https://thefluencytalks.com/:splat  301
-https://www.fluencytalks.com/* https://thefluencytalks.com/:splat  301
-http://www.thefluencytalks.com/* https://thefluencytalks.com/:splat 301
-https://www.thefluencytalks.com/* https://thefluencytalks.com/:splat 301
 
 # SPA fallback — React Router handles the route client-side.
 /*  /index.html  200
