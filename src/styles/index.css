@@ -85,3 +85,18 @@
   .ft-sheet { animation: ft-sheet-up var(--motion-base) var(--motion-ease); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---- Stories & Blog reader ---- */
+.ft-post-body { line-height: 1.65; font-size: 0.95rem; overflow-wrap: anywhere; word-break: break-word; }
+.ft-post-body h1 { font-size: 1.25rem; font-weight: 800; margin: 0.25rem 0; }
+.ft-post-body h2 { font-size: 1.1rem; font-weight: 700; margin: 0.25rem 0; }
+.ft-post-body p { margin: 0.35rem 0; }
+.ft-post-body ul { list-style: disc; padding-left: 1.4rem; margin: 0.35rem 0; }
+.ft-post-body ol { list-style: decimal; padding-left: 1.4rem; margin: 0.35rem 0; }
+.ft-post-body li { margin: 0.15rem 0; }
+.ft-post-body a { color: rgb(var(--c-brand)); text-decoration: underline; }
+.ft-post-body blockquote { border-left: 3px solid rgb(var(--c-brand) / 0.5); padding-left: 0.75rem; font-style: italic; color: rgb(var(--c-muted)); margin: 0.4rem 0; }
+.ft-post-body figure { margin: 0.5rem 0; }
+.ft-post-body img { width: 100%; border-radius: 0.5rem; object-fit: cover; max-height: 22rem; }
+.ft-post-body figcaption { font-size: 0.8rem; color: rgb(var(--c-muted)); padding: 0.25rem 0.25rem 0; }
+.ft-post-clamp { display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
