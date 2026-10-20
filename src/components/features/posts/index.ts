@@ -3,3 +3,4 @@ export * from './PostCard';
 export * from './PostEditor';
 export * from './PostToolbar';
 export * from './PublicBlogCard';
+export * from './SavedPostCard';

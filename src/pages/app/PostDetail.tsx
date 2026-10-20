@@ -60,10 +60,14 @@ export default function PostDetail() {
     await deletePost(post.id); nav('/posts');
   };
   const translate = async () => {
-    if (!plain.trim() || !trTarget) return;
+    if (!trTarget) return setTr({ state: 'error', text: 'Pick a language to translate to.' });
+    if (!plain.trim()) return setTr({ state: 'error', text: 'Nothing to translate in this post.' });
     setTr({ state: 'loading', text: '' });
     try {
       const out = await translateText(plain, trTarget, provider(trTarget));
+      if (!out || out.trim().toLowerCase() === plain.trim().toLowerCase()) {
+        return setTr({ state: 'done', text: 'This is already in your language.' });
+      }
       setTr({ state: 'done', text: out });
     } catch (e) { setTr({ state: 'error', text: e instanceof Error ? e.message : 'Could not translate.' }); }
   };

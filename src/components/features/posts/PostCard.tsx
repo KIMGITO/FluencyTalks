@@ -28,9 +28,15 @@ export function PostCard({ post, mine, onChanged, onDeleted }: { post: Post; min
     catch { /* noop */ }
   };
   const del = async () => {
-    if (!confirm('Delete this post?')) return;
-    const { deletePost } = await import('@/services/posts');
-    await deletePost(p.id); onDeleted(p.id);
+    const sure = mine ? confirm('Delete this post?') : confirm('Remove from saved?');
+    if (!sure) return;
+    if (mine) {
+      const { deletePost } = await import('@/services/posts');
+      await deletePost(p.id); onDeleted(p.id);
+    } else {
+      const s = await togglePostSave(p.id);
+      if (!s) onDeleted(p.id); // removed from saved; never deleted from the platform
+    }
   };
   return (
     <Card className="flex flex-col gap-2">
@@ -42,10 +48,19 @@ export function PostCard({ post, mine, onChanged, onDeleted }: { post: Post; min
           </p>
           <p className="flex items-center gap-1 text-xs text-muted">{p.author_username ? `@${p.author_username}` : ''} \u00b7 {formatTime(p.created_at)} {visIcon(p.visibility)}</p>
         </div>
-        {mine && (
+        {mine || p.saved && (
           <div className="flex items-center gap-1">
-            <Link to={`/posts/${p.id}/edit`} aria-label="Edit" className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-ink"><Pencil size={15} /></Link>
-            <button aria-label="Delete" onClick={del} className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-danger"><Trash2 size={15} /></button>
+            {mine && (
+              <>
+                <Link to={`/posts/${p.id}/edit`} aria-label="Edit" className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-ink"><Pencil size={15} /></Link>
+                <button aria-label="Delete" onClick={del} className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-danger"><Trash2 size={15} /></button>
+              </>
+            )}
+            {!mine && p.saved && (
+              <button aria-label="Remove from saved" onClick={del} className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-brand">
+                <Bookmark size={15} fill="currentColor" />
+              </button>
+            )}
           </div>
         )}
       </div>

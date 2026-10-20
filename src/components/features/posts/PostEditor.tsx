@@ -70,7 +70,7 @@ export function PostEditor({ blocks, onChange, userId }: { blocks: RichBlock[]; 
           )}
           {b.type === 'image' && (
             <div className="flex flex-col gap-1.5">
-              {b.src ? <img src={b.src} alt={b.caption ?? ''} className="max-h-80 w-full rounded-md object-cover" />
+              {b.src ? <img src={b.src} alt={b.caption ?? ''} className="max-h-80 w-full rounded-md object-contain cursor-pointer" />
               : <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md bg-surface-2 py-8 text-sm text-muted hover:text-ink">
                   <ImagePlus size={18} /> Pick a picture
                   <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { void onImage(e.target.files, b.id); e.target.value = ''; }} />

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { BookOpenText, PenLine } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button, EmptyState, Spinner } from '@/components/ui';
-import { PostCard } from '@/components/features/posts';
+import { PostCard, SavedPostCard } from '@/components/features/posts';
 import { listPosts } from '@/services/posts';
 import { useProfileStore } from '@/store/profileStore';
 import { useAuthStore } from '@/store/authStore';
@@ -58,7 +58,14 @@ export default function Posts() {
       </div>
       {!posts ? <div className="flex justify-center p-8"><Spinner /></div>
       : !show.length ? <EmptyState title={tab === 'saved' ? 'Nothing saved yet' : tab === 'mine' ? 'You have not written anything yet' : 'No posts yet'} text={tab === 'saved' ? 'Tap Save on any story or blog to keep it here for reference.' : 'Be the first to share a story in the language you are learning.'} />
-      : <div className="flex flex-col gap-2">{show.map((p) => <PostCard key={p.id} post={p} mine={!!uid && (p.author_id === uid || !!staff)} onChanged={patch} onDeleted={drop} />)}</div>}
+      : <div className="flex flex-col gap-2">{show.map((p) => {
+        const isMine = !!uid && (p.author_id === uid || !!staff);
+        return tab === 'saved' ? (
+          <SavedPostCard key={p.id} post={p} onRemoved={drop} />
+        ) : (
+          <PostCard key={p.id} post={p} mine={isMine} onChanged={patch} onDeleted={drop} />
+        );
+      })}</div>}
     </>
   );
 }
