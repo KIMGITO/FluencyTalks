@@ -51,10 +51,12 @@ a[style*="999px"]:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(0
 .ft-arrow{transition:background .25s,transform .25s}.ft-arrow:hover{background:${C.sun}!important;color:${C.ink}!important;transform:scale(1.1)}
 details summary{transition:color .2s}details summary:hover{color:${C.coral}}
 section[id]{scroll-margin-top:72px}
+@keyframes ftDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 a:focus-visible,button:focus-visible,[role=button]:focus-visible,summary:focus-visible{outline:3px solid ${C.sun};outline-offset:3px;border-radius:8px}
 .ft-burger{display:none;place-items:center;width:44px;height:44px;border-radius:12px;border:2px solid ${C.indigo};background:transparent;color:${C.indigo};font-size:20px;font-weight:800;cursor:pointer}
+.ft-drawer{display:none}
 .ft-fm{display:none}
-@media(max-width:900px){.ft-desk{display:none!important}.ft-burger{display:grid}}
+@media(max-width:900px){.ft-desk{display:none!important}.ft-burger{display:grid}.ft-drawer{display:block}}
 @media(max-width:800px){.ft-bub{display:none}.ft-frost{display:none}.ft-fm{display:block}}
 @media(max-width:700px){.ft-span{grid-column:1/-1}}
 @media(max-width:560px){.ft-arrow{display:none}.ft-bar{font-size:12px!important;padding:8px 12px!important}}

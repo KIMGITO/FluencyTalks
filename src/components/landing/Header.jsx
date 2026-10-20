@@ -5,9 +5,12 @@ import { BRAND } from '@/lib/site';
 import { Avatar, Logo, ThemeToggle } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
-// Navigation links configuration
+// Navigation links — every href points at a real section id on the landing page.
+// Verified ids: #languages (Languages.jsx), #speakers (Split.jsx),
+// #stories (Testimonial.jsx), #faq (Faq.jsx).
+// Plain hashes (not `/#…`) so clicks smooth-scroll without a full reload —
+// Header/Footer only render on `/`, so no cross-route links are needed.
 const NAV_ITEMS = [
-  // { label: 'How it works', href: '#how' },
   { label: 'Languages', href: '#languages' },
   { label: 'For speakers', href: '#speakers' },
   { label: 'Stories', href: '#stories' },
@@ -55,7 +58,9 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Monitor viewport width for responsive micro-adjustments
+  // `isMobile` drives micro-adjustments (padding, CTA copy).
+  // The drawer auto-closes past the burger breakpoint (see below + CSS
+  // `.ft-drawer` guard in theme.js), so it can never linger on big screens.
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -63,6 +68,15 @@ export default function Header() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Auto-close the mobile drawer the moment we grow past the burger breakpoint.
+  useEffect(() => {
+    const closeOnDesktop = () => {
+      if (window.innerWidth > 900) setIsMenuOpen(false);
+    };
+    window.addEventListener('resize', closeOnDesktop);
+    return () => window.removeEventListener('resize', closeOnDesktop);
   }, []);
 
   // Lock body scroll on iOS/Mobile when dropdown menu is open
@@ -243,7 +257,10 @@ export default function Header() {
 
             {signedIn && <ThemeToggle />}
 
-            {/* Mobile Touch-Optimized Hamburger Button */}
+            {/* Mobile-only hamburger — visibility is driven by CSS
+                (`.ft-burger`: hidden on desktop, grid under 900px).
+                No inline `display` here: an inline display would beat the
+                stylesheet and leak the button onto big screens. */}
             <button
               className="ft-burger"
               aria-label={
@@ -253,7 +270,6 @@ export default function Header() {
               aria-controls="mobile-navigation"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               style={{
-                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 width: '40px',
@@ -273,10 +289,15 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu Drawer */}
+        {/* Mobile dropdown drawer — rendered ONLY while a narrow viewport is
+            active, so it can never appear on big screens even if `isMenuOpen`
+            was left true during a resize. The matching CSS guard
+            (`.ft-drawer{display:none} @media(max-width:900px){.ft-drawer{...}}`)
+            hides it by default and reveals it under 900px. */}
         {isMenuOpen && (
           <div
             id="mobile-navigation"
+            className="ft-drawer"
             aria-label="Mobile Navigation"
             style={{
               borderTop: '1px solid rgb(var(--c-brand) / 0.08)',

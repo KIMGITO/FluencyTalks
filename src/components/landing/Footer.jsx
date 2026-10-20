@@ -1,47 +1,41 @@
 import { Link } from 'react-router-dom';
-import { C, NAME, FONT, descStyle, wrap } from '../../theme/theme';
+import { C, NAME, FONT, wrap } from '../../theme/theme';
 import { footerCSS } from '../../theme/componentStyles';
 import { Logo } from '@/components/ui';
 import { EMAILS, mailto } from '@/lib/emails';
 import { SUPPORT_SUBJECT } from '@/lib/site';
 
-/* hash = scrolls to a section on the landing page, to = router page, href = mailto/external */
+/* Every link points somewhere real:
+   hash = scrolls to a live landing section,
+   to = a registered router page (see router/index.tsx),
+   href = a support mailto. No dead links. */
 const cols = [
   [
-    'Product',
+    'Explore',
     [
-      // { label: 'How it works', hash: '#how' },
       { label: 'Languages', hash: '#languages' },
+      { label: 'For speakers', hash: '#speakers' },
+      { label: 'Member stories', hash: '#stories' },
       { label: 'Help and FAQ', hash: '#faq' },
     ],
   ],
   [
-    'Contact',
+    'Get started',
     [
-      {
-        label: `Email us ${EMAILS.info}`,
-        href: mailto(EMAILS.info, { subject: `Hello ${NAME}` }),
-      },
-      {
-        label: `Support ${EMAILS.support}`,
-        href: mailto(EMAILS.support, { subject: SUPPORT_SUBJECT }),
-      },
-      {
-        label: `Safety ${EMAILS.security}`,
-        href: mailto(EMAILS.security, { subject: 'Safety concern' }),
-      },
-      {
-        label: `Report abuse ${EMAILS.report}`,
-        href: mailto(EMAILS.report, { subject: 'Report abuse' }),
-      },
+      { label: 'Create a free account', to: '/signup' },
+      { label: 'Log in', to: '/login' },
+      { label: 'Find a partner', to: '/search' },
+      { label: 'How conversations work', hash: '#speakers' },
     ],
   ],
-];
-
-const legal = [
-  { label: 'Privacy', to: '/privacy' },
-  { label: 'Terms', to: '/terms' },
-  { label: 'Data deletion', to: '/data-deletion' },
+  [
+    'Trust & legal',
+    [
+      { label: 'Privacy', to: '/privacy' },
+      { label: 'Terms', to: '/terms' },
+      { label: 'Data deletion', to: '/data-deletion' },
+    ],
+  ],
 ];
 
 function FooterLink({ label, to, hash, href }) {
@@ -76,12 +70,9 @@ export default function Footer() {
     >
       <style>{footerCSS}</style>
 
-      {/* Main Responsive Grid Layout Container */}
-      <div
-        className=" grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4"
-        style={wrap}
-      >
-        {/* Col 1: Brand & Logo Panel */}
+      {/* Brand + 3 link columns: professional 4-up on desktop */}
+      <div className="ft-foot" style={wrap}>
+        {/* Brand + Talk-to-us panel */}
         <div className="ft-fbrand flex flex-col gap-4">
           <Logo light />
           <p
@@ -90,9 +81,23 @@ export default function Footer() {
           >
             Practice any language by talking with the people who speak it.
           </p>
+          <div className="mt-1 flex flex-col gap-1.5 text-sm">
+            <span
+              className="text-xs font-extrabold uppercase tracking-wider"
+              style={{ color: C.sun }}
+            >
+              Talk to us
+            </span>
+            <a
+              className="ft-flink transition-colors duration-200 hover:text-white"
+              href={mailto(EMAILS.support, { subject: SUPPORT_SUBJECT })}
+            >
+              {EMAILS.support}
+            </a>
+          </div>
         </div>
 
-        {/* Col 2: Dynamic Navigation Lists */}
+        {/* Navigation columns */}
         {cols.map(([heading, links]) => (
           <nav
             key={heading}
@@ -114,30 +119,11 @@ export default function Footer() {
             </ul>
           </nav>
         ))}
-
-        <div className='w-full md:col-span-2 lg:col-span-1'>
-          <h3
-              className="text-base font-extrabold uppercase tracking-wider"
-              style={{ color: C.sun }}
-            >
-              Description
-            </h3>
-          <div
-            className="ft-fdesc m-0 text-sm leading-relaxed opacity-80 "
-            style={descStyle}
-          >
-            The Fluency Talks connects language learners, expats, and students with
-            native and fluent speakers for real-world conversation. Practice
-            your target language, send text messages, receive real-time peer
-            corrections, and build your personalized phrasebook to fast-track
-            your journey to true fluency.
-          </div>
-        </div>
       </div>
 
-      {/* Bottom Horizontal Attribution/Legal Utility Bar */}
+      {/* Bottom attribution / legal utility bar */}
       <div
-        className="ft-fbar flex flex-col gap-4 border-t border-white/15 pt-5 text-sm sm:flex-row sm:justify-between sm:items-center"
+        className="ft-fbar border-t border-white/15 pt-5 text-sm"
         style={{
           ...wrap,
           marginTop: 'clamp(28px, 4vw, 40px)',
@@ -147,15 +133,18 @@ export default function Footer() {
           © {new Date().getFullYear()} {NAME}. All rights reserved.
         </span>
         <span className="flex items-center gap-5">
-          {legal.map((l) => (
-            <Link
-              key={l.label}
-              className="ft-flink transition-colors duration-200 hover:text-white"
-              to={l.to}
-            >
-              {l.label}
-            </Link>
-          ))}
+          <Link
+            className="ft-flink transition-colors duration-200 hover:text-white"
+            to="/privacy"
+          >
+            Privacy
+          </Link>
+          <Link
+            className="ft-flink transition-colors duration-200 hover:text-white"
+            to="/terms"
+          >
+            Terms
+          </Link>
         </span>
       </div>
     </footer>

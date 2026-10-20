@@ -164,7 +164,7 @@ export default function Hero() {
                     {join.signedIn ? 'Go to your profile' : 'Start talking free'}
                   </Link>
                   <a
-                    href="#how"
+                    href="#speakers"
                     style={btn('transparent', C.white, {
                       borderColor: C.white,
                     })}
