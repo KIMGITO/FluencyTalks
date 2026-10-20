@@ -216,7 +216,7 @@ export default function UserProfile() {
             <Button
               variant="danger"
               size="sm"
-              className={`${actionBtn}  bg-danger  self-start mt-4`}
+              className={`${actionBtn}  bg-danger  self-end mt-4`}
 
               onClick={onDelete}
             >

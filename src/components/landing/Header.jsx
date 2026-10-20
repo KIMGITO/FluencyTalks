@@ -31,7 +31,8 @@ function ProfileLink({ className, style, children, onClick }) {
 function useSessionIdentity(user) {
   const meta = user?.user_metadata ?? {};
   return {
-    name: meta.full_name || meta.name || meta.display_name || user?.email || 'You',
+    name:
+      meta.full_name || meta.name || meta.display_name || user?.email || 'You',
     src: meta.avatar_url || meta.picture || null,
   };
 }
@@ -197,8 +198,8 @@ export default function Header() {
               alignItems: 'center',
             }}
           >
-            {/* Signed out: log in + sign up. Signed in: one profile tab that
-                takes the member home, so they are never asked to log in again. */}
+            {signedIn && <ThemeToggle />}
+
             {authLoading ? null : signedIn ? (
               <ProfileLink
                 className="ft-desk"
@@ -214,11 +215,7 @@ export default function Header() {
                   transition: 'all 0.2s ease',
                 })}
               >
-                <Avatar
-                  name={identity.name}
-                  src={identity.src}
-                  size="sm"
-                />
+                <Avatar name={identity.name} src={identity.src} size="sm" />
               </ProfileLink>
             ) : (
               <>
@@ -255,12 +252,6 @@ export default function Header() {
               </>
             )}
 
-            {signedIn && <ThemeToggle />}
-
-            {/* Mobile-only hamburger — visibility is driven by CSS
-                (`.ft-burger`: hidden on desktop, grid under 900px).
-                No inline `display` here: an inline display would beat the
-                stylesheet and leak the button onto big screens. */}
             <button
               className="ft-burger"
               aria-label={
@@ -277,7 +268,9 @@ export default function Header() {
                 padding: 0,
                 borderRadius: '8px',
                 border: `1px solid ${isMenuOpen ? C.indigo : 'rgb(var(--c-brand) / 0.12)'}`,
-                background: isMenuOpen ? 'rgb(var(--c-brand) / 0.06)' : 'transparent',
+                background: isMenuOpen
+                  ? 'rgb(var(--c-brand) / 0.06)'
+                  : 'transparent',
                 color: C.ink,
                 fontSize: '18px',
                 cursor: 'pointer',
@@ -373,11 +366,7 @@ export default function Header() {
                     backgroundColor: 'rgb(var(--c-brand) / 0.04)',
                   }}
                 >
-                  <Avatar
-                    name={identity.name}
-                    src={identity.src}
-                    size="sm"
-                  />
+                  <Avatar name={identity.name} src={identity.src} size="sm" />
                   Go to my profile
                 </ProfileLink>
               ) : (
