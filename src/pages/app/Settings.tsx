@@ -4,6 +4,7 @@ import { Lock, Palette, UserRound } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button, Card, Input, tabClass } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { isOAuthOnly } from '@/lib/session';
 import { useThemeStore } from '@/store/themeStore';
 import { exportMyData } from '@/services';
 import { BlockedList } from '@/components/features';
@@ -23,7 +24,11 @@ const tabs: { key: Tab; label: string; icon: typeof UserRound }[] = [
  * lives inside the Profile tab (your own profile card).
  */
 export default function Settings() {
-  const { updatePassword, updateEmail, error } = useAuthStore(); const { mode, setMode } = useThemeStore();
+  const { updatePassword, updateEmail, error } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  // OAuth logins (Google/Apple) have no password identity: hide password setting.
+  const oauthOnly = isOAuthOnly(user);
+  const { mode, setMode } = useThemeStore();
   const [tab, setTab] = useState<Tab>('profile');
   const [pw, setPw] = useState(''); const [email, setEmail] = useState(''); const [msg, setMsg] = useState('');
   const onExport = async () => {
@@ -54,9 +59,14 @@ export default function Settings() {
         </>)}
 
         {tab === 'privacy' && (<>
-          <Card className="flex flex-col gap-2"><h2 className="font-semibold">Change password</h2>
-            <Input type="password" minLength={8} placeholder="New password" value={pw} onChange={(e) => setPw(e.target.value)} />
-            <Button size="sm" className="self-start" onClick={async () => setMsg((await updatePassword(pw)) ? 'Password updated.' : '')}>Update password</Button></Card>
+          {oauthOnly ? (
+            <Card className="flex flex-col gap-2"><h2 className="font-semibold">Password</h2>
+              <p className="text-sm text-muted">You signed in with Google, so there is no password on this account. Use Google to log in on every device.</p></Card>
+          ) : (
+            <Card className="flex flex-col gap-2"><h2 className="font-semibold">Change password</h2>
+              <Input type="password" minLength={8} placeholder="New password" value={pw} onChange={(e) => setPw(e.target.value)} />
+              <Button size="sm" className="self-start" onClick={async () => setMsg((await updatePassword(pw)) ? 'Password updated.' : '')}>Update password</Button></Card>
+          )}
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Blocked people</h2><BlockedList /></Card>
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Your data</h2><p className="text-sm text-muted">Download a copy of everything we store about you.</p><Button variant="secondary" size="sm" className="self-start" onClick={onExport}>Export my data</Button></Card>
         </>)}

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
 import { SocialButtons } from '@/components/features';
@@ -8,6 +8,8 @@ import { useAuthStore } from '@/store/authStore';
 export default function Login() {
   const { signIn, error } = useAuthStore();
   const nav = useNavigate();
+  const loc = useLocation() as { state?: { reason?: string } };
+  const notice = loc.state?.reason;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -25,6 +27,11 @@ export default function Login() {
         <p className="-mt-2 text-center text-sm text-muted">
           Log in to pick up your conversations where you left off.
         </p>
+        {notice && (
+          <p role="status" className="rounded-md border border-brand/30 bg-brand/10 px-4 py-3 text-sm font-medium">
+            {notice}
+          </p>
+        )}
 
         <form onSubmit={submit} className="space-y-4">
           <Input

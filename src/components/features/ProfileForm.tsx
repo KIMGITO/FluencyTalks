@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Avatar, Button, Input, Select, Textarea } from '@/components/ui';
 import { LanguagePicker } from './LanguagePicker';
 import { CountryPicker } from './CountryPicker';
@@ -15,7 +15,8 @@ const zones = (): string[] => (Intl as unknown as { supportedValuesOf?: (k: stri
 
 /** Used for onboarding and for editing your profile. */
 export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onDone: () => void }) {
-  const user = useAuthStore((s) => s.user)!; const { me, languages, save } = useProfileStore();
+  const user = useAuthStore((s) => s.user);
+  const { me, languages, save } = useProfileStore();
   useCountries();                                   // the country picker needs the list
   const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [username, setUsername] = useState(me?.username ?? ''); const [displayName, setDisplayName] = useState(me?.display_name ?? '');
@@ -24,6 +25,9 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
   const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
   const [langs, setLangs] = useState(languages); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  // "If account is set already, you can't access profile updation until you log in":
+  // editing an existing profile requires a live session — never render the form logged out.
+  if (!user) return <Navigate to="/login" replace />;
 
   const pick = (f?: File) => { if (f && f.size > MAX_AVATAR_BYTES) return setError('Photo must be under 2 MB.'); setError(null); setFile(f ?? null); };
   // Provider photo (Google etc) shows until the user picks a new one; initials when neither exists.
