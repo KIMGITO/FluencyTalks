@@ -65,22 +65,20 @@ $$ begin perform public.apply_points_delta(p_user_id, 10, 'sign_up', 'profile', 
 
 create or replace function public.record_correction_reward(p_correction_id uuid) returns void language plpgsql security definer set search_path = public as $$
 declare
-  c message_corrections;
-  m messages;
-  corrector_id uuid;
+  v_mc record;
+  v_m record;
 begin
-  select mc, m.* into c, m
+  select mc.*, m.sender_id, m.conversation_id into v_mc
   from message_corrections mc
   join messages m on m.id = mc.message_id
   where mc.id = p_correction_id;
 
   if not found then raise exception 'correction_not_found'; end if;
-  if m.sender_id = auth.uid() then raise exception 'cannot_reward_self'; end if;
+  if v_mc.sender_id = auth.uid() then raise exception 'cannot_reward_self'; end if;
 
-  corrector_id := c.corrector_id;
-  perform public.adjust_user_points(corrector_id, 5);
+  perform public.adjust_user_points(v_mc.corrector_id, 5);
   -- Save the phrase to the learner's phrasebook
-  perform public.save_phrase(c.suggested_text, null, null, c.message_id);
+  perform public.save_phrase(v_mc.suggested_text, null, null, v_mc.message_id);
 end $$;
 
 -- ---------- 7. Bounty: asker spends points to post an urgent question ----------

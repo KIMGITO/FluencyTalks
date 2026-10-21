@@ -6,16 +6,16 @@
 -- ---------- Drop old languages table and constraints (safe to re-apply) ----------
 
 drop table if exists public.languages;
-drop constraint if exists user_languages_language_fk on public.user_languages;
-drop constraint if exists saved_phrases_language_code_fkey on public.saved_phrases;
-drop constraint if exists translation_history_target_lang_fkey on public.translation_history;
+alter table if exists public.user_languages drop constraint if exists user_languages_language_fk;
+alter table if exists public.saved_phrases drop constraint if exists saved_phrases_language_code_fkey;
+alter table if exists public.translation_history drop constraint if exists translation_history_target_lang_fkey;
 drop index if exists user_languages_language_code_role_level_idx;
 
 -- ---------- New ISO 639-3 languages table ----------
 
 create table public.languages (
   id text primary key check (id ~ '^[a-z]{3}$'),           -- ISO 639-3, always lowercase
-  iso_639_1 text unique check (iso_639_1 is null or iso_639_1 ~ '^[a-z]{2}$'), -- null when standard has none
+  iso_639_1 text check (iso_639_1 is null or iso_639_1 ~ '^[a-z]{2}$'), -- null when standard has none
   english_name text not null check (char_length(btrim(english_name)) between 1 and 80),
   native_name text check (native_name is null or char_length(btrim(native_name)) between 1 and 80), -- autonym
   is_supported_learning boolean not null default true     -- false keeps a language off every picker
@@ -41,16 +41,21 @@ insert into public.languages (id, iso_639_1, english_name, native_name, is_suppo
   ('ita','it','Italian','Italiano',true),
   ('por','pt','Portuguese','Português',true),
   ('swl','sw','Swahili','Kiswahili',true),
-  ('ar','ar','Arabic','العربية',true),
-  ('he','he','Hebrew','עברית',true),
-  ('fa','fa','Persian','فارسی',true),
-  ('zh','zh','Chinese','中文',true),
-  ('ja','ja','Japanese','日本語',true),
-  ('ko','ko','Korean','한국어',true),
-  ('hi','hi','Hindi','हिन्दी',true),
-  ('ru','ru','Russian','Русский',true),
-  ('tr','tr','Turkish','Türkçe',true),
-  ('nl','nl','Dutch','Nederlands',true),
-  ('am','am','Amharic','አማርኛ',true),
- ('yo','yo','Yoruba','Yorùbá',true),
- ('id','id','Indonesian','Bahasa Indonesia',true);
+  ('ara','ar','Arabic','العربية',true),
+  ('heb','he','Hebrew','עברית',true),
+  ('fas','fa','Persian','فارسی',true),
+  ('zho','zh','Chinese','中文',true),
+  ('jpn','ja','Japanese','日本語',true),
+  ('kor','ko','Korean','한국어',true),
+  ('hin','hi','Hindi','हिन्दी',true),
+  ('rus','ru','Russian','Русский',true),
+  ('tur','tr','Turkish','Türkçe',true),
+  ('nld','nl','Dutch','Nederlands',true),
+  ('amh','am','Amharic','አማርኛ',true),
+  ('yor','yo','Yoruba','Yorùbá',true),
+  ('ind','id','Indonesian','Bahasa Indonesia',true)
+on conflict (id) do update
+  set iso_639_1             = excluded.iso_639_1,
+      english_name          = excluded.english_name,
+      native_name           = excluded.native_name,
+      is_supported_learning = excluded.is_supported_learning;

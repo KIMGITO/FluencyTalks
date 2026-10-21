@@ -31,10 +31,7 @@ create policy "users can remove study partners" on public.study_partners
 -- ---------- Drop old follows table and policies (if applying fresh) ----------
 
 -- Drop old follows policies
-drop policy if exists "follow as self" on public.follows;
-drop policy if exists "see own follow rows" on public.follows;
--- Drop old follows table (uncomment if replacing follows entirely)
--- drop table if exists public.follows;
+drop table if exists public.follows;
 
 -- ---------- Comments for service layer ----------
 

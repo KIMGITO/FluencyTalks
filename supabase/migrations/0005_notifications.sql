@@ -42,16 +42,18 @@ create trigger follows_notify after insert or update on public.study_partners fo
 
 -- Notify on message correction
 create or replace function public.trg_notify_correction() returns trigger language plpgsql security definer set search_path = public as $$
-declare m message;
+declare v_sender_id uuid; v_conversation_id uuid;
 begin
-  select * into m from messages where id = new.message_id;
-  perform public.notify(m.sender_id, new.corrector_id, 'correction', jsonb_build_object('conversation_id', m.conversation_id, 'message_id', m.id));
+  select sender_id, conversation_id into v_sender_id, v_conversation_id from messages where id = new.message_id;
+  perform public.notify(v_sender_id, new.corrector_id, 'correction', jsonb_build_object('conversation_id', v_conversation_id, 'message_id', new.message_id));
   return null;
 end $$;
 create trigger corrections_notify after insert on public.message_corrections for each row execute function public.trg_notify_correction();
 
 -- General notify function
-create or replace function public.notify(p_user uuid, p_actor uuid, p_type text, p_data jsonb default '{}') returns void language sql security definer set search_path = public as $$
+create or replace function public.notify(p_user uuid, p_actor uuid, p_type text, p_data jsonb default '{}') returns void language plpgsql security definer set search_path = public as $$
 begin
-  insert into notifications (user_id, actor_id, type, data) values (p_user, p_actor, p_type, p_data) where p_user is distinct from p_actor;
+  if p_user is distinct from p_actor then
+    insert into notifications (user_id, actor_id, type, data) values (p_user, p_actor, p_type, p_data);
+  end if;
 end $$;

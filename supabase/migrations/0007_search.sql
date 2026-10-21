@@ -11,7 +11,7 @@ begin
   -- "@sara" and "sara" are the same search; "%" and "_" must be escaped or they act as wildcards.
   v_q := lower(nullif(btrim(coalesce(p_query, '')), ''));
   if v_q is not null then v_q := nullif(ltrim(v_q, '@'), ''); end if;
-  if v_q is not null then v_like := '%' || replace(replace(replace(v_q, '\', '\\'), '%', '\\%'), '_', '\\_) || '%'; end if;
+  if v_q is not null then v_like := '%' || replace(replace(replace(v_q, '\', '\\'), '%', '\\%'), '_', '\\_') || '%'; end if;
 
   return query
   select p.id, p.username, p.display_name, p.avatar_url, p.bio, p.timezone, p.is_private, p.followers_count,

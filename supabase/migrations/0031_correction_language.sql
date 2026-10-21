@@ -4,7 +4,7 @@
 -- ---------- Add language_id to messages ----------
 
 alter table public.messages
-  add column if not exists language_id uuid references public.languages(id);
+  add column if not exists language_id text references public.languages(id);
 
 -- ---------- Add counts_for_reward to message_corrections ----------
 

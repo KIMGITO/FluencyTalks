@@ -8,7 +8,7 @@ create table public.translation_history (
   user_id uuid not null references public.profiles(id) on delete cascade,
   source_text text not null check (char_length(source_text) between 1 and 4000),
   translated_text text not null check (char_length(translated_text) between 1 and 4000),
-  target_lang text references public.languages(code),
+  target_lang text references public.languages(id),
   source_message_id uuid references public.messages(id) on delete set null,
   created_at timestamptz not null default now()
 );

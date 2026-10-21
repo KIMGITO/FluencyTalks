@@ -4,7 +4,7 @@
 
 -- ---------- Message Reactions table ----------
 
-create table public.message_reactions (
+create table if not exists public.message_reactions (
   message_id uuid references public.messages(id) on delete cascade,
   user_id uuid references public.profiles(id) on delete cascade,
   emoji text not null check (char_length(emoji) <= 8),

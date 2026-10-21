@@ -41,28 +41,28 @@ alter table public.profiles add  constraint profiles_learning_level_pair_chk
 -- so anyone who disagrees can fix it once without waiting.
 update public.profiles p
 set native_language_id = (
-  select ul.language_id from public.user_languages ul
-  where ul.user_id = p.id and ul.role = 'native' order by (ul.language_id = 'eng'), ul.language_id limit 1)
+  select ul.language_code from public.user_languages ul
+  where ul.user_id = p.id and ul.role = 'native' order by (ul.language_code = 'eng'), ul.language_code limit 1)
 where p.native_language_id is null;
 
 update public.profiles p
-set learning_language_id = x.language_id,
+set learning_language_id = x.language_code,
     learning_level = case when x.level in ('A1','A2','B1','B2','C1','C2') then x.level else 'A1' end
 from (
-  select distinct on (ul.user_id) ul.user_id, ul.language_id, ul.level
+  select distinct on (ul.user_id) ul.user_id, ul.language_code, ul.level
   from public.user_languages ul join public.profiles p2 on p2.id = ul.user_id
-  where ul.role = 'learning' and ul.language_id is distinct from p2.native_language_id
+  where ul.role = 'learning' and ul.language_code is distinct from p2.native_language_id
   order by ul.user_id,
            case ul.level when 'C2' then 6 when 'C1' then 5 when 'B2' then 4 when 'B1' then 3 when 'A2' then 2 else 1 end desc,
-           ul.language_id) x
+           ul.language_code) x
 where p.id = x.user_id and p.learning_language_id is null;
 
 -- Keep the derived copy identical to the profile for everyone who has a native language.
 delete from public.user_languages ul
 using public.profiles p
 where ul.user_id = p.id and p.native_language_id is not null
-  and not ((ul.role = 'native'   and ul.language_id = p.native_language_id)
-        or (ul.role = 'learning' and ul.language_id = p.learning_language_id));
+  and not ((ul.role = 'native'   and ul.language_code = p.native_language_id)
+        or (ul.role = 'learning' and ul.language_code = p.learning_language_id));
 
 -- ---------- 3. Launch list: 40 languages ----------
 -- Keep this list identical to the update at the end of supabase/seed.sql.

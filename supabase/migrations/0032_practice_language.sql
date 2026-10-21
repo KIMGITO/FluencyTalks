@@ -4,7 +4,7 @@
 -- ---------- Add practice_language_id to conversations ----------
 
 alter table public.conversations
-  add column if not exists practice_language_id uuid references public.languages(id);
+  add column if not exists practice_language_id text references public.languages(id);
 
 -- ---------- Backfill: set practice_language_id from the first active member's native language ----------
 
