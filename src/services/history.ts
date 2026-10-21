@@ -14,5 +14,22 @@ export const listTranslations = async (): Promise<(TranslationRecord & { convers
 
 export const deleteTranslation = async (id: string) => { await supabase.from('translation_history').delete().eq('id', id); };
 
+/** List points ledger entries for a user (audit trail) */
+export const listPointsLedger = async (userId: string) => {
+  const { data } = await supabase
+    .from('points_ledger')
+    .select('*, profiles!inner(display_name, username)', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  let entries = ((data ?? []) as { profiles?: { display_name: string; username: string } | null; delta: number; reason: string; ref_type: string; ref_id: string; created_at: string }[])
+    .map((e) => ({
+      ...e,
+      actor: e.profiles?.display_name || e.profiles?.username || 'system',
+      action: e.delta > 0 ? 'earned' : 'spent',
+      reason: e.reason,
+    }));
+  return entries;
+};
+
 /** Corrections that touched my messages, newest first — original text, corrector, status, conversation. */
 export const listMyCorrections = async (): Promise<CorrectionHistory[]> => rpc<CorrectionHistory[]>('list_my_corrections');

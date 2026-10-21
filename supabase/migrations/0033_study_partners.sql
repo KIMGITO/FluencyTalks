@@ -1,7 +1,6 @@
--- 0033: study partners replaces follow/unfollow
+-- 0033: study_partners replaces follows
 -- --------------------------------------------------------------
--- 1. Create study_partners table: private bookmark list
---    user_id saves partner_id. No counts, no notifications, no public lists.
+-- 1. Create study_partners table (private bookmark list)
 -- --------------------------------------------------------------
 create table if not exists public.study_partners (
   id uuid primary key default gen_random_uuid(),
@@ -12,21 +11,30 @@ create table if not exists public.study_partners (
 );
 
 -- --------------------------------------------------------------
--- 2. Index for fast lookup of a user's study partners
--- --------------------------------------------------------------
-create index if not exists study_partners_user_id_idx on public.study_partners (user_id);
-
--- --------------------------------------------------------------
--- 3. RLS: authenticated users can read their own study partners
+-- 2. Enable RLS and policies for study_partners
 -- --------------------------------------------------------------
 alter table public.study_partners enable row level security;
+
+-- Users can read their own study partners
 create policy "users can read own study partners" on public.study_partners
-for select using (auth.uid() = user_id);
+  for select using (auth.uid() = user_id);
+
+-- Users can add partners (insert as user_id)
+create policy "users can add study partners" on public.study_partners
+  for insert with check (auth.uid() = user_id);
+
+-- Users can remove partners (delete by user_id)
+create policy "users can remove study partners" on public.study_partners
+  for delete using (auth.uid() = user_id);
 
 -- --------------------------------------------------------------
--- 4. Comment: this replaces the facebook-style follows/followers system.
---    - No follower/following counts
---    - No follow requests or notifications
---    - Partners are not notified when saved
---    - Private bookmark list per user
+-- 3. Drop the old follows table and related columns/objects
+-- --------------------------------------------------------------
+drop policy if exists "follow as self" on public.follows;
+drop policy if exists "see own follow rows" on public.follows;
+drop table if exists public.follows;
+
+-- --------------------------------------------------------------
+-- 4. Comment: service layer updates (people.ts, discover.ts)
+--    will replace follows queries with study_partners queries.
 -- --------------------------------------------------------------

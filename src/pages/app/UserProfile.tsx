@@ -36,6 +36,7 @@ export default function UserProfile() {
   const signOut = useAuthStore((s) => s.signOut);
   const role = useProfileStore((s) => s.me?.role);
   const staff = role === 'admin' || role === 'moderator';
+  const myPoints = useProfileStore((s) => s.me?.points_balance);
   const providerAvatar = useProviderAvatar();
 
   if (profile === undefined)
@@ -120,6 +121,13 @@ export default function UserProfile() {
         {profile.bio && (
           <div className="text-xs items-center text-ink flex flex-wrap md:w-1/2 lg:w-1/3 font-light leading-loose ">
             <p> {profile.bio}</p>
+          </div>
+        )}
+        {profile.id === useProfileStore.getState().me?.id && myPoints !== undefined && (
+          <div className="ft-chips">
+            <span className="text-sm font-medium text-brand">
+              {myPoints} pts
+            </span>
           </div>
         )}
         <div className="ft-chips">

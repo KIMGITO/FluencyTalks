@@ -16,6 +16,7 @@
 --    is finalized.
 -- 4. saved_phrases gains is_public + unsplash_image_url for public vocabulary
 --    decks with safe Unsplash visual anchors (URL strings only; no binaries).
+--    plus bounty system columns (F8)
 -- 5. Bounty flagging (spend 50, transfer to helper) is built on top of
 --    adjust_user_points in a later step; the primitive already enforces the
 --    sufficient-balance check so no points can be created out of thin air.
@@ -85,7 +86,11 @@ end $$;
 -- ---------- 5. Public phrasebook library + Unsplash visual anchors ----------
 alter table public.saved_phrases
   add column if not exists is_public boolean not null default false,
-  add column if not exists unsplash_image_url text;
+  add column if not exists unsplash_image_url text,
+  add column if not exists bounty_id uuid,
+  add column if not exists bounty_cost int default 50,
+  add column if not exists bounty_status text default 'held' check (bounty_status in ('held','released','refunded')),
+  add column if not exists bounty_asker_id uuid references public.profiles(id);
 
 create index if not exists saved_phrases_public_idx on public.saved_phrases (is_public, created_at desc) where is_public;
 

@@ -4,7 +4,7 @@ create table public.reports (
   reporter_id uuid references public.profiles(id) on delete set null,
   target_user_id uuid references public.profiles(id) on delete set null,
   conversation_id uuid references public.conversations(id) on delete set null,
-  reason text not null check (reason in ('harassment','spam','inappropriate','impersonation','underage','scam','other')),
+  reason text not null check (reason in ('harassment','spam','inappropriate','impersonation','underage','scam','fake_correction','points_abuse','other')),
   details text check (char_length(details) <= 1000),
   evidence jsonb not null default '[]',                  -- snapshot of recent messages at report time
   status text not null default 'open' check (status in ('open','reviewing','actioned','dismissed')),

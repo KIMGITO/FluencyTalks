@@ -10,6 +10,8 @@ import Onboarding from '@/pages/app/Onboarding'; import Home from '@/pages/app/H
 import Messages from '@/pages/app/Messages'; import Profile from '@/pages/app/Profile'; import UserProfile from '@/pages/app/UserProfile';
 import EditProfile from '@/pages/app/EditProfile'; import Settings from '@/pages/app/Settings'; import Learning from '@/pages/app/Learning';
 import Admin from '@/pages/app/Admin';
+import PointsHistory from '@/pages/app/PointsHistory';
+import BountyQueue from '@/pages/app/BountyQueue';
 export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
       { path: '/settings', element: <Settings /> }, { path: '/learning', element: <Learning /> },
 
       { path: '/phrasebook', element: <Navigate to="/learning" replace /> },   // Phrasebook became Learning; old links keep working
+{ path: '/bounty-queue', element: <BountyQueue /> }
+{ path: '/points-history', element: <PointsHistory /> }
       { element: <AdminRoute />, children: [{ path: '/admin', element: <Admin /> }] },
     ] },
   ] },

@@ -24,10 +24,15 @@ export default function Learning() {
   const [size, setSize] = useState<TextSize>('tiny');
   // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
   const nameOf = useLanguageStore((s) => s.name);
-  const [phrases, setPhrases] = useState<(SavedPhrase & { conversation_id: string | null })[] | null>(null);
+  const [languages, setLanguages] = useState<string[] | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  // Simple review mode: flip between phrase and translation
+  const [reviewMode, setReviewMode] = useState<boolean>(false);
+  // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
+  const [phrasesData, setPhrasesData] = useState<{ phrases: (SavedPhrase & { conversation_id: string | null })[]; total: number } | null>(null);
   const [corrections, setCorrections] = useState<CorrectionHistory[] | null>(null);
   const [translations, setTranslations] = useState<(TranslationRecord & { conversation_id: string | null })[] | null>(null);
-  useEffect(() => { listPhrases().then(setPhrases).catch(() => setPhrases([])); }, []);
+  useEffect(() => { listPhrases(selectedLanguage).then(({ phrases, total }) => setPhrasesData({ phrases, total })).catch(() => setPhrasesData(null)); }, [selectedLanguage]);
   useEffect(() => { listMyCorrections().then(setCorrections).catch(() => setCorrections([])); }, []);
   useEffect(() => { listTranslations().then(setTranslations).catch(() => setTranslations([])); }, []);
 
@@ -50,14 +55,14 @@ export default function Learning() {
 
       {tab === 'phrases' && (!phrases ? <Loading /> : !phrases.length
         ? <EmptyState title="Nothing saved yet" text="Tap “Save phrase” under any message, or accept a correction, and it will show up here." />
-        : <div className="flex flex-col gap-1.5">{phrases.map((p) => (
+        : <div className="flex flex-col gap-1.5">{phrasesData.phrases.map((p) => (
             <div key={p.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
               <div className="ft-selectable min-w-0 flex-1">
                 <p className="whitespace-pre-wrap break-words font-medium">{p.phrase}</p>
                 {p.translation && <p className="break-words text-muted">{p.translation}</p>}
                 <p className="mt-1 flex items-center gap-2 text-muted">{when(p.created_at)}{withConv(p.conversation_id)}</p>
               </div>
-              <Button variant="ghost" size="sm" aria-label="Delete phrase" onClick={async () => { await deletePhrase(p.id); setPhrases(phrases.filter((x) => x.id !== p.id)); }}><Trash2 size={16} /></Button>
+              <Button variant="ghost" size="sm" aria-label="Delete phrase" onClick={async () => { await deletePhrase(p.id); setPhrasesData(prev => prev ? { ...prev, phrases: prev.phrases.filter((x) => x.id !== p.id) } : null); }}><Trash2 size={16} /></Button>
             </div>))}</div>)}
 
       {tab === 'corrections' && (!corrections ? <Loading /> : !corrections.length

@@ -5,9 +5,29 @@ import type { SavedPhrase } from '@/types/db';
 export const savePhrase = (p: { phrase: string; translation?: string; languageCode?: string; sourceMessageId?: string }) =>
   rpc<string>('save_phrase', { p_phrase: p.phrase, p_translation: p.translation ?? null, p_language: p.languageCode ?? null, p_source: p.sourceMessageId ?? null });
 /** Embeds the source message's conversation so each phrase can link back to the chat it came from. */
-export const listPhrases = async () => {
-  const { data } = await supabase.from('saved_phrases').select('*, source:messages(conversation_id)').order('created_at', { ascending: false });
-  return ((data ?? []) as (SavedPhrase & { source: { conversation_id: string } | null })[])
+export const listPhrases = async (p_languageId?: string) => {
+  const { data } = await supabase
+    .from('saved_phrases')
+    .select('*, source:messages(conversation_id)', { count: 'exact' })
+    .order('created_at', { ascending: false });
+  let phrases = ((data ?? []) as (SavedPhrase & { source: { conversation_id: string } | null })[])
     .map(({ source, ...p }) => ({ ...p, conversation_id: source?.conversation_id ?? null }));
+  if (p_languageId) {
+    phrases = phrases.filter((p) => p.language_id === p_languageId);
+  }
+  return { phrases, total: phrases.length };
 };
 export const deletePhrase = async (id: string) => { await supabase.from('saved_phrases').delete().eq('id', id); };
+
+/** List bounties posted by a specific user (asker) */
+export const listMyBounties = async (userId: string) => {
+  const { data } = await supabase
+    .from('saved_phrases')
+    .select('*, asker:profiles(display_name, username)', { count: 'exact' })
+    .eq('bounty_asker_id', userId)
+    .eq('bounty_status', 'held')
+    .order('created_at', { ascending: false });
+  let bounties = ((data ?? []) as (SavedPhrase & { asker: { display_name: string; username: string } | null })[])
+    .map(({ asker, ...b }) => ({ ...b, asker_username: asker?.username ?? asker?.display_name ?? 'unknown' }));
+  return { bounties, total: bounties.length };
+};

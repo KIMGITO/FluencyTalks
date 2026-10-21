@@ -10,7 +10,17 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-20 flex h-[var(--layout-topbarH)] items-center justify-between gap-4 border-b border-border bg-surface px-4">
       <Link to="/home"><Logo /></Link>
-      <div className="ml-auto flex items-center gap-1.5"><NotificationBell /><Link to="/profile" aria-label="Your profile"><Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="xs" /></Link></div>
+      <div className="ml-auto flex items-center gap-1.5">
+        <NotificationBell />
+        <Link to="/profile" aria-label="Your profile">
+          <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="xs" />
+        </Link>
+        {me?.points_balance !== undefined && (
+          <span className="ml-2 text-sm font-medium text-brand">
+            {me.points_balance} pts
+          </span>
+        )}
+      </div>
     </header>
   );
 }
