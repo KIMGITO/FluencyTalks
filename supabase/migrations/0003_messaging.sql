@@ -58,7 +58,7 @@ create policy "own phrases" on public.saved_phrases for all using (auth.uid() = 
 -- Realtime (Supabase-specific; the app wraps it in services/messaging.ts so it can be swapped).
 alter publication supabase_realtime add table public.messages, public.message_reactions, public.message_corrections;
 
-create function public.start_conversation(p_target uuid) returns uuid language plpgsql security definer set search_path = public as $$
+creates function public.start_conversation(p_target uuid, p_practice_language_id uuid default null) returns uuid language plpgsql security definer set search_path = public as $$
 declare v_key text; v_id uuid; v_status text;
 begin
   perform assert_active();
@@ -68,11 +68,16 @@ begin
   select id into v_id from conversations where direct_key = v_key;
   if v_id is null then
     if (select count(*) from conversations where created_by = auth.uid() and created_at > now() - interval '24 hours') >= 20 then raise exception 'rate_limited'; end if;
-    insert into conversations (direct_key, created_by) values (v_key, auth.uid()) returning id into v_id;
+    insert into conversations (direct_key, created_by, practice_language_id) values (v_key, auth.uid(), p_practice_language_id) returning id into v_id;
     -- Followed by the recipient => straight to their inbox. Otherwise it lands in Requests.
     v_status := case when exists (select 1 from follows where follower_id = p_target and followee_id = auth.uid() and status = 'accepted') then 'active' else 'request' end;
     insert into conversation_members (conversation_id, user_id, status) values (v_id, auth.uid(), 'active'), (v_id, p_target, v_status);
-  end if;
+else
+    -- if conversation already exists, update its practice_language_id if a new one is provided
+    if p_practice_language_id is not null then
+      update conversations set practice_language_id = p_practice_language_id where id = v_id;
+    end if;
+end if;
   return v_id;
 end $$;
 

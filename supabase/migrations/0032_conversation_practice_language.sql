@@ -1,30 +1,44 @@
 -- 0032: conversation practice_language_id for message language tagging
---
--- Adds practice_language_id to conversations so messages can default
--- to the language being practiced. This enables F5 (Direct Message Bridging)
--- and supports F4 correction language matching.
---
+-- --------------------------------------------------------------
 -- 1. Add practice_language_id to conversations table
---
+-- --------------------------------------------------------------
 alter table public.conversations
   add column if not exists practice_language_id uuid references public.languages(id);
---
--- 2. Backfill: set practice_language_id from the conversation members
---    (simplified: for each conversation, try to find a member whose role matches)
---
+
+-- --------------------------------------------------------------
+-- 2. Backfill: set practice_language_id from the first active member's native language
+-- --------------------------------------------------------------
 update public.conversations c
-set practice_language_id = m.language_id
-from (
-  select conv.id, l.language_id
-  from public.conversation_members cm
-  join public.profiles p on p.id = cm.user_id
-  join public.languages l on l.id = p.native_language_id
-  where cm.status = 'active
-) m on m.id = c.id;
---
--- 3. Make message.language_id default to conversation
---    practice_language_id when inserting new messages.
---    This is handled by the application layer and/or a trigger.
---
--- 4. Grant execute considerations handled in migration 0031
-;
+set practice_language_id = (
+  select p.native_language_id
+  from public.profiles p
+  join public.conversation_members cm on cm.user_id = p.id
+  where cm.conversation_id = c.id and cm.status = 'active'
+  order by p.native_language_id
+  limit 1
+) where practice_language_id is null;
+
+-- --------------------------------------------------------------
+-- 3. Ensure every message inserted into a conversation gets the practice_language_id
+--    from that conversation. Trigger defaults language_id on INSERT.
+-- --------------------------------------------------------------
+create or replace function public.set_message_language_on_insert()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  -- if the new message doesn't have a language_id set, use the conversation's practice_language_id
+  if new.language_id is null then
+    select practice_language_id into new.language_id from public.conversations where id = new.conversation_id;
+  end if;
+  return new;
+end
+$$;
+
+create trigger messages_set_language_before_insert
+before insert on public.messages
+for each row execute procedure public.set_message_language_on_insert();
+
+-- --------------------------------------------------------------
+-- 4. Application note: when creating messages, the RPC/supabase client
+--    should also pass language_id. The trigger is a safety net so language_id
+--    is never null at the DB level.
+-- --------------------------------------------------------------

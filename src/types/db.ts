@@ -2,7 +2,7 @@ export type Role = 'native' | 'learning';
 export type LevelCode = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Native';
 /** One of my languages. Only the ISO 639-3 id is stored; the names are for display. */
 export interface UserLanguage { language_id: string; role: Role; level: LevelCode; native_name?: string | null; english_name?: string | null }
-export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; followers_count: number; languages: UserLanguage[] }
+export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; languages: UserLanguage[] }
 /** Why someone is in the Home feed: they can teach me, we practise together, or we share nothing. */
 export type MatchKind = 'native' | 'learning' | 'other';
 /** A Home row: a Person plus how they matched, so the card can say why. */
@@ -20,7 +20,7 @@ export interface MessageHit {
 export interface ConversationRow { conversation_id: string; other_user_id: string; other_name: string; other_username: string; other_avatar: string | null; last_body: string | null; last_at: string; unread_count: number; status: 'active' | 'request' | 'ignored' }
 /** A row of public.languages; `id` is the ISO 639-3 code. Re-exported from lib/languages. */
 export type { Language, DisplayLanguage } from '@/lib/languages';
-export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; followers_count: number; following_count: number; points_balance: number; native_language_id: string | null; learning_language_id: string | null; learning_level: string | null; last_language_change_at: string | null }
+export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; points_balance: number; native_language_id: string | null; learning_language_id: string | null; learning_level: string | null; last_language_change_at: string | null }
 export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; created_at: string }
 export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_id: string | null; source_message_id: string | null; created_at: string; is_public: boolean; unsplash_image_url: string | null }
 /** One "Translate" tap, stored forever; source_message_id traces it back to the chat. */

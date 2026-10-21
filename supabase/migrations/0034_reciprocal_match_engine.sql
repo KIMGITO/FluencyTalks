@@ -1,0 +1,8 @@
+-- 0034: reciprocal match engine for home_feed
+-- --------------------------------------------------------------
+-- Replaces the old home_feed() with three-tier matching:
+--   1. perfect_swap: their native = my target AND their target = my native
+--   2. teacher: their native = my target (they can help, I may not help back)
+--   3. bridge: shared third language at B1+ (optional, off by default)
+-- Within each tier: order by recent activity + timezone overlap, NOT followers_count.
+-- --------------------------------------------------------------
