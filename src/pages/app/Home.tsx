@@ -13,17 +13,13 @@ import {
 import {
   homeFeed,
   listFollowRequests,
-  listPosts,
   respondFollowRequest,
   type MiniUser,
 } from '@/services';
 import { useCountries } from '@/store/countryStore';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
-import { PostCard } from '@/components/features/posts';
-import { rankPosts } from '@/lib/feedScore';
 import type { FeedPerson } from '@/types/db';
-import type { Post } from '@/types/posts';
 
 /**
  * Home is the daily scroll: people who share one of my languages, then a divider, then
@@ -42,7 +38,6 @@ export default function Home() {
   const [answering, setAnswering] = useState<string | null>(null);
   const [answerError, setAnswerError] = useState('');
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
-  const [stories, setStories] = useState<Post[] | null>(null);
   const [hidden, setHidden] = useState<string[]>([]);
 
   const learning = languages.filter((l) => l.role === 'learning');
@@ -53,16 +48,6 @@ export default function Home() {
     homeFeed()
       .then(setPeople)
       .catch(() => setPeople([]));
-    listPosts({ kind: 'story', limit: 30 })
-      .then((ps) => setStories(
-        rankPosts(ps, {
-          learning: languages.filter((l) => l.role === 'learning').map((l) => l.language_id),
-          native: languages.filter((l) => l.role === 'native').map((l) => l.language_id),
-          country: me?.country_code ?? null,
-          timezone: me?.timezone ?? null,
-        })
-      ))
-      .catch(() => setStories([]));
   }, [languages, me?.country_code, me?.timezone]);
 
   const { partners, others } = useMemo(() => {
@@ -181,22 +166,6 @@ export default function Home() {
             {others.map((p) => (
               <ProfileCard key={p.id} person={p} onHidden={drop} />
             ))}
-
-            {/* Ranked stories: Affinity × Weight × TimeDecay (FB EdgeRank style). */}
-            {stories !== null && (
-              <Card className="flex flex-col gap-2 mt-4">
-                <h2 className="flex items-center gap-1 font-semibold">
-                  <span className="text-xs">Stories for you</span>
-                </h2>
-                {stories.length === 0 ? (
-                  <p className="text-sm text-muted">No stories yet — write the first one.</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {stories.map((p) => <PostCard key={p.id} post={p} mine={false} onChanged={() => {}} onDeleted={() => {}} />)}
-                  </div>
-                )}
-              </Card>
-            )}
           </>
         )}
       </div>

@@ -1,9 +1,7 @@
-import { Home, Search, MessageCircle, GraduationCap, User, Settings, Shield, BookOpenText, SquarePen, type LucideIcon } from 'lucide-react';
+import { Home, Search, MessageCircle, GraduationCap, User, Settings, Shield, type LucideIcon } from 'lucide-react';
 export interface NavItem { to: string; label: string; icon: LucideIcon; desktopOnly?: boolean; mobileOnly?: boolean; staffOnly?: boolean; fabOnly?: boolean }
 export const navItems: NavItem[] = [
   { to: '/home', label: 'Home', icon: Home },
-  { to: '/posts', label: 'Stories', icon: BookOpenText },
-  { to: '/posts/new?type=story', label: 'Create', icon: SquarePen, fabOnly: true },   // one-tap story creation: sidebar + FAB, not the crowded bottom bar
   { to: '/search', label: 'Search', icon: Search },
   { to: '/messages', label: 'Messages', icon: MessageCircle },
   { to: '/learning', label: 'Learning', icon: GraduationCap },

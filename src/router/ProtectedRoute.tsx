@@ -19,7 +19,7 @@ export function ProtectedRoute() {
       forceLogoutReason === 'idle'
         ? 'You were signed out after 24 hours of inactivity. Please log in again.'
         : forceLogoutReason === 'invalid'
-          ? 'Your session is no longer valid (it may have been ended on another device). Please log in again.'
+          ? 'Your session is no longer valid. Please log in again.'
           : forceLogoutReason === 'switched'
             ? 'This account was recreated. Please log in again to continue.'
             : undefined;
