@@ -5,4 +5,4 @@ compatibility_date = "2026-10-20"
 directory = "./dist"
 
 [build]
-command = "npm run build && rm -f ./dist/_redirects && echo '/* /index.html 200' > ./dist/_redirects"
+command = "rm -f ./dist/_redirects && echo '/* /index.html 200' > ./dist/_redirects"
