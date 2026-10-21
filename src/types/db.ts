@@ -10,7 +10,7 @@ export type FeedPerson = Person & { match_kind: MatchKind; match_language: strin
 export interface Country { code: string; name: string }
 /** `relationship.is_me` is still returned by get_profile; follow fields are gone from the UI. */
 export interface FullProfile extends Person { relationship: { is_me: boolean } }
-export interface Message { id: string; conversation_id: string; sender_id: string; body: string; reply_to: string | null; created_at: string; edited_at: string | null; deleted_at: string | null }
+export interface Message { id: string; conversation_id: string; sender_id: string; body: string; reply_to: string | null; created_at: string; edited_at: string | null; deleted_at: string | null; language_id: string | null }
 /** Row from search_messages: one message inside a chat the viewer belongs to, with both people on it. */
 export interface MessageHit {
   message_id: string; conversation_id: string; body: string; created_at: string;
