@@ -25,9 +25,9 @@ export const listLanguages = async (onlySupported = false): Promise<DisplayLangu
 export const listCommonLanguages = (): Promise<DisplayLanguage[]> => listLanguages(true);
 // People search lives in ./search (one central place for the /search page).
 export const getProfile = (username: string) => rpc<FullProfile | null>('get_profile', { p_username: username });
-/** Only the ISO 639-3 id travels; native_name/english_name are display fields and are dropped here. */
-export const setMyLanguages = (languages: UserLanguage[]) =>
-  rpc('set_my_languages', { p_languages: languages.map(({ language_id, role, level }) => ({ language_id, role, level })) });
+/** One native language (required) and at most one learning language with its CEFR level. ISO 639-3 ids only. */
+export const setLanguageProfile = (p: { native: string; learning?: string | null; level?: string | null }) =>
+  rpc('set_language_profile', { p_native: p.native, p_learning: p.learning || null, p_level: p.learning ? p.level ?? 'A1' : null });
 export const saveProfile = (p: { username: string; displayName: string; bio: string; timezone: string; isPrivate: boolean; avatarUrl?: string; countryCode?: string | null }) =>
   rpc('save_profile', { p_username: p.username, p_display_name: p.displayName, p_bio: p.bio, p_timezone: p.timezone, p_is_private: p.isPrivate, p_avatar_url: p.avatarUrl ?? null, p_country: p.countryCode ?? null });
 

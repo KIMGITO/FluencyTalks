@@ -6,7 +6,10 @@ const friendly: Record<string, string> = {
   user_unavailable: 'This person is unavailable.',
   rate_limited: 'Slow down a little and try again soon.', awaiting_acceptance: 'Wait for them to accept your message request.',
   conversation_unavailable: 'This conversation is unavailable.', empty_message: 'Write something first.',
-  username_taken: 'That username is taken.', forbidden: "You don't have access to that.",
+  username_taken: 'That username is taken.',
+  language_required: 'Choose the language you speak natively.', language_same: 'Your native and learning languages must be different.',
+  language_unsupported: 'That language is not available yet.', invalid_level: 'Choose a level from A1 to C2.',
+  language_change_cooldown: 'You changed languages recently. You can change them again after 30 days.', forbidden: "You don't have access to that.",
 };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
 

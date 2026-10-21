@@ -48,7 +48,7 @@ React + Vite + TypeScript, Tailwind driven by a single token file, Zustand store
 
 ## 3. Features to Add: Defined Clearly
 
-### F1. Language Profile: One Native, One Target
+### F1. Language Profile: One Native, One Target *(done: migration 0030 + `LanguageSelect`)*
 **What:** Every user picks exactly **one native language** and **at most one learning language** (with a CEFR level). Stored as ISO 639-3 ids.
 **Why:** It makes matching a simple, explainable lookup and removes the noisy 12-language profiles.
 **Behaviour:**
@@ -145,18 +145,18 @@ saved_phrases       (existing) is_public, unsplash_image_url
 
 This is the most important section. Language selection decides who can match with whom, so every weakness here shows up as an empty or bad-feeling home screen.
 
-### B1. Users can pick up to 12 languages, with several native languages
+### B1. Users can pick up to 12 languages, with several native languages *(fixed in 0030)*
 **Where:** `set_my_languages()` allows up to 12 rows, multiple `native`, multiple `learning`.
 **Impact:** Profiles become vague, matching signals blur, and a user can claim "native" in many languages to appear helpful or to farm points.
 **Fix:** Move to single columns `native_language_id` and `learning_language_id` on `profiles` with a `CHECK (native_language_id <> learning_language_id)`. Update the picker to two single-select steps.
 **Trade-off to decide as a team:** Many Kenyan users genuinely have two or three native languages (for example Kikuyu, Swahili, English). Your rule of one is fine for an MVP. Tell users to choose *the language they would be happy to correct others in*. You can add a "second native language" later without changing the matching logic.
 
-### B2. Clients can write languages directly and bypass every rule
+### B2. Clients can write languages directly and bypass every rule *(fixed in 0030)*
 **Where:** `0001_init.sql` creates the policy `"own languages" ... for all using (auth.uid() = user_id)` and I found nothing that removes it. Any signed-in user can insert or update `user_languages` rows straight through the API, skipping the 12-row limit and the level validation in `set_my_languages()`.
 **Impact:** Any future "one native, one learning" rule enforced only in the function would be bypassable.
 **Fix:** Drop that policy, replace it with read-only access, and enforce the single-language rule with **table constraints** so the database itself is the authority. With single columns on `profiles`, the existing "protected columns" trigger pattern can guard them.
 
-### B3. The same language can be both native and learning
+### B3. The same language can be both native and learning *(fixed in 0030)*
 **Where:** the primary key is `(user_id, language_code, role)`, so `eng/native` and `eng/learning` can coexist.
 **Impact:** Contradictory profiles and false matches.
 **Fix:** the `CHECK` in B1.
@@ -219,7 +219,7 @@ This is the most important section. Language selection decides who can match wit
 ## 7. Recommended Build Order
 
 1. **Stabilise (done in the cleanup commit):** type errors fixed, chat crash fixed, R3 grants repaired, R1 closed. Remaining: verify the migrations on a clean Supabase project.
-2. **Language rules (2–3 days):** B1–B3. Single native + single learning, DB constraints, drop the open write policy, new onboarding steps.
+2. **Language rules (done in 0030):** B1–B3. Single native + single learning, DB constraints, drop the open write policy, new onboarding steps.
 3. **Matching (2–3 days):** F2, B4–B7. New `home_feed`, reasons on cards, empty-state waiting list, focus language list.
 4. **Study partners (1 day):** F3. Replace follows, delete dead UI.
 5. **Points economy done safely (3–4 days):** R1, R2, R6, F7. Ledger, internal-only point function, caps, points display on profile.
@@ -232,13 +232,17 @@ This is the most important section. Language selection decides who can match wit
 
 ---
 
+## 7b. Decisions made
+
+- One native language, strict. A second native language can be added later if users ask.
+- Launch list of 40 languages (`languages.is_supported_learning`), including Swahili (`swh`, the code for Kenyan Swahili) and Vietnamese (`vie`). English, French, Spanish, German, Portuguese, Italian, Mandarin, Japanese, Korean, Hindi, Arabic and others, plus Kenyan languages (Kikuyu, Luo, Kalenjin, Luhya, Kamba, Kisii) and major African languages.
+- Language changes: the first change is free, then once every 30 days; level changes are always free.
+
 ## 8. Open Decisions for the Team
 
-1. Is "one native language" strict, or do we allow a second one later?
-2. Do we launch with a small language list or all 100?
-3. Should the Bridge match tier (shared third language) be on by default?
-4. What are the final point values and daily caps?
-5. Is a bounty answerable by anyone native in that language, or only partners the asker has chatted with?
+1. Should the Bridge match tier (shared third language) be on by default?
+2. What are the final point values and daily caps?
+3. Is a bounty answerable by anyone native in that language, or only partners the asker has chatted with?
 
 ---
 

@@ -26,6 +26,6 @@ export function ProtectedRoute() {
     void sessionCheckedAt; // subscribed so the banner reason re-renders after async logout
     return <Navigate to="/login" state={{ from: loc, reason }} replace />;
   }
-  if (!me?.onboarding_done && loc.pathname !== '/onboarding') return <Navigate to="/onboarding" replace />;
+  if ((!me?.onboarding_done || !me.native_language_id) && loc.pathname !== '/onboarding') return <Navigate to="/onboarding" replace />;
   return <Outlet />;
 }

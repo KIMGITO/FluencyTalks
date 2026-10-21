@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Avatar, Button, Input, Select, Textarea } from '@/components/ui';
-import { LanguagePicker } from './LanguagePicker';
+import { LanguageSelect, type LanguageChoice, type LearnerLevel } from './LanguageSelect';
 import { CountryPicker } from './CountryPicker';
 import { MAX_AVATAR_BYTES } from '@/lib/constants';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
@@ -16,14 +16,14 @@ const zones = (): string[] => (Intl as unknown as { supportedValuesOf?: (k: stri
 /** Used for onboarding and for editing your profile. */
 export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onDone: () => void }) {
   const user = useAuthStore((s) => s.user);
-  const { me, languages, save } = useProfileStore();
+  const { me, save } = useProfileStore();
   useCountries();                                   // the country picker needs the list
   const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [username, setUsername] = useState(me?.username ?? ''); const [displayName, setDisplayName] = useState(me?.display_name ?? '');
   const [bio, setBio] = useState(me?.bio ?? ''); const [tz, setTz] = useState(me?.timezone ?? localTz); const [isPrivate, setPrivate] = useState(me?.is_private ?? false);
   // null = "no country of my own": the timezone serves it, until the user picks one here.
   const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
-  const [langs, setLangs] = useState(languages); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
+  const [langs, setLangs] = useState<LanguageChoice>({ native: me?.native_language_id ?? '', learning: me?.learning_language_id ?? '', level: (me?.learning_level as LearnerLevel | null) ?? 'A1' }); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   // "If account is set already, you can't access profile updation until you log in":
   // editing an existing profile requires a live session — never render the form logged out.
@@ -36,7 +36,7 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setError(null);
     if (!USERNAME_RE.test(username)) return setError('Username: 3 to 20 letters, numbers or underscores.');
-    if (!langs.length) return setError('Add at least one language.');
+    if (!langs.native) return setError('Choose the language you speak natively.');
     if (!adult) return setError('You must be 18 or older to join.');
     setBusy(true);
     try {
@@ -61,7 +61,7 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
       <Textarea label="About you" rows={3} maxLength={300} value={bio} placeholder="Interests, why you're learning, what you can help with" onChange={(e) => setBio(e.target.value)} />
       <Select label="Timezone" value={tz} onChange={(e) => setTz(e.target.value)}>{[...new Set([tz, ...zones()])].map((z) => <option key={z}>{z}</option>)}</Select>
       <CountryPicker value={country} timezone={tz} onChange={setCountry} />
-      <LanguagePicker value={langs} onChange={setLangs} />
+      <LanguageSelect value={langs} onChange={setLangs} />
       
       {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 18 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
       {error && <p className="text-sm text-danger">{error}</p>}

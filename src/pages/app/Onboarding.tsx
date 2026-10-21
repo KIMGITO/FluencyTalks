@@ -3,7 +3,7 @@ import { Card, Logo } from '@/components/ui';
 import { ProfileForm } from '@/components/features';
 import { useProfileStore } from '@/store/profileStore';
 export default function Onboarding() {
-  const nav = useNavigate(); const done = useProfileStore((s) => s.me?.onboarding_done);
+  const nav = useNavigate(); const done = useProfileStore((s) => !!s.me?.onboarding_done && !!s.me?.native_language_id);
   if (done) return <Navigate to="/home" replace />;
   return (
     <div className="ft-hero-bg flex min-h-screen flex-col items-center gap-6 p-4 py-10">

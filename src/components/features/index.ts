@@ -1,5 +1,5 @@
 export * from './LanguageChip'; export * from './ProfileCard'; export * from './SocialButtons';
-export * from './MessageButton'; export * from './UserMenu'; export * from './ReportDialog'; export * from './LanguagePicker';
+export * from './MessageButton'; export * from './UserMenu'; export * from './ReportDialog'; export * from './LanguageSelect';
 export * from './ProfileForm'; export * from './BlockedList';
 export * from './CountryBadge'; export * from './CountryPicker'; export * from './MatchBadge';
 export * from './search';

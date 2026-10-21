@@ -72,12 +72,13 @@ Run the migrations in order in the SQL editor (or `supabase db push`):
 | 0027 | `points_balance` (default 100), `adjust_user_points`, +5 for an accepted correction, public phrase library columns incl. `unsplash_image_url` |
 | 0028 | drops the posts system |
 | 0029 | restores function grants lost in 0028 and makes `adjust_user_points` internal-only |
+| 0030 | **One native + at most one learning language.** `profiles.native_language_id / learning_language_id / learning_level` with constraints; `set_language_profile()` is the only way to change them (30-day cooldown after the first change); the open client write policy on `user_languages` is removed; launch list of 40 languages; `set_my_languages` removed |
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
 - **Blocking is enforced in every read** via `is_blocked_between()` (both directions, silent).
 - `profiles.role`, `status` and counters cannot be edited from the client (trigger-protected).
-- **After adding any new function**, re-run the grants block at the end of 0005 (functions are callable by signed-in users only).
+- **After adding any new function**, re-run the grants block at the end of 0030 (functions are callable by signed-in users only). Keep its last line: `adjust_user_points` must stay internal-only.
 - Make yourself an admin once: `update profiles set role = 'admin' where id = '<your uid>';` in the SQL editor.
 - Deploy account deletion: `supabase functions deploy delete-account`. It is the only Edge Function, so exit cost is one small endpoint.
 - Realtime is used in exactly two places (`services/messaging.ts` for messages, corrections and reactions; `services/notifications.ts` for the bell), so it can be swapped for your own WebSocket layer later.
@@ -172,6 +173,7 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 
 - Direction and plan: see **[docs/PRODUCT_ANALYSIS.md](docs/PRODUCT_ANALYSIS.md)** (features, what is built, what to add, bottlenecks).
 - Migrations have not been verified against a live database since 0027. Apply them to a throwaway Supabase project first.
+- `user_languages` is now a derived copy of the two language columns on `profiles` (kept in sync by `set_language_profile`) so the old search and feed functions keep working until they are rewritten.
 - The follow system still exists in the database (`follows`, counters, `is_private`) and in `search_people`, `get_profile` and `home_feed`; the UI no longer shows it. It is replaced by *Saved Study Partners* in the next phase.
 - The emoji reaction bar is commented out in `MessageBubble`; reactions can be sent from the message menu but are not displayed yet.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.
