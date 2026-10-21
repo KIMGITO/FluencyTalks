@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { Select } from '@/components/ui';
 import { LEARNER_LEVELS } from '@/lib/constants';
 import { normalizeCode } from '@/lib/languages';
-import type { SearchScope } from '@/services';
 import { displayLabel, useDisplayLocales, useLanguages, useLanguageStore } from '@/store/languageStore';
 
 export interface SearchFiltersValue { language: string; role: string; level: string }
@@ -67,8 +66,6 @@ export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; 
               <Select aria-label="Role" value={value.role} onChange={txt('role')}><option value="">Anyone</option><option value="native">Native</option><option value="learning">Learners</option></Select></label>
             <label className="flex flex-col gap-1"><span className="text-2xs font-bold uppercase tracking-wide text-muted">Level</span>
               <Select aria-label="Level" value={value.level} onChange={txt('level')}><option value="">Any</option>{LEARNER_LEVELS.map((l) => <option key={l}>{l}</option>)}</Select></label>
-            <label className="flex flex-col gap-1"><span className="text-2xs font-bold uppercase tracking-wide text-muted">Who</span>
-              <Select aria-label="Who" value={value.scope} onChange={(e) => onChange({ scope: e.target.value as SearchScope })}><option value="everyone">Everyone</option><option value="following">Following</option></Select></label>
           </div>
           <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
             <span className="text-xs text-muted">{n ? `${n} active` : 'No filters'}{restCount > 0 && (showAll ? ` - all ${languages.length}` : ` - top ${common.length}`)}</span>

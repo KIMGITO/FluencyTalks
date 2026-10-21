@@ -6,7 +6,7 @@ import { MessageResult, PersonResult, SearchBox, SearchFilters } from '@/compone
 import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { searchMessages, searchPeople, type SearchScope } from '@/services';
+import { searchMessages, searchPeople } from '@/services';
 import { BRAND } from '@/lib/site';
 import { useDisplayLocales, useLanguageStore, useLanguages } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';

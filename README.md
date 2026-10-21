@@ -44,7 +44,6 @@ src/
   store/        Zustand: authStore, themeStore, profileStore, languageStore, chatStore, notificationStore
   hooks/        useBreakpoint, useUnreadCount, useDebouncedValue
   lib/          supabase.ts (the only file that creates the client), translate.ts (the only file that talks to a translation provider)
-  data/         mock.ts (temporary seed data, delete once real queries exist)
 supabase/migrations/   Schema as code, applied in order (see Backend section)
 supabase/functions/    delete-account (Edge Function)
   services/     Typed wrappers over Postgres functions (people, social, messaging, safety, account, phrasebook, history, search)
@@ -68,6 +67,11 @@ Run the migrations in order in the SQL editor (or `supabase db push`):
 | 0009 | Central search: `search_people` rewritten (leading `@` allowed, wildcards escaped, relevance order, role/level filters that work on their own, `p_scope` "people you follow") and `search_messages` added so `/search` can search your own chats |
 | 0010 | `country_code` on profiles + `home_feed()` (partners first, everyone else after, with the reason for the match) |
 | 0011 | **ISO 639-3 everywhere.** `languages` rebuilt around its standard 3-letter `id` (`iso_639_1`, `english_name`, `native_name`, `is_supported_learning`); `user_languages.language_id` replaces the free-text `language_code`, FK `ON DELETE CASCADE`; `saved_phrases` and `translation_history` re-pointed at the same table; `search_people`/`home_feed` match on ids; person payloads carry both display names. Existing rows are mapped, so no profile loses a language. `supabase/seed.sql` loads the curated list of 100 languages |
+| 0012–0019 | single reaction, deleted-message handling, follow-back, read receipts, provider avatar, follow languages |
+| 0020–0026 | *(blog/posts system, added then removed; see git history. Not part of the product.)* |
+| 0027 | `points_balance` (default 100), `adjust_user_points`, +5 for an accepted correction, public phrase library columns incl. `unsplash_image_url` |
+| 0028 | drops the posts system |
+| 0029 | restores function grants lost in 0028 and makes `adjust_user_points` internal-only |
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
@@ -164,12 +168,12 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 6. ✅ Account deletion (needs a server-side function with the service role), data export
 7. Voice/video sessions, PWA + push, i18n/RTL
 
-## Known gaps in this scaffold
+## Known gaps
 
-- Not yet installed or build-tested, and the SQL has not been run against a live database; apply migrations to a throwaway Supabase project first.
-- Search/Home still use mock data; services exist but pages are not wired yet.
-- Reaction removals arrive over realtime without RLS filtering (Supabase limitation for DELETE events); they carry only message, user and emoji ids, and the client ignores ones for messages it doesn't have.
-- Followers and following lists link to profiles but don't show a Follow button per row (`list_follows` doesn't return the viewer's follow status). Add it to the function if you want that.
+- Direction and plan: see **[docs/PRODUCT_ANALYSIS.md](docs/PRODUCT_ANALYSIS.md)** (features, what is built, what to add, bottlenecks).
+- Migrations have not been verified against a live database since 0027. Apply them to a throwaway Supabase project first.
+- The follow system still exists in the database (`follows`, counters, `is_private`) and in `search_people`, `get_profile` and `home_feed`; the UI no longer shows it. It is replaced by *Saved Study Partners* in the next phase.
+- The emoji reaction bar is commented out in `MessageBubble`; reactions can be sent from the message menu but are not displayed yet.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.
 - No i18n yet. Strings are inline and should move to translation files before launch.
-
+- Two deploy configs exist (`wrangler.toml` for Cloudflare Pages and `vercel.json`); pick one.

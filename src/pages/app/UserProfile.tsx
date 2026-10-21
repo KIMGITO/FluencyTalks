@@ -108,21 +108,6 @@ export default function UserProfile() {
               </div>
              
             </p>
-            <p className="mt-0.5 text-xs text-muted">
-              <Link
-                to={`/u/${profile.username}/followers`}
-                className="hover:underline"
-              >
-                <b className="text-ink">{profile.followers_count}</b> followers
-              </Link>{' '}
-              ·{' '}
-              <Link
-                to={`/u/${profile.username}/following`}
-                className="hover:underline"
-              >
-                <b className="text-ink">{profile.following_count}</b> following
-              </Link>
-            </p>
           </div>
           {!r.is_me && (
             <UserMenu

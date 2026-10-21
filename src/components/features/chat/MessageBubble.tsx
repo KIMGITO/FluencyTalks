@@ -1,19 +1,23 @@
 import { useRef, useState } from 'react';
 import clsx from 'clsx';
-import { MoreVertical, Pin } from 'lucide-react';
+import { Check, CheckCheck, MoreVertical, Pin } from 'lucide-react';
 import { CorrectionCard } from './CorrectionCard';
-import { ReactionBar } from './ReactionBar';
+import { MessageActions } from './MessageActions';
 import { useMessageGestures } from '@/hooks/useMessageGestures';
 import { formatTime } from '@/lib/format';
 import { translateText } from '@/lib/translate';
 import type { Correction, Message, Reaction } from '@/types/db';
 
+/** WhatsApp-style delivery state of one of my messages (computed in ChatThread). */
+export type TickState = 'sent' | 'delivered' | 'read';
+
 interface Props {
   message: Message;
+  tick?: TickState;
   mine: boolean;
   myId: string;
   corrections: Correction[];
-  reactions: Reaction[];
+  reactions?: Reaction[]; // unused until the reaction bar is re-enabled
   otherName: string;
   pinned: boolean;
   showTail: boolean;
@@ -38,6 +42,7 @@ interface Props {
 type Translation = { state: 'loading' | 'done' | 'error'; text: string };
 export function MessageBubble({
   message,
+  tick,
   mine,
   myId,
   corrections,
@@ -138,6 +143,15 @@ export function MessageBubble({
           <p className="ft-bubble-meta">
             {formatTime(message.created_at)}
             {message.edited_at && ' · edited'}
+            {mine && tick && (
+              <span
+                className={clsx('ml-1 inline-flex align-middle', tick === 'read' ? 'text-brand' : 'opacity-70')}
+                aria-label={tick}
+                title={tick}
+              >
+                {tick === 'sent' ? <Check size={12} aria-hidden /> : <CheckCheck size={12} aria-hidden />}
+              </span>
+            )}
           </p>
           {/* Desktop hover: 3-dots trigger. Touch uses long-press (gesture hook). */}
           <button
@@ -236,9 +250,10 @@ export function MessageBubble({
           onClose={() => setSheet(false)}
           onReply={() => onReply(message)}
           onPin={() => onPin(message)}
+          onTranslate={() => void translate()}
           onDeleteMe={() => onDeleteMe(message)}
           onDeleteAll={() => onDeleteAll(message)}
-          onReact={(emoji) => onReact(message, emoji)}
+          onReact={(emoji: string) => onReact(message, emoji)}
         />
       )}
     </div>

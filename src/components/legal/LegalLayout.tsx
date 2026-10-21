@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { photo } from '@/theme/theme';
 import { EMAILS } from '@/lib/emails';
@@ -12,6 +12,8 @@ import {
 } from '@/theme/componentStyles';
 import { Logo } from '../ui';
 
+export interface LegalSection { id: string; short: string; tagline: string; heading: string; img: string; tint: string; side: string; body: ReactNode }
+
 const LINKS = [
   ['Privacy', '/privacy'],
   ['Terms', '/terms'],
@@ -20,8 +22,8 @@ const LINKS = [
 
 /* Text helpers so each page stays short and consistent.
    Their style objects live in theme/componentStyles.js so any page can reuse them. */
-export const P = ({ children }) => <p style={legalText}>{children}</p>;
-export const Bullets = ({ items }) => (
+export const P = ({ children }: { children: ReactNode }) => <p style={legalText}>{children}</p>;
+export const Bullets = ({ items }: { items: [string, string][] }) => (
   <ul style={legalList}>
     {items.map(([t, d]) => (
       <li key={t} style={legalListItem}>
@@ -44,19 +46,25 @@ export default function LegalLayout({
   updated,
   contact = EMAILS.support,
   sections,
+}: {
+  title: string;
+  active: string;
+  updated: string;
+  contact?: string;
+  sections: LegalSection[];
 }) {
   const n = sections.length;
   const [i, setI] = useState(() =>
     Math.max(
       0,
-      sections.findIndex((s) => `#${s.id}` === window.location.hash),
+      sections.findIndex((s: LegalSection) => `#${s.id}` === window.location.hash),
     ),
   );
   const cur = sections[i];
   const toward = cur.side === 'left' ? 'right' : 'left';
 
   const go = useCallback(
-    (k) => {
+    (k: number) => {
       setI((k + n) % n);
       if (window.innerWidth <= 820)
         document
@@ -70,8 +78,8 @@ export default function LegalLayout({
     window.history.replaceState(window.history.state, '', `#${cur.id}`);
   }, [cur.id]);
   useEffect(() => {
-    const key = (e) => {
-      if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    const key = (e: KeyboardEvent) => {
+      if (/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName)) return;
       if (e.key === 'ArrowRight') go(i + 1);
       if (e.key === 'ArrowLeft') go(i - 1);
     };
@@ -109,10 +117,10 @@ export default function LegalLayout({
       <main
         id="lg-top"
         className={`lg-stage lg-${cur.side}`}
-        style={{ '--lg-tint': cur.tint }}
+        style={{ '--lg-tint': cur.tint } as CSSProperties}
       >
         <div className="lg-media" aria-hidden="true">
-          {sections.map((s, k) => (
+          {sections.map((s: LegalSection, k: number) => (
             <div
               key={s.id}
               style={{

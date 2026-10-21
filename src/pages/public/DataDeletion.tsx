@@ -11,7 +11,7 @@ function DeleteForm() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
-  const submit = async (e) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
