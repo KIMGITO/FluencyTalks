@@ -1,11 +1,7 @@
 # ---------------------------------------------------------------------------
-# Fluency Talks — Cloudflare Pages _redirects
-#
-# SPA fallback: anything that isn't a real file serves /index.html so
-# React Router handles client-side routes. Must stay LAST.
-#
-# Format:  source  destination  status
+# Custom Redirects & Rules
+# (SPA routing is handled automatically by wrangler.toml)
 # ---------------------------------------------------------------------------
 
-# SPA fallback — React Router handles the route client-side.
-/*  /index.html  200
+# Example custom redirect if needed:
+# /old-route  /new-route  301

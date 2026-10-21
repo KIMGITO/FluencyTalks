@@ -1,8 +1,9 @@
-name = "fluencytalks"
+name = "thefluencytalks"
 compatibility_date = "2026-10-20"
 
 [assets]
 directory = "./dist"
+not_found_handling = "single-page-application"
 
 [build]
-command = "rm -f ./dist/_redirects && echo '/* /index.html 200' > ./dist/_redirects"
+command = "npm run build"
