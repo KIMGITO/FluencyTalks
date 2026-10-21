@@ -32,8 +32,9 @@ export const router = createBrowserRouter([
       { path: '/settings', element: <Settings /> }, { path: '/learning', element: <Learning /> },
 
       { path: '/phrasebook', element: <Navigate to="/learning" replace /> },   // Phrasebook became Learning; old links keep working
-{ path: '/bounty-queue', element: <BountyQueue /> }
-{ path: '/points-history', element: <PointsHistory /> }
+{ path: '/bounty-queue', element: <BountyQueue /> },
+  { path: '/points-history', element: <PointsHistory /> }
+    ,
       { element: <AdminRoute />, children: [{ path: '/admin', element: <Admin /> }] },
     ] },
   ] },
