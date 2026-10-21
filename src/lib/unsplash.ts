@@ -1,8 +1,4 @@
-// Unsplash search helper — calls the Supabase Edge Function
-// Ensure UNSPLASH_ACCESS_KEY is set in your Supabase project env vars
-
-// Unsplash search helper — calls the Supabase Edge Function
-// Ensure UNSPLASH_ACCESS_KEY is set in your Supabase project env vars
+import { supabase } from './supabase';
 
 export interface UnsplashImage {
   id: string;
@@ -34,8 +30,6 @@ export interface UnsplashResults {
 }
 
 export async function searchUnsplash(keyword: string, page = 1, perPage = 10): Promise<UnsplashResults> {
-  const supabase = useSupabaseClient();
-
   const { data, error } = await supabase
     .rpc('unsplash_proxy', {
       p_search: keyword,
