@@ -62,7 +62,7 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
       <Select label="Timezone" value={tz} onChange={(e) => setTz(e.target.value)}>{[...new Set([tz, ...zones()])].map((z) => <option key={z}>{z}</option>)}</Select>
       <CountryPicker value={country} timezone={tz} onChange={setCountry} />
       <LanguagePicker value={langs} onChange={setLangs} />
-      <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={isPrivate} onChange={(e) => setPrivate(e.target.checked)} /><span><b>Private profile.</b> People must request to follow you.</span></label>
+      
       {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 18 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button type="submit" full loading={busy}>{mode === 'onboarding' ? 'Finish setup' : 'Save changes'}</Button>

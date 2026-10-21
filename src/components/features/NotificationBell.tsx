@@ -8,12 +8,10 @@ import { useNotificationStore } from '@/store/notificationStore';
 import type { AppNotification } from '@/types/db';
 
 const verbs: Record<AppNotification['type'], string> = {
-  follow: 'started following you', follow_request: 'wants to follow you', follow_accepted: 'accepted your follow request',
   message_request: 'sent you a message request', correction: 'suggested a correction to your message',
 };
 /** Where a notification leads when tapped. */
 const destination = (n: AppNotification) => {
-  if (n.type === 'follow_request') return '/home';   // follow requests are answered on Home
   if (n.type === 'message_request' || n.type === 'correction') return n.data.conversation_id ? `/messages/${n.data.conversation_id}` : '/messages';
   return n.actor_username ? `/u/${n.actor_username}` : '/home';
 };

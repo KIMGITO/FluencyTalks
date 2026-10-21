@@ -4,7 +4,6 @@ import { Clock4Icon, LogOut } from 'lucide-react';
 import { Avatar, Button, Card, EmptyState, Spinner } from '@/components/ui';
 import {
   CountryBadge,
-  FollowButton,
   LanguageChip,
   MessageButton,
   UserMenu,
@@ -171,11 +170,7 @@ export default function UserProfile() {
             </>
           ) : (
             <>
-              <FollowButton userId={profile.id} initial={r.following} />
               <MessageButton userId={profile.id} />
-              {r.follows_me && (
-                <span className="text-xs text-muted">Follows you</span>
-              )}
             </>
           )}
         </div>

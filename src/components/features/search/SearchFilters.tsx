@@ -7,7 +7,7 @@ import { normalizeCode } from '@/lib/languages';
 import type { SearchScope } from '@/services';
 import { displayLabel, useDisplayLocales, useLanguages, useLanguageStore } from '@/store/languageStore';
 
-export interface SearchFiltersValue { language: string; role: string; level: string; scope: SearchScope }
+export interface SearchFiltersValue { language: string; role: string; level: string }
 
 /** Compact filters: button + count, chips inline, selects in popover. Language names read in your language; common first, rest behind More. */
 export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; onChange: (p: Partial<SearchFiltersValue>) => void }) {
@@ -24,10 +24,10 @@ export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; 
   if (value.language) chips.push({ k: 'language', label: nameIn(value.language, locales) });
   if (value.role) chips.push({ k: 'role', label: value.role === 'native' ? 'Native' : 'Learners' });
   if (value.level) chips.push({ k: 'level', label: value.level });
-  if (value.scope === 'following') chips.push({ k: 'scope', label: 'Following' });
+
   const n = chips.length;
-  const clear = () => onChange({ language: '', role: '', level: '', scope: 'everyone' });
-  const drop = (k: keyof SearchFiltersValue) => onChange(k === 'scope' ? { scope: 'everyone' } : { [k]: '' } as Partial<SearchFiltersValue>);
+  const clear = () => onChange({ language: '', role: '', level: '' });
+  const drop = (k: keyof SearchFiltersValue) => onChange({ [k]: '' } as Partial<SearchFiltersValue>);
   useEffect(() => {
     if (!open) return;
     const doc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };

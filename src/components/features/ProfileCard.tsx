@@ -4,7 +4,6 @@ import { Avatar, Card } from '@/components/ui';
 import { LanguageChip } from './LanguageChip';
 import { CountryBadge } from './CountryBadge';
 import { MatchBadge } from './MatchBadge';
-import { FollowButton } from './FollowButton';
 import { MessageButton } from './MessageButton';
 import { UserMenu } from './UserMenu';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
@@ -85,7 +84,6 @@ export function ProfileCard({
         />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-1.5">
-        <FollowButton userId={person.id} initial={person.follow_status} />
         <MessageButton userId={person.id} />
       </div>
     </Card>

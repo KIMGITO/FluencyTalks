@@ -2,13 +2,13 @@ export type Role = 'native' | 'learning';
 export type LevelCode = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Native';
 /** One of my languages. Only the ISO 639-3 id is stored; the names are for display. */
 export interface UserLanguage { language_id: string; role: Role; level: LevelCode; native_name?: string | null; english_name?: string | null }
-export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; followers_count: number; languages: UserLanguage[]; follow_status: 'pending' | 'accepted' | null }
+export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; followers_count: number; languages: UserLanguage[] }
 /** Why someone is in the Home feed: they can teach me, we practise together, or we share nothing. */
 export type MatchKind = 'native' | 'learning' | 'other';
 /** A Home row: a Person plus how they matched, so the card can say why. */
 export type FeedPerson = Person & { match_kind: MatchKind; match_language: string | null };
 export interface Country { code: string; name: string }
-export interface FullProfile extends Omit<Person, 'follow_status'> { following_count: number; relationship: { is_me: boolean; following: 'pending' | 'accepted' | null; follows_me: boolean } }
+export interface FullProfile extends Person { }
 export interface Message { id: string; conversation_id: string; sender_id: string; body: string; reply_to: string | null; created_at: string; edited_at: string | null; deleted_at: string | null }
 /** Row from search_messages: one message inside a chat the viewer belongs to, with both people on it. */
 export interface MessageHit {
@@ -27,7 +27,7 @@ export interface TranslationRecord { id: string; source_text: string; translated
 /** Row from list_my_corrections: a correction that was applied to one of my messages. */
 export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
 export interface Reaction { message_id: string; user_id: string; emoji: string }
-export type NotificationType = 'follow' | 'follow_request' | 'follow_accepted' | 'message_request' | 'correction';
+export type NotificationType = 'message_request' | 'correction';
 export interface AppNotification {
   id: string; type: NotificationType; data: { conversation_id?: string; message_id?: string }; read_at: string | null; created_at: string;
   actor_id: string | null; actor_username: string | null; actor_name: string | null; actor_avatar: string | null;

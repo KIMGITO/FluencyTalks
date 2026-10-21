@@ -117,7 +117,7 @@ export function ChatThread({ id }: { id: string }) {
         </div>)}
       {isRequest ? (
         <div className="space-y-2 border-t border-border bg-surface p-3">
-          <p className="text-sm text-muted">{row.other_name} isn't in your followers yet. Accept to reply, or ignore this request.</p>
+          <p className="text-sm text-muted">This is a message request. Accept to reply, or ignore it.</p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => respond(id, true)}>Accept</Button>
             <Button size="sm" variant="secondary" onClick={async () => { await respond(id, false); nav('/messages'); }}>Ignore</Button>

@@ -30,8 +30,7 @@ export default function Search() {
   const query = params.get('q') ?? '';
   const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? 'all') as Tab;
   const language = params.get('lang') ?? ''; const role = params.get('role') ?? ''; const level = params.get('level') ?? '';
-  const scope: SearchScope = params.get('scope') === 'following' ? 'following' : 'everyone';
-  const filtered = !!(language || role || level) || scope === 'following';
+  const filtered = !!(language || role || level);
 
   const patch = useCallback((p: Record<string, string>) => setParams((cur) => {
     const next = new URLSearchParams(cur);
@@ -49,7 +48,7 @@ export default function Search() {
   const [people, setPeople] = useState<Person[]>([]); const [pBusy, setPBusy] = useState(false); const [pMore, setPMore] = useState(false); const [pErr, setPErr] = useState('');
   const [hits, setHits] = useState<MessageHit[]>([]); const [hBusy, setHBusy] = useState(false); const [hMore, setHMore] = useState(false); const [hErr, setHErr] = useState('');
 
-  const peopleArgs = useMemo(() => ({ query: typed || undefined, language: language || undefined, role: role || undefined, level: level || undefined, scope, limit: tab === 'all' ? PREVIEW : SEARCH_PAGE_SIZE }), [typed, language, role, level, scope, tab]);
+  const peopleArgs = useMemo(() => ({ query: typed || undefined, language: language || undefined, role: role || undefined, level: level || undefined, limit: tab === 'all' ? PREVIEW : SEARCH_PAGE_SIZE }), [typed, language, role, level, tab]);
 
   useEffect(() => {
     if (!wantPeople) { setPeople([]); setPMore(false); return; }
@@ -119,7 +118,7 @@ export default function Search() {
       <div className="sticky top-[var(--layout-topbarH)] z-10 -mx-1 mb-2 flex items-center gap-2 bg-bg/95 px-1 py-1.5 backdrop-blur">
         <div className="min-w-0 flex-1 overflow-x-auto"><Tabs value={tab} onChange={(key) => patch({ tab: key })} items={tabs} /></div>
         {tab !== 'messages' && (
-          <SearchFilters value={{ language, role, level, scope }} onChange={(p) => patch({ lang: p.language ?? '', role: p.role ?? '', level: p.level ?? '', scope: p.scope === 'following' ? 'following' : '' })} />
+          <SearchFilters value={{ language, role, level }} onChange={(p) => patch({ lang: p.language ?? '', role: p.role ?? '', level: p.level ?? '' })} />
         )}
       </div>
 

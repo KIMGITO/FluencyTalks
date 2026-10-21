@@ -1,4 +1,4 @@
-export * from './LanguageChip'; export * from './ProfileCard'; export * from './SocialButtons'; export * from './FollowButton';
+export * from './LanguageChip'; export * from './ProfileCard'; export * from './SocialButtons';
 export * from './MessageButton'; export * from './UserMenu'; export * from './ReportDialog'; export * from './LanguagePicker';
 export * from './ProfileForm'; export * from './BlockedList';
 export * from './CountryBadge'; export * from './CountryPicker'; export * from './MatchBadge';

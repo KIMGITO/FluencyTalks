@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 /** Maps database error codes (raised in SQL functions) to messages safe to show users. */
 const friendly: Record<string, string> = {
   not_authenticated: 'Please log in again.', account_restricted: 'Your account is restricted.',
-  user_unavailable: 'This person is unavailable.', cannot_follow_self: "You can't follow yourself.",
+  user_unavailable: 'This person is unavailable.',
   rate_limited: 'Slow down a little and try again soon.', awaiting_acceptance: 'Wait for them to accept your message request.',
   conversation_unavailable: 'This conversation is unavailable.', empty_message: 'Write something first.',
   username_taken: 'That username is taken.', forbidden: "You don't have access to that.",

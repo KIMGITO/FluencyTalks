@@ -10,12 +10,7 @@ import {
   EmptyState,
   Spinner,
 } from '@/components/ui';
-import {
-  homeFeed,
-  listFollowRequests,
-  respondFollowRequest,
-  type MiniUser,
-} from '@/services';
+import { homeFeed, type MiniUser } from '@/services';
 import { useCountries } from '@/store/countryStore';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -32,19 +27,11 @@ export default function Home() {
   const labelOf = useLanguageStore((s) => s.labelOf);
   const locales = useDisplayLocales();
   useCountries(); // flags need the country names
-  const [requests, setRequests] = useState<
-    (MiniUser & { follower_id: string })[]
-  >([]);
-  const [answering, setAnswering] = useState<string | null>(null);
-  const [answerError, setAnswerError] = useState('');
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
   const [hidden, setHidden] = useState<string[]>([]);
 
   const learning = languages.filter((l) => l.role === 'learning');
   useEffect(() => {
-    listFollowRequests()
-      .then(setRequests)
-      .catch(() => {});
     homeFeed()
       .then(setPeople)
       .catch(() => setPeople([]));
@@ -58,18 +45,6 @@ export default function Home() {
     };
   }, [people, hidden]);
 
-  const answer = async (id: string, accept: boolean) => {
-    setAnswering(id);
-    setAnswerError('');
-    try {
-      await respondFollowRequest(id, accept);
-      setRequests((r) => r.filter((x) => x.follower_id !== id));
-    } catch (e) {
-      setAnswerError((e as Error).message);
-    } finally {
-      setAnswering(null);
-    }
-  };
   const drop = (id: string) => setHidden((h) => [...h, id]);
   const subtitle = learning.length
     ? `Find people to practice with.`
@@ -82,44 +57,6 @@ export default function Home() {
         subtitle={subtitle}
       />
       <div className="flex flex-col gap-2">
-        {requests.length > 0 && (
-          <Card className="flex flex-col gap-2">
-            <h2 className="font-semibold">Follow requests</h2>
-            {answerError && (
-              <p className="text-sm text-danger">{answerError}</p>
-            )}
-            {requests.map((r) => (
-              <div key={r.follower_id} className="flex items-center gap-2">
-                <Avatar name={r.display_name} src={r.avatar_url} size="sm" />
-                <Link
-                  to={`/u/${r.username}`}
-                  className="min-w-0 flex-1 truncate text-sm font-medium"
-                >
-                  {r.display_name}
-                  <span className="block truncate text-xs font-normal text-muted">
-                    @{r.username} wants to follow you
-                  </span>
-                </Link>
-                <Button
-                  size="sm"
-                  loading={answering === r.follower_id}
-                  onClick={() => answer(r.follower_id, true)}
-                >
-                  Follow back
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={answering === r.follower_id}
-                  onClick={() => answer(r.follower_id, false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            ))}
-          </Card>
-        )}
-
         {people === null ? (
           <div className="flex justify-center p-6">
             <Spinner />
