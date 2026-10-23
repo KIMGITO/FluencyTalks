@@ -29,8 +29,11 @@ drop table if exists public.post_saves cascade;
 drop table if exists public.post_reads cascade;
 drop table if exists public.posts cascade;
 
--- 3. Storage: remove the post-images policies, then the bucket itself.
+-- 3. Storage: remove the post-images policies.
+--    The bucket itself is NOT deleted here: hosted Supabase forbids direct DELETEs on storage
+--    tables ("Use the Storage API instead"). It only ever existed on databases that ran the removed
+--    posts migrations; a database built from these files never creates it. If yours has an old
+--    `post-images` bucket, delete it in the dashboard (Storage) or with the Storage API.
 drop policy if exists "post images public read" on storage.objects;
 drop policy if exists "post images insert own" on storage.objects;
 drop policy if exists "post images delete own" on storage.objects;
-delete from storage.buckets where id = 'post-images';
