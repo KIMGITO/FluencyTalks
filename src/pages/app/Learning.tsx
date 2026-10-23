@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
-import { ExternalLink, Trash2 } from 'lucide-react';
+import { ExternalLink, Trash2, Search as SearchIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
+import { Button, EmptyState, Spinner, Tabs, Input } from '@/components/ui';
 import { DiffText } from '@/components/features';
 import { deletePhrase, deleteTranslation, listMyCorrections, listPhrases, listTranslations } from '@/services';
 import { useLanguageStore } from '@/store/languageStore';
+import { searchUnsplash } from '@/lib/unsplash';
 import type { CorrectionHistory, SavedPhrase, TranslationRecord } from '@/types/db';
 
 type Tab = 'phrases' | 'corrections' | 'translations';
@@ -22,6 +23,8 @@ const Loading = () => <div className="flex justify-center p-8"><Spinner /></div>
 export default function Learning() {
   const [tab, setTab] = useState<Tab>('phrases');
   const [size, setSize] = useState<TextSize>('tiny');
+  const [unsplashQuery, setUnsplashQuery] = useState('');
+  const [unsplashResult, setUnsplashResult] = useState<string | null>(null);
   // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
   const nameOf = useLanguageStore((s) => s.name);
   const [languages, setLanguages] = useState<string[] | null>(null);
@@ -36,6 +39,11 @@ export default function Learning() {
   useEffect(() => { listMyCorrections().then(setCorrections).catch(() => setCorrections([])); }, []);
   useEffect(() => { listTranslations().then(setTranslations).catch(() => setTranslations([])); }, []);
 
+  const handleSearchUnsplash = async () => {
+    const url = await searchUnsplash(unsplashQuery);
+    setUnsplashResult(url);
+  };
+
   const withConv = (id: string | null) => id && (
     <Link to={`/messages/${id}`} className="inline-flex items-center gap-1 text-brand hover:underline">Open chat<ExternalLink size={10} /></Link>);
   const when = (iso: string) => new Date(iso).toLocaleDateString();
@@ -45,12 +53,11 @@ export default function Learning() {
       <PageHeader title="Learning" subtitle="Phrases you saved, corrections and translations." />
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'phrases', label: 'Phrases' }, { key: 'corrections', label: 'Corrections' }, { key: 'translations', label: 'Translations' }]} />
-        {/* <div className="flex overflow-hidden rounded-full border border-border" role="group" aria-label="Text size">
-          {(['tiny', 'small'] as const).map((s) => (
-            <button key={s} onClick={() => setSize(s)} aria-pressed={size === s}
-              className={clsx('px-3 py-1.5 font-semibold', sizeClass[s], size === s ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-surface-2')}>
-              {s === 'tiny' ? 'A Very small' : 'A Small'}</button>))}
-        </div> */}
+        <div className="flex w-full items-center gap-2 mt-2">
+          <Input placeholder="Search Unsplash for image..." value={unsplashQuery} onChange={(e) => setUnsplashQuery(e.target.value)} />
+          <Button onClick={handleSearchUnsplash}><SearchIcon size={16} /></Button>
+        </div>
+        {unsplashResult && <img src={unsplashResult} alt="Unsplash" className="mt-2 h-32 w-full object-cover rounded-md" />}
       </div>
 
       {tab === 'phrases' && (!phrasesData ? <Loading /> : !phrasesData.phrases.length

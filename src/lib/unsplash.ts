@@ -1,39 +1,18 @@
-import { supabase } from './supabase';
+import { constants } from '@/lib/constants';
 
-export interface UnsplashImage {
-  id: string;
-  urls: {
-    regular: string;
-    full: string;
-    thumb: string;
-  };
-  user: {
-    username: string;
-    name: string;
-    profile_image: {
-      small: string;
-      medium: string;
-    };
-  };
-  links: {
-    html: string;
-    download: string;
-    self: string;
-  };
-  description: string | null;
-}
-
-export interface UnsplashResults {
-  total: number;
-  total_pages: number;
-  results: UnsplashImage[];
-}
-
-/** Goes through the `unsplash-proxy` Edge Function, which holds the Unsplash key. */
-export async function searchUnsplash(keyword: string, page = 1, perPage = 10): Promise<UnsplashResults> {
-  const { data, error } = await supabase.functions.invoke('unsplash-proxy', {
-    body: { search: keyword, page, perPage },
-  });
-  if (error) throw error;
-  return data as UnsplashResults;
+export async function searchUnsplash(query: string) {
+  try {
+    // This is a placeholder for the actual Unsplash API call logic
+    // We assume the environment variable for the Unsplash access key is available
+    const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1`, {
+      headers: {
+        'Authorization': `Client-ID ${import.meta.env.VITE_UNSPLASH_ACCESS_KEY}`
+      }
+    });
+    const data = await response.json();
+    return data.results[0]?.urls?.regular || null;
+  } catch (error) {
+    console.error('Error fetching from Unsplash:', error);
+    return null;
+  }
 }
