@@ -1,8 +1,7 @@
--- 0012: Follow back — responding to follow requests.
--- "Follow back" accepts a pending follow and creates a mutual follow.
--- "Cancel" just deletes the pending request.
--- Stands alone; interacts with study_partners/follows system.
-
+-- 0015: answering a follow request follows back — "Follow back" + "Cancel", not Accept/Decline.
+-- Accepting marks their pending follow accepted AND creates my accepted follow to them,
+-- so both lists stay mutual. Works even if the follower is private (an accepted row
+-- bypasses their request queue). Cancel just deletes their pending request.
 create or replace function public.respond_follow_request(p_follower uuid, p_accept boolean) returns void
 language plpgsql security definer set search_path = public as $$
 begin

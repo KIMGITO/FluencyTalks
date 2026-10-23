@@ -33,6 +33,4 @@ drop table if exists public.posts cascade;
 drop policy if exists "post images public read" on storage.objects;
 drop policy if exists "post images insert own" on storage.objects;
 drop policy if exists "post images delete own" on storage.objects;
--- Manually handle the bucket removal as the direct delete is restricted in migrations
--- This might require manual cleanup via Supabase dashboard or API.
--- delete from storage.buckets where id = 'post-images';
+delete from storage.buckets where id = 'post-images';

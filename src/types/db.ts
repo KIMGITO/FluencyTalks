@@ -22,7 +22,7 @@ export interface ConversationRow { conversation_id: string; other_user_id: strin
 export type { Language, DisplayLanguage } from '@/lib/languages';
 export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; points_balance: number; native_language_id: string | null; learning_language_id: string | null; learning_level: string | null; last_language_change_at: string | null }
 export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; created_at: string }
-export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_id: string | null; source_message_id: string | null; created_at: string; is_public: boolean; unsplash_image_url: string | null }
+export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_id: string | null; source_message_id: string | null; created_at: string; is_public: boolean; unsplash_image_url: string | null; bounty_status: 'none' | 'held' | 'accepted' | 'expired_refunded'; bounty_cost: number | null; bounty_asker_id: string | null }
 /** One "Translate" tap, stored forever; source_message_id traces it back to the chat. */
 export interface TranslationRecord { id: string; source_text: string; translated_text: string; language_id: string | null; source_message_id: string | null; created_at: string }
 /** Row from list_my_corrections: a correction that was applied to one of my messages. */

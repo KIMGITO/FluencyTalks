@@ -25,12 +25,22 @@ import type { FeedPerson } from '@/types/db';
 export default function Home() {
   const { me, languages } = useProfileStore();
   const labelOf = useLanguageStore((s) => s.labelOf);
+  const languageName = useLanguageStore((s) => s.name);
   const locales = useDisplayLocales();
   useCountries(); // flags need the country names
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
   const [hidden, setHidden] = useState<string[]>([]);
 
   const learning = languages.filter((l) => l.role === 'learning');
+  // Shown when nobody matches yet: say who we are looking for, using the user's own two languages.
+  const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
+  const nativeName = nameOf(me?.native_language_id);
+  const learningName = nameOf(me?.learning_language_id);
+  const emptyText = learningName
+    ? `Nobody matches yet. People who speak ${learningName} natively, or are learning ${nativeName}, will appear here as they join. You can also search by name or @username.`
+    : nativeName
+      ? `Add a language you are learning in your profile to get matched. People learning ${nativeName} will appear here as they join, or search by name or @username.`
+      : 'Search for anyone by name or @username.';
   useEffect(() => {
     homeFeed()
       .then(setPeople)
@@ -76,34 +86,7 @@ export default function Home() {
             {partners.length === 0 && others.length === 0 && (
               <EmptyState
                 title="No matches yet"
-                text={languages.length > 0
-                  ? `Wait — ${languages.length} ${
-                      languages.length === 1 ? 'person' : 'people'
-                    } ${languages.length === 1
-                      ? me.native_language_id
-                      : languages
-                          .filter((l) => l.role === 'native')
-                          .map((l) => labelOf(l.language_code) ?? l.language_code)
-                          .join(', ')} ${
-                      languages.length === 1
-                        ? 'speaks natively.'
-                        : 'speak natively.'
-                  }${languages.some((l) => l.role === 'learning')
-                    ? ` ${languages.filter((l) => l.role === 'learning').length} ${
-                        languages.filter((l) => l.role === 'learning').length === 1
-                          ? 'person'
-                          : 'people'
-                      } learning ${
-                          languages
-                            .filter((l) => l.role === 'learning')
-                            .map((l) => labelOf(l.language_code) ?? l.language_code)
-                            .join(', ')
-                        } ${languages.filter((l) => l.role === 'learning').length === 1
-                          ? 'is learning.'
-                          : 'are learning.'
-                        }`
-                    : '.'}`
-                  : 'Search for anyone by name or @username.'}
+                text={emptyText}
                 action={
                   <Link to="/search">
                     <Button size="sm">Search people</Button>

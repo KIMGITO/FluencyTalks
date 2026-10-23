@@ -29,14 +29,11 @@ export interface UnsplashResults {
   results: UnsplashImage[];
 }
 
+/** Goes through the `unsplash-proxy` Edge Function, which holds the Unsplash key. */
 export async function searchUnsplash(keyword: string, page = 1, perPage = 10): Promise<UnsplashResults> {
-  const { data, error } = await supabase
-    .rpc('unsplash_proxy', {
-      p_search: keyword,
-      p_page: page,
-      p_perPage: perPage,
-    });
-
+  const { data, error } = await supabase.functions.invoke('unsplash-proxy', {
+    body: { search: keyword, page, perPage },
+  });
   if (error) throw error;
   return data as UnsplashResults;
 }

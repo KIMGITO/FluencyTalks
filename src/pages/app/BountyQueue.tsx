@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { EmptyState, Spinner, Button } from '@/components/ui';
 import { listMyBounties } from '@/services';
+import { useProfileStore } from '@/store/profileStore';
 import type { SavedPhrase } from '@/types/db';
 
 export default function BountyQueue() {
-  const { username } = useParams();
   const me = useProfileStore((s) => s.me);
   const [bounties, setBounties] = useState<(SavedPhrase & { asker_username: string })[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!me?.id) return;
-    listMyBounties(me.id).then(setBounties).catch(() => setBounties([]));
-    setLoading(false);
+    listMyBounties(me.id).then((r) => setBounties(r.bounties)).catch(() => setBounties([])).finally(() => setLoading(false));
   }, [me?.id]);
 
   if (loading || !me?.id) {
-    return <Spinner className="justify-center p-8" />;
+    return <div className="flex justify-center p-8"><Spinner /></div>;
   }
 
   const myBounties = bounties?.filter((b) => b.bounty_asker_id === me.id) || [];

@@ -32,7 +32,7 @@ export default function Learning() {
   const [phrasesData, setPhrasesData] = useState<{ phrases: (SavedPhrase & { conversation_id: string | null })[]; total: number } | null>(null);
   const [corrections, setCorrections] = useState<CorrectionHistory[] | null>(null);
   const [translations, setTranslations] = useState<(TranslationRecord & { conversation_id: string | null })[] | null>(null);
-  useEffect(() => { listPhrases(selectedLanguage).then(({ phrases, total }) => setPhrasesData({ phrases, total })).catch(() => setPhrasesData(null)); }, [selectedLanguage]);
+  useEffect(() => { listPhrases(selectedLanguage ?? undefined).then(setPhrasesData).catch(() => setPhrasesData({ phrases: [], total: 0 })); }, [selectedLanguage]);
   useEffect(() => { listMyCorrections().then(setCorrections).catch(() => setCorrections([])); }, []);
   useEffect(() => { listTranslations().then(setTranslations).catch(() => setTranslations([])); }, []);
 
@@ -53,7 +53,7 @@ export default function Learning() {
         </div> */}
       </div>
 
-      {tab === 'phrases' && (!phrases ? <Loading /> : !phrases.length
+      {tab === 'phrases' && (!phrasesData ? <Loading /> : !phrasesData.phrases.length
         ? <EmptyState title="Nothing saved yet" text="Tap “Save phrase” under any message, or accept a correction, and it will show up here." />
         : <div className="flex flex-col gap-1.5">{phrasesData.phrases.map((p) => (
             <div key={p.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>

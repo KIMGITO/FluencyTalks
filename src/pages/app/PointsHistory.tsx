@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useProfileStore } from '@/store/profileStore';
 import { EmptyState, Spinner, Button } from '@/components/ui';
 import { listPointsLedger } from '@/services/history';
@@ -21,12 +22,11 @@ export default function PointsHistory() {
 
   useEffect(() => {
     if (!me?.id) return;
-    listPointsLedger(me.id).then(setLedger).catch(() => setLedger([]));
-    setLoading(false);
+    listPointsLedger(me.id).then(setLedger).catch(() => setLedger([])).finally(() => setLoading(false));
   }, [me?.id]);
 
   if (loading || !me?.id) {
-    return <Spinner className="justify-center p-8" />;
+    return <div className="flex justify-center p-8"><Spinner /></div>;
   }
 
   const totalEarned = ledger?.filter((e) => e.action === 'earned').reduce((sum, e) => sum + e.delta, 0) || 0;

@@ -14,7 +14,7 @@ const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 const zones = (): string[] => (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? [];
 
 /** Used for onboarding and for editing your profile. */
-export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onDone: () => void }) {
+export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'edit'; onDone: () => void; onError?: (message: string) => void }) {
   const user = useAuthStore((s) => s.user);
   const { me, save } = useProfileStore();
   useCountries();                                   // the country picker needs the list
@@ -24,7 +24,7 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
   // null = "no country of my own": the timezone serves it, until the user picks one here.
   const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
   const [langs, setLangs] = useState<LanguageChoice>({ native: me?.native_language_id ?? '', learning: me?.learning_language_id ?? '', level: (me?.learning_level as LearnerLevel | null) ?? 'A1' }); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
-  const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [globalError, setGlobalError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   // "If account is set already, you can't access profile updation until you log in":
   // editing an existing profile requires a live session — never render the form logged out.
   if (!user) return <Navigate to="/login" replace />;
@@ -33,8 +33,8 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
   // Provider photo (Google etc) shows until the user picks a new one; initials when neither exists.
   const providerAvatar = useProviderAvatar();
   const preview = file ? URL.createObjectURL(file) : resolveAvatar(me?.avatar_url, providerAvatar);
-  const submit = async (e: FormEvent, onGlobalError?: (message: string) => void) => {
-    e.preventDefault(); setError(null);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setError(null); onError?.('');
     if (!USERNAME_RE.test(username)) return setError('Username: 3 to 20 letters, numbers or underscores.');
     if (!langs.native) return setError('Choose the language you speak natively.');
     if (!adult) return setError('You must be 18 or older to join.');
@@ -45,13 +45,12 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
       if (mode === 'onboarding') await Promise.all([recordConsent('age_18', '1'), recordConsent('terms', '1'), recordConsent('privacy', '1')]);
       onDone();
     } catch (err) {
-      const message = (err as Error).message || 'Something went wrong';
-      setError(null); // clear field errors
-      onGlobalError?.(message); // show global popup error
+      const message = (err as Error).message || 'Something went wrong. Please try again.';
+      if (onError) onError(message); else setError(message);
     } finally { setBusy(false); }
   };
   return (
-    <form onSubmit={(e) => submit(e, setGlobalError)} className="space-y-5">
+    <form onSubmit={submit} className="space-y-5">
       <div className="flex items-center gap-4">
         <Avatar name={displayName || username || 'U'} src={preview} size="xl" ring />
         <div className="flex flex-col gap-1">
@@ -68,7 +67,6 @@ export function ProfileForm({ mode, onDone }: { mode: 'onboarding' | 'edit'; onD
       <LanguageSelect value={langs} onChange={setLangs} />
       
       {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 18 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
-      {globalError && <p className="text-sm text-danger">{globalError}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button type="submit" full loading={busy}>{mode === 'onboarding' ? 'Finish setup' : 'Save changes'}</Button>
     </form>

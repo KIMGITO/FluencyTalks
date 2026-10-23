@@ -17,7 +17,7 @@ export class ApiError extends Error { constructor(public code: string, message: 
 export async function rpc<T = void>(fn: string, args?: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.rpc(fn, args);
   if (error) {
-    console.log('API error', fn, args, error);
+    if (import.meta.env.DEV) console.warn('API error', fn, error.message, error.hint ?? '');   // dev only; never log arguments
     const code = error.code === '23505' ? 'username_taken' : Object.keys(friendly).find((c) => error.message.includes(c)) ?? 'unknown';
     throw new ApiError(code, friendly[code] ?? 'Something went wrong. Please try again.');
   }

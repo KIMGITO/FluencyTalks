@@ -52,6 +52,13 @@ supabase/functions/    delete-account (Edge Function)
 
 ## Backend (Supabase)
 
+> **Important: reset your database after pulling this.** An earlier rewrite of the migrations (git tag
+> `backup-team-squash-2026-10-21`) removed columns such as `profiles.status`, so onboarding failed with
+> `column "status" does not exist` and more than 20 functions the app calls were missing. The migrations
+> below are the complete, tested set. A database built from the old files cannot be patched in place:
+> run `supabase db reset` (local) or `supabase db reset --linked` (hosted dev project). **This deletes all
+> data in that database.** Do not use it on a database with real users.
+
 Run the migrations in order in the SQL editor (or `supabase db push`):
 
 | File | Adds |
@@ -73,6 +80,7 @@ Run the migrations in order in the SQL editor (or `supabase db push`):
 | 0028 | drops the posts system |
 | 0029 | restores function grants lost in 0028 and makes `adjust_user_points` internal-only |
 | 0030 | **One native + at most one learning language.** `profiles.native_language_id / learning_language_id / learning_level` with constraints; `set_language_profile()` is the only way to change them (30-day cooldown after the first change); the open client write policy on `user_languages` is removed; launch list of 40 languages; `set_my_languages` removed |
+| 0031 | Aligns the database with the app: report reasons `fake_correction` / `points_abuse`; **`points_ledger`** (audit trail, own rows readable only) and `award_points()` (the only way points move; idempotent per event); `accept_correction` pays through it with anti-farming limits (10 rewarded corrections per corrector per day, 3 per author per day, no reward for an unchanged text); `adjust_user_points` removed; `messages.language_id`; provisional bounty columns on `saved_phrases` |
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
@@ -169,11 +177,24 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 6. ✅ Account deletion (needs a server-side function with the service role), data export
 7. Voice/video sessions, PWA + push, i18n/RTL
 
+## Tests
+
+`supabase/tests/app_flow.sql` replays the exact RPC calls the app makes (same function and parameter names as `src/services`): onboarding (language profile, profile, consents), the language rules, profiles and feed, messaging, corrections and points, reports and blocking, and admin access. It stops with a non-zero exit on the first broken step.
+
+```bash
+supabase db reset                     # migrations + seed on a throwaway local database
+psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/app_flow.sql    # prints ALL APP-FLOW CHECKS PASSED
+```
+
+Run it after adding or changing any migration. It would have caught the failure above.
+
 ## Known gaps
 
 - Direction and plan: see **[docs/PRODUCT_ANALYSIS.md](docs/PRODUCT_ANALYSIS.md)** (features, what is built, what to add, bottlenecks).
 - Migrations have not been verified against a live database since 0027. Apply them to a throwaway Supabase project first.
 - `user_languages` is now a derived copy of the two language columns on `profiles` (kept in sync by `set_language_profile`) so the old search and feed functions keep working until they are rewritten.
+- **Bounty Queue and Points History pages**: Points History reads the real ledger. The Bounty Queue page is a UI stub: there is no function that posts, answers or pays a bounty yet, and its buttons are placeholders. The bounty columns on `saved_phrases` are provisional.
+- **Unsplash**: the search runs through the `unsplash-proxy` Edge Function. Deploy it and set the key as a server secret: `supabase secrets set UNSPLASH_ACCESS_KEY=...` then `supabase functions deploy unsplash-proxy`.
 - The follow system still exists in the database (`follows`, counters, `is_private`) and in `search_people`, `get_profile` and `home_feed`; the UI no longer shows it. It is replaced by *Saved Study Partners* in the next phase.
 - The emoji reaction bar is commented out in `MessageBubble`; reactions can be sent from the message menu but are not displayed yet.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.
