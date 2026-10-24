@@ -6,7 +6,7 @@ import { useCountries } from '@/store/countryStore';
  * the timezone serves it (that is why the timezone exists on the profile at all). Renders
  * nothing when neither is known, rather than an empty pill.
  */
-export function CountryBadge({ code, timezone, className, showName = false }:
+export function CountryBadge({ code, timezone, className, showName = true }:
   { code?: string | null; timezone?: string | null; className?: string; showName?: boolean }) {
   const list = useCountries();               // fetches once, shared by every badge
   const hit = resolveCountry(code, timezone);

@@ -126,6 +126,46 @@ export const usePriorityLanguages = () => {
   );
 };
 
+/*** About 40 most-read and taught languages, including Swahili and Vietnamese. ***/
+export const useCommonLanguages = () => {
+  const list = useLanguages();
+  const common = list.filter((l) => l.is_supported_learning);
+  const rest = list.filter((l) => !l.is_supported_learning);
+  // Ensure Swahili and Vietnamese are included even if not marked as supported learning
+  const swahili = list.find((l) => l.id === "swh");
+  const vietnamese = list.find((l) => l.id === "vie");
+  // Start with common, add rest until we have ~40, ensuring swahili/vietnamese
+  const priority = [...common];
+  const addedIds = new Set(common.map((l) => l.id));
+  // Add rest languages until we reach ~40 (or list ends), skipping ids already added
+  for (const l of rest) {
+    if (priority.length >= 40) break;
+    if (!addedIds.has(l.id)) {
+      priority.push(l);
+      addedIds.add(l.id);
+    }
+  }
+  // Ensure swahili is included if present
+  if (swahili && !addedIds.has(swahili.id)) {
+    if (priority.length < 40) {
+      priority.push(swahili);
+    } else {
+      // Replace the last one if swahili is more important
+      priority[priority.length - 1] = swahili;
+    }
+  }
+  // Ensure vietnamese is included if present
+  if (vietnamese && !addedIds.has(vietnamese.id)) {
+    if (priority.length < 40) {
+      priority.push(vietnamese);
+    } else {
+
+      priority[priority.length - 1] = vietnamese;
+    }
+  }
+  return useMemo(() => priority, [list]);
+};
+
 /**
  * Locales for display: my native languages (BCP-47) + browser + English.
  * Reads profileStore directly so every chip/caller gets it with one hook.
