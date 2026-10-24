@@ -15,6 +15,9 @@ import { useCountries } from '@/store/countryStore';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
+import { listContributionPosts, type ContributionPost } from '@/services/library';
+import { PostCard } from '@/components/features/library';
+
 
 /**
  * Home is the daily scroll: people who share one of my languages, then a divider, then
@@ -34,6 +37,14 @@ export default function Home() {
   const learning = languages.filter((l) => l.role === 'learning');
   // Shown when nobody matches yet: say who we are looking for, using the user's own two languages.
   const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
+  const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
+
+  useEffect(() => {
+    listContributionPosts()
+      .then((r) => setPosts(r.posts))
+      .catch(() => setPosts([]));
+  }, []);
+
   const nativeName = nameOf(me?.native_language_id);
   const learningName = nameOf(me?.learning_language_id);
   const emptyText = learningName
@@ -99,6 +110,7 @@ export default function Home() {
             {partners.length === 0 && others.length > 0 && (
               <EmptyState
                 title="No language match yet"
+
                 text="Nobody here shares one of your languages right now — browse everyone below, or add more languages."
                 action={
                   <Link to="/profile/edit">
@@ -115,6 +127,10 @@ export default function Home() {
             ))}
           </>
         )}
+            {posts && posts.map((p) => (
+              <PostCard key={p.id} post={p} />
+            ))}
+
       </div>
     </>
   );

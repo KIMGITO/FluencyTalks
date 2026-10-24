@@ -150,3 +150,43 @@ grant execute on function public.list_saved_partner_ids() to authenticated, serv
 revoke execute on all functions in schema public from public, anon;
 grant  execute on all functions in schema public to authenticated, service_role;
 alter default privileges in schema public revoke execute on functions from public, anon;
+
+-- RLS for contribution_posts
+alter table public.contribution_posts enable row level security;
+
+create policy "Anyone can view contribution posts"
+  on public.contribution_posts for select
+  to authenticated
+  using (not exists (select 1 from public.blocks where blocker_id = auth.uid() and blocked_id = contribution_posts.user_id));
+
+create policy "Users can delete their own contribution posts"
+  on public.contribution_posts for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- RLS for contribution_helper
+alter table public.contribution_helper enable row level security;
+
+create policy "Anyone can view contribution helpers"
+  on public.contribution_helper for select
+  to authenticated
+  using (true);
+
+-- RLS for saved_partners
+alter table public.saved_partners enable row level security;
+
+create policy "Users can view their own saved partners"
+  on public.saved_partners for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own saved partners"
+  on public.saved_partners for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete their own saved partners"
+  on public.saved_partners for delete
+  to authenticated
+  using (auth.uid() = user_id);
+

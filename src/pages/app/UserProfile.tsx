@@ -17,6 +17,8 @@ import { useProfileStore } from '@/store/profileStore';
 import type { FullProfile } from '@/types/db';
 import { actionBtn } from '@/components/features/ActionButtonStyle';
 import { C } from '@/theme/theme';
+import { listUserContributionPosts, type ContributionPost } from '@/services/library';
+import { PostCard } from '@/components/features/library';
 
 export default function UserProfile() {
   const { username = '' } = useParams();
@@ -38,6 +40,16 @@ export default function UserProfile() {
   const staff = role === 'admin' || role === 'moderator';
   const myPoints = useProfileStore((s) => s.me?.points_balance);
   const providerAvatar = useProviderAvatar();
+  const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
+
+  useEffect(() => {
+    if (profile?.id) {
+      listUserContributionPosts(profile.id)
+        .then((r) => setPosts(r.posts))
+        .catch(() => setPosts([]));
+    }
+  }, [profile?.id]);
+
 
   if (profile === undefined)
     return (
@@ -213,6 +225,19 @@ export default function UserProfile() {
           </div>
         </Card>
       )}
+      <div className="mt-4 space-y-4">
+        <h3 className="px-1 font-bold text-lg text-ink">Contributions</h3>
+        {posts === null ? (
+          <div className="flex justify-center p-4"><Spinner /></div>
+        ) : posts.length === 0 ? (
+          <p className="px-1 text-sm text-muted italic">No contributions yet.</p>
+        ) : (
+          posts.map((p) => (
+            <PostCard key={p.id} post={p} />
+          ))
+        )}
+      </div>
+
     </div>
   );
 }

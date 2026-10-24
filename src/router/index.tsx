@@ -23,6 +23,7 @@ import Settings from '@/pages/app/Settings';
 import Learning from '@/pages/app/Learning';
 import Admin from '@/pages/app/Admin';
 import Library from '@/pages/features/library/Library';
+import ContributePage from '@/pages/features/library/contribute/ContributePage';
 import Partners from '@/pages/features/partners/Partners';
 import BountyQueue from '@/pages/app/BountyQueue';
 
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
           { path: '/phrasebook', element: <Navigate to='/learning' replace /> },
           { path: '/bounty-queue', element: <BountyQueue /> },
           { path: '/library', element: <Library /> },
+          { path: '/library/contribute', element: <ContributePage /> },
           { path: '/partners', element: <Partners /> },
           {
             element: <AdminRoute />,

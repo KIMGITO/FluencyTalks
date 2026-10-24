@@ -15,6 +15,8 @@ const friendly: Record<string, string> = {
   no_change: 'Your answer is the same as the original.', bounty_needs_language: 'Choose the language this message is written in.',
   cannot_correct_self: "You can't correct your own message.",
   language_change_cooldown: 'You changed languages recently. You can change them again after 30 days.', forbidden: "You don't have access to that.",
+  not_contribution_eligible: 'You need a native language or a B1+ learning level set in your profile to contribute.',
+  empty_phrase: 'Phrase cannot be empty.',
 };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
 
