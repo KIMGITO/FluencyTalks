@@ -7,7 +7,7 @@ export const navItems: NavItem[] = [
   { to: '/library', label: 'Library', icon: BookOpen },
   { to: '/learning', label: 'Learning', icon: GraduationCap, desktopOnly: true },
   { to: '/bounty-queue', label: 'Bounties', icon: Coins, desktopOnly: true },   
-  { to: '/profile', label: 'Profile', icon: User, desktopOnly: true },   
-  { to: '/settings', label: 'Settings', icon: Settings, desktopOnly: true },
+  { to: '/profile', label: 'Profile', icon: User },
+  { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/admin', label: 'Moderation', icon: Shield, desktopOnly: true, staffOnly: true },   
 ];

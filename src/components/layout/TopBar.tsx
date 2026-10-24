@@ -16,7 +16,7 @@ export function TopBar() {
           <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="xs" />
         </Link>
         {me?.points_balance !== undefined && (
-          <Link to="/bounty-queue" className="ml-2 text-sm font-medium text-brand" aria-label={`${me.points_balance} points. Open bounties`}>
+          <Link to="/bounty-queue" className="hidden sm:ml-2 sm:text-sm sm:font-medium sm:text-brand" aria-label={`${me.points_balance} points. Open bounties`}>
             {me.points_balance} pts
           </Link>
         )}

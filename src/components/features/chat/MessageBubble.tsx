@@ -185,8 +185,8 @@ export function MessageBubble({
                 <p className="ft-selectable whitespace-pre-wrap break-words">
                   {tr.text}
                 </p>
-                <p className="mt-0.5 text-2xs text-muted">
-                  Machine translation by MyMemory
+                <p className="mt-0.5 text-[8px] text-muted">
+                  Auto Translation
                 </p>
               </>
             ))}
