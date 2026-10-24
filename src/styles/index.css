@@ -19,7 +19,7 @@
 }
 @layer components {
   /* Compact by default; `--layout-cardPadLg` on md+ so laptops/tablets breathe. */
-  .ft-card { @apply bg-surface rounded-lg border border-border shadow-card; }
+  .ft-card { @apply bg-surface rounded-lg shadow-card; }
   .ft-card-pad { padding: var(--layout-cardPad); }
   @media (min-width: 768px) { .ft-card-pad { padding: var(--layout-cardPadLg); } }
   /* Horizontal chip/pill row that wraps — used instead of a grid where the

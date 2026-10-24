@@ -8,7 +8,7 @@ export function TopBar() {
   const me = useProfileStore((s) => s.me);
   const providerAvatar = useProviderAvatar();
   return (
-    <header className="sticky top-0 z-20 flex h-[var(--layout-topbarH)] items-center justify-between gap-4 border-b border-border bg-surface px-4">
+    <header className="sticky top-0 z-20 flex h-[var(--layout-topbarH)] items-center justify-between gap-4 bg-surface px-4">
       <Link to="/home"><Logo /></Link>
       <div className="ml-auto flex items-center gap-1.5">
         <NotificationBell />
