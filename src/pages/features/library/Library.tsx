@@ -1,138 +1,288 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Input, Spinner, Tabs } from '@/components/ui';
-import { Cloud } from 'lucide-react';
-import { listContributionPosts, isContributionEligible, savePartner, type ContributionPost } from '@/services/library';
+import { Button, EmptyState, Input, Spinner } from '@/components/ui';
+import { BookOpen, Plus, RefreshCw, Filter, X } from 'lucide-react';
+import { listContributionPosts, isContributionEligible, type ContributionPost } from '@/services/library';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
+import { ContributionModal } from '@/components/features/library';
+
+const CATEGORIES = [
+  { value: '', label: 'All categories' },
+  { value: 'phrase', label: 'Phrases' },
+  { value: 'idiom', label: 'Idioms' },
+  { value: 'usage', label: 'Usage examples' },
+  { value: 'grammar', label: 'Grammar' },
+];
 
 export default function Library() {
-  const [params, setParams] = useSearchParams();
-  const [tab, setTab] = useState<'all' | 'my'>('all');
-  const [posts, setPosts] = useState<ContributionPost[] | null>(null);
-  const [total, setTotal] = useState(0);
+  const [, setParams] = useSearchParams();
+  const [lang, setLang] = useState('');
+  const [cat, setCat] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
-  const [savingError, setSavingError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const languageName = useLanguageStore((s) => s.name);
   const languages = useLanguageStore((s) => s.list);
   const me = useProfileStore((s) => s.me);
-  const myPartners = useProfileStore((s) => s.savedPartners);
+  const eligible = isContributionEligible(me);
 
-  const query = params.get('q') ?? '';
-  const lang = params.get('lang') ?? '';
-  const cat = params.get('cat') ?? '';
-  const sort = params.get('sort') ?? 'newest';
-
-  const fetch = useCallback(async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
-    const p = { language_id: lang || undefined, category: cat || undefined };
-    const r = await listContributionPosts(p.language_id ?? undefined, p.category ?? undefined);
-    setPosts(r.posts ?? null);
-    setTotal(r.total ?? 0);
-    setLoading(false);
+    try {
+      const r = await listContributionPosts(lang || undefined, cat || undefined);
+      setPosts(r.posts ?? null);
+    } finally {
+      setLoading(false);
+    }
   }, [lang, cat]);
 
-  useEffect(() => { void fetch(); }, [fetch]);
+  useEffect(() => { void fetchPosts(); }, [fetchPosts]);
 
-  const isMy = useMemo(() => tab === 'my', [tab]);
+  const displayed = useMemo(() => {
+    if (!posts) return [];
+    const q = searchText.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((p) =>
+      p.phrase.toLowerCase().includes(q) ||
+      (p.translation ?? '').toLowerCase().includes(q) ||
+      (p.source_context ?? '').toLowerCase().includes(q),
+    );
+  }, [posts, searchText]);
 
-  const toggleSave = async (partnerId: string) => {
-    setSavingError(null);
-    setSaving(saving === partnerId ? null : partnerId);
-    try {
-      const isSaved = myPartners?.some((p) => p.partner_id === partnerId) ?? false;
-      if (isSaved) {
-        await savePartner(partnerId);
-        setPosts((prev) => prev?.map((p) => (p.id === partnerId ? { ...p, saved: false } as ContributionPost : p)) as ContributionPost[] | null);
-      } else {
-        await savePartner(partnerId);
-        setPosts((prev) => prev?.map((p) => (p.id === partnerId ? { ...p, saved: true } as ContributionPost : p)) as ContributionPost[] | null);
-      }
-    } catch (e: any) {
-      setSavingError(e.message || 'Failed to update partner list.');
-    } finally {
-      setSaving(null);
-    }
-  };
+  const hasFilters = lang || cat;
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-4">
-      <PageHeader title="Community Library" subtitle="Browse practiced phrases, idioms and usage examples contributed by the community" />
+    <div className="mx-auto w-full max-w-3xl p-4 pb-24 md:pb-4">
+      <PageHeader
+        title="Community Library"
+        subtitle="Browse phrases, idioms and examples contributed by the community"
+      />
 
-      <div className="mb-3 flex gap-2">
-        <Tabs<'all' | 'my'> value={tab} onChange={setTab} items={[{ key: 'all', label: 'All' }, { key: 'my', label: 'My contributions' }]} />
-        <Button variant="secondary" onClick={fetch} disabled={loading}>Refresh</Button>
-      </div>
+      {/* ---- Top bar ---- */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {/* search */}
+        <div className="relative flex-1 min-w-[180px]">
+          <Input
+            placeholder="Search phrases…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="pr-8"
+          />
+          {searchText && (
+            <button
+              type="button"
+              onClick={() => setSearchText('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted hover:text-ink"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
 
-      <form className="mb-3 flex flex-wrap items-center gap-2" onChange={() => void fetch()}>
-        <Input placeholder="Search the library…" value={query} name="q" className="flex-1 min-w-[180px]" />
-        <select name="lang" className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
-          <option value="">All languages</option>
-          {languages.map((l) => <option key={l.id} value={l.id}>{languageName(l.id)}</option>)}
-        </select>
-        <select name="cat" className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
-          <option value="">All categories</option>
-          <option value="phrase">Phrases</option>
-          <option value="idiom">Idioms</option>
-          <option value="usage">Usage examples</option>
-          <option value="grammar">Grammar</option>
-        </select>
-        <select name="sort" className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-        </select>
-        <Button type="submit" variant="secondary">Apply</Button>
-        {(query || lang || cat || sort) && (
-          <Button type="button" variant="ghost" onClick={() => { setParams({}); void fetch(); }}>Clear</Button>
-        )}
+        <button
+          type="button"
+          onClick={() => setShowFilters((f) => !f)}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition ${
+            showFilters || hasFilters
+              ? 'bg-brand text-on-brand'
+              : 'bg-surface-2 text-muted hover:bg-border hover:text-ink'
+          }`}
+        >
+          <Filter size={14} />
+          Filters{hasFilters ? ' •' : ''}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void fetchPosts()}
+          disabled={loading}
+          title="Refresh"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-muted transition hover:bg-border hover:text-ink disabled:opacity-40"
+        >
+          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+        </button>
+
         {me && (
-          <Button type="button" variant="primary" onClick={() => document.getElementById('contribution-modal')?.scrollIntoView({ behavior: 'smooth' })}>
-            <Cloud size={16} className="mr-1" /> Contribute
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setModalOpen(true)}
+            className="gap-1.5"
+          >
+            <Plus size={15} />
+            Contribute
           </Button>
         )}
-      </form>
+      </div>
 
-      {me && (
-        <div id="contribution-modal" className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-3 text-sm text-muted">
-          <span className={`h-2.5 w-2.5 rounded-full ${isContributionEligible(me) ? 'bg-success' : 'bg-danger'}`} />
-          {isContributionEligible(me) ? 'You can contribute to the library.' : 'Join the library as a native speaker or B1+ learner.'}
+      {/* ---- Filters row ---- */}
+      {showFilters && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            className="h-9 rounded-lg border border-border bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+          >
+            <option value="">All languages</option>
+            {languages.map((l) => (
+              <option key={l.id} value={l.id}>{languageName(l.id)}</option>
+            ))}
+          </select>
+
+          <select
+            value={cat}
+            onChange={(e) => setCat(e.target.value)}
+            className="h-9 rounded-lg border border-border bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={() => { setLang(''); setCat(''); }}
+              className="flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs text-muted hover:text-danger transition"
+            >
+              <X size={12} /> Clear
+            </button>
+          )}
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center p-8"><Spinner /></div>
-      ) : !posts?.length ? (
-        <EmptyState title="Nothing in the library yet" text="Be the first to share a phrase, idiom or usage example." action={me ? <Button onClick={() => document.getElementById('contribution-modal')?.scrollIntoView({ behavior: 'smooth' })}>Contribute</Button> : null} />
-      ) : (
-        <div className="space-y-3">{posts.map((p) => (
-          <div key={p.id} className="ft-card space-y-2 rounded-xl border border-border bg-surface-2 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate font-semibold text-lg">{p.phrase}</h3>
-                {p.translation && <p className="mt-1 break-words text-muted">{p.translation}</p>}
-                {p.source_context && <p className="mt-1 break-words text-xs text-muted">{p.source_context}</p>}
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-                  <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[11px] text-brand">{p.language_id}</span>
-                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">{p.category}</span>
-                  <span className="flex items-center gap-1"><UserAvatar userId={p.user_id} size="xs" /> {p.author?.display_name ?? 'Unknown'}</span>
-                </div>
-              </div>
-              {me && (
-                <Button variant="ghost" size="sm" onClick={() => void toggleSave(p.id)} data-save={myPartners?.some((pp) => pp.partner_id === p.id) ?? false}>{myPartners?.some((pp) => pp.partner_id === p.id) ? 'Saved' : 'Save'}</Button>
-              )}
-            </div>
-          </div>
-        ))}</div>
+      {/* ---- Eligibility banner ---- */}
+      {me && !eligible && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
+          <span className="mt-0.5 text-lg">🔒</span>
+          <span>
+            To contribute, verify your native language or reach <strong>B1+</strong> in your learning language from your profile.
+          </span>
+        </div>
       )}
 
-      {savingError && <p className="mt-3 text-sm text-danger">{savingError}</p>}
+      {/* ---- Post list ---- */}
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Spinner />
+        </div>
+      ) : !displayed.length ? (
+        <EmptyState
+          title={searchText || hasFilters ? 'No matching posts' : 'Nothing here yet'}
+          text={
+            searchText || hasFilters
+              ? 'Try different filters or search terms.'
+              : 'Be the first to share a phrase, idiom or usage example.'
+          }
+          action={
+            me && eligible ? (
+              <Button onClick={() => setModalOpen(true)}>
+                <Plus size={16} />
+                Contribute
+              </Button>
+            ) : null
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          {displayed.map((p) => (
+            <PostCard key={p.id} post={p} />
+          ))}
+        </div>
+      )}
+
+      {/* ---- Modal ---- */}
+      <ContributionModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onPosted={() => void fetchPosts()}
+      />
     </div>
   );
 }
 
-function UserAvatar({ userId, size = 'md' }: { userId: string; size?: 'xs' | 'sm' | 'md' }) {
-  return <div className={`flex h-${size === 'xs' ? 6 : size === 'sm' ? 8 : 9} w-${size === 'xs' ? 6 : size === 'sm' ? 8 : 9} items-center justify-center rounded-full bg-surface-2 font-medium text-[11px] text-muted`}>{userId.slice(0, 2).toUpperCase()}</div>;
+/* ============================================================
+   PostCard
+   ============================================================ */
+interface PostCardProps {
+  post: ContributionPost & {
+    author?: { display_name?: string | null; username?: string; id?: string } | null;
+  };
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  phrase: 'bg-brand/10 text-brand',
+  idiom: 'bg-purple-500/10 text-purple-500',
+  usage: 'bg-emerald-500/10 text-emerald-600',
+  grammar: 'bg-amber-500/10 text-amber-600',
+};
+
+function PostCard({ post }: PostCardProps) {
+  const languageName = useLanguageStore((s) => s.name);
+  const authorName = post.author?.display_name || post.author?.username || 'Anonymous';
+  const initials = authorName.slice(0, 2).toUpperCase();
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-sm transition hover:shadow-md">
+      {/* cover image */}
+      {post.unsplash_image_url && (
+        <div className="relative h-40 w-full overflow-hidden bg-surface">
+          <img
+            src={post.unsplash_image_url}
+            alt={post.phrase}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/40 to-transparent" />
+        </div>
+      )}
+
+      <div className="p-4 space-y-2">
+        {/* header row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-bold leading-snug text-ink">{post.phrase}</h3>
+            {post.translation && (
+              <p className="mt-0.5 text-sm text-muted">{post.translation}</p>
+            )}
+          </div>
+          {/* category badge */}
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${CATEGORY_COLORS[post.category] ?? 'bg-surface text-muted'}`}>
+            {post.category}
+          </span>
+        </div>
+
+        {/* source context */}
+        {post.source_context && (
+          <p className="rounded-lg bg-surface px-3 py-2 text-xs italic text-muted">
+            "{post.source_context}"
+          </p>
+        )}
+
+        {/* footer: lang + author */}
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center gap-2">
+            {post.language_id && (
+              <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-brand">
+                {post.language_id.toUpperCase()}
+                {post.language_id && ` · ${languageName(post.language_id)}`}
+              </span>
+            )}
+          </div>
+          {/* author */}
+          <div className="flex items-center gap-1.5 text-xs text-muted">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/20 text-[9px] font-bold text-brand">
+              {initials}
+            </span>
+            <span>{authorName}</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
 }

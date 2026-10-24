@@ -36,23 +36,41 @@ export const router = createBrowserRouter([
   { path: '/terms', element: <Terms /> },
   { path: '/data-deletion', element: <DeleteForm /> },
   {
+    // Protected but shell-free — onboarding has its own full-screen layout
     element: <ProtectedRoute />,
     children: [
       { path: '/onboarding', element: <Onboarding /> },
-      { path: '/home', element: <Home /> },
-      { path: '/search', element: <Search /> },
-      { path: '/discover', element: <Navigate to='/search' replace /> },
-      { path: '/messages', element: <Messages /> },
-      { path: '/messages/:id', element: <Messages /> },
-      { path: '/profile', element: <Profile /> },
-      { path: '/profile/edit', element: <EditProfile /> },
-      { path: '/u/:username', element: <UserProfile /> },
-      { path: '/settings', element: <Settings /> },
-      { path: '/learning', element: <Learning /> },
-      { path: '/phrasebook', element: <Navigate to='/learning' replace /> },
-      { path: '/bounty-queue', element: <BountyQueue /> },
-      { path: '/library', element: <Library /> },
-      { path: '/partners', element: <Partners /> },
+    ],
+  },
+  {
+    // Protected pages that need the full app shell (TopBar + Sidebar + BottomNav)
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <AppShell />,
+        children: [
+          { path: '/home', element: <Home /> },
+          { path: '/search', element: <Search /> },
+          { path: '/discover', element: <Navigate to='/search' replace /> },
+          { path: '/messages', element: <Messages /> },
+          { path: '/messages/:id', element: <Messages /> },
+          { path: '/profile', element: <Profile /> },
+          { path: '/profile/edit', element: <EditProfile /> },
+          { path: '/u/:username', element: <UserProfile /> },
+          { path: '/settings', element: <Settings /> },
+          { path: '/learning', element: <Learning /> },
+          { path: '/phrasebook', element: <Navigate to='/learning' replace /> },
+          { path: '/bounty-queue', element: <BountyQueue /> },
+          { path: '/library', element: <Library /> },
+          { path: '/partners', element: <Partners /> },
+          {
+            element: <AdminRoute />,
+            children: [
+              { path: '/admin', element: <Admin /> },
+            ],
+          },
+        ],
+      },
     ],
   },
   { path: '*', element: <NotFound /> },
