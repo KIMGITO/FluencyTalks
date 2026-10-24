@@ -41,14 +41,6 @@ export default function ContributePage() {
         sourceContext.trim() || null as any,
         unsplashUrl || null as any,
       );
-      await postContribution(
-        phrase.trim(),
-        translation.trim() || null as any,
-        language,
-        category,
-        sourceContext.trim() || null as any,
-        unsplashUrl || null as any,
-      );
       // Wait a moment for Supabase to reflect changes
       await new Promise(r => setTimeout(r, 500));
 
@@ -95,19 +87,17 @@ export default function ContributePage() {
           placeholder="e.g. break the ice"
         />
 
-        <label className="block text-sm font-medium text-ink">
-          Language *
-          <select
-            className="mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-brand focus:outline-none"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <option value="">Select a language</option>
-            {languages.map((l) => (
-              <option key={l.id} value={l.id}>{languageName(l.id)}</option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label="Language *"
+          searchable
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+        >
+          <option value="">Select a language</option>
+          {languages.map((l) => (
+            <option key={l.id} value={l.id}>{languageName(l.id)}</option>
+          ))}
+        </Select>
 
         <Input
           label="Translation (optional)"

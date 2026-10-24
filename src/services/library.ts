@@ -8,7 +8,7 @@ export const listContributionPosts = async (p_languageId?: string, p_category?: 
   console.log('DEBUG: listContributionPosts called with', { p_languageId, p_category });
   let q = supabase
     .from('contribution_posts')
-    .select('*, user:profiles(id, username, display_name, avatar_url, languages)', { count: 'exact' })
+    .select('*, user:profiles(id, username, display_name, avatar_url)', { count: 'exact' })
     .order('created_at', { ascending: false });
   if (p_languageId) q = q.eq('language_id', p_languageId);
   if (p_category) q = q.eq('category', p_category);
@@ -18,7 +18,10 @@ export const listContributionPosts = async (p_languageId?: string, p_category?: 
   }
   console.log('DEBUG: listContributionPosts result:', { dataCount: data?.length, count, data });
   return {
-    posts: ((data ?? []) as (ContributionPost & { user: Person })[]).map(({ user, ...p }) => ({ ...p, author: user })),
+    posts: ((data ?? []) as (ContributionPost & { user: Person })[]).map(({ user, ...p }) => ({
+      ...p,
+      author: { ...user, languages: [] }
+    })),
     total: count ?? 0,
   };
 };
@@ -26,7 +29,7 @@ export const listUserContributionPosts = async (userId: string) => {
   console.log('DEBUG: listUserContributionPosts called for userId:', userId);
   const { data, error, count } = await supabase
     .from('contribution_posts')
-    .select('*, user:profiles(id, username, display_name, avatar_url, languages)', { count: 'exact' })
+    .select('*, user:profiles(id, username, display_name, avatar_url)', { count: 'exact' })
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   
@@ -36,7 +39,10 @@ export const listUserContributionPosts = async (userId: string) => {
   console.log('DEBUG: listUserContributionPosts result:', { dataCount: data?.length, count, data });
 
   return {
-    posts: ((data ?? []) as (ContributionPost & { user: Person })[]).map(({ user, ...p }) => ({ ...p, author: user })),
+    posts: ((data ?? []) as (ContributionPost & { user: Person })[]).map(({ user, ...p }) => ({
+      ...p,
+      author: { ...user, languages: [] }
+    })),
     total: count ?? 0,
   };
 };

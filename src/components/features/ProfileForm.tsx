@@ -37,7 +37,7 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
     e.preventDefault(); setError(null); onError?.('');
     if (!USERNAME_RE.test(username)) return setError('Username: 3 to 20 letters, numbers or underscores.');
     if (!langs.native) return setError('Choose the language you speak natively.');
-    if (!adult) return setError('You must be 18 or older to join.');
+    if (!adult) return setError('You must be 16 or older to join.');
     setBusy(true);
     try {
       const avatarUrl = file ? await uploadAvatar(user.id, file) : undefined;
@@ -66,7 +66,7 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
       <CountryPicker value={country} timezone={tz} onChange={setCountry} />
       <LanguageSelect value={langs} onChange={setLangs} />
       
-      {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 18 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
+      {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 16 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button type="submit" full loading={busy}>{mode === 'onboarding' ? 'Finish setup' : 'Save changes'}</Button>
     </form>

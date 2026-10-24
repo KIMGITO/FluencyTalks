@@ -20,6 +20,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 export function PostCard({ post }: PostCardProps) {
   const [deleted, setDeleted] = useState(false);
   const me = useProfileStore((s) => s.me);
+  const languageName = useLanguageStore((s) => s.name);
   const isOwner = me?.id === post.user_id;
 
   const handleDelete = async () => {
@@ -34,7 +35,6 @@ export function PostCard({ post }: PostCardProps) {
 
   if (deleted) return null;
 
-  const languageName = useLanguageStore((s) => s.name);
   const authorName = post.author?.display_name || post.author?.username || 'Anonymous';
   const initials = authorName.slice(0, 2).toUpperCase();
 
