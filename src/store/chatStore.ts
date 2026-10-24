@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { acceptCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondCorrection, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type ReactionEvent } from '@/services';
+import { acceptCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondCorrection, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type SendOptions, type ReactionEvent } from '@/services';
 import { useAuthStore } from '@/store/authStore';
+import { useProfileStore } from '@/store/profileStore';
 import type { ConversationRow, Correction, Message, Reaction } from '@/types/db';
 
 let unsub: (() => void) | null = null;
@@ -17,7 +18,7 @@ interface S {
   messages: Record<string, Message[]>; corrections: Record<string, Correction[]>; reactions: Record<string, Reaction[]>; // corrections and reactions keyed by message id
   pins: Record<string, string[]>; hidden: Record<string, true>; drafts: Record<string, Message | null>;
   loadLists: () => Promise<void>; open: (id: string) => Promise<void>; close: () => void;
-  send: (id: string, body: string, replyTo?: string) => Promise<void>; respond: (id: string, accept: boolean) => Promise<void>;
+  send: (id: string, body: string, replyTo?: string, opts?: SendOptions) => Promise<void>; respond: (id: string, accept: boolean) => Promise<void>;
   loadCorrections: (convId: string) => Promise<void>; upsertCorrection: (c: Correction) => void;
   suggest: (convId: string, messageId: string, text: string, note?: string) => Promise<void>;
   accept: (c: Correction) => Promise<void>; dismiss: (c: Correction) => Promise<void>;
@@ -42,9 +43,10 @@ export const useChatStore = create<S>((set, get) => ({
     await Promise.all([get().loadCorrections(id), get().loadReactions(id), markRead(id)]); await get().loadLists();
   },
   close: () => set({ openId: null }),
-  send: async (id, body, replyTo) => {
+  send: async (id, body, replyTo, opts) => {
     const fallback = get().drafts[id]?.id ?? undefined;
-    get().append(await sendMessage(id, body, replyTo ?? fallback));
+    get().append(await sendMessage(id, body, replyTo ?? fallback, opts));
+    if (opts?.bounty) useProfileStore.getState().updatePoints(-50);   // the server holds the points; keep the top bar in step
     set((s) => ({ drafts: { ...s.drafts, [id]: null } }));
     await get().loadLists();
   },

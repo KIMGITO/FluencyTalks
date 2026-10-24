@@ -52,41 +52,38 @@ supabase/functions/    delete-account (Edge Function)
 
 ## Backend (Supabase)
 
-> **Important: reset your database after pulling this.** An earlier rewrite of the migrations (git tag
-> `backup-team-squash-2026-10-21`) removed columns such as `profiles.status`, so onboarding failed with
-> `column "status" does not exist` and more than 20 functions the app calls were missing. The migrations
-> below are the complete, tested set. A database built from the old files cannot be patched in place:
-> run `supabase db reset` (local) or `supabase db reset --linked` (hosted dev project). **This deletes all
-> data in that database.** Do not use it on a database with real users.
+> **Important: reset your database after pulling this.** Two earlier rewrites of the migrations (git tags
+> `backup-team-squash-2026-10-21` and the files in `supabase/migrations_archive/team_squash_v2/`) dropped
+> columns and more than 30 functions the app calls, so onboarding failed (`column "status" does not exist`,
+> then `set_language_profile` and `record_consent` missing). A database built from those files cannot be
+> patched in place: run `supabase db reset` (local) or `supabase db reset --linked` (hosted dev project).
+> **This deletes all data in that database.** Do not use it on a database with real users.
 
-Run the migrations in order in the SQL editor (or `supabase db push`):
+### Migrations
 
-| File | Adds |
+| File | What it is |
 |---|---|
-| 0001 | profiles, user_languages, follows, blocks, signup trigger |
-| 0002 | languages list, helpers, counters, `search_people`, `get_profile`, `save_profile`, `set_my_languages`, follow/unfollow/requests, block/unblock |
-| 0003 | conversations, messages, reactions, corrections, phrasebook; `start_conversation`, `send_message`, message requests, rate limits, realtime |
-| 0004 | reports (with message evidence), admin actions, bans (email-hash), auto-suspend after 5 reporters in 7 days |
-| 0005 | avatars bucket + policies, notifications (triggers), consents, `export_my_data`, function grants |
-| 0006 | `save_phrase`, `accept_correction` (accepts and saves the corrected phrase atomically) |
-| 0007 | `list_notifications`, `count_unread_notifications`; admin read functions `admin_report_queue`, `admin_search_users`, `admin_recent_actions` |
-| 0008 | `translation_history` (every Translate tap, deduped and traced to its message), `save_translation`, `list_my_corrections`, reaction emoji limit 8 → 40 (ZWJ/skin tones), translations added to `export_my_data` |
-| 0009 | Central search: `search_people` rewritten (leading `@` allowed, wildcards escaped, relevance order, role/level filters that work on their own, `p_scope` "people you follow") and `search_messages` added so `/search` can search your own chats |
-| 0010 | `country_code` on profiles + `home_feed()` (partners first, everyone else after, with the reason for the match) |
-| 0011 | **ISO 639-3 everywhere.** `languages` rebuilt around its standard 3-letter `id` (`iso_639_1`, `english_name`, `native_name`, `is_supported_learning`); `user_languages.language_id` replaces the free-text `language_code`, FK `ON DELETE CASCADE`; `saved_phrases` and `translation_history` re-pointed at the same table; `search_people`/`home_feed` match on ids; person payloads carry both display names. Existing rows are mapped, so no profile loses a language. `supabase/seed.sql` loads the curated list of 100 languages |
-| 0012–0019 | single reaction, deleted-message handling, follow-back, read receipts, provider avatar, follow languages |
-| 0020–0026 | *(blog/posts system, added then removed; see git history. Not part of the product.)* |
-| 0027 | `points_balance` (default 100), `adjust_user_points`, +5 for an accepted correction, public phrase library columns incl. `unsplash_image_url` |
-| 0028 | drops the posts system |
-| 0029 | restores function grants lost in 0028 and makes `adjust_user_points` internal-only |
-| 0030 | **One native + at most one learning language.** `profiles.native_language_id / learning_language_id / learning_level` with constraints; `set_language_profile()` is the only way to change them (30-day cooldown after the first change); the open client write policy on `user_languages` is removed; launch list of 40 languages; `set_my_languages` removed |
-| 0031 | Aligns the database with the app: report reasons `fake_correction` / `points_abuse`; **`points_ledger`** (audit trail, own rows readable only) and `award_points()` (the only way points move; idempotent per event); `accept_correction` pays through it with anti-farming limits (10 rewarded corrections per corrector per day, 3 per author per day, no reward for an unchanged text); `adjust_user_points` removed; `messages.language_id`; provisional bounty columns on `saved_phrases` |
+| `20261024000000_baseline.sql` | The complete, tested schema in one file: tables, security rules, messaging, safety, storage, phrasebook, corrections, notifications, search, ISO 639-3 languages, one-native-plus-one-learning language profile, points ledger and reward limits. It is the original chain 0001–0031 (kept in `supabase/migrations_archive/`) joined in order. |
+| `20261024000001_message_language_and_bounties.sql` | Message language tag; who may correct (native speaker, or learner at B1+); the bounty system (`send_message(... p_bounty)`, `answer_bounty`, `list_open_bounties`, `list_my_bounties`, automatic refunds). |
+
+**Rules for changing the database**
+1. **Never edit, merge, squash or rewrite an existing migration by hand.** Add a new file with a later version number.
+2. Run `npm run test:db` (needs a throwaway Postgres 15+; see `scripts/test-db.sh`) before you push. CI runs the same check on every push.
+3. It builds the database from scratch, checks that **every `rpc()` call in `src/` matches a database function and its parameter names**, and replays onboarding, messaging, corrections, points, bounties, reports, blocking and admin access.
+4. Hosted Supabase rejects direct `DELETE`s on `storage.*` tables; remove buckets with the Storage API or dashboard.
+
+### Points and bounties
+- Everyone starts with 100 points. Points only move through `award_points()`, which clients cannot call; every movement is a row in `points_ledger` (one per event, so nothing pays twice).
+- An accepted correction earns its author +5, limited to 10 per day per corrector and 3 per day for the same message author, and nothing when the "correction" is the original text.
+- **Bounty:** tick "Ask the community" in the composer (50 points held, at most 3 open). Speakers qualified in the message's language see it under Bounties and answer. When you accept an answer, that helper gets the 50 points. After 48 hours with no accepted answer, or if you delete the message, the 50 points come back.
+- **Who may correct:** a native speaker of the message's language, or a learner at B1 or above. The sender chooses the language a message is written in (default: the one they are learning).
+- A bounty shows the message text to other speakers of that language. The composer says so before you send.
 
 Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
 - **Blocking is enforced in every read** via `is_blocked_between()` (both directions, silent).
 - `profiles.role`, `status` and counters cannot be edited from the client (trigger-protected).
-- **After adding any new function**, re-run the grants block at the end of 0030 (functions are callable by signed-in users only). Keep its last line: `adjust_user_points` must stay internal-only.
+- **After adding any new function**, re-run the grants block at the end of `20261024000001_message_language_and_bounties.sql` (functions are callable by signed-in users only). Keep its last lines: `award_points` and `refund_expired_bounties` must stay internal-only.
 - Make yourself an admin once: `update profiles set role = 'admin' where id = '<your uid>';` in the SQL editor.
 - Deploy account deletion: `supabase functions deploy delete-account`. It is the only Edge Function, so exit cost is one small endpoint.
 - Realtime is used in exactly two places (`services/messaging.ts` for messages, corrections and reactions; `services/notifications.ts` for the bell), so it can be swapped for your own WebSocket layer later.
@@ -179,22 +176,23 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 
 ## Tests
 
-`supabase/tests/app_flow.sql` replays the exact RPC calls the app makes (same function and parameter names as `src/services`): onboarding (language profile, profile, consents), the language rules, profiles and feed, messaging, corrections and points, reports and blocking, and admin access. It stops with a non-zero exit on the first broken step.
+`supabase/tests/app_flow.sql` (run by `scripts/test-db.sh`) replays the exact RPC calls the app makes (same function and parameter names as `src/services`): onboarding (language profile, profile, consents), the language rules, profiles and feed, messaging, corrections and points, reports and blocking, and admin access. It stops with a non-zero exit on the first broken step.
 
 ```bash
-supabase db reset                     # migrations + seed on a throwaway local database
-psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/app_flow.sql    # prints ALL APP-FLOW CHECKS PASSED
+# any throwaway Postgres 15+ you can create databases on (never a real project):
+ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres npm run test:db
 ```
 
-Run it after adding or changing any migration. It would have caught the failure above.
+It prints `ALL APP-FLOW CHECKS PASSED` and `OK: database matches the app`, or stops at the first broken step. Run it after adding or changing any migration or any `src/services/*` call. It would have caught every migration failure in this project's history.
 
 ## Known gaps
 
 - Direction and plan: see **[docs/PRODUCT_ANALYSIS.md](docs/PRODUCT_ANALYSIS.md)** (features, what is built, what to add, bottlenecks).
 - Migrations have not been verified against a live database since 0027. Apply them to a throwaway Supabase project first.
 - `user_languages` is now a derived copy of the two language columns on `profiles` (kept in sync by `set_language_profile`) so the old search and feed functions keep working until they are rewritten.
-- **Bounty Queue and Points History pages**: Points History reads the real ledger. The Bounty Queue page is a UI stub: there is no function that posts, answers or pays a bounty yet, and its buttons are placeholders. The bounty columns on `saved_phrases` are provisional.
-- **Unsplash**: the search runs through the `unsplash-proxy` Edge Function. Deploy it and set the key as a server secret: `supabase secrets set UNSPLASH_ACCESS_KEY=...` then `supabase functions deploy unsplash-proxy`.
+- **Community library**: phrases have an `is_public` column and a read policy, but no screen publishes or browses them yet.
+- **Unsplash**: search runs through the `unsplash-proxy` Edge Function, so the key stays on the server. Deploy it and set the secret: `supabase secrets set UNSPLASH_ACCESS_KEY=...` then `supabase functions deploy unsplash-proxy`. The Learning page shows a result with its photographer credit; attaching an image to a saved phrase is not built yet.
+- Expired bounties are refunded the next time anyone opens the Bounties page or posts a bounty (no scheduled job needed).
 - The follow system still exists in the database (`follows`, counters, `is_private`) and in `search_people`, `get_profile` and `home_feed`; the UI no longer shows it. It is replaced by *Saved Study Partners* in the next phase.
 - The emoji reaction bar is commented out in `MessageBubble`; reactions can be sent from the message menu but are not displayed yet.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.

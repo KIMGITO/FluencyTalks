@@ -9,6 +9,11 @@ const friendly: Record<string, string> = {
   username_taken: 'That username is taken.',
   language_required: 'Choose the language you speak natively.', language_same: 'Your native and learning languages must be different.',
   language_unsupported: 'That language is not available yet.', invalid_level: 'Choose a level from A1 to C2.',
+  insufficient_points: 'You need 50 points to ask the community.', too_many_bounties: 'You can have 3 open bounties at a time.',
+  bounty_unavailable: 'That bounty is no longer open.', not_qualified_to_correct: 'Corrections come from native speakers or learners at B1 or above in that language.',
+  already_answered: 'You already answered this one.', language_not_yours: 'Choose one of your own languages.',
+  no_change: 'Your answer is the same as the original.', bounty_needs_language: 'Choose the language this message is written in.',
+  cannot_correct_self: "You can't correct your own message.",
   language_change_cooldown: 'You changed languages recently. You can change them again after 30 days.', forbidden: "You don't have access to that.",
 };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }

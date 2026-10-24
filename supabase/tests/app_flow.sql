@@ -149,6 +149,61 @@ do $$ begin
   assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-0000000000b2') = 115, 'pair cap: 3 rewards (5+5+5) + starting 100, the 4th earns nothing';
 end $$;
 
+-- ============ 5b. MESSAGE LANGUAGE, WHO MAY CORRECT, BOUNTIES ============
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+do $$ declare m public.messages; begin
+  assert (select language_id from public.messages where id = (select id from msg)) = 'vie', 'message defaults to the sender''s learning language';
+  m := public.send_message(p_conv => (select conv from ctx), p_body => 'Habari za asubuhi', p_language => 'swh');
+  assert m.language_id = 'swh', 'sender can tag the message with their other language';
+end $$;
+select tt.expect_error($q$select public.send_message(p_conv => (select conv from ctx), p_body => 'x', p_language => 'eng')$q$, 'language_not_yours');
+-- Zed (native Dutch) is not qualified to correct a Vietnamese message; Linh (native Vietnamese) is.
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');
+select tt.expect_error(format($q$select public.answer_bounty(%L, 'x', null)$q$, (select id from msg)), 'bounty_unavailable');
+
+-- Amina posts a Vietnamese-tagged bounty: 100 - 50 = 50 points held.
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+create temp table bnt as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Toi muon hoc tieng Viet', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt to public;
+do $$ declare b record; begin
+  select * into b from public.messages where id = (select id from bnt);
+  assert b.is_bounty and b.bounty_status = 'open' and b.bounty_cost = 50, 'bounty is open and costs 50';
+  assert (select points_balance from public.profiles where id = auth.uid()) = 50, 'points are held';
+  assert (select count(*) from public.list_my_bounties()) = 1, 'my bounties lists it';
+  assert not exists (select 1 from public.list_open_bounties() x where x.message_id = (select id from bnt)), 'the asker does not see their own bounty in the queue';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');
+do $$ begin assert not exists (select 1 from public.list_open_bounties() x where x.message_id = (select id from bnt)), 'an unqualified user does not see it'; end $$;
+select tt.expect_error(format($q$select public.answer_bounty(%L, 'Toi muon hoc tieng Viet.', null)$q$, (select id from bnt)), 'not_qualified_to_correct');
+-- Zed also cannot suggest a correction inside a chat he is not part of (and is unqualified anyway).
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+do $$ begin assert exists (select 1 from public.list_open_bounties() x where x.message_id = (select id from bnt) and x.cost = 50), 'a qualified native speaker sees the bounty'; end $$;
+create temp table banswer as select public.answer_bounty((select id from bnt), 'Tôi muốn học tiếng Việt', 'diacritics') as id; grant select on banswer to public;
+select tt.expect_error(format($q$select public.answer_bounty(%L, 'again', null)$q$, (select id from bnt)), 'already_answered');
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select public.accept_correction((select id from banswer));
+do $$ begin
+  assert (select bounty_status from public.messages where id = (select id from bnt)) = 'paid', 'bounty marked paid';
+  assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-0000000000b2') = 165, 'helper gets the 50 (115 + 50), not +5';
+  assert (select points_balance from public.profiles where id = auth.uid()) = 50, 'asker keeps paying 50 only once';
+end $$;
+-- Expiry refund: an unanswered bounty comes back after it lapses.
+create temp table bnt2 as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Rafiki yangu', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt2 to public;
+do $$ begin assert (select points_balance from public.profiles where id = auth.uid()) = 0, '50 - 50 = 0'; end $$;
+select tt.expect_error($q$select public.send_message(p_conv => (select conv from ctx), p_body => 'again', p_language => 'vie', p_bounty => true)$q$, 'insufficient_points');
+reset role;
+select set_config('app.bypass_protect', 'on', false);
+update public.messages set bounty_expires_at = now() - interval '1 minute' where id = (select id from bnt2);
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+do $$ begin
+  assert (select count(*) from public.list_my_bounties() x where x.status = 'refunded') = 1, 'expired bounty is refunded';
+  assert (select points_balance from public.profiles where id = auth.uid()) = 50, 'points returned';
+end $$;
+select tt.expect_error($q$select public.refund_expired_bounties()$q$, 'permission denied');
+-- Refunding twice is impossible (one ledger row per event).
+do $$ begin assert (select count(*) from public.points_ledger where reason = 'bounty_expired_refund') = 1; end $$;
+
 -- ============ 6. SAFETY ============
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 select public.report_user('00000000-0000-0000-0000-0000000000b2', 'fake_correction', 'test', (select conv from ctx));
@@ -168,4 +223,4 @@ select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 select tt.expect_error($q$select count(*) from public.admin_report_queue('open')$q$, 'forbidden');
 
 reset role;
-do $$ begin raise notice 'ALL APP-FLOW CHECKS PASSED'; end $$;
+select 'ALL APP-FLOW CHECKS PASSED' as result;

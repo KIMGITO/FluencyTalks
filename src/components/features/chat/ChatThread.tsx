@@ -123,7 +123,7 @@ export function ChatThread({ id }: { id: string }) {
             <Button size="sm" variant="secondary" onClick={async () => { await respond(id, false); nav('/messages'); }}>Ignore</Button>
             <Button size="sm" variant="danger" onClick={async () => { await blockUser(row.other_user_id); nav('/messages'); }}>Block</Button>
           </div>
-        </div>) : <Composer onSend={(t) => send(id, t)} replyTo={replyTarget} onCancelReply={() => setReply(id, null)} onType={touchTyping} />}
+        </div>) : <Composer onSend={(t, opts) => send(id, t, undefined, opts)} replyTo={replyTarget} onCancelReply={() => setReply(id, null)} onType={touchTyping} />}
       <CorrectionDialog message={correcting} onClose={() => setCorrecting(null)} onSubmit={async (t, n) => { await suggest(id, correcting!.id, t, n || undefined); setCorrecting(null); }} />
     </div>
   );

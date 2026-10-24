@@ -143,6 +143,7 @@ export function MessageBubble({
           <p className="ft-bubble-meta">
             {formatTime(message.created_at)}
             {message.edited_at && ' · edited'}
+            {message.is_bounty && <span className="ml-1 font-semibold" title="Bounty">· bounty {message.bounty_status === 'open' ? 'open' : message.bounty_status === 'paid' ? 'answered' : 'refunded'}</span>}
             {mine && tick && (
               <span
                 className={clsx('ml-1 inline-flex align-middle', tick === 'read' ? 'text-brand' : 'opacity-70')}

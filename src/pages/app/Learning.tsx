@@ -7,7 +7,7 @@ import { Button, EmptyState, Spinner, Tabs, Input } from '@/components/ui';
 import { DiffText } from '@/components/features';
 import { deletePhrase, deleteTranslation, listMyCorrections, listPhrases, listTranslations } from '@/services';
 import { useLanguageStore } from '@/store/languageStore';
-import { searchUnsplash } from '@/lib/unsplash';
+import { searchUnsplash, type UnsplashPhoto } from '@/lib/unsplash';
 import type { CorrectionHistory, SavedPhrase, TranslationRecord } from '@/types/db';
 
 type Tab = 'phrases' | 'corrections' | 'translations';
@@ -24,7 +24,8 @@ export default function Learning() {
   const [tab, setTab] = useState<Tab>('phrases');
   const [size, setSize] = useState<TextSize>('tiny');
   const [unsplashQuery, setUnsplashQuery] = useState('');
-  const [unsplashResult, setUnsplashResult] = useState<string | null>(null);
+  const [unsplashResult, setUnsplashResult] = useState<UnsplashPhoto | null>(null);
+  const [unsplashError, setUnsplashError] = useState('');
   // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
   const nameOf = useLanguageStore((s) => s.name);
   const [languages, setLanguages] = useState<string[] | null>(null);
@@ -40,8 +41,12 @@ export default function Learning() {
   useEffect(() => { listTranslations().then(setTranslations).catch(() => setTranslations([])); }, []);
 
   const handleSearchUnsplash = async () => {
-    const url = await searchUnsplash(unsplashQuery);
-    setUnsplashResult(url);
+    setUnsplashError('');
+    try {
+      const photo = await searchUnsplash(unsplashQuery);
+      setUnsplashResult(photo);
+      if (!photo) setUnsplashError('No image found. Try another word.');
+    } catch (e) { setUnsplashResult(null); setUnsplashError((e as Error).message); }
   };
 
   const withConv = (id: string | null) => id && (
@@ -57,7 +62,13 @@ export default function Learning() {
           <Input placeholder="Search Unsplash for image..." value={unsplashQuery} onChange={(e) => setUnsplashQuery(e.target.value)} />
           <Button onClick={handleSearchUnsplash}><SearchIcon size={16} /></Button>
         </div>
-        {unsplashResult && <img src={unsplashResult} alt="Unsplash" className="mt-2 h-32 w-full object-cover rounded-md" />}
+        {unsplashError && <p className="mt-2 text-sm text-danger">{unsplashError}</p>}
+        {unsplashResult && (
+          <figure className="mt-2">
+            <img src={unsplashResult.url} alt={unsplashResult.alt} className="h-32 w-full rounded-md object-cover" />
+            <figcaption className="mt-1 text-xs text-muted">Photo by <a className="underline" href={unsplashResult.creditUrl} target="_blank" rel="noreferrer">{unsplashResult.credit}</a> on Unsplash</figcaption>
+          </figure>
+        )}
       </div>
 
       {tab === 'phrases' && (!phrasesData ? <Loading /> : !phrasesData.phrases.length

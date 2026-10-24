@@ -35,4 +35,5 @@ if ! out=$(psql "$URL" -q -v ON_ERROR_STOP=1 -f supabase/tests/app_flow.sql 2>&1
   echo "$out" | grep -v '^\s*$' | grep -vE '^[- +]*$|row\)|expect_error|as_user' | tail -12
   echo "APP FLOW FAILED"; exit 1
 fi
-echo "$out" | grep PASSED
+if echo "$out" | grep -q "ALL APP-FLOW CHECKS PASSED"; then echo "   ALL APP-FLOW CHECKS PASSED"; else echo "$out" | tail -12; echo "APP FLOW DID NOT REPORT SUCCESS"; exit 1; fi
+echo "OK: database matches the app"

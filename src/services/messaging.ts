@@ -21,7 +21,10 @@ export function subscribeToReceipts(conv: string, onRead: (at: string) => void) 
 }
 
 export const startConversation = (userId: string) => rpc<string>('start_conversation', { p_target: userId });
-export const sendMessage = (conv: string, body: string, replyTo?: string) => rpc<Message>('send_message', { p_conv: conv, p_body: body, p_reply_to: replyTo ?? null });
+/** `language` is one of my two languages (default: the one I am learning). `bounty` holds 50 points for community help. */
+export interface SendOptions { language?: string; bounty?: boolean }
+export const sendMessage = (conv: string, body: string, replyTo?: string, opts?: SendOptions) =>
+  rpc<Message>('send_message', { p_conv: conv, p_body: body, p_reply_to: replyTo ?? null, p_language: opts?.language ?? null, p_bounty: opts?.bounty ?? false });
 export const listConversations = (status: 'active' | 'request' = 'active') => rpc<ConversationRow[]>('list_conversations', { p_status: status });
 export const respondMessageRequest = (conv: string, accept: boolean) => rpc('respond_message_request', { p_conv: conv, p_accept: accept });
 export const markRead = (conv: string) => rpc('mark_read', { p_conv: conv });

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": " vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && npx wrangler pages deploy dist --project-name fluencytalks"
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name fluencytalks",
+    "check": "tsc --noEmit && vite build",
+    "test:db": "bash scripts/test-db.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
