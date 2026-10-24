@@ -16,11 +16,7 @@ const timeLeft = (iso: string) => {
   return h >= 1 ? `${h}h left` : `${Math.max(1, Math.floor(ms / 60_000))}m left`;
 };
 
-/**
- * Bounties: someone paid points to get a message corrected by speakers of its language.
- * "Open" = bounties I am qualified to answer. "Mine" = bounties I posted.
- * Opening the page also settles expired bounties (the server refunds the points).
- */
+
 export default function BountyQueue() {
   const [tab, setTab] = useState<Tab>('open');
   const [open, setOpen] = useState<OpenBounty[] | null>(null);
@@ -35,7 +31,7 @@ export default function BountyQueue() {
     try {
       const [o, m] = await Promise.all([listOpenBounties(), listMyBounties()]);
       setOpen(o); setMine(m);
-      if (myId) await loadProfile(myId);          // a refund may have changed my points
+      if (myId) await loadProfile(myId);          
     } catch (e) { setError((e as Error).message); setOpen((v) => v ?? []); setMine((v) => v ?? []); }
   }, [myId, loadProfile]);
   useEffect(() => { void refresh(); }, [refresh]);

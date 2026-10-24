@@ -10,7 +10,7 @@ const TESTIMONIALS = [
       "I studied French for years and froze when I spoke. Three weeks of chats with Camille and I finally ordered dinner in Paris without panic.",
     author: "Amina Odhiambo",
     role: "Learning French, member since 2025",
-    img: IMG.team, // replace or keep dynamic per testimonial if needed
+    img: IMG.team, 
     tint: "surface",
   },
   {
@@ -40,14 +40,14 @@ export default function Testimonial() {
 
   const current = TESTIMONIALS[currentIndex];
 
-  // Next / Prev handler with animation lock
+  
   const handleSlideChange = (newIndex) => {
     if (isAnimating || newIndex === currentIndex) return;
     setIsAnimating(true);
     setTimeout(() => {
       setCurrentIndex(newIndex);
       setIsAnimating(false);
-    }, 250); // Matches transition duration
+    }, 250); 
   };
 
   const handleNext = () => {
@@ -60,7 +60,7 @@ export default function Testimonial() {
     handleSlideChange(prevIdx);
   };
 
-  // Autoplay functionality
+  
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
@@ -72,7 +72,6 @@ export default function Testimonial() {
 
   return (
     <>
-      {/* Sheet lives centrally: see theme/componentStyles.js → testimonialCSS */}
       <style>{testimonialCSS}</style>
 
       <ImageSection
@@ -82,8 +81,6 @@ export default function Testimonial() {
         tint={current.tint}
         minHeight={560}
       >
-        {/* Solid readable card: the frosted photo panel alone is too
-            translucent (blur mixes text with the drifting photo). */}
         <div
           className="tst-card"
           onMouseEnter={() => setIsPaused(true)}
@@ -101,7 +98,6 @@ export default function Testimonial() {
             boxShadow: '0 16px 40px rgb(var(--c-ink) / 0.12)',
           }}
         >
-          {/* Quote Symbol */}
           <div
             style={{
               fontFamily: SERIF,
@@ -115,7 +111,6 @@ export default function Testimonial() {
             “
           </div>
 
-          {/* Animated Card Content */}
           <div
             key={current.id}
             className={!isAnimating ? 'testimonial-content-animate' : ''}
@@ -145,7 +140,6 @@ export default function Testimonial() {
             </div>
           </div>
 
-          {/* Navigation Controls & Pagination Dots */}
           <div
             style={{
               display: 'flex',
@@ -156,7 +150,6 @@ export default function Testimonial() {
               borderTop: '1px solid rgba(0, 0, 0, 0.06)',
             }}
           >
-            {/* Dots Indicator */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {TESTIMONIALS.map((item, idx) => (
                 <button
@@ -168,7 +161,6 @@ export default function Testimonial() {
               ))}
             </div>
 
-            {/* Prev / Next Buttons */}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 className="tst-nav-btn"

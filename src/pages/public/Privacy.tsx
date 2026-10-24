@@ -9,7 +9,7 @@ const sections = [
       <Bullets items={[['Account and profile:', 'email, username, avatar, native and target languages.'], ['Messages and content:', 'practice messages, translated phrases, audio clips and saved vocabulary.'], ['Technical data:', 'IP address, device type, browser settings and usage analytics.']]} /></>) },
   { id: 'use', short: 'How we use it', tagline: 'How we use your data', heading: 'Empowering your fluency', img: IMG.online, tint: '#f0f7ff', side: 'right',
     body: (<><P>Every piece of data has a purpose.</P>
-      <Bullets items={[['Core service:', 'partner matching, real-time chat and AI practice tutors.'], ['Safety:', 'preventing spam and abuse, and enforcing our terms.'], ['Notifications:', 'practice reminders, partner messages and security updates.']]} /></>) },
+      <Bullets items={[['Core service:', 'partner matching, real-time chat and conversation practice.'], ['Safety:', 'preventing spam and abuse, and enforcing our terms.'], ['Notifications:', 'practice reminders, partner messages and security updates.']]} /></>) },
   { id: 'sharing', short: 'Sharing', tagline: 'Third parties', heading: 'Trusted infrastructure partners', img: IMG.talk, tint: '#f3f0ff', side: 'left',
     body: (<><P>We never sell your personal information. We share data only with the providers that run the service.</P>
       <Bullets items={[['Supabase:', 'encrypted database and sign-in.'], ['Translation APIs:', 'secure translation processing (for example MyMemory).']]} /></>) },

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { C, IMG, SERIF, wrap, btn, photo, bubble } from '../../theme/theme';
+import { C, IMG, SERIF, wrap, btn, photo } from '../../theme/theme';
 import { heroCSS } from '../../theme/componentStyles';
-import { Words } from './Reveal';
 import { useJoinLink } from './useJoinLink';
 
 const slides = [
@@ -104,7 +103,6 @@ export default function Hero() {
                     ...photo(s.img),
                     position: 'absolute',
                     inset: 0,
-                    animation: on ? 'ftZoom 10s ease-out forwards' : 'none',
                   }}
                 />
               </div>
@@ -134,7 +132,7 @@ export default function Hero() {
                     maxWidth: 780,
                   }}
                 >
-                  <Words text={s.title} on={on} />
+                  {s.title}
                 </h1>
                 <p
                   style={{
@@ -143,7 +141,7 @@ export default function Hero() {
                     maxWidth: 540,
                     margin: '0 0 34px',
                     ...(on
-                      ? { animation: 'ftUp .8s .9s both' }
+                      ? {}
                       : { opacity: 0 }),
                   }}
                 >
@@ -155,7 +153,7 @@ export default function Hero() {
                     gap: 14,
                     flexWrap: 'wrap',
                     ...(on
-                      ? { animation: 'ftUp .8s 1.1s both' }
+                      ? {}
                       : { opacity: 0 }),
                   }}
                   className="flex justify-center "
@@ -178,90 +176,6 @@ export default function Hero() {
         })}
       </div>
 
-      <div
-        className="ft-bub"
-        style={bubble(C.white, C.indigo, { right: '7%', top: 70 })}
-      >
-        ¿Cómo estás?
-      </div>
-      <div
-        className="ft-bub"
-        style={bubble(C.teal, C.white, {
-          right: '15%',
-          top: 150,
-          borderRadius: '22px 22px 4px 22px',
-          animationDelay: '1s',
-        })}
-      >
-        Très bien, merci!
-      </div>
-      <div
-        className="ft-bub"
-        style={bubble(C.sun, C.ink, {
-          right: '4%',
-          top: 230,
-          animationDelay: '2s',
-        })}
-      >
-        Karibu sana!
-      </div>
-
-      <div
-        className="ft-ctlw"
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 40 }}
-      >
-        {/* <div className="ft-ctl" style={wrap}>
-          <button
-            className="ft-arrow ft-prev"
-            aria-label="Previous slide"
-            onClick={() => go(-1)}
-            style={arrow}
-          >
-            ‹
-          </button>
-          <button
-            className="ft-arrow ft-next"
-            aria-label="Next slide"
-            onClick={() => go(1)}
-            style={arrow}
-          >
-            ›
-          </button>
-          <div className="ft-dots" style={{ display: 'flex', gap: 8 }}>
-            {slides.map((s, i) => (
-              <button
-                key={s.tag}
-                aria-label={`Go to slide ${i + 1}`}
-                onClick={() => setIdx(i)}
-                style={{
-                  width: i === idx ? 56 : 14,
-                  height: 8,
-                  borderRadius: 8,
-                  border: 0,
-                  padding: 0,
-                  cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.4)',
-                  overflow: 'hidden',
-                  transition: 'width .4s',
-                }}
-              >
-                {i === idx && (
-                  <span
-                    key={idx}
-                    style={{
-                      display: 'block',
-                      height: '100%',
-                      background: C.sun,
-                      animation: 'ftFill 6.5s linear both',
-                      animationPlayState: paused ? 'paused' : 'running',
-                    }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        </div> */}
-      </div>
     </section>
   );
 }

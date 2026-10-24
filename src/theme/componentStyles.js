@@ -1,47 +1,9 @@
-/**
- * =============================================================================
- * componentStyles.js — central registry for every component stylesheet
- * =============================================================================
- * WHY THIS EXISTS
- *   Component CSS used to live inside each component as a private
- *   `const CSS = \`...\`` string (or an inline <style> tag). That made styles
- *   impossible to reuse, easy to duplicate (reduced-motion and focus rules
- *   existed twice) and hard to review. All component sheets now live here,
- *   sectioned and commented, and are imported by the components that render
- *   them.
- *
- * HOW TO USE
- *   import { legalCSS } from '@/theme/componentStyles';
- *   ...                                            // relative: '../../theme/componentStyles'
- *   <style>{legalCSS}</style>                      // render with the component
- *
- *   Mounting many instances? `COMPONENT_CSS` (bottom of file) is every sheet
- *   concatenated, ready to inject exactly once from a root layout instead.
- *
- * CONVENTIONS
- *   - `ft-` prefix : landing / shared chrome (see also theme.js `CSS`)
- *   - `lg-` prefix : legal shell (Privacy / Terms / Data deletion)
- *   - `tst-` prefix: testimonial carousel — namespaced so its once-generic
- *                    .nav-btn / .dot / keyframes can never collide with
- *                    another component's when loaded globally.
- *   - Colours/type come from injected design tokens (`--c-*`, tokens.ts +
- *     inject.ts) or the raw palette exported by theme.js (`C`, `FONT`, `DISPLAY`).
- *
- * Every sheet is self-contained: base rules, hover/focus states, dark-theme
- * overrides and media queries travel together in one commented block.
- */
+
 import { C, FONT, DISPLAY } from './theme';
 
-/* ========================================================================== *
- * LEGAL PAGES — src/components/legal/LegalLayout.tsx        classes: `lg-*`
- * Sticky top bar, split media/panel stage with frosted content panel,
- * section pager, dark-theme overrides and responsive fallbacks.
- * ========================================================================== */
 
-/**
- * Horizontal offset that keeps the content panel aligned with the 1240px
- * header on wide screens. Used by `.lg-panel` and both `.lg-content` paddings.
- */
+
+
 const LEGAL_OFFSET = 'max(0px, calc((100vw - 1240px) / 2))';
 
 export const legalCSS = `
@@ -120,10 +82,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgb(var(--c-sun));outline
 `;
 
 
-/* ========================================================================== *
- * LANDING FOOTER — src/components/landing/Footer.jsx    classes: `ft-foot*`
- * Link columns, hover slide on links, bottom legal bar + responsive stacks.
- * ========================================================================== */
+
 export const footerCSS = `.ft-foot {
   display: grid;width: 100%;box-sizing: border-box;gap: clamp(28px, 4vw, 56px);align-items: start;grid-template-columns: 1fr;
 }/* Brand spans full width on mobile, sits beside links on desktop */.ft-foot .ft-fbrand {grid-column: 1 / -1;}@media (min-width: 640px) {.ft-foot {  grid-template-columns: repeat(2, 1fr);}}
@@ -140,11 +99,7 @@ export const footerCSS = `.ft-foot {
 @media (max-width: 560px) {.ft-foot {  gap: 32px 20px;}.ft-fbar {  flex-direction: column-reverse;  text-align: center;}
 }`;
 
-/* ========================================================================== *
- * HERO CAROUSEL CONTROLS — src/components/landing/Hero.jsx   classes: `ft-ctl*`
- * Prev/next/dots order + small-screen rules (inline styles can't do media
- * queries, hence this sheet).
- * ========================================================================== */
+
 export const heroCSS = `
 .ft-ctl{display:flex;align-items:center;gap:14px}
 .ft-prev{order:0}.ft-next{order:1}.ft-dots{order:2;margin-left:8px}
@@ -159,23 +114,14 @@ export const heroCSS = `
 }
 `;
 
-/* ========================================================================== *
- * STATS BAR — src/components/landing/Stats.jsx      classes: `ft-st-long/short`
- * Swaps long stat labels for short ones under 600px.
- * ========================================================================== */
+
 export const statsCSS = `
 .ft-st-short{display:none}
 @media(max-width:600px){.ft-st-long{display:none}.ft-st-short{display:inline}}
 `;
 
 
-/* ========================================================================== *
- * HOW-IT-WORKS — src/components/landing/HowItWorks.jsx
- * classes: `ft-steps*`, `ft-step-*`, `ft-how-eyebrow`
- * Chat-thread cards: alternating tail radius (same motif as the Languages
- * greeting pills + Hero bubbles), per-step accent rail + icon badge.
- * 4-up desktop → 2x2 tablet → stacked mobile. Colours/type from tokens.
- * ========================================================================== */
+
 export const howItWorksCSS = `
 /* -- Eyebrow pill: same voice as Hero tag + CTA labels -------------------- */
 .ft-how-eyebrow {
@@ -331,11 +277,7 @@ export const howItWorksCSS = `
 `;
 
 
-/* ========================================================================== *
- * LANGUAGES GRID — src/components/landing/Languages.jsx   classes: `ft-lang-*`
- * Greeting pills: centred flex row (3-col grid on mobile), tactile tap
- * feedback, selected outline and the "N speakers online" banner.
- * ========================================================================== */
+
 export const languagesCSS = `
 /* -- Grid: centred wrapping row of pills ---------------------------------- */
 .ft-lang-grid {
@@ -445,13 +387,7 @@ export const languagesCSS = `
 `;
 
 
-/* ========================================================================== *
- * TESTIMONIAL CAROUSEL — src/components/landing/Testimonial.jsx
- * classes: `testimonial-content-animate`, `tst-nav-btn`, `tst-dot`
- * NOTE: the original sheet used generic global names (.nav-btn, .dot,
- * fadeInSlide). They are namespaced `tst-` here so they can never style
- * another component's markup once loaded.
- * ========================================================================== */
+
 export const testimonialCSS = `
 /* -- Motion: quote fade-in when the slide changes ------------------------- */
 @keyframes tstFadeIn {
@@ -512,20 +448,16 @@ export const testimonialCSS = `
 }
 `;
 
-/* ========================================================================== *
- * LEGAL TEXT STYLE OBJECTS — back the exported P / Bullets helpers in
- * src/components/legal/LegalLayout.tsx. Reuse them for any page that renders
- * body copy inside the legal shell (Privacy, Terms, Data deletion, ...).
- * ========================================================================== */
 
-/** Root wrapper of the legal shell: base font + light/dark surface colours. */
+
+
 export const legalPage = {
   fontFamily: 'var(--font-sans)',
   color: 'rgb(var(--c-ink))',
   background: 'rgb(var(--c-surface))',
 };
 
-/** Body paragraph (the `<P>` helper). */
+
 export const legalText = {
   margin: '0 0 14px',
   lineHeight: 1.7,
@@ -533,9 +465,7 @@ export const legalText = {
   color: 'rgb(var(--c-ink))',
 };
 
-/** Bullet list container (the `<Bullets>` helper): gap-only grid, no markers.
- *  Kept as a grid deliberately: `flexDirection`/`flexWrap` are strict literal
- *  unions in CSSProperties, and a one-column list needs no layout switching. */
+
 export const legalList = {
   listStyle: 'none',
   margin: 0,
@@ -544,7 +474,7 @@ export const legalList = {
   gap: 10,
 };
 
-/** One bullet row: accent dot + text. */
+
 export const legalListItem = {
   display: 'flex',
   gap: 12,
@@ -552,7 +482,7 @@ export const legalListItem = {
   fontSize: 'clamp(15px, 1.7vw, 16.5px)',
 };
 
-/** The accent dot marker of a bullet row. */
+
 export const legalBulletDot = {
   width: 8,
   height: 8,
@@ -562,14 +492,7 @@ export const legalBulletDot = {
   flex: 'none',
 };
 
-/* ========================================================================== *
- * AGGREGATE — every sheet above concatenated.
- * Inject once from a root layout if you prefer a single global stylesheet
- * over rendering one <style> tag per mounted component:
- *
- *   import { COMPONENT_CSS } from '@/theme/componentStyles';
- *   ...<style>{COMPONENT_CSS}</style>
- * ========================================================================== */
+
 export const COMPONENT_CSS = [
   legalCSS,
   footerCSS,

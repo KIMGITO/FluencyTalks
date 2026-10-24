@@ -3,11 +3,6 @@ import { rpc } from '@/lib/api';
 import { languageLabel, sortKey } from '@/lib/languages';
 import type { DisplayLanguage, FullProfile, Language, MyProfile, UserLanguage } from '@/types/db';
 
-/**
- * Every seeded language, common 100 first. `is_supported_learning` no longer hides
- * rows from the client — it only decides what shows *before* the "More languages…"
- * expander. Priority: supported first (English order), then the rest (English order).
- */
 export const listLanguages = async (onlySupported = false): Promise<DisplayLanguage[]> => {
   let q = supabase
     .from('languages')
@@ -21,17 +16,14 @@ export const listLanguages = async (onlySupported = false): Promise<DisplayLangu
     .sort((a, b) => Number(b.is_supported_learning) - Number(a.is_supported_learning) || sortKey(a).localeCompare(sortKey(b)));
 };
 
-/** The common-first subset pickers show before "More languages…". */
+
 export const listCommonLanguages = (): Promise<DisplayLanguage[]> => listLanguages(true);
-// People search lives in ./search (one central place for the /search page).
 export const getProfile = (username: string) => rpc<FullProfile | null>('get_profile', { p_username: username });
-/** One native language (required) and at most one learning language with its CEFR level. ISO 639-3 ids only. */
 export const setLanguageProfile = (p: { native: string; learning?: string | null; level?: string | null }) =>
   rpc('set_language_profile', { p_native: p.native, p_learning: p.learning || null, p_level: p.learning ? p.level ?? 'A1' : null });
 export const saveProfile = (p: { username: string; displayName: string; bio: string; timezone: string; isPrivate: boolean; avatarUrl?: string; countryCode?: string | null }) =>
   rpc('save_profile', { p_username: p.username, p_display_name: p.displayName, p_bio: p.bio, p_timezone: p.timezone, p_is_private: p.isPrivate, p_avatar_url: p.avatarUrl ?? null, p_country: p.countryCode ?? null });
 
-/** Uploads to avatars/<uid>/avatar-<ts>.<ext> (storage policy restricts writes to your own folder). Returns the public URL. */
 export async function uploadAvatar(userId: string, file: File) {
   const path = `${userId}/avatar-${Date.now()}.${file.name.split('.').pop()}`;
   const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });

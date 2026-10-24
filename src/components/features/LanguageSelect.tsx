@@ -6,23 +6,19 @@ import { useProfileStore } from '@/store/profileStore';
 import type { DisplayLanguage } from '@/types/db';
 
 export type LearnerLevel = (typeof LEARNER_LEVELS)[number];
-/** The whole language profile: one native language, at most one learning language. */
+
 export interface LanguageChoice { native: string; learning: string; level: LearnerLevel }
 
 const COOLDOWN_DAYS = 30;
 
-/** Date until which languages are locked (the server enforces it too), or null. */
+
 export function languageLockedUntil(lastChange: string | null | undefined): Date | null {
   if (!lastChange) return null;
   const until = new Date(new Date(lastChange).getTime() + COOLDOWN_DAYS * 86_400_000);
   return until.getTime() > Date.now() ? until : null;
 }
 
-/**
- * Two single choices: the language you speak natively, and (optionally) the one you are learning.
- * Only launch-list languages are offered; a language you already saved stays selectable.
- * The database is the authority (set_language_profile); this form just makes the rules obvious.
- */
+
 export function LanguageSelect({ value, onChange }: { value: LanguageChoice; onChange: (v: LanguageChoice) => void }) {
   const list = useLanguages();
   const locales = useDisplayLocales();

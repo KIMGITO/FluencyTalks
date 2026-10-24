@@ -23,8 +23,7 @@ export default function Features() {
       <h2 style={{ ...h2, color: C.sun }}>
         Everything you need to keep going
       </h2>
-      {/* Flex column — a one-column grid adds nothing here, and flex keeps the
-          buttons at their natural height across every breakpoint. */}
+      {}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 26, marginTop: 28 }}>
         {items.map(([t, d, c]) => (
           <div

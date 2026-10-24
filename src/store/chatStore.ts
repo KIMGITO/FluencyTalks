@@ -11,11 +11,11 @@ export const isGone = (m: { deleted_at?: string | null; body?: string | null }) 
 const loadJson = (key: string): Record<string, string[]> | Record<string, true> => {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
 };
-const saveJson = (key: string, value: unknown) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } };
+const saveJson = (key: string, value: unknown) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { } };
 
 interface S {
   active: ConversationRow[]; requests: ConversationRow[]; openId: string | null;
-  messages: Record<string, Message[]>; corrections: Record<string, Correction[]>; reactions: Record<string, Reaction[]>; // corrections and reactions keyed by message id
+  messages: Record<string, Message[]>; corrections: Record<string, Correction[]>; reactions: Record<string, Reaction[]>;
   pins: Record<string, string[]>; hidden: Record<string, true>; drafts: Record<string, Message | null>;
   loadLists: () => Promise<void>; open: (id: string) => Promise<void>; close: () => void;
   send: (id: string, body: string, replyTo?: string, opts?: SendOptions) => Promise<void>; respond: (id: string, accept: boolean) => Promise<void>;
@@ -37,8 +37,8 @@ export const useChatStore = create<S>((set, get) => ({
   loadLists: async () => { const [active, requests] = await Promise.all([listConversations('active'), listConversations('request')]); set({ active, requests }); },
   open: async (id) => {
     set({ openId: id });
-    await get().loadLists();                                   // lists first so the header never flashes "unavailable"
-    const list = (await getMessages(id)).filter((m) => !isGone(m)).reverse(); // deleted never enter state
+    await get().loadLists();
+    const list = (await getMessages(id)).filter((m) => !isGone(m)).reverse();
     set((s) => ({ messages: { ...s.messages, [id]: list } }));
     await Promise.all([get().loadCorrections(id), get().loadReactions(id), markRead(id)]); await get().loadLists();
   },
@@ -46,18 +46,17 @@ export const useChatStore = create<S>((set, get) => ({
   send: async (id, body, replyTo, opts) => {
     const fallback = get().drafts[id]?.id ?? undefined;
     get().append(await sendMessage(id, body, replyTo ?? fallback, opts));
-    if (opts?.bounty) useProfileStore.getState().updatePoints(-50);   // the server holds the points; keep the top bar in step
+    if (opts?.bounty) useProfileStore.getState().updatePoints(-50);
     set((s) => ({ drafts: { ...s.drafts, [id]: null } }));
     await get().loadLists();
   },
   respond: async (id, accept) => { await respondMessageRequest(id, accept); await get().loadLists(); },
   append: (m) => set((s) => {
-    if (isGone(m)) return s; // deleted never enter state (read status first)
+    if (isGone(m)) return s;
     const list = s.messages[m.conversation_id];
-    if (!list) return s;                                       // not opened yet: lists refresh via loadLists()
+    if (!list) return s;
     return list.some((x) => x.id === m.id) ? s : { messages: { ...s.messages, [m.conversation_id]: [...list, m] } };
   }),
-  /** INSERT and UPDATE (delete-for-everyone) both land here; id-keyed upsert. */
   applyUpdate: (m) => set((s) => {
     const list = s.messages[m.conversation_id];
     if (!list) return s;
@@ -75,15 +74,14 @@ export const useChatStore = create<S>((set, get) => ({
     return { corrections: { ...s.corrections, [c.message_id]: next } };
   }),
   suggest: async (convId, messageId, text, note) => { await suggestCorrection(messageId, text, note); await get().loadCorrections(convId); },
-  accept: async (c) => { await acceptCorrection(c.id); get().upsertCorrection({ ...c, status: 'accepted' }); },   // also saves the phrase (server-side)
+  accept: async (c) => { await acceptCorrection(c.id); get().upsertCorrection({ ...c, status: 'accepted' }); },
   dismiss: async (c) => { await respondCorrection(c.id, false); get().upsertCorrection({ ...c, status: 'dismissed' }); },
   loadReactions: async (convId) => {
     const rows = await getReactions((get().messages[convId] ?? []).map((m) => m.id));
-    const byMessage: Record<string, Reaction[]> = {}; (get().messages[convId] ?? []).forEach((m) => (byMessage[m.id] = []));   // empty list clears reactions removed while away
+    const byMessage: Record<string, Reaction[]> = {}; (get().messages[convId] ?? []).forEach((m) => (byMessage[m.id] = []));
     rows.forEach((r) => byMessage[r.message_id]?.push(r));
     set((s) => ({ reactions: { ...s.reactions, ...byMessage } }));
   },
-  /** Used by both my own taps and realtime events; idempotent, so the echo of my own change is harmless. */
   applyReaction: ({ added, reaction: r }) => set((s) => {
     const list = s.reactions[r.message_id] ?? []; const same = (x: Reaction) => x.user_id === r.user_id && x.emoji === r.emoji;
     if (added) return list.some(same) ? s : { reactions: { ...s.reactions, [r.message_id]: [...list, r] } };
@@ -97,14 +95,13 @@ export const useChatStore = create<S>((set, get) => ({
       get().applyReaction({ added, reaction: { message_id: messageId, user_id: me, emoji } });
       return;
     }
-    // Single-reaction enforcement: clear my previous emoji first so counts stay in sync.
     for (const old of mine) {
       try {
         const removed = await toggleReaction(messageId, old.emoji);
         if (!removed) get().applyReaction({ added: false, reaction: old });
-      } catch { /* keep going: replacement must not fail because one removal did */ }
+      } catch { }
     }
-    const added = await toggleReaction(messageId, emoji);   // server decides: true = added, false = removed
+    const added = await toggleReaction(messageId, emoji);
     get().applyReaction({ added, reaction: { message_id: messageId, user_id: me, emoji } });
   },
   togglePin: (convId, messageId) => set((s) => {
@@ -114,16 +111,14 @@ export const useChatStore = create<S>((set, get) => ({
     return { pins };
   }),
   isPinned: (convId, messageId) => (get().pins[convId] ?? []).includes(messageId),
-  /** Delete-for-me: local-only visibility filter, keyed by message id. */
   hideForMe: (messageId) => set((s) => {
     const hidden = { ...s.hidden, [messageId]: true as const };
     saveJson('ft-hidden', hidden);
     return { hidden };
   }),
-  /** Delete-for-everyone: message vanishes everywhere (no placeholder). */
   deleteForEveryone: async (convId, messageId) => {
     set((s) => ({ messages: { ...s.messages, [convId]: (s.messages[convId] ?? []).filter((m) => m.id !== messageId) }, pins: { ...s.pins, [convId]: (s.pins[convId] ?? []).filter((x) => x !== messageId) }, drafts: { ...s.drafts, [convId]: s.drafts[convId]?.id === messageId ? null : s.drafts[convId] } }));
-    try { await deleteMessage(messageId); } catch { /* optimistic: stays gone */ }
+    try { await deleteMessage(messageId); } catch { }
     get().loadLists();
   },
   setReply: (convId, m) => set((s) => ({ drafts: { ...s.drafts, [convId]: m } })),

@@ -5,7 +5,7 @@ import { CountryBadge } from '../CountryBadge';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import type { Person } from '@/types/db';
 
-/** Someone whose @handle is exactly what was typed, shown above the list the way Facebook puts the matching profile on top. */
+
 export function PersonResult({ person }: { person: Person }) {
   const labelOf = useLanguageStore((s) => s.labelOf);
   const locales = useDisplayLocales();

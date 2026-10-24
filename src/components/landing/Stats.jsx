@@ -2,7 +2,7 @@ import { C, SERIF, wrap } from '../../theme/theme';
 import { statsCSS } from '../../theme/componentStyles';
 import { Reveal, Count } from './Reveal';
 
-// [value, suffix, decimals, long label, short label]
+
 const stats = [
   [40, '+', 0, 'Languages to practice', 'Languages'],
   [120, 'k', 0, 'Conversations a month', 'Chats / month'],

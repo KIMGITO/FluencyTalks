@@ -1,7 +1,7 @@
 export type DiffPart = { text: string; kind: 'same' | 'add' | 'del' };
-const MAX_CELLS = 250000; // beyond this, skip word-level diff and show before/after
+const MAX_CELLS = 250000; 
 
-/** Word-level diff (longest common subsequence). Whitespace is kept as tokens so output re-joins cleanly. */
+
 export function diffWords(a: string, b: string): DiffPart[] {
   const x = a.split(/(\s+)/).filter(Boolean); const y = b.split(/(\s+)/).filter(Boolean);
   if (x.length * y.length > MAX_CELLS) return [{ text: a, kind: 'del' }, { text: b, kind: 'add' }];

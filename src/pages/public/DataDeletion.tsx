@@ -15,7 +15,6 @@ function DeleteForm() {
     e.preventDefault();
     setBusy(true);
     try {
-      // TODO: connect to your backend, e.g. supabase.functions.invoke('delete-request', { body: { email } })
       await new Promise((r) => setTimeout(r, 600));
       setDone(true);
     } finally { setBusy(false); }

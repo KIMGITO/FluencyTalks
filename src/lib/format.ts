@@ -1,4 +1,4 @@
-/** Today -> time, otherwise short date. */
+
 export function formatTime(iso: string) {
   const d = new Date(iso); const now = new Date();
   return d.toDateString() === now.toDateString()

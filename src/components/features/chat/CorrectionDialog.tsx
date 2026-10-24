@@ -13,7 +13,7 @@ export function CorrectionDialog({ message, onClose, onSubmit }: { message: Mess
 
   useEffect(() => { setText(message?.body ?? ''); setNote(''); setError(''); }, [message?.id]);
   const unchanged = !message || text.trim() === message.body.trim();
-  // Native speaker, or learner at B1 or above: the same rule the database enforces (can_correct_language).
+  
   const canEdit = !!message && canCorrect(me, message.language_id);
   
   const submit = async () => { setBusy(true); setError(''); try { await onSubmit(text.trim(), note.trim()); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } };

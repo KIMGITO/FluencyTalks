@@ -16,12 +16,9 @@ import {
 
 interface AuthState {
   user: User | null; session: Session | null; loading: boolean; error: string | null;
-  /** When the session was last confirmed with the server (ms epoch). */
   sessionCheckedAt: number | null;
-  /** Set when we forced a logout (idle timeout / deleted elsewhere / user switched). */
   forceLogoutReason: 'idle' | 'invalid' | 'switched' | null;
   init: () => Promise<void>;
-  /** Re-confirm the session with the server. Returns false when we logged out. */
   validateSession: () => Promise<boolean>;
   signUp: (email: string, password: string) => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<boolean>;
@@ -39,7 +36,6 @@ const run = async (set: (s: Partial<AuthState>) => void, fn: () => Promise<{ err
 const PROD_ORIGIN = 'https://thefluencytalks.com';
 const origin = () => (typeof window !== 'undefined' ? window.location.origin : PROD_ORIGIN);
 
-/** Clear cached per-user client state without importing stores statically (chatStore imports this file). */
 async function resetUserCaches() {
   try {
     const [{ useProfileStore }, { useChatStore }, { useNotificationStore }] = await Promise.all([
@@ -48,24 +44,21 @@ async function resetUserCaches() {
       import('@/store/notificationStore'),
     ]);
     useProfileStore.getState().reset();
-    try { useChatStore.getState().stopRealtime(); } catch { /* not started */ }
-    try { useNotificationStore.getState().stop(); } catch { /* not started */ }
+    try { useChatStore.getState().stopRealtime(); } catch { }
+    try { useNotificationStore.getState().stop(); } catch { }
   } catch {
-    /* stores not loaded yet — nothing cached */
   }
 }
 
 let initialized = false;
 export const useAuthStore = create<AuthState>((set, get) => {
-  /** Force-logout on this device and wipe stale per-user state. */
   const forceLogout = async (reason: AuthState['forceLogoutReason']) => {
     clearSessionMarkers();
     await resetUserCaches();
-    try { await supabase.auth.signOut(); } catch { /* already signed out */ }
+    try { await supabase.auth.signOut(); } catch { }
     set({ user: null, session: null, loading: false, sessionCheckedAt: Date.now(), forceLogoutReason: reason });
   };
 
-  /** Adopt a fresh session: handle user-switch (deleted + re-created), stamp activity. */
   const adoptSession = async (s: Session | null) => {
     const user = s?.user ?? null;
     if (!user) {

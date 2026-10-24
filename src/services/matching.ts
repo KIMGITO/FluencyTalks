@@ -11,7 +11,7 @@ export const savePartner = (partnerId: string) => rpc<string>('save_partner', { 
 export const deletePartner = (partnerId: string) => rpc<string>('delete_partner', { p_partner: partnerId });
 export const listSavedPartnerIds = () => rpc<string[]>('list_saved_partner_ids');
 
-/** Helper the brief wants: who I may post to the library as. */
+
 export const isContributionEligible = (me: { native_language_id: string | null; learning_language_id: string | null; learning_level: string | null } | null) => {
   if (!me) return false;
   if (me.native_language_id) return true;
@@ -19,7 +19,7 @@ export const isContributionEligible = (me: { native_language_id: string | null; 
   return lvl === 'B1' || lvl === 'B2' || lvl === 'C1' || lvl === 'C2';
 };
 
-/** Does `other` match my `learning` or `native` language at the right level? */export const matchLanguage = (
+export const matchLanguage = (
   otherLanguages: { language_id: string; role: string; level: string }[] | null,
   myNative: string | null,
   myLearning: string | null,
@@ -41,7 +41,7 @@ export const isContributionEligible = (me: { native_language_id: string | null; 
   return null;
 };
 
-/** One person the viewer could message: matched by shared language, or "other". */
+
 export interface MatchPerson extends Person { match_kind: 'native' | 'learning' | 'other'; match_language: string | null }
 
 export const searchMatched = (query: string, language: string | null, level: string | null, limit = 24) =>

@@ -10,10 +10,10 @@ export default function Landing() {
       <GlobalStyles />
       <Header />
       <Hero />
-      {/* <Stats /> */}
+      {}
       <div className='py-2'></div>
       <About />
-      {/* <HowItWorks /> */}
+      {}
       <Languages />
       <Split />
       <Features />

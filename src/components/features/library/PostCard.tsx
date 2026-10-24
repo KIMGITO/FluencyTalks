@@ -40,7 +40,6 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-sm transition hover:shadow-md">
-      {/* cover image */}
       {post.unsplash_image_url && (
         <div className="relative h-40 w-full overflow-hidden bg-surface">
           <img
@@ -54,7 +53,6 @@ export function PostCard({ post }: PostCardProps) {
       )}
 
       <div className="p-4 space-y-2">
-        {/* header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h3 className="text-lg font-bold leading-snug text-ink">{post.phrase}</h3>
@@ -62,7 +60,6 @@ export function PostCard({ post }: PostCardProps) {
               <p className="mt-0.5 text-sm text-muted">{post.translation}</p>
             )}
           </div>
-          {/* category badge & actions */}
           <div className="flex items-center gap-2">
             <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${CATEGORY_COLORS[post.category] ?? 'bg-surface text-muted'}`}>
               {post.category}
@@ -79,14 +76,12 @@ export function PostCard({ post }: PostCardProps) {
           </div>
         </div>
 
-        {/* source context */}
         {post.source_context && (
           <p className="rounded-lg bg-surface px-3 py-2 text-xs italic text-muted">
             "{post.source_context}"
           </p>
         )}
 
-        {/* footer: lang + author */}
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="flex items-center gap-2">
             {post.language_id && (
@@ -96,7 +91,6 @@ export function PostCard({ post }: PostCardProps) {
               </span>
             )}
           </div>
-          {/* author */}
           <div className="flex items-center gap-1.5 text-xs text-muted">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/20 text-[9px] font-bold text-brand">
               {initials}

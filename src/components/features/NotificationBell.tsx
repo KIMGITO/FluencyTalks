@@ -10,7 +10,7 @@ import type { AppNotification } from '@/types/db';
 const verbs: Record<AppNotification['type'], string> = {
   message_request: 'sent you a message request', correction: 'suggested a correction to your message',
 };
-/** Where a notification leads when tapped. */
+
 const destination = (n: AppNotification) => {
   if (n.type === 'message_request' || n.type === 'correction') return n.data.conversation_id ? `/messages/${n.data.conversation_id}` : '/messages';
   return n.actor_username ? `/u/${n.actor_username}` : '/home';
@@ -27,8 +27,6 @@ export function NotificationBell() {
       </Button>
       {open && (<>
         <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-        {/* Mobile: fixed full-width panel under the topbar so it can never overflow
-            the small viewport. Desktop: classic right-aligned dropdown. */}
         <div className="ft-card fixed left-2 right-2 top-[calc(var(--layout-topbarH)+0.5rem)] z-40 shadow-pop sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <h2 className="font-semibold">Notifications</h2>

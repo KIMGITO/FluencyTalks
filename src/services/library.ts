@@ -58,7 +58,7 @@ export const deletePartner = (partnerId: string) => rpc<string>('delete_partner'
 export const postContribution = (phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string, unsplashUrl: string) => rpc<string>('post_contribution', { p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl });
 export const deleteContribution = (id: string) => rpc<string>('delete_contribution', { p_id: id });
 
-/** eligibility: native speaker or B1+ learner */ 
+ 
 export const isContributionEligible = (me: { native_language_id: string | null; learning_language_id: string | null; learning_level: string | null } | null) => {
   if (!me) return false;
   if (me.native_language_id) return true;

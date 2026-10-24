@@ -8,7 +8,7 @@ import { displayLabel, useDisplayLocales, useLanguages, useLanguageStore } from 
 
 export interface SearchFiltersValue { language: string; role: string; level: string }
 
-/** Compact filters: button + count, chips inline, selects in popover. Language names read in your language; common first, rest behind More. */
+
 export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; onChange: (p: Partial<SearchFiltersValue>) => void }) {
   const languages = useLanguages();
   const nameIn = useLanguageStore((s) => s.nameIn);

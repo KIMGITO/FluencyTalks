@@ -9,7 +9,7 @@ import { UserMenu } from './UserMenu';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import type { FeedPerson, Person } from '@/types/db';
 
-/** `match` is only passed by the Home feed; search and follow lists omit it. */
+
 export function ProfileCard({
   person,
   match,
@@ -29,7 +29,7 @@ export function ProfileCard({
     match?.language ??
     ('match_language' in person ? person.match_language : null);
   return (
-    // Compact row: small avatar, tight gaps, actions inline with the chips.
+    
     <Card className="flex flex-col gap-2">
       <div className="flex items-start gap-2.5">
         <Link to={`/u/${person.username}`}>

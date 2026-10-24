@@ -5,12 +5,7 @@ interface SwipeHandlers {
   onLongPress: () => void;
 }
 
-/**
- * Pure touch/pointer gesture hook: no new deps.
- * - Horizontal right swipe (>56px, mostly horizontal) -> reply.
- * - Long press (>=550ms, <10px move) -> context action sheet.
- * Desktop hover menus are CSS-driven in MessageBubble (no JS needed).
- */
+
 export function useMessageGestures(ref: { current: HTMLElement | null }, { onSwipeRight, onLongPress }: SwipeHandlers) {
   const state = useRef({ startX: 0, startY: 0, dx: 0, timer: 0 as unknown as ReturnType<typeof setTimeout> | 0, fired: false, el: null as HTMLElement | null });
   const cb = useRef({ onSwipeRight, onLongPress });
@@ -31,7 +26,7 @@ export function useMessageGestures(ref: { current: HTMLElement | null }, { onSwi
     const move = (x: number, y: number) => {
       const dx = x - s.startX; const dy = y - s.startY;
       if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearTimer();
-      if (Math.abs(dy) > Math.abs(dx) * 1.2) { el.style.transform = ''; s.dx = 0; return; }   // vertical scroll wins
+      if (Math.abs(dy) > Math.abs(dx) * 1.2) { el.style.transform = ''; s.dx = 0; return; }   
       if (dx > 0) { s.dx = Math.min(dx, 88); el.style.transform = `translateX(${s.dx}px)`; }
       else { el.style.transform = ''; s.dx = 0; }
     };
@@ -48,7 +43,7 @@ export function useMessageGestures(ref: { current: HTMLElement | null }, { onSwi
     const onTouchStart = (e: TouchEvent) => { const t = e.touches[0]; down(t.clientX, t.clientY); };
     const onTouchMove = (e: TouchEvent) => { const t = e.touches[0]; move(t.clientX, t.clientY); };
     const onTouchEnd = () => up();
-    const onContext = (e: Event) => { if ('vibrate' in navigator) { try { (navigator as Navigator & { vibrate: (p: number) => boolean }).vibrate(12); } catch { /* noop */ } } e.preventDefault?.(); };
+    const onContext = (e: Event) => { if ('vibrate' in navigator) { try { (navigator as Navigator & { vibrate: (p: number) => boolean }).vibrate(12); } catch {  } } e.preventDefault?.(); };
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: true });
     el.addEventListener('touchend', onTouchEnd);

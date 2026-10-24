@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { BRAND } from '@/lib/site';
 
-/** The app's one search field: icon, clear button, Escape to reset. */
+
 export function SearchBox({ value, onChange, placeholder = 'Search people and chats…', autoFocus = true }: { value: string; onChange: (value: string) => void; placeholder?: string; autoFocus?: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => { if (autoFocus) input.current?.focus(); }, [autoFocus]);

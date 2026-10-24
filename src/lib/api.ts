@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-/** Maps database error codes (raised in SQL functions) to messages safe to show users. */
+
 const friendly: Record<string, string> = {
   not_authenticated: 'Please log in again.', account_restricted: 'Your account is restricted.',
   user_unavailable: 'This person is unavailable.',
@@ -20,11 +20,11 @@ const friendly: Record<string, string> = {
 };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
 
-/** Single gateway for all Postgres functions. Swap this file if the backend ever moves off Supabase. */
+
 export async function rpc<T = void>(fn: string, args?: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.rpc(fn, args);
   if (error) {
-    if (import.meta.env.DEV) console.warn('API error', fn, error.message, error.hint ?? '');   // dev only; never log arguments
+    if (import.meta.env.DEV) console.warn('API error', fn, error.message, error.hint ?? '');   
     const code = error.code === '23505' ? 'username_taken' : Object.keys(friendly).find((c) => error.message.includes(c)) ?? 'unknown';
     throw new ApiError(code, friendly[code] ?? 'Something went wrong. Please try again.');
   }

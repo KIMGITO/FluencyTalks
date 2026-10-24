@@ -8,7 +8,7 @@ import { adminDismissReport } from '@/services';
 import type { AdminReport, AccountStatus } from '@/types/db';
 
 const reasonLabel = (r: string) => REPORT_REASONS.find((x) => x.value === r)?.label ?? r;
-/** One report: who reported whom, the message snapshot taken at report time, and the actions. */
+
 export function ReportCard({ report: r, onAct, onResolved }: { report: AdminReport; onAct: (userId: string, name: string, status: AccountStatus, reportId: string) => void; onResolved: () => void }) {
   const [showEvidence, setShowEvidence] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const targetName = r.target_name ?? 'Deleted user'; const open = r.status === 'open'; const ts = r.target_status;

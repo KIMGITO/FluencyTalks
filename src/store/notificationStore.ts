@@ -12,10 +12,8 @@ interface S {
 export const useNotificationStore = create<S>((set, get) => ({
   items: [], unread: 0, loaded: false,
   load: async () => { const [items, unread] = await Promise.all([listNotifications(), countUnreadNotifications()]); set({ items, unread: Number(unread), loaded: true }); },
-  markRead: async (ids) => { await markNotificationsRead(ids); await get().load(); },   // no ids = mark everything read
-  /** Mark all as read AND delete them (feed clears). */
+  markRead: async (ids) => { await markNotificationsRead(ids); await get().load(); },
   markAllReadAndClear: async () => { await markNotificationsRead(); await deleteNotifications(); await get().load(); },
-  /** Delete one notification row. */
   remove: async (id) => { await deleteNotifications([id]); await get().load(); },
   start: (userId) => { if (unsub) return; get().load().catch(() => {}); unsub = subscribeToNotifications(userId, () => get().load().catch(() => {})); },
   stop: () => { unsub?.(); unsub = null; set({ items: [], unread: 0, loaded: false }); },

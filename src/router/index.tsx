@@ -37,14 +37,12 @@ export const router = createBrowserRouter([
   { path: '/terms', element: <Terms /> },
   { path: '/data-deletion', element: <DeleteForm /> },
   {
-    // Protected but shell-free — onboarding has its own full-screen layout
     element: <ProtectedRoute />,
     children: [
       { path: '/onboarding', element: <Onboarding /> },
     ],
   },
   {
-    // Protected pages that need the full app shell (TopBar + Sidebar + BottomNav)
     element: <ProtectedRoute />,
     children: [
       {

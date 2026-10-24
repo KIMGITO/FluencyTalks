@@ -20,15 +20,11 @@ const tabs: { key: Tab; label: string; icon: typeof UserRound }[] = [
   { key: 'appearance', label: 'Appearance', icon: Palette },
 ];
 
-/**
- * Group settings: profile (edit profile + email), privacy (password + blocked +
- * data export), appearance (theme). Session & account (logout + delete) now
- * lives inside the Profile tab (your own profile card).
- */
+
 export default function Settings() {
   const { updatePassword, updateEmail, error } = useAuthStore();
   const user = useAuthStore((s) => s.user);
-  // OAuth logins (Google/Apple) have no password identity: hide password setting.
+  
   const oauthOnly = isOAuthOnly(user);
   const { mode, setMode } = useThemeStore();
   const [tab, setTab] = useState<Tab>('profile');

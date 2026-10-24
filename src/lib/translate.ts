@@ -1,23 +1,17 @@
 import { normalizeCode, providerCode } from '@/lib/languages';
 
-/**
- * Tap-to-translate. The ONLY file that talks to a translation provider, so it can be swapped
- * (DeepL, your own backend) without touching UI code.
- * Provider today: MyMemory (free, no key). The text of a message is sent to it ONLY when the user taps "Translate".
- * `target` is the ISO 639-3 id we store ('jpn'); the provider needs its own vocabulary, so
- * the mapping to an alpha-2 code happens here and nowhere else.
- */
+
 const ENDPOINT = 'https://api.mymemory.translated.net/get';
-const CONTACT_EMAIL = import.meta.env.VITE_TRANSLATE_EMAIL as string | undefined;   // optional: raises MyMemory's free daily quota
-const MAX_BYTES = 450;      // MyMemory rejects queries over 500 bytes
-const MAX_CHUNKS = 12;     // a maximum-length (4000 character) message in an accented Latin script needs about 11
+const CONTACT_EMAIL = import.meta.env.VITE_TRANSLATE_EMAIL as string | undefined;   
+const MAX_BYTES = 450;      
+const MAX_CHUNKS = 12;     
 const cache = new Map<string, string>();
 
 export class TranslateError extends Error {}
 const bytes = (s: string) => new TextEncoder().encode(s).length;
-/** MyMemory's Chinese needs the region; everything else takes the plain alpha-2 code. */
+
 const apiCode = (iso3: string) => { const c = providerCode(iso3); return c === 'zh' ? 'zh-CN' : c; };
-const decode = (s: string) => new DOMParser().parseFromString(s, 'text/html').documentElement.textContent ?? s;   // the API returns HTML entities
+const decode = (s: string) => new DOMParser().parseFromString(s, 'text/html').documentElement.textContent ?? s;   
 
 function split(part: string): string[] {
   if (bytes(part) <= MAX_BYTES) return [part];
@@ -25,7 +19,7 @@ function split(part: string): string[] {
   for (const ch of Array.from(part)) { if (bytes(cur + ch) > MAX_BYTES) { out.push(cur); cur = ''; } cur += ch; }
   return cur ? [...out, cur] : out;
 }
-/** Sentence-aware chunks that each fit the provider's size limit. */
+
 function chunk(text: string): string[] {
   const out: string[] = []; let cur = '';
   for (const part of (text.match(/[^.!?。！？\n]+[.!?。！？]*\s*/g) ?? [text]).flatMap(split)) {
@@ -36,11 +30,9 @@ function chunk(text: string): string[] {
   return out;
 }
 
-/** Source language is auto-detected; `target` is the ISO 639-3 id we store (eng, jpn, cmn ...).
- *  `provider` is the same language as the translation API names it -- normally the table's
- *  iso_639_1, resolved by the caller from the language store so this file stays store-free. */
+
 export async function translateText(text: string, target: string, provider?: string): Promise<string> {
-  const iso3 = normalizeCode(target) ?? 'eng';   // an id the standard does not have falls back to English
+  const iso3 = normalizeCode(target) ?? 'eng';   
   const api = provider || providerCode(iso3);
   const key = `${iso3}:${text}`; const hit = cache.get(key); if (hit) return hit;
   const chunks = chunk(text.trim());

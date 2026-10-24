@@ -41,7 +41,6 @@ export default function ContributePage() {
         sourceContext.trim() || null as any,
         unsplashUrl || null as any,
       );
-      // Wait a moment for Supabase to reflect changes
       await new Promise(r => setTimeout(r, 500));
 
       navigate('/library');

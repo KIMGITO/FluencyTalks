@@ -57,7 +57,7 @@ export default function UserProfile() {
         <Spinner />
       </div>
     );
-  // Same screen for "doesn't exist" and "blocked you": blocking stays silent.
+  
   if (profile === null)
     return (
       <EmptyState
@@ -163,15 +163,7 @@ export default function UserProfile() {
                   Edit profile
                 </Button>
               </Link>
-              {/* <Link to="/settings">
-                <Button
-                  size="sm"
-                  variant={'ghost'}
-                  className={`${actionBtn} transition-colors`}
-                >
-                  Settings
-                </Button>
-              </Link> */}
+              {}
             </>
           ) : (
             <>
@@ -197,7 +189,7 @@ export default function UserProfile() {
               <p className="text-xs text-danger">Sign out on this device.</p>
             </div>
             <Button
-              // variant="danger"
+              
               size="sm"
               className={`${actionBtn}  bg-danger  self-center`}
               onClick={signOut}

@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-/** Name initials: first letters of first + last word (up to 2), e.g. "Ada Lovelace" -> "AL". */
+
 export function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return 'U';

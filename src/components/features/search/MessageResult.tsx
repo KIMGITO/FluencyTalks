@@ -3,7 +3,7 @@ import { Avatar, Card } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import type { MessageHit } from '@/types/db';
 
-/** A window of the message around the match, so a long message still reads as one line. */
+
 function windowAround(body: string, query: string, radius = 70) {
   const q = query.trim();
   const at = q ? body.toLowerCase().indexOf(q.toLowerCase()) : -1;
@@ -12,10 +12,10 @@ function windowAround(body: string, query: string, radius = 70) {
   return { head: (from > 0 ? '…' : '') + body.slice(from, at), match: body.slice(at, at + q.length), tail: body.slice(at + q.length, at + q.length + radius) };
 }
 
-/** One chat hit: who the conversation is with, the matched message and when it was sent. Opens the chat. */
+
 export function MessageResult({ hit, query }: { hit: MessageHit; query: string }) {
   const part = windowAround(hit.body, query);
-  const mine = hit.sender_id !== hit.other_id;   // a direct chat has two people, so anything else is the viewer
+  const mine = hit.sender_id !== hit.other_id;   
   return (
     <Link to={`/messages/${hit.conversation_id}`} className="block">
       <Card className="flex items-start gap-2.5 transition hover:bg-surface-2">

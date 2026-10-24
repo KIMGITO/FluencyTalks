@@ -5,10 +5,7 @@ import { Logo } from '@/components/ui';
 import { EMAILS, mailto } from '@/lib/emails';
 import { SUPPORT_SUBJECT } from '@/lib/site';
 
-/* Every link points somewhere real:
-   hash = scrolls to a live landing section,
-   to = a registered router page (see router/index.tsx),
-   href = a support mailto. No dead links. */
+
 const cols = [
   [
     'Explore',
@@ -70,9 +67,7 @@ export default function Footer() {
     >
       <style>{footerCSS}</style>
 
-      {/* Brand + 3 link columns: professional 4-up on desktop */}
       <div className="ft-foot" style={wrap}>
-        {/* Brand + Talk-to-us panel */}
         <div className="ft-fbrand flex flex-col gap-4">
           <Logo light />
           <p
@@ -97,7 +92,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Navigation columns */}
         {cols.map(([heading, links]) => (
           <nav
             key={heading}
@@ -121,7 +115,6 @@ export default function Footer() {
         ))}
       </div>
 
-      {/* Bottom attribution / legal utility bar */}
       <div
         className="ft-fbar border-t border-white/15 pt-5 text-sm"
         style={{

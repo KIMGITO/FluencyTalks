@@ -9,7 +9,7 @@ import { usePresence } from '@/hooks/usePresence';
 export function ConversationList() {
   const { active, requests } = useChatStore(); const [tab, setTab] = useState<'active' | 'request'>('active');
   const myId = useAuthStore((s) => s.user?.id ?? null);
-  const { onlineIds } = usePresence(null, null, myId);   // lobby only: online dots
+  const { onlineIds } = usePresence(null, null, myId);   
   const rows = tab === 'active' ? active : requests;
   return (
     <div className="space-y-3">

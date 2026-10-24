@@ -1,13 +1,4 @@
-/**
- * Clickable email address that opens the user's mail app (`mailto:`).
- *
- * ```tsx
- * import { EmailLink } from '@/components/ui';
- * import { EMAILS } from '@/lib/emails';
- *
- * <p>Email us <EmailLink email={EMAILS.info} /></p>
- * ```
- */
+
 export function EmailLink({
   email,
   subject,

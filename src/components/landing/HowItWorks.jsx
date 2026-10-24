@@ -1,4 +1,4 @@
-import { C, wrap, h2, lead, blob } from '../../theme/theme';
+import { C, wrap, h2, lead } from '../../theme/theme';
 import { howItWorksCSS } from '../../theme/componentStyles';
 import { Reveal } from './Reveal';
 import { Languages, Users, MessagesSquare, BookmarkCheck } from 'lucide-react';
@@ -47,10 +47,6 @@ export default function HowItWorks() {
       }}
     >
       <style>{howItWorksCSS}</style>
-      {/* Same drifting wash used in Languages — ties the two light/dark bands together */}
-      <div aria-hidden="true" style={blob(C.coral, 340, { top: -120, right: -90, opacity: 0.16 })} />
-      <div aria-hidden="true" style={blob(C.teal, 300, { bottom: -130, left: -90, opacity: 0.16 })} />
-
       <div style={{ ...wrap, position: 'relative' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 60px)' }}>

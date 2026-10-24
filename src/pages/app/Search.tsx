@@ -14,14 +14,9 @@ import type { MessageHit, Person } from '@/types/db';
 
 type Tab = 'all' | 'people' | 'messages';
 const tabs: { key: Tab; label: string }[] = [{ key: 'all', label: 'All' }, { key: 'people', label: 'People' }, { key: 'messages', label: 'Messages' }];
-const PREVIEW = 5;                                   // rows the mixed "All" tab shows before its "See all" links
+const PREVIEW = 5;                                   
 
-/**
- * The one place the app searches from: one box, Facebook-style tabs, filters, and all of
- * it in the URL so a search can be shared or reached with Back. `q` is mirrored into the
- * URL as you type (replaced, never pushed) and the query runs 300 ms later, so history
- * stays meaningful and the server is not hammered on every keystroke.
- */
+
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const me = useProfileStore((s) => s.me); const myLanguages = useProfileStore((s) => s.languages);
@@ -39,7 +34,7 @@ export default function Search() {
   }, { replace: true }), [setParams]);
 
   const [text, setText] = useState(query);
-  useEffect(() => setText(query), [query]);                     // the box follows the URL (Back button, shared links)
+  useEffect(() => setText(query), [query]);                     
   const typed = useDebouncedValue(query, 300).trim();
   const handle = typed.replace(/^@/, '').toLowerCase();
   const wantPeople = tab !== 'messages' && (!!typed || filtered);
@@ -84,9 +79,9 @@ export default function Search() {
   };
 
   const hide = (id: string) => setPeople((p) => p.filter((x) => x.id !== id));
-  const exact = handle && people[0]?.username?.toLowerCase() === handle ? people[0] : null;      // the "@name" someone typed
+  const exact = handle && people[0]?.username?.toLowerCase() === handle ? people[0] : null;      
   const isMe = !!me?.username && !!handle && handle === me.username.toLowerCase();
-  const quick = useMemo(() => {                                                       // shortcuts for an empty box
+  const quick = useMemo(() => {                                                       
     const mine = myLanguages.filter((l) => l.role === 'learning').map((l) => l.language_id);
     return (mine.length ? mine : languages.slice(0, 6).map((l) => l.id)).slice(0, 6);
   }, [myLanguages, languages]);
@@ -107,14 +102,14 @@ export default function Search() {
     </section>
   );
 
-  const idle = !wantPeople && !wantHits;                          // nothing typed and no filters: shortcuts, not an empty list
+  const idle = !wantPeople && !wantHits;                          
   const loading = (wantPeople && pBusy) || (wantHits && hBusy);
 
   return (
     <>
       <PageHeader title="Search" subtitle="Find people to talk to, or something you said" />
       <div className="mb-2"><SearchBox value={text} onChange={(v) => patch({ q: v })} /></div>
-      {/* Single compact toolbar: tabs left, filter button right — no card, no second row. */}
+      {}
       <div className="sticky top-[var(--layout-topbarH)] z-10 -mx-1 mb-2 flex items-center gap-2 bg-bg/95 px-1 py-1.5 backdrop-blur">
         <div className="min-w-0 flex-1 overflow-x-auto"><Tabs value={tab} onChange={(key) => patch({ tab: key })} items={tabs} /></div>
         {tab !== 'messages' && (

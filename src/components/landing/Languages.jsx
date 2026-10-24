@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { C, DISPLAY, FONT, wrap, h2, lead, btn, blob } from '../../theme/theme';
+import { C, DISPLAY, FONT, wrap, h2, lead, btn } from '../../theme/theme';
 import { languagesCSS } from '../../theme/componentStyles';
 import { Reveal } from './Reveal';
 import { useJoinLink } from './useJoinLink';
@@ -35,9 +35,6 @@ export default function Languages() {
       }}
     >
       <style>{languagesCSS}</style>
-      <div style={blob(C.coral, 380, { top: -100, right: -80 })} />
-      <div style={blob(C.teal, 320, { bottom: -120, left: -80 })} />
-
       <div style={{ ...wrap, position: 'relative' }}>
         <Reveal>
           <h2 style={{ ...h2, color: C.white }}>Say hello in 40+ languages</h2>

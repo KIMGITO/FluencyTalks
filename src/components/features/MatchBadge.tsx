@@ -1,7 +1,7 @@
 import { useLanguageStore } from '@/store/languageStore';
 import type { MatchKind } from '@/types/db';
 
-/** Says why this person is in the feed, so a match is not just another row. */
+
 const label = (kind: MatchKind, lang: string) =>
   kind === 'native' ? `Teaches ${lang}` : kind === 'learning' ? `Learning ${lang}` : '';
 

@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { photo } from '@/theme/theme';
 import { EMAILS } from '@/lib/emails';
 import {
-  legalCSS,       // <style> sheet for the whole legal shell
-  legalPage,      // root page wrapper (font + colours)
-  legalText,      // <P> paragraph style
-  legalList,      // <Bullets> list style
-  legalListItem,  // one bullet row
-  legalBulletDot, // accent dot marker
+  legalCSS,       
+  legalPage,      
+  legalText,      
+  legalList,      
+  legalListItem,  
+  legalBulletDot, 
 } from '@/theme/componentStyles';
 import { Logo } from '../ui';
 
@@ -20,8 +20,7 @@ const LINKS = [
   ['Delete my data', '/data-deletion'],
 ];
 
-/* Text helpers so each page stays short and consistent.
-   Their style objects live in theme/componentStyles.js so any page can reuse them. */
+
 export const P = ({ children }: { children: ReactNode }) => <p style={legalText}>{children}</p>;
 export const Bullets = ({ items }: { items: [string, string][] }) => (
   <ul style={legalList}>
@@ -36,10 +35,7 @@ export const Bullets = ({ items }: { items: [string, string][] }) => (
   </ul>
 );
 
-/**
- * props: title, active (route of this page), updated, contact,
- * sections: [{ id, short, tagline, heading, body, img, tint (6-digit hex accent used for the title chip), side: 'left' | 'right' }]
- */
+
 export default function LegalLayout({
   title,
   active,

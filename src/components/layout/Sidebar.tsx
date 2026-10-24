@@ -3,8 +3,7 @@ import clsx from 'clsx';
 import { navItems } from './nav';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { useProfileStore } from '@/store/profileStore';
-/** Desktop: icon + label. Tablet: icons only. Hidden on mobile (BottomNav takes over).
- *  Desktop: icon + label. Tablet: icons only. Hidden on mobile. */
+
 export function Sidebar() {
   const unread = useUnreadCount(); const role = useProfileStore((s) => s.me?.role); const staff = role === 'admin' || role === 'moderator';
   return (

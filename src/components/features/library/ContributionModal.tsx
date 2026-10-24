@@ -78,7 +78,6 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* phrase */}
           <Textarea
             label="Phrase / idiom *"
             rows={2}
@@ -87,7 +86,6 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
             placeholder="e.g. break the ice"
           />
 
-          {/* language */}
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-muted">Language *</span>
             <select
@@ -102,7 +100,6 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
             </select>
           </label>
 
-          {/* translation */}
           <Input
             label="Translation (optional)"
             value={translation}
@@ -110,7 +107,6 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
             placeholder="e.g. initier une conversation"
           />
 
-          {/* category */}
           <Select
             label="Category"
             value={category}
@@ -122,7 +118,6 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
             <option value="grammar">Grammar</option>
           </Select>
 
-          {/* source context */}
           <Textarea
             label="Source context (optional)"
             rows={2}
@@ -131,7 +126,6 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
             placeholder="Where you saw or heard it used"
           />
 
-          {/* image */}
           {unsplashUrl ? (
             <div className="relative overflow-hidden rounded-xl">
               <img src={unsplashThumb || unsplashUrl} alt="Selected" className="h-36 w-full object-cover" />

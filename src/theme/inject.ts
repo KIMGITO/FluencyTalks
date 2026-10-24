@@ -3,7 +3,7 @@ import { themes, gradients, layout, radii, fonts, fontWeights, shadows, motion, 
 const block = (p: Record<string, string>) => Object.entries(p).map(([k, v]) => `--c-${k}:${v};`).join('');
 const flat = (prefix: string, o: Record<string, string | number>) => Object.entries(o).map(([k, v]) => `--${prefix}-${k}:${v};`).join('');
 
-/** Builds all CSS variables from tokens.ts and injects them. Called once in main.tsx. */
+
 export function injectTokens() {
   const css =
     `:root{${block(themes.light)}${flat('grad', gradients)}${flat('layout', layout)}${flat('radius', radii)}` +

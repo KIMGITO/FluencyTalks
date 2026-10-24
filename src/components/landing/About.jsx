@@ -7,7 +7,7 @@ export default function About() {
   const join = useJoinLink();
   return (
     <ImageSection img={IMG.friends} side="right" tint="surface" minHeight={600} >
-      {/* Flex column, not a grid: these are stacked text blocks. */}
+      {}
       <div className="flex flex-col gap-6">
         <h2 style={h2}>
           Apps teach you words.{' '}

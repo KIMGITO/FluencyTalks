@@ -13,7 +13,7 @@ import type { CorrectionHistory, SavedPhrase, TranslationRecord } from '@/types/
 type Tab = 'phrases' | 'corrections' | 'translations';
 type TextSize = 'tiny' | 'small';
 
-/** Very small by default so a long history stays scannable; toggle to slightly larger. */
+
 const sizeClass: Record<TextSize, string> = { tiny: 'text-2xs', small: 'text-xs' };
 const statusChip: Record<CorrectionHistory['status'], string> = {
   accepted: 'bg-success/15 text-success', pending: 'bg-brand-soft text-brand', dismissed: 'bg-surface-2 text-muted',
@@ -26,13 +26,13 @@ export default function Learning() {
   const [unsplashQuery, setUnsplashQuery] = useState('');
   const [unsplashResult, setUnsplashResult] = useState<UnsplashPhoto | null>(null);
   const [unsplashError, setUnsplashError] = useState('');
-  // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
+  
   const nameOf = useLanguageStore((s) => s.name);
   const [languages, setLanguages] = useState<string[] | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
-  // Simple review mode: flip between phrase and translation
+  
   const [reviewMode, setReviewMode] = useState<boolean>(false);
-  // The stored id is an ISO 639-3 code; the history shows the language's own name instead.
+  
   const [phrasesData, setPhrasesData] = useState<{ phrases: (SavedPhrase & { conversation_id: string | null })[]; total: number } | null>(null);
   const [corrections, setCorrections] = useState<CorrectionHistory[] | null>(null);
   const [translations, setTranslations] = useState<(TranslationRecord & { conversation_id: string | null })[] | null>(null);

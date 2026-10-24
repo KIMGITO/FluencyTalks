@@ -7,14 +7,12 @@ import { adminSearchUsers } from '@/services';
 import { useProfileStore } from '@/store/profileStore';
 import type { AdminUser } from '@/types/db';
 
-/** Look someone up and change their status. With an empty search it lists suspended and banned people first. */
 export function AdminUsers() {
   const me = useProfileStore((s) => s.me); const [query, setQuery] = useState(''); const [users, setUsers] = useState<AdminUser[] | null>(null); const [error, setError] = useState(''); const [target, setTarget] = useState<ModTarget | null>(null); const [tick, setTick] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => { setError(''); adminSearchUsers(query.trim()).then(setUsers).catch((e) => { setError((e as Error).message); setUsers([]); }); }, 300);
     return () => clearTimeout(t);
   }, [query, tick]);
-  // Moderators may only act on regular users; the server enforces this too.
   const canAct = (u: AdminUser) => u.id !== me?.id && (me?.role === 'admin' || u.role === 'user');
   return (
     <div className="space-y-4">

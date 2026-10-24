@@ -2,13 +2,10 @@ import clsx from 'clsx';
 import { flagOf, resolveCountry } from '@/lib/countries';
 import { useCountries } from '@/store/countryStore';
 
-/** A country shown as its flag. Uses the country the person chose; if they never chose one
- * the timezone serves it (that is why the timezone exists on the profile at all). Renders
- * nothing when neither is known, rather than an empty pill.
- */
+
 export function CountryBadge({ code, timezone, className, showName = true }:
   { code?: string | null; timezone?: string | null; className?: string; showName?: boolean }) {
-  const list = useCountries();               // fetches once, shared by every badge
+  const list = useCountries();               
   const hit = resolveCountry(code, timezone);
   if (!hit) return null;
   const name = list.find((c) => c.code === hit.code)?.name ?? hit.code;

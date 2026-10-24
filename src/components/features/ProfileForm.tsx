@@ -13,24 +13,24 @@ import { recordConsent, uploadAvatar } from '@/services';
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 const zones = (): string[] => (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? [];
 
-/** Used for onboarding and for editing your profile. */
+
 export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'edit'; onDone: () => void; onError?: (message: string) => void }) {
   const user = useAuthStore((s) => s.user);
   const { me, save } = useProfileStore();
-  useCountries();                                   // the country picker needs the list
+  useCountries();                                   
   const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [username, setUsername] = useState(me?.username ?? ''); const [displayName, setDisplayName] = useState(me?.display_name ?? '');
   const [bio, setBio] = useState(me?.bio ?? ''); const [tz, setTz] = useState(me?.timezone ?? localTz); const [isPrivate, setPrivate] = useState(me?.is_private ?? false);
-  // null = "no country of my own": the timezone serves it, until the user picks one here.
+  
   const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
   const [langs, setLangs] = useState<LanguageChoice>({ native: me?.native_language_id ?? '', learning: me?.learning_language_id ?? '', level: (me?.learning_level as LearnerLevel | null) ?? 'A1' }); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
-  // "If account is set already, you can't access profile updation until you log in":
-  // editing an existing profile requires a live session — never render the form logged out.
+  
+  
   if (!user) return <Navigate to="/login" replace />;
 
   const pick = (f?: File) => { if (f && f.size > MAX_AVATAR_BYTES) return setError('Photo must be under 2 MB.'); setError(null); setFile(f ?? null); };
-  // Provider photo (Google etc) shows until the user picks a new one; initials when neither exists.
+  
   const providerAvatar = useProviderAvatar();
   const preview = file ? URL.createObjectURL(file) : resolveAvatar(me?.avatar_url, providerAvatar);
   const submit = async (e: FormEvent) => {

@@ -1,4 +1,4 @@
-/** WhatsApp-style day grouping: oldest-first input -> [{ key, label, messages }]. */
+
 import type { Message } from '@/types/db';
 
 export interface DayGroup { key: string; label: string; messages: Message[] }
@@ -19,7 +19,7 @@ export function dayLabel(iso: string, now = new Date()): string {
   return d.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-/** Bucket an oldest-first list into localized date partitions. Pure + stable. */
+
 export function groupByDay(messages: Message[], now = new Date()): DayGroup[] {
   const groups: DayGroup[] = [];
   const index = new Map<string, DayGroup>();
@@ -32,7 +32,7 @@ export function groupByDay(messages: Message[], now = new Date()): DayGroup[] {
   return groups;
 }
 
-/** True when this message starts a new visual cluster (new sender or >2 min gap). */
+
 export function isClusterStart(prev: Message | undefined, cur: Message): boolean {
   if (!prev) return true;
   if (prev.sender_id !== cur.sender_id) return true;

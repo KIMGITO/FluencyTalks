@@ -6,8 +6,8 @@ export const navItems: NavItem[] = [
   { to: '/messages', label: 'Messages', icon: MessageCircle },
   { to: '/library', label: 'Library', icon: BookOpen },
   { to: '/learning', label: 'Learning', icon: GraduationCap, desktopOnly: true },
-  { to: '/bounty-queue', label: 'Bounties', icon: Coins, desktopOnly: true },   // mobile reaches it from the points chip in the top bar
-  { to: '/profile', label: 'Profile', icon: User, desktopOnly: true },   // mobile reaches profile via the header avatar; sidebar keeps it on md+
+  { to: '/bounty-queue', label: 'Bounties', icon: Coins, desktopOnly: true },   
+  { to: '/profile', label: 'Profile', icon: User, desktopOnly: true },   
   { to: '/settings', label: 'Settings', icon: Settings, desktopOnly: true },
-  { to: '/admin', label: 'Moderation', icon: Shield, desktopOnly: true, staffOnly: true },   // admins and moderators only; on mobile it is reached from Settings
+  { to: '/admin', label: 'Moderation', icon: Shield, desktopOnly: true, staffOnly: true },   
 ];

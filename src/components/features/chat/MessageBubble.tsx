@@ -8,7 +8,7 @@ import { formatTime } from '@/lib/format';
 import { translateText } from '@/lib/translate';
 import type { Correction, Message, Reaction } from '@/types/db';
 
-/** WhatsApp-style delivery state of one of my messages (computed in ChatThread). */
+
 export type TickState = 'sent' | 'delivered' | 'read';
 
 interface Props {
@@ -17,13 +17,13 @@ interface Props {
   mine: boolean;
   myId: string;
   corrections: Correction[];
-  reactions?: Reaction[]; // unused until the reaction bar is re-enabled
+  reactions?: Reaction[]; 
   otherName: string;
   pinned: boolean;
   showTail: boolean;
   replyTo?: Message | null;
-  translateTo: string; // ISO 639-3 id of the language the viewer wants translations in (their native one)
-  translateApi: string; // the same language as the translation API names it (usually its iso_639_1)
+  translateTo: string; 
+  translateApi: string; 
   onCorrect: (m: Message) => void;
   onSave: (m: Message, translation?: string) => Promise<unknown>;
   onReact: (m: Message, emoji: string) => Promise<void>;
@@ -37,7 +37,7 @@ interface Props {
     m: Message,
     translated: string,
     targetLang: string,
-  ) => unknown; // history write, fire-and-forget
+  ) => unknown; 
 }
 type Translation = { state: 'loading' | 'done' | 'error'; text: string };
 export function MessageBubble({
@@ -75,13 +75,13 @@ export function MessageBubble({
     onLongPress: () => setSheet(true),
   });
   const translate = async () => {
-    if (tr?.state === 'done') return setTr(null); // second tap hides it
+    if (tr?.state === 'done') return setTr(null); 
     setTr({ state: 'loading', text: '' });
     try {
       const out = await translateText(message.body, translateTo, translateApi);
       setTr({ state: 'done', text: out });
-      // Store every completed translation for the history tab (skips "already your language"),
-      // keyed by the ISO 639-3 id rather than whatever the API was called with.
+      
+      
       if (out.trim().toLowerCase() !== message.body.trim().toLowerCase())
         onTranslated?.(message, out, translateTo);
     } catch (e) {
@@ -154,7 +154,6 @@ export function MessageBubble({
               </span>
             )}
           </p>
-          {/* Desktop hover: 3-dots trigger. Touch uses long-press (gesture hook). */}
           <button
             aria-label="Message options"
             onClick={() => setSheet(true)}
@@ -194,11 +193,6 @@ export function MessageBubble({
         </div>
       )}
       <>
-        {/* <ReactionBar
-          reactions={reactions}
-          myId={myId}
-          onToggle={(emoji) => onReact(message, emoji)}
-        /> */}
         <div className="flex gap-3 px-1.5 text-xs leading-tight text-muted">
           {!mine && (
             <button

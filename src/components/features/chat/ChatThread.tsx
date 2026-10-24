@@ -21,26 +21,19 @@ export function ChatThread({ id }: { id: string }) {
   const { open, close, messages, corrections, active, requests, send, respond, suggest, accept, dismiss, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
   const [correcting, setCorrecting] = useState<Message | null>(null);
   const [showPins, setShowPins] = useState(false);
-  // ISO 639-3 id of the language I want translations in; 'eng' when no native language is set.
   const translateTo = useProfileStore((s) => s.languages.find((l) => l.role === 'native')?.language_id ?? 'eng');
   const providerOf = useLanguageStore((s) => s.provider);
-  const translateApi = providerOf(translateTo);   // the same language as the translation API names it
+  const translateApi = providerOf(translateTo);
   const row = [...active, ...requests].find((c) => c.conversation_id === id); const list = messages[id];
   const isRequest = requests.some((c) => c.conversation_id === id);
   const peerId = row?.other_user_id ?? null;
   const { onlineIds, peerTyping, touchTyping } = usePresence(list ? id : null, peerId, myId ?? null);
   const peerOnline = peerId ? onlineIds.includes(peerId) : false;
-  // Peer read receipt: my messages at or before this timestamp have been read.
-  // Loaded on open, then kept live via the conversation_members realtime channel.
   const [peerReadAt, setPeerReadAt] = useState<string | null>(null);
   useEffect(() => { setPeerReadAt(null); getPeerReadAt(id).then(setPeerReadAt).catch(() => undefined); }, [id]);
   useEffect(() => subscribeToReceipts(id, setPeerReadAt), [id]);
   useEffect(() => { open(id); return close; }, [id]);
   const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
-  /** WhatsApp-style ticks for my messages:
-   *  1 grey tick (sent) = they were offline when I sent it,
-   *  2 grey ticks (delivered) = they are online (or replied after it),
-   *  2 blue ticks (read) = they opened the message (peer_read_at moved past it). */
   const tickFor = (m: Message): TickState => {
     if (peerReadAt && m.created_at <= peerReadAt) return 'read';
     if (peerOnline) return 'delivered';

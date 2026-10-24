@@ -1,13 +1,4 @@
-/**
- * Single source of truth for brand + domain.
- *
- * Brand: "The Fluency Talks" (with leading "The").
- * Domain: thefluencytalks.com (apex, https, no www — www redirects to apex).
- *
- * Every SEO surface (index.html, JSON-LD, OG/Twitter, robots, sitemap,
- * manifest, page titles, emails) must derive from here so a future
- * rebrand is a one-file change.
- */
+
 
 export const BRAND = 'The Fluency Talks' as const;
 export const SHORT_BRAND = 'The Fluency Talks' as const;

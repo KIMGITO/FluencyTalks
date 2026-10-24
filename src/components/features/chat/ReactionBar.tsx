@@ -1,16 +1,16 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import clsx from 'clsx';
-import type { Theme } from 'emoji-picker-react';   // type-only: a value import would pull the whole picker into the main chunk
+import type { Theme } from 'emoji-picker-react';   
 import { SmilePlus } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
 import type { Reaction } from '@/types/db';
 
-// The picker ships every emoji (~340 kB), so it is only downloaded when a reaction is picked.
+
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
 
-const PICKER_W = 352, PICKER_H = 400;   // keep in sync with width/height props below
+const PICKER_W = 352, PICKER_H = 400;   
 
-/** Grouped emoji chips (tap to add or remove mine) plus the full emoji-picker-react picker. */
+
 export function ReactionBar({ reactions, myId, onToggle }: { reactions: Reaction[]; myId: string; onToggle: (emoji: string) => Promise<void> }) {
   const [picking, setPicking] = useState(false); const [error, setError] = useState('');
   const [pos, setPos] = useState({ left: 0, top: 0 });
@@ -28,7 +28,7 @@ export function ReactionBar({ reactions, myId, onToggle }: { reactions: Reaction
   const groups = new Map<string, { count: number; mine: boolean }>();
   reactions.forEach((r) => { const g = groups.get(r.emoji) ?? { count: 0, mine: false }; groups.set(r.emoji, { count: g.count + 1, mine: g.mine || r.user_id === myId }); });
   const toggle = async (emoji: string) => { setPicking(false); setError(''); try { await onToggle(emoji); } catch (e) { setError((e as Error).message); } };
-  // Anchor to the button: above if it fits, otherwise below; clamped to the viewport.
+  
   const openPicker = (e: React.MouseEvent<HTMLButtonElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const w = Math.min(PICKER_W, window.innerWidth - 24);

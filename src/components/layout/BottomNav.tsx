@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { navItems } from './nav';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
-/** Mobile bar keeps the core tabs. */
+
 export function BottomNav() {
   const unread = useUnreadCount();
   const tabs = navItems.filter((i) => !i.desktopOnly && !i.fabOnly);

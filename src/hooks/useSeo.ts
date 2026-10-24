@@ -29,14 +29,7 @@ function upsertLink(rel: string, href: string) {
   el.setAttribute('href', href);
 }
 
-/**
- * Per-page SEO for an SPA. index.html holds the default (home) tags;
- * each public route calls this to override title / description /
- * canonical + OG/Twitter so crawlers + link previews stay correct.
- *
- * App (logged-in) routes pass noIndex: true — search/chat/profile pages
- * must never be indexed.
- */
+
 export function useSeo({ title, description, path = '/', noIndex = false, image = OG_IMAGE }: SeoOpts = {}) {
   useEffect(() => {
     const fullTitle = !title

@@ -59,7 +59,6 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-surface-2 p-3">
-      {/* search bar */}
       <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -89,7 +88,6 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
         </button>
       </div>
 
-      {/* results */}
       {loading && (
         <div className="flex justify-center py-6">
           <Spinner />

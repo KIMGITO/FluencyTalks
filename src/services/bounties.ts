@@ -1,11 +1,11 @@
 import { rpc } from '@/lib/api';
 
-/** A bounty from someone else that I am qualified to answer. */
+
 export interface OpenBounty {
   message_id: string; body: string; language_id: string; cost: number; expires_at: string; created_at: string;
   asker_id: string; asker_username: string | null; asker_display_name: string | null; asker_avatar_url: string | null;
 }
-/** A bounty I posted. */
+
 export interface MyBounty {
   message_id: string; conversation_id: string; body: string; language_id: string | null; cost: number;
   status: 'open' | 'paid' | 'refunded'; expires_at: string; created_at: string; answers: number;

@@ -1,26 +1,15 @@
 export const NAME = 'The Fluency Talks';
 
-/**
- * Landing palette, expressed through the app's design tokens (`--c-*`, injected
- * by theme/inject.ts) instead of raw hex. This is the single change that makes
- * the whole marketing site follow the app's light/dark theme: the `C.*` names
- * below are kept so component code reads the same, but the values now resolve
- * through CSS variables.
- */
 const tok = (name) => `rgb(var(--c-${name}))`;
-/** Token colour at a given alpha: alpha('accent', 0.9) -> rgb(var(--c-accent) / 0.9) */
 export const alpha = (token, a) => `rgb(var(--c-${token}) / ${a})`;
 
 export const C = {
   indigo: tok('brand'), deep: tok('deep'), coral: tok('accent'), teal: tok('aqua'),
   sun: tok('sun'), sky: tok('brand-soft'), blush: 'rgb(var(--c-accent) / 0.12)',
   ink: tok('ink'), muted: tok('muted'),
-  // Always white: used for text on top of dark panels and photos, so it must
-  // NOT flip to a dark value in dark mode. Page backgrounds use C.surface.
   white: '#ffffff', surface: tok('surface'),
 };
 
-/** Typography definitions aligned with tokens.ts & index.html Google Fonts */
 export const FONT = 'var(--font-sans)';
 export const DISPLAY = 'var(--font-display)';
 export const SERIF = 'var(--font-serif)';
@@ -32,15 +21,9 @@ export const IMG = {
   team: img('photo-1522071820081-009f0129c71c'), online: img('photo-1516321318423-f06f85e504b3'), talk: img('photo-1517048676732-d65bc937f952'),
 };
 
-/* Keyframes, hover states and media queries live here. */
 export const CSS = `
 html{scroll-behavior:smooth; font-family: ${FONT};}
 h1, h2, h3, h4, .ft-display { font-family: ${DISPLAY}; }
-@keyframes ftWord{from{opacity:0;transform:translateY(70%) rotate(5deg);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
-@keyframes ftUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
-@keyframes ftZoom{from{transform:scale(1)}to{transform:scale(1.14)}}
-@keyframes ftDrift{from{transform:scale(1.04) translateX(0)}to{transform:scale(1.12) translateX(-1.5%)}}
-@keyframes ftFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
 @keyframes ftFill{from{width:0}to{width:100%}}
 a[style*="999px"]{transition:transform .25s,box-shadow .25s}
 a[style*="999px"]:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(0,0,0,.28)}
@@ -69,5 +52,4 @@ export const lead = { fontFamily: FONT, fontWeight: 400, fontSize: 'clamp(16px, 
 export const btn = (bg, color, extra = {}) => ({ display: 'inline-block', background: bg, color, padding: 'clamp(8px, 1.6vw, 10px) clamp(20px, 3vw, 30px)', borderRadius: 999, fontWeight: 700, fontSize: 16, textDecoration: 'none', border: '2px solid transparent', fontFamily: FONT, ...extra });
 export const photo = (src, extra = {}) => ({ backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center', ...extra });
 export const grid = (min, gap = 28) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap });
-export const blob = (color, size, pos) => ({ position: 'absolute', width: size, height: size, borderRadius: '50%', background: color, filter: 'blur(70px)', opacity: 0.35, animation: 'ftFloat 9s ease-in-out infinite', pointerEvents: 'none', ...pos });
-export const bubble = (bg, color, extra) => ({ position: 'absolute', background: bg, color, padding: '12px 20px', borderRadius: '22px 22px 22px 4px', fontWeight: 800, fontSize: 18, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', animation: 'ftFloat 5s ease-in-out infinite', fontFamily: DISPLAY, ...extra });
+

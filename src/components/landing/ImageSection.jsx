@@ -1,11 +1,7 @@
 import { photo, wrap, alpha } from '../../theme/theme';
 import { Reveal } from './Reveal';
 
-/**
- * Full-bleed photo section. On desktop the content sits on one side over a frosted-blur panel
- * that fades toward the photo. On mobile (.ft-fm) the frost covers the full width for legibility.
- * Props: img, side ('left' | 'right'), tint (a `--c-*` token name, so it follows light/dark).
- */
+
 export default function ImageSection({
   id,
   img,
@@ -32,7 +28,6 @@ export default function ImageSection({
           ...photo(img),
           position: 'absolute',
           inset: 0,
-          animation: 'ftDrift 22s ease-in-out infinite alternate',
         }}
       />
       <div

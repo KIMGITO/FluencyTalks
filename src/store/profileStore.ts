@@ -17,7 +17,7 @@ export const useProfileStore = create<S>((set, get) => ({
     set({ me, languages, savedPartners: partners ?? [], status: 'ready' });
   },
   save: async (p, languages) => {
-    await setLanguageProfile(languages);   // languages first: onboarding completes once a username AND a native language exist
+    await setLanguageProfile(languages);
     await saveProfile(p);
     await get().load(get().me!.id);
   },

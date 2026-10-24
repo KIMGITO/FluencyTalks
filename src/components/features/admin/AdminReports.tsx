@@ -6,7 +6,7 @@ import { adminReportQueue } from '@/services';
 import type { AdminReport } from '@/types/db';
 
 type Filter = 'open' | 'actioned' | 'dismissed';
-/** Report queue. Open reports are listed oldest first so nothing waits forever. */
+
 export function AdminReports() {
   const [filter, setFilter] = useState<Filter>('open'); const [items, setItems] = useState<AdminReport[] | null>(null); const [error, setError] = useState(''); const [target, setTarget] = useState<ModTarget | null>(null);
   const load = useCallback(() => { setError(''); adminReportQueue(filter).then(setItems).catch((e) => { setError((e as Error).message); setItems([]); }); }, [filter]);

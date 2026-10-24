@@ -5,7 +5,7 @@ import { useChatStore } from '@/store/chatStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useAuthStore } from '@/store/authStore';
-/** Facebook-style shell. Grid columns are controlled in styles/index.css (.ft-shell) from tokens. */
+
 export function AppShell() {
   const { startRealtime, stopRealtime } = useChatStore(); const loadLanguages = useLanguageStore((s) => s.load);
   const userId = useAuthStore((s) => s.user?.id); const startNotifications = useNotificationStore((s) => s.start); const stopNotifications = useNotificationStore((s) => s.stop);

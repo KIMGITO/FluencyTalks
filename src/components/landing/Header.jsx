@@ -5,11 +5,11 @@ import { BRAND } from '@/lib/site';
 import { Avatar, Logo, ThemeToggle } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
-// Navigation links — every href points at a real section id on the landing page.
-// Verified ids: #languages (Languages.jsx), #speakers (Split.jsx),
-// #stories (Testimonial.jsx), #faq (Faq.jsx).
-// Plain hashes (not `/#…`) so clicks smooth-scroll without a full reload —
-// Header/Footer only render on `/`, so no cross-route links are needed.
+
+
+
+
+
 const NAV_ITEMS = [
   { label: 'Languages', href: '#languages' },
   { label: 'For speakers', href: '#speakers' },
@@ -17,8 +17,7 @@ const NAV_ITEMS = [
   { label: 'FAQ', href: '#faq' },
 ];
 
-/** Where the profile tab goes: straight into the app home. The profile store is
- *  only populated inside ProtectedRoute, so we deliberately don't depend on it here. */
+
 function ProfileLink({ className, style, children, onClick }) {
   return (
     <Link to="/home" onClick={onClick} className={className} style={style}>
@@ -27,7 +26,7 @@ function ProfileLink({ className, style, children, onClick }) {
   );
 }
 
-/** Best available label/photo for the session, before the profile loads. */
+
 function useSessionIdentity(user) {
   const meta = user?.user_metadata ?? {};
   return {
@@ -41,13 +40,13 @@ export default function Header() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  // Session-aware: signed-in members are offered their profile, never a login form.
+  
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.loading);
   const identity = useSessionIdentity(user);
   const signedIn = !!user;
 
-  // Track scroll progress for top indicator bar
+  
   useEffect(() => {
     const handleScroll = () => {
       const doc = document.documentElement;
@@ -59,9 +58,9 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // `isMobile` drives micro-adjustments (padding, CTA copy).
-  // The drawer auto-closes past the burger breakpoint (see below + CSS
-  // `.ft-drawer` guard in theme.js), so it can never linger on big screens.
+  
+  
+  
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -71,7 +70,7 @@ export default function Header() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Auto-close the mobile drawer the moment we grow past the burger breakpoint.
+  
   useEffect(() => {
     const closeOnDesktop = () => {
       if (window.innerWidth > 900) setIsMenuOpen(false);
@@ -80,7 +79,7 @@ export default function Header() {
     return () => window.removeEventListener('resize', closeOnDesktop);
   }, []);
 
-  // Lock body scroll on iOS/Mobile when dropdown menu is open
+  
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -92,7 +91,7 @@ export default function Header() {
     };
   }, [isMenuOpen]);
 
-  // Close menu on Escape key press
+  
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isMenuOpen) {
@@ -107,7 +106,6 @@ export default function Header() {
 
   return (
     <>
-      {/* Top Scroll Indicator Line */}
       <div
         style={{
           position: 'fixed',
@@ -152,7 +150,6 @@ export default function Header() {
             padding: isMobile ? '10px 16px' : '12px 24px',
           }}
         >
-          {/* Brand Logo */}
           <Link
             to="/"
             style={{ textDecoration: 'none' }}
@@ -161,7 +158,6 @@ export default function Header() {
             <Logo />
           </Link>
 
-          {/* Desktop Navigation */}
           <nav
             className="ft-nav ft-desk"
             aria-label="Main Navigation"
@@ -190,7 +186,6 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Action Buttons & Hamburger Toggle */}
           <div
             style={{
               display: 'flex',
@@ -282,11 +277,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile dropdown drawer — rendered ONLY while a narrow viewport is
-            active, so it can never appear on big screens even if `isMenuOpen`
-            was left true during a resize. The matching CSS guard
-            (`.ft-drawer{display:none} @media(max-width:900px){.ft-drawer{...}}`)
-            hides it by default and reveals it under 900px. */}
         {isMenuOpen && (
           <div
             id="mobile-navigation"
@@ -347,7 +337,6 @@ export default function Header() {
                 }}
               />
 
-              {/* Mobile account action — profile tab for members, log in for guests */}
               {authLoading ? null : signedIn ? (
                 <ProfileLink
                   onClick={() => setIsMenuOpen(false)}

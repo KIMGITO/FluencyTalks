@@ -16,7 +16,7 @@ const POSITION_MAP: Record<DividerPosition, { left: string; right: string }> = {
   e:  { left: 'flex-1', right: 'hidden' },
 };
 
-/** A rule that separates sections of a list. `label` puts a caption in the specified position. */
+
 export const Divider = ({
   className,
   label,

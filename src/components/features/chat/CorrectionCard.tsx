@@ -4,7 +4,7 @@ import { Button } from '@/components/ui';
 import { DiffText } from './DiffText';
 import type { Correction } from '@/types/db';
 
-/** Learner (message owner) sees Accept / Dismiss. The corrector sees the status of their suggestion. */
+
 export function CorrectionCard({ correction, original, isOwner, correctorName, onAccept, onDismiss }: {
   correction: Correction; original: string; isOwner: boolean; correctorName: string;
   onAccept: (c: Correction) => Promise<void>; onDismiss: (c: Correction) => Promise<void>;

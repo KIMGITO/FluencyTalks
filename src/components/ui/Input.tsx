@@ -3,14 +3,14 @@ import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 
 export type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-/* Omit the native numeric `size` attribute so it doesn't clash with ours. */
+
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   label?: string;
   error?: string;
   size?: InputSize;
 };
 
-/* Full class names are listed so Tailwind can detect them at build time. */
+
 const sizes: Record<InputSize, { input: string; label: string; message: string }> = {
   xs: { input: 'h-8 rounded-sm px-2.5 text-xs', label: 'mb-1 text-xs', message: 'mt-1 text-xs' },
   sm: { input: 'h-10 rounded-md px-3 text-sm', label: 'mb-1 text-sm', message: 'mt-1 text-xs' },

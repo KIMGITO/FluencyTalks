@@ -8,13 +8,13 @@ import type { SendOptions } from '@/services';
 
 const BOUNTY_COST = 50;
 
-/** Enter sends, Shift+Enter adds a new line. Reply preview anchors above the input. */
+
 export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (text: string, opts: SendOptions) => Promise<void>; replyTo?: Message | null; onCancelReply?: () => void; onType?: () => void }) {
   const [text, setText] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const [isBounty, setIsBounty] = useState(false);
   const me = useProfileStore((s) => s.me);
   const nameOf = useLanguageStore((s) => s.name);
-  // The language this message is written in: one of my two, defaulting to the one I am learning.
+  
   const mine = [me?.learning_language_id, me?.native_language_id].filter((x): x is string => !!x);
   const [language, setLanguage] = useState<string>('');
   useEffect(() => { if (!language || !mine.includes(language)) setLanguage(mine[0] ?? ''); }, [me?.native_language_id, me?.learning_language_id]);

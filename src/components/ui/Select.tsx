@@ -7,13 +7,13 @@ import {
 
 type Opt = { value: string; label: string; disabled: boolean };
 
-/* Same drop-in props as the native control, plus optional search. */
+
 type Props = SelectHTMLAttributes<HTMLSelectElement> & { label?: string; searchable?: boolean };
 
-/* Accent/case-insensitive matching so "Portugues" finds "Português". */
+
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-/* Reads <option>/<optgroup> children; value falls back to the label like the native control. */
+
 const parseOptions = (children: ReactNode): Opt[] => {
   const out: Opt[] = [];
   const walk = (node: ReactNode) => {
@@ -29,7 +29,7 @@ const parseOptions = (children: ReactNode): Opt[] => {
         });
         return;
       }
-      walk(p.children); // <optgroup>, fragments, wrappers
+      walk(p.children); 
     });
   };
   walk(children);
@@ -57,7 +57,7 @@ export function Select({
   const valueId = `${triggerId}-value`;
 
   const all = useMemo(() => parseOptions(children), [children]);
-  /* Search only pays off on long lists; pass `searchable` to force it either way. */
+  
   const showSearch = searchable ?? all.length > 7;
 
   const [open, setOpen] = useState(false);
@@ -81,7 +81,7 @@ export function Select({
   const listRef = useRef<HTMLUListElement>(null);
   const typed = useRef({ text: '', at: 0 });
 
-  /* Focus the search box (or the active option) and keep it scrolled into view. */
+  
   useEffect(() => {
     if (!open) return;
     const el = listRef.current?.querySelector<HTMLElement>('[data-active="true"]');
@@ -90,7 +90,7 @@ export function Select({
     el?.scrollIntoView({ block: 'nearest' });
   }, [open, showSearch, activeIdx, q]);
 
-  /* Open upward when the space below the trigger is too tight. */
+  
   useEffect(() => {
     if (!open) return;
     const r = triggerRef.current?.getBoundingClientRect();
@@ -120,7 +120,7 @@ export function Select({
     close(true);
     if (v === current) return;
     setInternal(v);
-    /* Call sites only read `target.value` — mirror it so onChange(e.target.value) works. */
+    
     onChange?.({ target: { value: v }, currentTarget: { value: v } } as unknown as ChangeEvent<HTMLSelectElement>);
   };
 
@@ -157,7 +157,7 @@ export function Select({
     if (o && !o.disabled) choose(o.value);
   };
 
-  const onQuery = (v: string) => { setQ(v); setActive(0); }; // first match becomes active while typing
+  const onQuery = (v: string) => { setQ(v); setActive(0); }; 
 
   const onTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -167,7 +167,7 @@ export function Select({
       return;
     }
     if (e.key === 'Escape' && open) { e.preventDefault(); close(true); return; }
-    /* Native type-ahead: start typing on the closed control. */
+    
     if (!open && e.key.length === 1 && !e.altKey && !e.ctrlKey && !e.metaKey) {
       openList('first');
       if (showSearch) onQuery(e.key);
@@ -179,7 +179,7 @@ export function Select({
     switch (e.key) {
       case 'Escape':
         e.preventDefault();
-        e.stopPropagation(); // don't let the surrounding modal close too
+        e.stopPropagation(); 
         close(true);
         break;
       case 'ArrowDown': e.preventDefault(); move(1); break;
@@ -187,11 +187,11 @@ export function Select({
       case 'Home': if (!showSearch) { e.preventDefault(); jump('home'); } break;
       case 'End': if (!showSearch) { e.preventDefault(); jump('end'); } break;
       case 'Enter':
-        e.preventDefault(); // never submit the surrounding form from the search box
+        e.preventDefault(); 
         pickActive();
         break;
       case ' ':
-        if (!showSearch) { e.preventDefault(); pickActive(); } // in the search box a space is text
+        if (!showSearch) { e.preventDefault(); pickActive(); } 
         break;
       default:
         if (!showSearch && e.key.length === 1 && !e.altKey && !e.ctrlKey && !e.metaKey) typeAhead(e.key);
@@ -207,7 +207,7 @@ export function Select({
       <div
         className="relative"
         onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget)) close(); // Tab away closes like the native control
+          if (!e.currentTarget.contains(e.relatedTarget)) close(); 
         }}
       >
         <button
@@ -241,7 +241,6 @@ export function Select({
 
         {open && (
           <>
-            {/* Click-away layer, under the menu (the menu itself is inert). */}
             <div className="fixed inset-0 z-30" onMouseDown={() => close()} />
             <div
               onKeyDown={onPanelKeyDown}
@@ -321,7 +320,6 @@ export function Select({
           </>
         )}
       </div>
-      {/* Kept in the DOM so name/required/form-association still work with the hidden native control. */}
       <select
         className="hidden"
         name={name}

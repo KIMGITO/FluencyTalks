@@ -5,7 +5,7 @@ import { adminRecentActions } from '@/services';
 import type { AdminAction } from '@/types/db';
 
 const verbs: Record<AdminAction['action'], string> = { suspend: 'suspended', ban: 'banned', reinstate: 'reinstated', dismiss_report: 'dismissed a report', auto_suspend: 'was auto-suspended after repeated reports' };
-/** Read-only audit trail of moderation actions (newest first). */
+
 export function AdminActivity() {
   const [items, setItems] = useState<AdminAction[] | null>(null); const [error, setError] = useState('');
   useEffect(() => { adminRecentActions().then(setItems).catch((e) => { setError((e as Error).message); setItems([]); }); }, []);

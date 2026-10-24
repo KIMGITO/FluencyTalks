@@ -4,7 +4,6 @@ import { levelColors } from '@/theme/tokens';
 export type Level = keyof typeof levelColors;
 export type LanguageEntry = { language: string; level: Level };
 
-// Full literal class strings so Tailwind can detect them
 const tone: Record<string, string> = {
   'lvl-a': 'bg-lvl-a/10 text-lvl-a',
   'lvl-b': 'bg-lvl-b/10 text-lvl-b',

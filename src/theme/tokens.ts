@@ -1,11 +1,3 @@
-/**
- * The Fluency Talks design tokens — THE single source of truth.
- * Nothing in components may hard-code a color, font, size, spacing or gradient.
- * tokens.ts -> (a) CSS variables injected at runtime (inject.ts)
- *           -> (b) Tailwind theme (tailwind.config.ts)
- * Colors are "R G B" triplets so Tailwind opacity modifiers (bg-brand/20) work.
- */
-
 export const fonts = {
   sans: "'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
   display: "'Bricolage Grotesque', 'Figtree', system-ui, sans-serif",
@@ -34,13 +26,6 @@ export const fontSizes = {
   '5xl': ['4rem', { lineHeight: '4.1rem', letterSpacing: '-0.04em' }],
 } as const;
 
-/**
- * Spacing scale. This REPLACES Tailwind's default scale (it is assigned to
- * `theme.spacing`, not `theme.extend.spacing`), so every step we want to use
- * must exist here. The half steps and `px` below are the ones the UI relies on
- * for tight chips, dividers and icon buttons — without them those classes
- * silently generate no CSS at all.
- */
 export const spacing = {
   0: '0', px: '1px', 0.5: '0.125rem', 1: '0.25rem', 1.5: '0.375rem', 2: '0.5rem', 2.5: '0.625rem',
   3: '0.75rem', 3.5: '0.875rem', 4: '1rem', 4.5: '1.125rem', 5: '1.25rem', 6: '1.5rem', 7: '1.75rem',
@@ -54,18 +39,16 @@ export const shadows = {
   pop: '0 12px 40px rgb(var(--c-deep) / 0.25)',
 } as const;
 
-/** Breakpoints drive Tailwind AND the useBreakpoint hook. Facebook-style: 3 / 2 / 1 columns. */
+
 export const breakpoints = { sm: 640, md: 768, lg: 1100, xl: 1400 } as const;
 
-/** Layout dimensions used by AppShell (exposed as --layout-* variables). */
+
 export const layout = {
   topbarH: '3.25rem', bottomNavH: '3.5rem',
   sidebarW: '15.5rem', sidebarCompactW: '4rem', railW: '18.5rem', feedMaxW: '40rem',
-  // Density knobs so cards stay compact on phones and roomy on laptops/tablets.
   cardPad: '0.75rem', cardPadLg: '1rem',
 } as const;
 
-/** Language-learning level palette (CEFR). */
 export const levelColors = { A1: 'lvl-a', A2: 'lvl-a', B1: 'lvl-b', B2: 'lvl-b', C1: 'lvl-c', C2: 'lvl-c', Native: 'lvl-n' } as const;
 
 type Palette = Record<string, string>;
@@ -88,7 +71,6 @@ export const themes: Record<'light' | 'dark', Palette> = {
   },
 };
 
-/** Gradients reference theme variables, so they follow light/dark automatically. */
 export const gradients = {
   brand: 'linear-gradient(135deg, rgb(var(--c-brand)) 0%, rgb(var(--c-aqua)) 100%)',
   spark: 'linear-gradient(135deg, rgb(var(--c-accent)) 0%, rgb(var(--c-sun)) 100%)',

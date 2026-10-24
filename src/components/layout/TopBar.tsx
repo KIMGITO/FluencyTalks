@@ -3,7 +3,7 @@ import { Logo, Avatar } from '@/components/ui';
 import { NotificationBell } from '@/components/features/NotificationBell';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { useProfileStore } from '@/store/profileStore';
-/** The header holds logo, bell and you — the small avatar IS the profile button. Falls back to provider photo, then initials. */
+
 export function TopBar() {
   const me = useProfileStore((s) => s.me);
   const providerAvatar = useProviderAvatar();

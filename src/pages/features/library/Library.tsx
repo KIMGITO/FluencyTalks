@@ -62,9 +62,9 @@ export default function Library() {
         subtitle="Browse phrases, idioms and examples contributed by the community"
       />
 
-      {/* ---- Top bar ---- */}
+      {}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {/* search */}
+        {}
         <div className="relative flex-1 min-w-[180px]">
           <Input
             placeholder="Search phrases…"
@@ -117,7 +117,7 @@ export default function Library() {
         )}
       </div>
 
-      {/* ---- Filters row ---- */}
+      {}
       {showFilters && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
           <select
@@ -153,7 +153,7 @@ export default function Library() {
         </div>
       )}
 
-      {/* ---- Eligibility banner ---- */}
+      {}
       {me && !eligible && (
         <div className="mb-4 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
           <span className="mt-0.5 text-lg">🔒</span>
@@ -163,7 +163,7 @@ export default function Library() {
         </div>
       )}
 
-      {/* ---- Post list ---- */}
+      {}
       {loading ? (
         <div className="flex justify-center py-16">
           <Spinner />
@@ -195,8 +195,6 @@ export default function Library() {
           ))}
         </div>
       )}
-
-
     </div>
   );
 }

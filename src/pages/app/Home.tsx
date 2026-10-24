@@ -19,23 +19,18 @@ import { listContributionPosts, type ContributionPost } from '@/services/library
 import { PostCard } from '@/components/features/library';
 
 
-/**
- * Home is the daily scroll: people who share one of my languages, then a divider, then
- * everyone else. `home_feed()` returns both groups already split, sorted and filtered
- * (blocked, suspended and half-finished accounts never reach the client), so this page
- * only has to decide how to draw the line between the two.
- */
+
 export default function Home() {
   const { me, languages } = useProfileStore();
   const labelOf = useLanguageStore((s) => s.labelOf);
   const languageName = useLanguageStore((s) => s.name);
   const locales = useDisplayLocales();
-  useCountries(); // flags need the country names
+  useCountries(); 
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
   const [hidden, setHidden] = useState<string[]>([]);
 
   const learning = languages.filter((l) => l.role === 'learning');
-  // Shown when nobody matches yet: say who we are looking for, using the user's own two languages.
+  
   const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
   const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
 
@@ -89,7 +84,7 @@ export default function Home() {
                 <ProfileCard key={p.id} person={p} onHidden={drop} />
               ))}
 
-            {/* The line the brief asks for: partners above, the rest of the app below. */}
+            {}
             {partners.length > 0 && others.length > 0 && (
               <Divider label="Everyone else" className="my-2" position="ne" />
             )}
@@ -106,7 +101,7 @@ export default function Home() {
               />
             )}
 
-            {/* Shown above the list it is talking about, and says so. */}
+            {}
             {partners.length === 0 && others.length > 0 && (
               <EmptyState
                 title="No language match yet"
