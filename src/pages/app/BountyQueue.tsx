@@ -47,7 +47,7 @@ export default function BountyQueue() {
       {tab === 'open'
         ? (open === null ? <div className="flex justify-center p-8"><Spinner /></div>
           : !open.length ? <EmptyState title="No open bounties" text="Bounties in a language you speak natively, or know at B1 or above, show up here." />
-          : <div className="space-y-3">{open.map((b) => <OpenCard key={b.message_id} bounty={b} language={nameOf(b.language_id)} onDone={refresh} />)}</div>)
+          : <div className="space-y-3">{open.map((b) => <OpenCard key={b.message_id} bounty={b} language={nameOf(b.language_id)} />)}</div>)
         : (mine === null ? <div className="flex justify-center p-8"><Spinner /></div>
           : !mine.length ? <EmptyState title="No bounties yet" text="In a chat, tick “Ask the community” before sending a message. It costs 50 points, refunded if nobody helps within 48 hours." />
           : <div className="space-y-3">{mine.map((b) => <MineCard key={b.message_id} bounty={b} language={b.language_id ? nameOf(b.language_id) : ''} />)}</div>)}
@@ -55,7 +55,7 @@ export default function BountyQueue() {
   );
 }
 
-function OpenCard({ bounty, language, onDone }: { bounty: OpenBounty; language: string; onDone: () => Promise<void> }) {
+function OpenCard({ bounty, language }: { bounty: OpenBounty; language: string }) {
   const [answering, setAnswering] = useState(false);
   const [text, setText] = useState(bounty.body);
   const [note, setNote] = useState('');
@@ -65,7 +65,7 @@ function OpenCard({ bounty, language, onDone }: { bounty: OpenBounty; language: 
 
   const send = async () => {
     setBusy(true); setError('');
-    try { await answerBounty(bounty.message_id, text, note); setSent(true); await onDone(); }
+    try { await answerBounty(bounty.message_id, text, note); setSent(true); }   // the card stays, so the confirmation stays visible
     catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   };

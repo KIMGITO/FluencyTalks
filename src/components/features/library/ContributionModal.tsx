@@ -3,6 +3,7 @@ import { Image, X } from 'lucide-react';
 import { Button, Modal, Select, Spinner, Textarea } from '@/components/ui';
 import { Input } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
+import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
 import { isContributionEligible, postContribution, type ContributionPost } from '@/services/library';
 import { UnsplashPicker } from './UnsplashPicker';
@@ -26,9 +27,9 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const languages = useLanguageStore((s) => s.list);
   const languageName = useLanguageStore((s) => s.name);
   const me = useProfileStore((s) => s.me);
+  const languages = qualifiedLanguages(me);   // only languages you are qualified to teach (the server checks too)
   const canContribute = isContributionEligible(me);
 
   const reset = () => {
@@ -94,8 +95,8 @@ export function ContributionModal({ open, onClose, onPosted }: Props) {
               className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
             >
               <option value="">Select a language…</option>
-              {languages.map((l) => (
-                <option key={l.id} value={l.id}>{languageName(l.id)}</option>
+              {languages.map((id) => (
+                <option key={id} value={id}>{languageName(id)}</option>
               ))}
             </select>
           </label>

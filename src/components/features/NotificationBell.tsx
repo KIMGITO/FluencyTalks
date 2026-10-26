@@ -7,12 +7,18 @@ import { formatTime } from '@/lib/format';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { AppNotification } from '@/types/db';
 
-const verbs: Record<AppNotification['type'], string> = {
-  message_request: 'sent you a message request', correction: 'suggested a correction to your message',
+const verb = (n: AppNotification): string => {
+  switch (n.type) {
+    case 'message_request': return 'sent you a message request';
+    case 'correction': return 'suggested a correction to your message';
+    case 'correction_accepted': return n.data.points ? `accepted your correction. You earned ${n.data.points} points` : 'accepted your correction';
+    case 'bounty_paid': return `accepted your answer. You earned ${n.data.points ?? 0} points`;
+  }
 };
 
 const destination = (n: AppNotification) => {
-  if (n.type === 'message_request' || n.type === 'correction') return n.data.conversation_id ? `/messages/${n.data.conversation_id}` : '/messages';
+  if (n.type === 'bounty_paid') return '/points-history';   // the helper is not in the asker's chat
+  if (n.type === 'message_request' || n.type === 'correction' || n.type === 'correction_accepted') return n.data.conversation_id ? `/messages/${n.data.conversation_id}` : '/messages';
   return n.actor_username ? `/u/${n.actor_username}` : '/home';
 };
 
@@ -37,7 +43,7 @@ export function NotificationBell() {
               <li key={n.id} className={clsx('flex w-full items-center gap-3 p-3 hover:bg-surface-2', !n.read_at && 'bg-brand-soft/40')}>
                 <button onClick={() => go(n)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <Avatar name={n.actor_name ?? '?'} src={n.actor_avatar} size="sm" />
-                  <span className="min-w-0 flex-1 break-words text-sm"><b>{n.actor_name ?? 'Someone'}</b> {verbs[n.type]}<span className="block text-xs text-muted">{formatTime(n.created_at)}</span></span>
+                  <span className="min-w-0 flex-1 break-words text-sm"><b>{n.actor_name ?? 'Someone'}</b> {verb(n)}<span className="block text-xs text-muted">{formatTime(n.created_at)}</span></span>
                   {!n.read_at && <span aria-label="Unread" className="h-3 w-3 shrink-0 rounded-full bg-brand" />}
                 </button>
                 <button aria-label="Delete notification" title="Delete" onClick={(e) => del(e, n)} className="shrink-0 rounded-full p-1.5 text-muted hover:bg-surface hover:text-danger"><Trash2 size={15} /></button>

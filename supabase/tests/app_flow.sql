@@ -186,6 +186,13 @@ do $$ begin
   assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-0000000000b2') = 165, 'helper gets the 50 (115 + 50), not +5';
   assert (select points_balance from public.profiles where id = auth.uid()) = 50, 'asker keeps paying 50 only once';
 end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+do $$ declare n record; begin
+  select * into n from public.notifications where user_id = auth.uid() and type = 'bounty_paid';
+  assert found and (n.data->>'points')::int = 50, 'the helper is told they earned 50 points';
+  assert n.data->'conversation_id' is null, 'the helper is not given the asker''s chat id';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 -- Expiry refund: an unanswered bounty comes back after it lapses.
 create temp table bnt2 as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Rafiki yangu', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt2 to public;
 do $$ begin assert (select points_balance from public.profiles where id = auth.uid()) = 0, '50 - 50 = 0'; end $$;
@@ -201,8 +208,37 @@ do $$ begin
   assert (select points_balance from public.profiles where id = auth.uid()) = 50, 'points returned';
 end $$;
 select tt.expect_error($q$select public.refund_expired_bounties()$q$, 'permission denied');
+-- Deleting the message behind an open bounty refunds it at once.
+create temp table bnt3 as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Nitakuona kesho', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt3 to public;
+do $$ begin assert (select points_balance from public.profiles where id = auth.uid()) = 0, 'held again'; end $$;
+select public.delete_message((select id from bnt3));
+do $$ begin
+  assert (select points_balance from public.profiles where id = auth.uid()) = 50, 'deleting refunds immediately';
+  assert (select bounty_status from public.messages where id = (select id from bnt3)) = 'refunded';
+end $$;
+
 -- Refunding twice is impossible (one ledger row per event).
-do $$ begin assert (select count(*) from public.points_ledger where reason = 'bounty_expired_refund') = 1; end $$;
+do $$ begin assert (select count(*) from public.points_ledger where reason = 'bounty_expired_refund') = 2, 'exactly one refund row per refunded bounty (expired one + deleted one), never two for the same bounty'; end $$;
+-- calling the sweep again changes nothing
+select count(*) from public.list_my_bounties();
+do $$ begin assert (select count(*) from public.points_ledger where reason = 'bounty_expired_refund') = 2, 'a second sweep does not refund again'; assert (select points_balance from public.profiles where id = auth.uid()) = 50; end $$;
+
+-- ============ 5c. COMMUNITY LIBRARY + SAVED PARTNERS ============
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');   -- Zed: native Dutch, not learning anything
+select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good morning', 'vie', 'phrase', null, null)$q$, 'not_contribution_eligible');
+select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good morning', null, 'phrase', null, null)$q$, 'language_required');
+select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good morning', 'nld', 'spam', null, null)$q$, 'invalid_category');
+select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good morning', 'nld', 'phrase', null, 'http://evil.example/pixel.gif')$q$, 'invalid_image');
+select public.post_contribution('Goedemorgen', 'Good morning', 'nld', 'phrase', null, 'https://images.unsplash.com/photo-1?w=800');
+select tt.expect_error($q$select public.set_contribution_eligibility('00000000-0000-0000-0000-0000000000a1', 'native')$q$, 'does not exist');
+do $$ begin assert (select count(*) from public.contribution_posts where user_id = auth.uid()) = 1, 'the valid post is stored'; end $$;
+select tt.expect_error($q$insert into public.contribution_posts (user_id, phrase, category) values (auth.uid(), 'direct', 'phrase')$q$, 'row-level security');
+
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select tt.expect_error($q$select public.save_partner(auth.uid())$q$, 'cannot_save_self');
+select tt.expect_error($q$insert into public.saved_partners (user_id, partner_id) values (auth.uid(), '00000000-0000-0000-0000-0000000000c3')$q$, 'row-level security');
+select public.save_partner('00000000-0000-0000-0000-0000000000b2');
+do $$ begin assert (select count(*) from public.saved_partners where user_id = auth.uid()) = 1, 'partner saved'; end $$;
 
 -- ============ 6. SAFETY ============
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
@@ -210,6 +246,7 @@ select public.report_user('00000000-0000-0000-0000-0000000000b2', 'fake_correcti
 select public.report_user('00000000-0000-0000-0000-0000000000c3', 'points_abuse', 'test', null);
 select tt.expect_error($q$select public.report_user('00000000-0000-0000-0000-0000000000c3', 'not_a_reason', null, null)$q$, 'violates check');
 select public.block_user('00000000-0000-0000-0000-0000000000b2');
+do $$ begin assert (select count(*) from public.saved_partners where user_id = auth.uid()) = 0, 'blocking removes the saved partner'; end $$;
 select tt.as_user('00000000-0000-0000-0000-0000000000b2');
 do $$ begin
   assert public.get_profile('amina') is null, 'blocked users cannot see each other';
