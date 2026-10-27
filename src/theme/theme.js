@@ -31,7 +31,7 @@ a[style*="999px"]:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(0
 .ft-pop:hover{transform:translateY(-8px) rotate(-2deg) scale(1.06);box-shadow:0 14px 28px rgba(0,0,0,.35)}
 .ft-lift{transition:transform .3s}.ft-lift:hover{transform:translateY(-8px)}
 .ft-nav a{position:relative; font-weight: 600;}.ft-nav a:after{content:'';position:absolute;left:0;bottom:-5px;height:3px;width:0;background:${C.coral};transition:width .25s}.ft-nav a:hover:after{width:100%}
-.ft-arrow{transition:background .25s,transform .25s}.ft-arrow:hover{background:${C.sun}!important;color:${C.ink}!important;transform:scale(1.1)}
+.ft-arrow{transition:background .25s,transform .25s}.ft-arrow:hover{background:#0052CC!important;color:#ffffff!important;transform:scale(1.1)}
 details summary{transition:color .2s}details summary:hover{color:${C.coral}}
 section[id]{scroll-margin-top:72px}
 @keyframes ftDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}

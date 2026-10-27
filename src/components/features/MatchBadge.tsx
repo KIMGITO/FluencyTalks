@@ -10,7 +10,7 @@ export function MatchBadge({ kind, language }: { kind: MatchKind; language?: str
   const text = kind === 'other' ? '' : label(kind, nameOf(language ?? ''));
   if (!text) return null;
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-brand/10 px-2 py-0.5 text-2xs font-semibold text-brand">
+    <span className="inline-flex shrink-0 items-center rounded-full bg-brand/10 px-2 py-0.5 text-2xs font-semibold text-on-brand">
       {text}
     </span>
   );

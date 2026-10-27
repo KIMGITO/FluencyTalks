@@ -4,11 +4,11 @@ import { levelColors } from '@/theme/tokens';
 export type Level = keyof typeof levelColors;
 export type LanguageEntry = { language: string; level: Level };
 
-const tone: Record<string, string> = {
-  'lvl-a': 'bg-lvl-a/10 text-lvl-a',
-  'lvl-b': 'bg-lvl-b/10 text-lvl-b',
-  'lvl-c': 'bg-lvl-c/10 text-lvl-c',
-  'lvl-n': 'bg-lvl-n/10 text-lvl-n',
+const levelTone: Record<string, string> = {
+  'lvl_a': 'bg-indigo-100 text-indigo-900',
+  'lvl_b': 'bg-blue-100 text-blue-900',
+  'lvl_c': 'bg-green-100 text-green-900',
+  'lvl_n': 'bg-gray-100 text-gray-900',
 };
 
 const isNative = (level: Level) => levelColors[level] === 'lvl-n';
@@ -23,7 +23,7 @@ export const LevelTag = ({
   <span
     className={clsx(
       'rounded-full px-1.5 py-[3px] text-center text-[9px] font-bold uppercase leading-none tracking-wider',
-      tone[levelColors[level]],
+      levelTone['lvl_' + levelColors[level]],
       className,
     )}
   >
