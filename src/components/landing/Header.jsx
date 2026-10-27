@@ -1,390 +1,103 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { C, wrap, btn } from '../../theme/theme';
-import { BRAND } from '@/lib/site';
 import { Avatar, Logo, ThemeToggle } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
-
-
-
-
-
-const NAV_ITEMS = [
-  { label: 'Languages', href: '#languages' },
-  { label: 'For speakers', href: '#speakers' },
-  { label: 'Stories', href: '#stories' },
-  { label: 'FAQ', href: '#faq' },
+export const NAV = [
+  { id: 'services', label: 'What you get' },
+  { id: 'languages', label: 'Languages' },
+  { id: 'speakers', label: 'For speakers' },
+  { id: 'project', label: 'The project' },
+  { id: 'faq', label: 'FAQ' },
 ];
 
-
-function ProfileLink({ className, style, children, onClick }) {
-  return (
-    <Link to="/home" onClick={onClick} className={className} style={style}>
-      {children}
-    </Link>
-  );
+/** The section the reader is in, so the nav can show where they are. */
+function useActiveSection(ids) {
+  const [active, setActive] = useState(null);
+  useEffect(() => {
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    if (!els.length || !('IntersectionObserver' in window)) return undefined;
+    const inView = new Set();
+    // A thin band across the upper-middle of the screen: the section crossing it is "current".
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+      const current = ids.filter((id) => inView.has(id)).pop() ?? null;
+      setActive((prev) => current ?? (window.scrollY < 200 ? null : prev));
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, [ids]);
+  return [active, setActive];
 }
 
-
-function useSessionIdentity(user) {
-  const meta = user?.user_metadata ?? {};
-  return {
-    name:
-      meta.full_name || meta.name || meta.display_name || user?.email || 'You',
-    src: meta.avatar_url || meta.picture || null,
-  };
-}
+const IDS = NAV.map((n) => n.id);
 
 export default function Header() {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.loading);
-  const identity = useSessionIdentity(user);
-  const signedIn = !!user;
+  const [open, setOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [active, setActive] = useActiveSection(IDS);
+  const meta = user?.user_metadata ?? {};
+  const name = meta.full_name || meta.name || meta.display_name || user?.email || 'You';
 
-  
   useEffect(() => {
-    const handleScroll = () => {
-      const doc = document.documentElement;
-      const totalHeight = doc.scrollHeight - doc.clientHeight;
-      setScrollProgress(totalHeight > 0 ? doc.scrollTop / totalHeight : 0);
+    const onScroll = () => {
+      const d = document.documentElement;
+      const max = d.scrollHeight - d.clientHeight;
+      setProgress(max > 0 ? d.scrollTop / max : 0);
+      if (d.scrollTop < 200) setActive(null);   // back at the top: no section is current (the observer may not fire again)
     };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [setActive]);
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  
-  
-  
+  // The mobile menu: Escape closes it, the page behind does not scroll, and it closes on a wider screen.
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    if (!open) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    const onResize = () => window.innerWidth > 900 && setOpen(false);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize); };
+  }, [open]);
 
-  
-  useEffect(() => {
-    const closeOnDesktop = () => {
-      if (window.innerWidth > 900) setIsMenuOpen(false);
-    };
-    window.addEventListener('resize', closeOnDesktop);
-    return () => window.removeEventListener('resize', closeOnDesktop);
-  }, []);
-
-  
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMenuOpen]);
-
-  
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isMenuOpen) {
-        setIsMenuOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMenuOpen]);
-
-  const isScrolled = scrollProgress > 0.01;
+  const go = (id) => { setActive(id); setOpen(false); };
+  const links = NAV.map(({ id, label }) => (
+    <a key={id} href={`#${id}`} aria-current={active === id ? 'true' : undefined} onClick={() => go(id)}>{label}</a>
+  ));
 
   return (
-    <>
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '3px',
-          width: `${scrollProgress * 100}%`,
-          background: ` ${C.indigo}`,
-          zIndex: 50,
-          transition: 'width 0.1s linear',
-        }}
-      />
-
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          background: 'rgb(var(--c-surface) / 0.92)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: `1px solid ${
-            isScrolled || isMenuOpen
-              ? 'rgb(var(--c-brand) / 0.14)'
-              : 'rgb(var(--c-brand) / 0.08)'
-          }`,
-          boxShadow:
-            isScrolled || isMenuOpen
-              ? '0 10px 30px -10px rgb(var(--c-brand) / 0.14)'
-              : '0 2px 8px -2px rgb(var(--c-brand) / 0.05)',
-          transition: 'all 0.25s ease-in-out',
-        }}
-      >
-        <div
-          style={{
-            ...wrap,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '16px',
-            padding: isMobile ? '10px 16px' : '12px 24px',
-          }}
-        >
-          <Link
-            to="/"
-            style={{ textDecoration: 'none' }}
-            aria-label={`${BRAND} Home`}
-          >
-            <Logo />
-          </Link>
-
-          <nav
-            className="ft-nav ft-desk"
-            aria-label="Main Navigation"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '24px',
-              fontWeight: 600,
-              fontSize: '15px',
-            }}
-          >
-            {NAV_ITEMS.map(({ label, href }) => (
-              <a
-                key={label}
-                href={href}
-                style={{
-                  color: C.ink,
-                  textDecoration: 'none',
-                  transition: 'color 0.2s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = C.indigo)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = C.ink)}
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          <div
-            style={{
-              display: 'flex',
-              gap: isMobile ? '8px' : '10px',
-              alignItems: 'center',
-            }}
-          >
-            {signedIn && <ThemeToggle />}
-
-            {authLoading ? null : signedIn ? (
-              <ProfileLink
-                className="ft-desk"
-                style={btn('transparent', C.indigo, {
-                  padding: '2px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  borderRadius: '999px',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s ease',
-                })}
-              >
-                <Avatar name={identity.name} src={identity.src} size="sm" />
-              </ProfileLink>
-            ) : (
-              <>
-                <Link
-                  className="ft-desk"
-                  to="/login"
-                  style={btn('transparent', C.indigo, {
-                    padding: '7px 16px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    borderRadius: '8px',
-                    border: `1.5px solid ${C.indigo}`,
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.2s ease',
-                  })}
-                >
-                  Log in
-                </Link>
-
-                <Link
-                  to="/signup"
-                  style={btn(C.indigo, C.white, {
-                    padding: isMobile ? '7px 13px' : '8px 16px',
-                    fontSize: isMobile ? '14px' : '15px',
-                    fontWeight: '600',
-                    borderRadius: '8px',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 2px 8px rgb(var(--c-brand) / 0.2)',
-                    transition: 'all 0.2s ease',
-                  })}
-                >
-                  {isMobile ? 'Sign up' : 'Sign up free'}
-                </Link>
-              </>
-            )}
-
-            <button
-              className="ft-burger"
-              aria-label={
-                isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'
-              }
-              aria-expanded={isMenuOpen}
-              aria-controls="mobile-navigation"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '40px',
-                height: '40px',
-                padding: 0,
-                borderRadius: '8px',
-                border: `1px solid ${isMenuOpen ? C.indigo : 'rgb(var(--c-brand) / 0.12)'}`,
-                background: isMenuOpen
-                  ? 'rgb(var(--c-brand) / 0.06)'
-                  : 'transparent',
-                color: C.ink,
-                fontSize: '18px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {isMenuOpen ? '✕' : '☰'}
-            </button>
-          </div>
+    <header className={`lp-header${progress > 0.005 ? ' is-scrolled' : ''}${open ? ' is-open' : ''}`}>
+      <a className="lp-skip" href="#main">Skip to main content</a>
+      <div className="lp-wrap lp-header__row">
+        <Logo />
+        <nav className="lp-nav" aria-label="Main">{links}</nav>
+        <div className="lp-header__actions">
+          {user && <ThemeToggle />}
+          {authLoading ? null : user ? (
+            <Link to="/home" aria-label="Open your account" title={name}><Avatar name={name} src={meta.avatar_url || meta.picture || null} size="sm" /></Link>
+          ) : (
+            <>
+              <Link to="/login" className="lp-textlink">Log in</Link>
+              <Link to="/signup" className="lp-btn lp-btn--solid lp-btn--sm">Sign up free</Link>
+            </>
+          )}
+          <button type="button" className="lp-burger" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="lp-drawer" onClick={() => setOpen(!open)}>{open ? '✕' : '☰'}</button>
         </div>
-
-        {isMenuOpen && (
-          <div
-            id="mobile-navigation"
-            className="ft-drawer"
-            aria-label="Mobile Navigation"
-            style={{
-              borderTop: '1px solid rgb(var(--c-brand) / 0.08)',
-              background: 'rgb(var(--c-surface) / 0.98)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 12px 24px -6px rgb(var(--c-brand) / 0.12)',
-              animation: 'ftDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) both',
-            }}
-          >
-            <nav
-              style={{
-                ...wrap,
-                padding: '12px 16px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-              }}
-            >
-              {NAV_ITEMS.map(({ label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '16px',
-                    color: C.ink,
-                    textDecoration: 'none',
-                    transition: 'background-color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor =
-                      'rgb(var(--c-brand) / 0.04)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'transparent')
-                  }
-                >
-                  <span>{label}</span>
-                  <span style={{ fontSize: '14px', opacity: 0.4 }}>→</span>
-                </a>
-              ))}
-
-              <div
-                style={{
-                  height: '1px',
-                  backgroundColor: 'rgb(var(--c-brand) / 0.08)',
-                  margin: '8px 0 12px',
-                }}
-              />
-
-              {authLoading ? null : signedIn ? (
-                <ProfileLink
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '15px',
-                    color: C.ink,
-                    border: `1.5px solid ${C.indigo}`,
-                    textDecoration: 'none',
-                    backgroundColor: 'rgb(var(--c-brand) / 0.04)',
-                  }}
-                >
-                  <Avatar name={identity.name} src={identity.src} size="sm" />
-                  Go to my profile
-                </ProfileLink>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '100%',
-                    padding: '11px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '15px',
-                    color: C.indigo,
-                    border: `1.5px solid ${C.indigo}`,
-                    textDecoration: 'none',
-                    textAlign: 'center',
-                    backgroundColor: 'transparent',
-                  }}
-                >
-                  Log in
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
-      </header>
-    </>
+      </div>
+      <div id="lp-drawer" className="lp-drawer" role="navigation" aria-label="Mobile">
+        <div className="lp-wrap">
+          {links}
+          {!authLoading && (user
+            ? <Link to="/home" className="lp-btn lp-btn--solid" onClick={() => setOpen(false)}>Go to your account</Link>
+            : <><Link to="/signup" className="lp-btn lp-btn--solid" onClick={() => setOpen(false)}>Sign up free</Link><Link to="/login" onClick={() => setOpen(false)} style={{ borderBottom: 0, fontFamily: 'var(--font-sans)', fontSize: '1rem', fontWeight: 600 }}>Log in</Link></>)}
+        </div>
+      </div>
+      <div className="lp-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />
+    </header>
   );
 }

@@ -1,7 +1,7 @@
 export const fonts = {
-  sans: "'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  display: "'Bricolage Grotesque', 'Figtree', system-ui, sans-serif",
-  serif: "Georgia, 'Times New Roman', serif",
+  sans: "'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  display: "'Newsreader', Georgia, 'Times New Roman', serif",
+  serif: "'Newsreader', Georgia, 'Times New Roman', serif",
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 } as const;
 
@@ -15,10 +15,10 @@ export const fontWeights = {
 
 export const fontSizes = {
   '2xs': ['0.65rem', { lineHeight: '1rem', letterSpacing: '-0.01em' }],
-  xs: ['0.75rem', { lineHeight: '1.1rem', letterSpacing: '-0.01em' }],
-  sm: ['0.875rem', { lineHeight: '1.35rem', letterSpacing: '-0.01em' }],
-  base: ['1rem', { lineHeight: '1.55rem', letterSpacing: '-0.011em' }],
-  lg: ['1.125rem', { lineHeight: '1.7rem', letterSpacing: '-0.015em' }],
+  xs: ['0.75rem', { lineHeight: '1.2rem', letterSpacing: '-0.005em' }],
+  sm: ['0.875rem', { lineHeight: '1.4rem', letterSpacing: '-0.005em' }],
+  base: ['1rem', { lineHeight: '1.6rem', letterSpacing: '-0.005em' }],
+  lg: ['1.125rem', { lineHeight: '1.8rem', letterSpacing: '-0.01em' }],
   xl: ['1.375rem', { lineHeight: '1.9rem', letterSpacing: '-0.02em' }],
   '2xl': ['1.75rem', { lineHeight: '2.2rem', letterSpacing: '-0.025em' }],
   '3xl': ['2.25rem', { lineHeight: '2.6rem', letterSpacing: '-0.03em' }],

@@ -1,15 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { Search, X, ImageOff } from 'lucide-react';
 import { Spinner } from '@/components/ui';
+import { searchUnsplashPhotos, type UnsplashPhoto } from '@/lib/unsplash';
 
-const ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY as string;
-
-export interface UnsplashPhoto {
-  id: string;
-  urls: { regular: string; thumb: string; small: string };
-  alt_description: string | null;
-  user: { name: string; links: { html: string } };
-}
+export type { UnsplashPhoto } from '@/lib/unsplash';
 
 interface Props {
   onSelect: (regularUrl: string, thumbUrl: string, attribution: { name: string; link: string }) => void;
@@ -29,15 +23,9 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=12&orientation=landscape`,
-        { headers: { Authorization: `Client-ID ${ACCESS_KEY}` } },
-      );
-      if (!res.ok) throw new Error('Unsplash search failed');
-      const data = await res.json() as { results: UnsplashPhoto[] };
-      setPhotos(data.results ?? []);
-    } catch {
-      setError('Could not load images. Check your Unsplash API key.');
+      setPhotos(await searchUnsplashPhotos(q, 12));
+    } catch (e) {
+      setError((e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -51,10 +39,7 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
 
   const pick = (photo: UnsplashPhoto) => {
     setSelected(photo.id);
-    onSelect(photo.urls.regular, photo.urls.thumb, {
-      name: photo.user.name,
-      link: photo.user.links.html,
-    });
+    onSelect(photo.url, photo.thumb, { name: photo.credit, link: photo.creditUrl });
   };
 
   return (
@@ -113,8 +98,8 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
                 }`}
               >
                 <img
-                  src={p.urls.small}
-                  alt={p.alt_description ?? 'Unsplash photo'}
+                  src={p.small}
+                  alt={p.alt}
                   className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   loading="lazy"
                 />

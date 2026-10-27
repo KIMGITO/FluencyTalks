@@ -26,9 +26,9 @@ export interface TranslationRecord { id: string; source_text: string; translated
 
 export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
 export interface Reaction { message_id: string; user_id: string; emoji: string }
-export type NotificationType = 'message_request' | 'correction';
+export type NotificationType = 'message_request' | 'correction' | 'correction_accepted' | 'bounty_paid';
 export interface AppNotification {
-  id: string; type: NotificationType; data: { conversation_id?: string; message_id?: string }; read_at: string | null; created_at: string;
+  id: string; type: NotificationType; data: { conversation_id?: string; message_id?: string; points?: number }; read_at: string | null; created_at: string;
   actor_id: string | null; actor_username: string | null; actor_name: string | null; actor_avatar: string | null;
 }
 export type AccountStatus = 'active' | 'suspended' | 'banned';

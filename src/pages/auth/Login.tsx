@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
 import { Button, Input } from '@/components/ui';
@@ -10,7 +10,8 @@ import { EMAILS, mailto } from '@/lib/emails';
 
 export default function Login() {
   useSeo({ title: 'Log in', description: `Log in to ${BRAND} to pick up your conversations where you left off.`, path: '/login', noIndex: true });
-  const { signIn, error } = useAuthStore();
+  const { signIn, error, clearError } = useAuthStore();
+  useEffect(() => { clearError(); }, [clearError]);
   const nav = useNavigate();
   const loc = useLocation() as { state?: { reason?: string } };
   const notice = loc.state?.reason;

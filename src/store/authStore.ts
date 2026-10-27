@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { friendlyAuthError, parseLanding, type LandingInfo } from '@/lib/authHelpers';
 import {
   IDLE_CHECK_MS,
   SESSION_REVALIDATE_MS,
@@ -18,6 +19,11 @@ interface AuthState {
   user: User | null; session: Session | null; loading: boolean; error: string | null;
   sessionCheckedAt: number | null;
   forceLogoutReason: 'idle' | 'invalid' | 'switched' | null;
+  /** The page was opened from a password-reset email link, so this session is a recovery session. */
+  recovery: boolean;
+  /** Set when the email link was already used or has expired (Supabase puts the reason in the URL). */
+  recoveryLinkError: string | null;
+  clearError: () => void;
   init: () => Promise<void>;
   validateSession: () => Promise<boolean>;
   signUp: (email: string, password: string) => Promise<boolean>;
@@ -30,9 +36,24 @@ interface AuthState {
 }
 const run = async (set: (s: Partial<AuthState>) => void, fn: () => Promise<{ error: { message: string } | null }>) => {
   set({ error: null }); const { error } = await fn();
-  if (error) set({ error: error.message });
+  if (error) set({ error: friendlyAuthError(error.message) });
   return !error;
 };
+
+/**
+ * What the URL said when the page loaded. This must be read synchronously at load: the Supabase
+ * client consumes and rewrites the URL hash a moment later, and its PASSWORD_RECOVERY event can
+ * fire before our listener is registered.
+ */
+const landing = (() => {
+  if (typeof window === 'undefined') return { recovery: false, linkError: null as string | null };
+  const { hash, search, pathname } = window.location;
+  const params = new URLSearchParams(`${hash.replace(/^#/, '')}&${search.replace(/^\?/, '')}`);
+  const linkError = params.get('error_description') ?? (params.get('error') ? 'Link is invalid or has expired' : null);
+  const recovery = !linkError && (params.get('type') === 'recovery'
+    || (pathname === '/reset-password' && (params.has('code') || params.has('access_token'))));
+  return { recovery, linkError };
+})();
 const PROD_ORIGIN = 'https://thefluencytalks.com';
 const origin = () => (typeof window !== 'undefined' ? window.location.origin : PROD_ORIGIN);
 
@@ -66,7 +87,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
       else { clearSessionMarkers(); set({ user: null, session: null, loading: false }); }
       return;
     }
-    if (isIdleExpired()) { await forceLogout('idle'); return; }
+    // A recovery session is brand new: the idle marker left in this browser from an old visit must not sign it out.
+    if (get().recovery) touchActivity();
+    else if (isIdleExpired()) { await forceLogout('idle'); return; }
     if (isStaleForUser(user.id)) {
       await resetUserCaches();
       set({ forceLogoutReason: 'switched' });
@@ -80,6 +103,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
   return {
   user: null, session: null, loading: true, error: null, sessionCheckedAt: null, forceLogoutReason: null,
+  recovery: landing.recovery, recoveryLinkError: landing.linkError,
+  clearError: () => set({ error: null }),
   init: async () => {
     if (initialized) return;
     initialized = true;
@@ -88,6 +113,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
     const { data } = await supabase.auth.getSession();
     await adoptSession(data.session);
     supabase.auth.onAuthStateChange(async (event, s) => {
+      if (event === 'PASSWORD_RECOVERY') { touchActivity(); set({ recovery: true }); }
       if (event === 'SIGNED_OUT' || !s) {
         clearSessionMarkers();
         await resetUserCaches();
@@ -170,7 +196,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
       set({ error: 'This account signs in with Google. Use Google to log in — no password to change here.' });
       return false;
     }
-    return run(set, () => supabase.auth.updateUser({ password }));
+    const ok = await run(set, () => supabase.auth.updateUser({ password }));
+    if (ok) set({ recovery: false });
+    return ok;
   },
   updateEmail: (email) => run(set, () => supabase.auth.updateUser({ email })),
   };

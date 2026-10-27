@@ -35,6 +35,8 @@ export default function Library() {
     try {
       const r = await listContributionPosts(lang || undefined, cat || undefined);
       setPosts(r.posts ?? null);
+    } catch {
+      setPosts([]);
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { Image, X, ChevronLeft } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button, Select, Textarea, Input } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
+import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
 import { isContributionEligible, postContribution } from '@/services/library';
 import { UnsplashPicker } from '@/components/features/library/UnsplashPicker';
@@ -22,9 +23,9 @@ export default function ContributePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const languages = useLanguageStore((s) => s.list);
   const languageName = useLanguageStore((s) => s.name);
   const me = useProfileStore((s) => s.me);
+  const languages = qualifiedLanguages(me);   // only languages you are qualified to teach (the server checks too)
   const canContribute = isContributionEligible(me);
 
   const submit = async () => {
@@ -93,8 +94,8 @@ export default function ContributePage() {
           onChange={(e) => setLanguage(e.target.value)}
         >
           <option value="">Select a language</option>
-          {languages.map((l) => (
-            <option key={l.id} value={l.id}>{languageName(l.id)}</option>
+          {languages.map((id) => (
+            <option key={id} value={id}>{languageName(id)}</option>
           ))}
         </Select>
 
