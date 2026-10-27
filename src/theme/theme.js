@@ -16,6 +16,7 @@ export const SERIF = 'var(--font-serif)';
 
 
 const img = (id, w = 1600) => `https://images.unsplash.com/${id}?w=${w}&auto=format&fit=crop&q=75`;
+export const unsplash = img;
 export const IMG = {
   hero: img('photo-1543269865-cbf427effbad'), friends: img('photo-1529156069898-49953e39b3ac'),
   team: img('photo-1522071820081-009f0129c71c'), online: img('photo-1516321318423-f06f85e504b3'), talk: img('photo-1517048676732-d65bc937f952'),
