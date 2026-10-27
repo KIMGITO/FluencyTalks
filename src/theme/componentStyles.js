@@ -7,90 +7,149 @@ import { C, FONT, DISPLAY } from './theme';
 const LEGAL_OFFSET = 'max(0px, calc((100vw - 1240px) / 2))';
 
 export const legalCSS = `
+
 /* -- Motion -------------------------------------------------------------- */
+
 @keyframes lgIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes lgDrift{from{transform:scale(1.03)}to{transform:scale(1.09) translateX(-1%)}}
+
+
 
 /* -- Sticky header: logo, section links, home link ----------------------- */
+
 .lg-bar{position:sticky;top:0;z-index:20;background:rgb(var(--c-surface) / .94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgb(var(--c-border))}
+
 .lg-bar-in{max-width:1240px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:20px;min-height:68px}
+
 .lg-links{display:flex;gap:6px;margin-left:auto}
+
 .lg-link{padding:.35rem 0;font-size:.9375rem;font-weight:500;text-decoration:none;color:rgb(var(--c-muted));transition:color .2s}
+
 .lg-link:hover{color:rgb(var(--c-ink))}
+
 .lg-link.on{color:rgb(var(--c-brand));text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1.5px}
+
 .lg-back{font-weight:600;font-size:.9375rem;text-decoration:none;color:rgb(var(--c-muted));transition:color .2s}
+
 .lg-back:hover{color:rgb(var(--c-ink));text-decoration:underline;text-underline-offset:.25em}
 
-/* -- Stage: full-height split of media (background) + content panel ------ */
-.lg-stage{position:relative;display:flex;min-height:calc(100vh - 68px);min-height:calc(100dvh - 68px);overflow:hidden;scroll-margin-top:68px}
-.lg-left{justify-content:flex-start}.lg-right{justify-content:flex-end}
-.lg-media{position:absolute;inset:0;overflow:hidden;background:rgb(var(--c-deep))}
-.lg-panel{position:relative;display:flex;width:max(60%, calc(clamp(460px,46vw,640px) + ${LEGAL_OFFSET}))}
-.lg-frost{position:absolute;inset:0;backdrop-filter:blur(6px) saturate(0.6);-webkit-backdrop-filter:blur(6px) saturate(0.6)}
-.lg-content{position:relative;width:100%;display:flex;flex-direction:column;justify-content:center;padding:clamp(28px,4vw,48px) 0}
-.lg-left .lg-content{padding-left:calc(24px + ${LEGAL_OFFSET});padding-right:clamp(56px,12vw,170px)}
-.lg-right .lg-content{padding-right:calc(24px + ${LEGAL_OFFSET});padding-left:clamp(56px,12vw,170px)}
 
-/* -- Meta row: breadcrumb chip (tinted via --lg-tint) + "Updated" -------- */
+
+/* -- Single column page -------------------------------------------------- */
+
+.lg-main{position:relative;min-height:calc(100dvh - 68px);overflow:hidden;scroll-margin-top:68px}
+
+.lg-panel{position:relative;display:flex;flex-direction:column;width:100%}
+
+
+
+/* -- Meta row: breadcrumb chip (brand tint) + "Updated" ------------------ */
+
 .lg-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;font-size:13px;font-weight:700}
-.lg-crumb{padding:6px 14px;border-radius:999px;background:var(--lg-tint);color:rgb(var(--c-deep));white-space:nowrap;box-shadow:0 1px 2px rgb(var(--c-ink) / .12)}
+
+.lg-crumb{padding:6px 14px;border-radius:999px;background:rgb(var(--c-brand-soft));color:rgb(var(--c-brand));white-space:nowrap;box-shadow:0 1px 2px rgb(var(--c-ink) / .12)}
+
 .lg-upd{color:rgb(var(--c-muted));white-space:nowrap}
 
+
+
 /* -- Article: tagline chip, serif heading, section entrance animation ---- */
+
 .lg-tag{display:inline-block;margin:0 0 12px;padding:6px 13px;border-radius:999px;background:rgb(var(--c-surface-2));color:rgb(var(--c-ink));font-weight:800;font-size:12.5px;line-height:1.3;letter-spacing:.08em;text-transform:uppercase}
+
 .lg-tag::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:rgb(var(--c-accent));margin-right:8px;vertical-align:1px}
+
 .lg-h{font-family:var(--font-serif);font-size:clamp(26px,3.6vw,38px);line-height:1.2;margin:0 0 16px;color:rgb(var(--c-brand))}
+
 .lg-in{animation:lgIn .45s cubic-bezier(.2,.8,.2,1) both}
 
+
+
 /* -- Controls: prev/next pager, counter row, contact note ---------------- */
+
 .lg-ctl{margin-top:clamp(22px,3vw,34px);padding-top:18px;border-top:1px solid rgb(var(--c-ink) / .12)}
+
 .lg-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700;font-size:14px;color:rgb(var(--c-muted))}
+
 .lg-nb{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.4rem;border-radius:3px;border:1.5px solid rgb(var(--c-brand));font-weight:600;font-size:1rem;line-height:1.2;text-decoration:none;cursor:pointer;transition:transform .3s var(--ease),box-shadow .3s var(--ease),background-color .25s,color .25s,border-color .25s}
+
 .lg-nb:hover{transform:translateY(-2px);box-shadow:0 12px 22px -12px rgb(var(--c-ink) / .5)}
+
 .lg-nb.p{background:rgb(var(--c-brand));color:rgb(var(--c-on-brand));border-color:rgb(var(--c-brand))}
+
 .lg-nb.p:hover{background:rgb(var(--c-deep));border-color:rgb(var(--c-deep))}
+
 .lg-fine{margin:14px 0 0;font-size:13px;color:rgb(var(--c-muted))}
+
 .lg-fine a{color:rgb(var(--c-brand));font-weight:800;transition:color .2s}
+
 .lg-fine a:hover{color:rgb(var(--c-accent))}
 
+
+
 /* -- Body copy: matches landing reading type (Source Sans, ~1.6) ---------- */
+
 .lg-text{margin:0 0 18px;line-height:1.7;font-size:clamp(15px,1.8vw,17px);color:rgb(var(--c-ink))}
+
 .lg-text a{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.28em;text-decoration-color:rgb(var(--c-accent));transition:text-decoration-color .2s}
+
 .lg-text a:hover{text-decoration-color:currentColor}
 
+
+
 /* -- Lists: dot bullets, same reading type -------------------------------- */
+
 .lg-list{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px}
+
 .lg-list-item{display:flex;gap:12px;line-height:1.6;font-size:clamp(15px,1.7vw,16.5px);color:rgb(var(--c-ink))}
+
 .lg-list-item strong{color:rgb(var(--c-brand))}
+
 .lg-bullet{width:8px;height:8px;border-radius:50%;background:rgb(var(--c-accent));margin-top:9px;flex:none}
 
+
+
 /* -- Utilities + focus ring (legal pages are keyboard-heavy) ------------- */
+
 .lg-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* visually hidden page <h1> */
+
 a:focus-visible,button:focus-visible{outline:3px solid rgb(var(--c-sun));outline-offset:2px;border-radius:8px}
 
+
+
 /* -- Dark theme overrides (tokens flip under :root[data-theme="dark"]) ---- */
+
 :root[data-theme="dark"] .lg-link:hover{color:rgb(var(--c-aqua))}
+
 :root[data-theme="dark"] .lg-link.on,:root[data-theme="dark"] .lg-nb.p{color:rgb(var(--c-deep))}
+
 :root[data-theme="dark"] .lg-back{color:rgb(var(--c-aqua))}
+
 :root[data-theme="dark"] .lg-back:hover{color:rgb(var(--c-sun))}
+
 :root[data-theme="dark"] .lg-h{color:rgb(var(--c-accent))}
+
 :root[data-theme="dark"] .lg-nb{color:rgb(var(--c-aqua))}
+
 :root[data-theme="dark"] .lg-nb:hover{color:rgb(var(--c-deep))}
+
 :root[data-theme="dark"] .lg-fine a{color:rgb(var(--c-aqua))}
+
 :root[data-theme="dark"] .lg-fine a:hover{color:rgb(var(--c-sun))}
 
-/* -- Breakpoints: 900px hide section links / 820px stack / 520px slim bar  */
+
+
+/* -- Breakpoints --------------------------------------------------------- */
+
 @media(max-width:900px){.lg-links{display:none}.lg-back{margin-left:auto}}
-@media(max-width:820px){
-  .lg-stage{flex-direction:column;min-height:0}
-  .lg-media{position:relative;inset:auto;height:clamp(190px,46vw,300px);flex:none}
-  .lg-panel{width:100%;background:rgb(var(--c-surface))}.lg-frost{display:none}
-  .lg-left .lg-content,.lg-right .lg-content{padding:24px 20px 36px}
-  .lg-nb{height:44px}
-}
+
+@media(max-width:820px){.lg-main{min-height:0}.lg-panel{width:100%}.lg-nb{height:44px}}
+
 @media(max-width:520px){.lg-bar .ft-logo-text{display:none}.lg-bar-in{gap:12px}}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
 `;
+
 
 
 

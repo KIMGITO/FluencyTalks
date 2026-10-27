@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { IMG } from '@/theme/theme';
 import { Input } from '@/components/ui';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
 import { useSeo } from '@/hooks/useSeo';
@@ -22,10 +21,10 @@ function DeleteForm() {
 
   if (done) return <P>Thanks. We have sent a confirmation link to <strong>{email}</strong>. Open it within 24 hours to finish your request.</P>;
   return (
-    <form onSubmit={submit} style={{ display: 'grid', gap: 14, maxWidth: 420 }}>
+    <form onSubmit={submit} className="grid gap-4 max-w-[420px]">
       <Input id="del-email" type="email" label="Account email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 15, lineHeight: 1.5 }}>
-        <input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} required style={{ marginTop: 4, width: 18, height: 18 }} />
+      <label className="flex items-start gap-2 text-sm leading-relaxed">
+        <input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} required className="mt-0.5 shrink-0 w-4 h-4" />
         I understand this permanently deletes my account and cannot be undone.
       </label>
       <button
@@ -41,11 +40,9 @@ function DeleteForm() {
 }
 
 const sections = [
-  { id: 'what', short: 'What is deleted', tagline: 'Before you go', heading: 'What deleting your account does', img: IMG.team, tint: '#fef9e7', side: 'left',
-    body: (<Bullets items={[['Removed:', 'your profile, messages, saved phrases and audio clips.'], ['Within 30 days:', 'all remaining copies are purged from our systems.'], ['Kept briefly:', 'minimal records we are legally required to retain, such as safety reports.']]} />) },
-  { id: 'request', short: 'Request deletion', tagline: 'Delete my data', heading: 'Request account deletion', img: IMG.friends, tint: '#fff0ea', side: 'right', body: <DeleteForm /> },
-  { id: 'after', short: 'What happens next', tagline: 'Next steps', heading: 'After you submit', img: IMG.hero, tint: '#e8f8f5', side: 'left',
-    body: (<><P>We email you a confirmation link. Once you open it, your account is deactivated straight away.</P><P>Changed your mind? Log in within 7 days to cancel the request.</P></>) },
+  { id: 'what', short: 'What is deleted', tagline: 'Before you go', heading: 'What deleting your account does', body: (<Bullets items={[['Removed:', 'your profile, messages, saved phrases and audio clips.'], ['Within 30 days:', 'all remaining copies are purged from our systems.'], ['Kept briefly:', 'minimal records we are legally required to retain, such as safety reports.']]} />) },
+  { id: 'request', short: 'Request deletion', tagline: 'Delete my data', heading: 'Request account deletion', body: <DeleteForm /> },
+  { id: 'after', short: 'What happens next', tagline: 'Next steps', heading: 'After you submit', body: (<><P>We email you a confirmation link. Once you open it, your account is deactivated straight away.</P><P>Changed your mind? Log in within 7 days to cancel the request.</P></>) },
 ];
 
 export default function DeleteRequest() {
@@ -62,11 +59,7 @@ export default function DeleteRequest() {
           id: 'email',
           short: 'Email us',
           tagline: 'Prefer email',
-          heading: 'Request deletion by email',
-          img: IMG.online,
-          tint: '#f0f7ff',
-          side: 'right',
-          body: (
+          heading: 'Request deletion by email', body: (
             <>
               <P>
                 Prefer email? Write to{' '}

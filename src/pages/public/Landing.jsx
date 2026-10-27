@@ -36,7 +36,7 @@ export default function Landing() {
         <Services />
         <Languages />
         <Roles />
-        <Project />
+        {/* <Project /> */}
         <Faq />
         <Cta />
       </main>

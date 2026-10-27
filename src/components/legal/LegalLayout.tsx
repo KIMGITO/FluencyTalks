@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback, type CSSProperties, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { photo } from '@/theme/theme';
 import { EMAILS } from '@/lib/emails';
 import { legalCSS } from '@/theme/componentStyles';
 import { Logo } from '../ui';
 
 import '@/styles/landing.css';
 
-export interface LegalSection { id: string; short: string; tagline: string; heading: string; img: string; tint: string; side: string; body: ReactNode }
+export interface LegalSection { id: string; short: string; tagline: string; heading: string; body: ReactNode }
 
 const LINKS = [
   ['Privacy', '/privacy'],
@@ -52,7 +51,6 @@ export default function LegalLayout({
     ),
   );
   const cur = sections[i];
-  const toward = cur.side === 'left' ? 'right' : 'left';
 
   const go = useCallback(
     (k: number) => {
@@ -77,8 +75,6 @@ export default function LegalLayout({
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [i, go]);
-
-  const mask = `linear-gradient(to ${toward}, black 0%, black 86%, transparent 100%)`;
 
   return (
     <div className="lp">
@@ -105,37 +101,8 @@ export default function LegalLayout({
         </div>
       </header>
 
-      <main
-        id="lg-top"
-        className={`lg-stage lg-${cur.side}`}
-        style={{ '--lg-tint': cur.tint } as CSSProperties}
-      >
-        <div className="lg-media" aria-hidden="true">
-          {sections.map((s: LegalSection, k: number) => (
-            <div
-              key={s.id}
-              style={{
-                ...photo(s.img),
-                position: 'absolute',
-                inset: 0,
-                opacity: k === i ? 1 : 0,
-                transition: 'opacity .9s ease',
-                animation: 'lgDrift 24s ease-in-out infinite alternate',
-              }}
-            />
-          ))}
-        </div>
-
+      <main id="lg-top" className="lg-main">
         <section className="lg-panel" aria-labelledby="lg-h">
-          <div
-            aria-hidden="true"
-            className="lg-frost"
-            style={{
-              background: `linear-gradient(to ${toward}, rgb(var(--c-surface) / .8) 0%, rgb(var(--c-surface) / .7) 68%, rgb(var(--c-surface) / .4) 86%, rgb(var(--c-surface) / 1) 100%)`,
-              WebkitMaskImage: mask,
-              maskImage: mask,
-            }}
-          />
           <div className="lg-content">
             <div className="lp-wrap">
               <h1 className="lg-sr">{title}</h1>
@@ -155,32 +122,32 @@ export default function LegalLayout({
               </article>
 
               <div className="lg-ctl">
-              <div className="lg-row">
-                <span>
-                  Section {i + 1} of {n}
-                </span>
-                <span style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="lg-nb"
-                    onClick={() => go(i - 1)}
-                    aria-label="Previous section"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    className="lg-nb p"
-                    onClick={() => go(i + 1)}
-                    aria-label="Next section"
-                  >
-                    {i === n - 1 ? 'Start over' : 'Next'}
-                  </button>
-                </span>
+                <div className="lg-row">
+                  <span>
+                    Section {i + 1} of {n}
+                  </span>
+                  <span className="flex gap-2">
+                    <button
+                      className="lg-nb"
+                      onClick={() => go(i - 1)}
+                      aria-label="Previous section"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      className="lg-nb p"
+                      onClick={() => go(i + 1)}
+                      aria-label="Next section"
+                    >
+                      {i === n - 1 ? 'Start over' : 'Next'}
+                    </button>
+                  </span>
+                </div>
+                <p className="lg-fine">
+                  Questions about this page? Write to{' '}
+                  <a href={`mailto:${contact}`}>{contact}</a>.
+                </p>
               </div>
-              <p className="lg-fine">
-                Questions about this page? Write to{' '}
-                <a href={`mailto:${contact}`}>{contact}</a>.
-              </p>
-            </div>
             </div>
           </div>
         </section>
