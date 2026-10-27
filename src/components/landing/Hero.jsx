@@ -13,7 +13,7 @@ export default function Hero() {
     <section className="lp-hero" aria-labelledby="hero-title">
       <div className="lp-wrap lp-hero__grid">
         <div className="lp-hero__copy">
-          <p className="lp-kicker">Language exchange, person to person</p>
+          {/* <p className="lp-kicker">Language exchange, person to person</p> */}
           <h1 id="hero-title" className="lp-hero__title">
             <span className="lp-strip">Speak a language with the people who <em>speak it.</em></span>
           </h1>

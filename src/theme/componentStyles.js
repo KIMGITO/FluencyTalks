@@ -15,11 +15,11 @@ export const legalCSS = `
 .lg-bar{position:sticky;top:0;z-index:20;background:rgb(var(--c-surface) / .94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgb(var(--c-border))}
 .lg-bar-in{max-width:1240px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:20px;min-height:68px}
 .lg-links{display:flex;gap:6px;margin-left:auto}
-.lg-link{padding:8px 14px;border-radius:999px;font-weight:700;font-size:14px;color:rgb(var(--c-muted));text-decoration:none;transition:background .2s,color .2s}
-.lg-link:hover{background:rgb(var(--c-brand-soft));color:rgb(var(--c-brand))}
-.lg-link.on{background:rgb(var(--c-brand));color:rgb(var(--c-on-brand))}
-.lg-back{font-weight:800;font-size:14px;color:rgb(var(--c-brand));text-decoration:none;white-space:nowrap;transition:color .2s}
-.lg-back:hover{color:rgb(var(--c-accent))}
+.lg-link{padding:.35rem 0;font-size:.9375rem;font-weight:500;text-decoration:none;color:rgb(var(--c-muted));transition:color .2s}
+.lg-link:hover{color:rgb(var(--c-ink))}
+.lg-link.on{color:rgb(var(--c-brand));text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1.5px}
+.lg-back{font-weight:600;font-size:.9375rem;text-decoration:none;color:rgb(var(--c-muted));transition:color .2s}
+.lg-back:hover{color:rgb(var(--c-ink));text-decoration:underline;text-underline-offset:.25em}
 
 /* -- Stage: full-height split of media (background) + content panel ------ */
 .lg-stage{position:relative;display:flex;min-height:calc(100vh - 68px);min-height:calc(100dvh - 68px);overflow:hidden;scroll-margin-top:68px}
@@ -45,13 +45,24 @@ export const legalCSS = `
 /* -- Controls: prev/next pager, counter row, contact note ---------------- */
 .lg-ctl{margin-top:clamp(22px,3vw,34px);padding-top:18px;border-top:1px solid rgb(var(--c-ink) / .12)}
 .lg-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700;font-size:14px;color:rgb(var(--c-muted))}
-.lg-nb{height:42px;padding:0 18px;border-radius:999px;border:2px solid rgb(var(--c-brand));background:transparent;color:rgb(var(--c-brand));font-weight:800;font-size:14px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
-.lg-nb:hover{background:rgb(var(--c-brand));color:rgb(var(--c-on-brand))}
-.lg-nb.p{background:rgb(var(--c-brand));color:rgb(var(--c-on-brand))}
-.lg-nb.p:hover{background:rgb(var(--c-accent));border-color:rgb(var(--c-accent));color:rgb(var(--c-deep))}
+.lg-nb{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.4rem;border-radius:3px;border:1.5px solid rgb(var(--c-brand));font-weight:600;font-size:1rem;line-height:1.2;text-decoration:none;cursor:pointer;transition:transform .3s var(--ease),box-shadow .3s var(--ease),background-color .25s,color .25s,border-color .25s}
+.lg-nb:hover{transform:translateY(-2px);box-shadow:0 12px 22px -12px rgb(var(--c-ink) / .5)}
+.lg-nb.p{background:rgb(var(--c-brand));color:rgb(var(--c-on-brand));border-color:rgb(var(--c-brand))}
+.lg-nb.p:hover{background:rgb(var(--c-deep));border-color:rgb(var(--c-deep))}
 .lg-fine{margin:14px 0 0;font-size:13px;color:rgb(var(--c-muted))}
 .lg-fine a{color:rgb(var(--c-brand));font-weight:800;transition:color .2s}
 .lg-fine a:hover{color:rgb(var(--c-accent))}
+
+/* -- Body copy: matches landing reading type (Source Sans, ~1.6) ---------- */
+.lg-text{margin:0 0 18px;line-height:1.7;font-size:clamp(15px,1.8vw,17px);color:rgb(var(--c-ink))}
+.lg-text a{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.28em;text-decoration-color:rgb(var(--c-accent));transition:text-decoration-color .2s}
+.lg-text a:hover{text-decoration-color:currentColor}
+
+/* -- Lists: dot bullets, same reading type -------------------------------- */
+.lg-list{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px}
+.lg-list-item{display:flex;gap:12px;line-height:1.6;font-size:clamp(15px,1.7vw,16.5px);color:rgb(var(--c-ink))}
+.lg-list-item strong{color:rgb(var(--c-brand))}
+.lg-bullet{width:8px;height:8px;border-radius:50%;background:rgb(var(--c-accent));margin-top:9px;flex:none}
 
 /* -- Utilities + focus ring (legal pages are keyboard-heavy) ------------- */
 .lg-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* visually hidden page <h1> */

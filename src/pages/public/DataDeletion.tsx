@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { IMG } from '@/theme/theme';
-import { Input, Button } from '@/components/ui';
+import { Input } from '@/components/ui';
 import LegalLayout, { P, Bullets } from '@/components/legal/LegalLayout';
 import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
@@ -28,7 +28,14 @@ function DeleteForm() {
         <input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} required style={{ marginTop: 4, width: 18, height: 18 }} />
         I understand this permanently deletes my account and cannot be undone.
       </label>
-      <Button type="submit" loading={busy} disabled={!sure}>Request deletion</Button>
+      <button
+        type="submit"
+        className="lp-btn lp-btn--solid"
+        disabled={busy || !sure}
+        aria-busy={busy || undefined}
+      >
+        {busy ? 'Requesting…' : 'Request deletion'}
+      </button>
     </form>
   );
 }
@@ -63,18 +70,18 @@ export default function DeleteRequest() {
             <>
               <P>
                 Prefer email? Write to{' '}
-                <a href={mailto(EMAILS.privacy, { subject: 'Delete my data' })}>
+                <a className="lp-link" href={mailto(EMAILS.privacy, { subject: 'Delete my data' })}>
                   {EMAILS.privacy}
                 </a>{' '}
                 from your account email and we will confirm within 72 hours.
               </P>
               <P>
                 Safety issue? Contact{' '}
-                <a href={mailto(EMAILS.security, { subject: 'Safety concern' })}>
+                <a className="lp-link" href={mailto(EMAILS.security, { subject: 'Safety concern' })}>
                   {EMAILS.security}
                 </a>
                 . To flag abuse outside the app, write to{' '}
-                <a href={mailto(EMAILS.report, { subject: 'Report abuse' })}>
+                <a className="lp-link" href={mailto(EMAILS.report, { subject: 'Report abuse' })}>
                   {EMAILS.report}
                 </a>
                 .

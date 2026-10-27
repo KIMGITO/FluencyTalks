@@ -2,15 +2,10 @@ import { useState, useEffect, useCallback, type CSSProperties, type ReactNode } 
 import { Link } from 'react-router-dom';
 import { photo } from '@/theme/theme';
 import { EMAILS } from '@/lib/emails';
-import {
-  legalCSS,       
-  legalPage,      
-  legalText,      
-  legalList,      
-  legalListItem,  
-  legalBulletDot, 
-} from '@/theme/componentStyles';
+import { legalCSS } from '@/theme/componentStyles';
 import { Logo } from '../ui';
+
+import '@/styles/landing.css';
 
 export interface LegalSection { id: string; short: string; tagline: string; heading: string; img: string; tint: string; side: string; body: ReactNode }
 
@@ -21,12 +16,12 @@ const LINKS = [
 ];
 
 
-export const P = ({ children }: { children: ReactNode }) => <p style={legalText}>{children}</p>;
+export const P = ({ children }: { children: ReactNode }) => <p className="lg-text">{children}</p>;
 export const Bullets = ({ items }: { items: [string, string][] }) => (
-  <ul style={legalList}>
+  <ul className="lg-list">
     {items.map(([t, d]) => (
-      <li key={t} style={legalListItem}>
-        <span style={legalBulletDot} />
+      <li key={t} className="lg-list-item">
+        <span className="lg-bullet" aria-hidden="true" />
         <span>
           <strong>{t}</strong> {d}
         </span>
@@ -86,7 +81,7 @@ export default function LegalLayout({
   const mask = `linear-gradient(to ${toward}, black 0%, black 86%, transparent 100%)`;
 
   return (
-    <div style={legalPage}>
+    <div className="lp">
       <style>{legalCSS}</style>
 
       <header className="lg-bar">
@@ -142,21 +137,24 @@ export default function LegalLayout({
             }}
           />
           <div className="lg-content">
-            <h1 className="lg-sr">{title}</h1>
-            <div className="lg-meta">
-              <span className="lg-crumb">{title}</span>
-              {updated && <span className="lg-upd">Updated {updated}</span>}
-            </div>
+            <div className="lp-wrap">
+              <h1 className="lg-sr">{title}</h1>
+              <div className="lg-meta">
+                <span className="lg-crumb">{title}</span>
+                {updated && <span className="lg-upd">Updated {updated}</span>}
+              </div>
 
-            <article key={cur.id} className="lg-in ft-selectable">
-              {cur.tagline && <div className="lg-tag">{cur.tagline}</div>}
-              <h2 id="lg-h" className="lg-h">
-                {cur.heading}
-              </h2>
-              {cur.body}
-            </article>
+              <article key={cur.id} className="lg-in ft-selectable">
+                <div className="lp-section-head">
+                  {cur.tagline && <p className="lp-kicker">{cur.tagline}</p>}
+                  <h2 id="lg-h" className="lg-h">
+                    {cur.heading}
+                  </h2>
+                </div>
+                {cur.body}
+              </article>
 
-            <div className="lg-ctl">
+              <div className="lg-ctl">
               <div className="lg-row">
                 <span>
                   Section {i + 1} of {n}
@@ -182,6 +180,7 @@ export default function LegalLayout({
                 Questions about this page? Write to{' '}
                 <a href={`mailto:${contact}`}>{contact}</a>.
               </p>
+            </div>
             </div>
           </div>
         </section>
