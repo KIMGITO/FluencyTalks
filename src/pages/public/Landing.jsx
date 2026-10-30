@@ -7,7 +7,6 @@ import '@/styles/landing.css';
 
 export default function Landing() {
   useSeo({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: '/' });
-  // Arriving from another page with a #section (the header and footer links): scroll there.
   const { hash } = useLocation();
   useEffect(() => {
     if (!hash) return;
