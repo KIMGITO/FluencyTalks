@@ -13,9 +13,7 @@ export default function Languages() {
             <li  key={word} data-reveal style={{ '--s': `${size}rem`, '--d': `${(i % 6) * 0.05}s` }}><span lang={lang} dir={dir} className="">{word}</span></li>
           ))}
         </ul>
-        {/* <p className="lp-languages__more" data-reveal>
-          Including <strong>Swahili</strong>, <strong>Vietnamese</strong>, <strong>English</strong> and <strong>French</strong>, and the Kenyan languages Kikuyu, Dholuo, Kalenjin, Luhya, Kamba and Kisii. You choose one language you speak and one you are learning.
-        </p> */}
+       
       </div>
     </section>
   );
