@@ -21,8 +21,8 @@ export default function Hero() {
 
         <div className="lp-hero__art" aria-hidden="true">
           <figure className="lp-photo lp-photo--a"><img src={unsplash(BIG, 900)} srcSet={srcset(BIG, [500, 900, 1300])} sizes="(max-width: 56rem) 66vw, 34vw" width="900" height="1125" alt="" fetchpriority="high" decoding="async" /></figure>
-          <figure className="lp-photo lp-photo--b"><img src={unsplash(SMALL, 500)} srcSet={srcset(SMALL, [300, 500])} sizes="(max-width: 56rem) 46vw, 18vw" width="500" height="500" alt="" loading="lazy" decoding="async" /></figure>
-          <div className="lp-sticker"><span><b>40</b>languages, free</span></div>
+          <figure className="lp-photo lp-photo--b"><img src={unsplash(SMALL, 500)} srcSet={srcset(SMALL, [300, 500])} sizes="(max-width: 56rem) 46vw, 18vw" width="600" height="600" alt="" loading="lazy" decoding="async" /></figure>
+          <div className="lp-sticker"><span>Learn <b >40+</b>languages</span></div>
         </div>
 
         <div className="lp-hero__body">
@@ -31,7 +31,6 @@ export default function Hero() {
             <Link to={join.to} className="lp-btn lp-btn--accent">{join.signedIn ? 'Go to your account' : 'Start talking, it is free'}</Link>
             <a href="#services" className="lp-link">See what you get <span aria-hidden="true">→</span></a>
           </div>
-          <ul className="lp-hero__meta"><li>Text chat with live corrections</li><li>No payment, no ads</li></ul>
         </div>
       </div>
     </section>

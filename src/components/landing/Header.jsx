@@ -12,14 +12,13 @@ export const NAV = [
 ];
 const IDS = NAV.map((n) => n.id);
 
-/** The section the reader is in (home page only), so the nav can show where they are. */
 function useActiveSection(enabled) {
   const [active, setActive] = useState(null);
   useEffect(() => {
     if (!enabled || !('IntersectionObserver' in window)) return undefined;
     const els = IDS.map((id) => document.getElementById(id)).filter(Boolean);
     const inView = new Set();
-    // A thin band across the upper-middle of the screen: the section crossing it is "current".
+/** The section the reader is in (home page only), so the nav can show where they are. */
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
       const current = IDS.filter((id) => inView.has(id)).pop() ?? null;
@@ -31,7 +30,6 @@ function useActiveSection(enabled) {
   return [active, setActive];
 }
 
-/** One header for every public page. On the home page the links scroll; elsewhere they go to the home page section. */
 export default function Header() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';
@@ -55,7 +53,6 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [setActive]);
 
-  // Opening the menu: Escape closes it, the page behind stays put, a wider screen closes it.
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
@@ -69,7 +66,7 @@ export default function Header() {
 
   const close = (id) => { if (id) setActive(id); setOpen(false); };
   const link = ({ id, label }, i, drawer) => {
-    const inner = drawer ? <>{label}<small>{String(i + 1).padStart(2, '0')}</small></> : label;
+    const inner = drawer ? <>{label}</> : label;
     const cur = active === id ? 'true' : undefined;
     return isHome
       ? <a key={id} href={`#${id}`} aria-current={cur} onClick={() => close(id)}>{inner}</a>
@@ -83,9 +80,9 @@ export default function Header() {
         <Logo />
         <nav className="lp-nav" aria-label="Main">{NAV.map((n, i) => link(n, i, false))}</nav>
         <div className="lp-header__actions">
-          {user && <ThemeToggle />}
+          {/* {user && <ThemeToggle />} */}
           {authLoading ? null : user ? (
-            <Link to="/home" aria-label="Open your account" title={name}><Avatar name={name} src={meta.avatar_url || meta.picture || null} size="sm" /></Link>
+            <></>
           ) : (
             <>
               <Link to="/login" className="lp-textlink">Log in</Link>
@@ -101,7 +98,6 @@ export default function Header() {
           ? <Link to="/home" className="lp-btn lp-btn--accent" onClick={() => close()}>Go to your account</Link>
           : <><Link to="/signup" className="lp-btn lp-btn--accent" onClick={() => close()}>Sign up free</Link><Link to="/login" className="lp-drawer__login" onClick={() => close()}>Log in</Link></>)}
       </div>
-      {/* <div className="lp-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" /> */}
     </header>
   );
 }

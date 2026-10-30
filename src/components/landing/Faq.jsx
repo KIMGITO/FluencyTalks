@@ -19,13 +19,15 @@ export default function Faq() {
     <section id="faq" className="lp-faq" aria-labelledby="faq-title">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="lp-wrap lp-faq__grid">
-        <div className="lp-faq__head" data-reveal>
+         <div className="lp-faq__head" data-reveal>
           <p className="lp-kicker">Questions</p>
-          <h2 id="faq-title">Before you start</h2>
-          <p>Something missing? <a className="lp-link" href={mailto(EMAILS.support, { subject: SUPPORT_SUBJECT })}>Ask us</a>.</p>
+          <h2 id="faq-title">Before you start ...</h2>
         </div>
         <div className="lp-faq__list" data-reveal style={{ '--d': '.1s' }}>
           {faqs.map(([q, a]) => (<details key={q}><summary>{q}</summary><p>{a}</p></details>))}
+        </div>
+        <div className="lp-faq__head" data-reveal>
+          <p>Something missing? <a className="lp-link" href={mailto(EMAILS.support, { subject: SUPPORT_SUBJECT })}>Ask us</a>.</p>
         </div>
       </div>
     </section>

@@ -83,7 +83,7 @@ export function ChatThread({ id }: { id: string }) {
             </div>))}
         </div>)}
       <div className="ft-thread" role="log" aria-label={`Conversation with ${row.other_name}`}>
-        {!visible.length && <p className="py-6 text-center text-sm text-muted">Say hello in the language you're practicing.</p>}
+        {!visible.length && <p className="py-6 text-center text-sm text-muted">Say hello in more tahn   the language you're practicing.</p>}
         {days.map((day) => (
           <section key={day.key} aria-label={day.label}>
             <div className="ft-daybadge my-2">{day.label}</div>
