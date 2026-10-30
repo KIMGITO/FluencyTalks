@@ -1,157 +1,82 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { EMAILS } from '@/lib/emails';
-import { legalCSS } from '@/theme/componentStyles';
-import { Logo } from '../ui';
-
+// The public-page shell (header, footer, landing look) is plain JS.
+import { PublicShell } from '@/components/landing';
+import { EMAILS, mailto } from '@/lib/emails';
 import '@/styles/landing.css';
 
 export interface LegalSection { id: string; short: string; tagline: string; heading: string; body: ReactNode }
 
-const LINKS = [
-  ['Privacy', '/privacy'],
-  ['Terms', '/terms'],
-  ['Delete my data', '/data-deletion'],
-];
+const TABS: [string, string][] = [['Privacy', '/privacy'], ['Terms', '/terms'], ['Delete my data', '/data-deletion']];
 
-
-export const P = ({ children }: { children: ReactNode }) => <p className="lg-text">{children}</p>;
+export const P = ({ children }: { children: ReactNode }) => <p className="lp-p">{children}</p>;
 export const Bullets = ({ items }: { items: [string, string][] }) => (
-  <ul className="lg-list">
-    {items.map(([t, d]) => (
-      <li key={t} className="lg-list-item">
-        <span className="lg-bullet" aria-hidden="true" />
-        <span>
-          <strong>{t}</strong> {d}
-        </span>
-      </li>
-    ))}
+  <ul className="lp-list">
+    {items.map(([title, text]) => <li key={title}><span><strong>{title}</strong> {text}</span></li>)}
   </ul>
 );
 
+/** The section being read, so the contents list can highlight it. */
+function useCurrentSection(ids: string[]) {
+  const [current, setCurrent] = useState(ids[0]);
+  useEffect(() => {
+    if (!('IntersectionObserver' in window)) return undefined;
+    const inView = new Set<string>();
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id)));
+      const now = ids.find((id) => inView.has(id));
+      if (now) setCurrent(now);
+    }, { rootMargin: '-25% 0px -65% 0px' });
+    ids.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [ids]);
+  return current;
+}
 
-export default function LegalLayout({
-  title,
-  active,
-  updated,
-  contact = EMAILS.support,
-  sections,
-}: {
-  title: string;
-  active: string;
-  updated: string;
-  contact?: string;
-  sections: LegalSection[];
+/**
+ * Privacy, terms and data deletion: one long page you can read, search and link into, not slides.
+ * Wide screens get a sticky contents list; phones get a strip of section chips under the header.
+ */
+export default function LegalLayout({ title, active, updated, contact = EMAILS.support, sections }: {
+  title: string; active: string; updated: string; contact?: string; sections: LegalSection[];
 }) {
-  const n = sections.length;
-  const [i, setI] = useState(() =>
-    Math.max(
-      0,
-      sections.findIndex((s: LegalSection) => `#${s.id}` === window.location.hash),
-    ),
-  );
-  const cur = sections[i];
-
-  const go = useCallback(
-    (k: number) => {
-      setI((k + n) % n);
-      if (window.innerWidth <= 820)
-        document
-          .getElementById('lg-top')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    },
-    [n],
-  );
-
-  useEffect(() => {
-    window.history.replaceState(window.history.state, '', `#${cur.id}`);
-  }, [cur.id]);
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if (/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName)) return;
-      if (e.key === 'ArrowRight') go(i + 1);
-      if (e.key === 'ArrowLeft') go(i - 1);
-    };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [i, go]);
-
+  const ids = sections.map((s) => s.id);
+  const current = useCurrentSection(ids);
   return (
-    <div className="lp">
-      <style>{legalCSS}</style>
-
-      <header className="lg-bar">
-        <div className="lg-bar-in flex justify-between items-center">
-          <Logo />
-          <nav className="lg-links flex" aria-label="Legal pages">
-            {LINKS.map(([l, to]) => (
-              <Link
-                key={to}
-                to={to}
-                className={`lg-link${to === active ? ' on' : ''}`}
-                aria-current={to === active ? 'page' : undefined}
-              >
-                {l}
-              </Link>
-            ))}
+    <PublicShell>
+      <div className="lp-wrap">
+        <header className="lp-doc__head">
+          <p className="lp-kicker">Legal</p>
+          <h1>{title}</h1>
+          <p className="lp-doc__meta">Last updated {updated}</p>
+          <nav className="lp-tabs" aria-label="Legal pages">
+            {TABS.map(([label, to]) => <Link key={to} to={to} aria-current={to === active ? 'page' : undefined}>{label}</Link>)}
           </nav>
-          <Link to="/" className="lg-back">
-            Home
-          </Link>
+        </header>
+
+        <div className="lp-doc">
+          <nav className="lp-toc" aria-label="On this page">
+            <p className="lp-toc__title">On this page</p>
+            <ol>
+              {sections.map((s) => <li key={s.id}><a href={`#${s.id}`} aria-current={current === s.id ? 'true' : undefined}>{s.short}</a></li>)}
+            </ol>
+          </nav>
+          <article className="lp-prose">
+            {sections.map((s) => (
+              <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`}>
+                <p className="lp-kicker">{s.tagline}</p>
+                <h2 id={`${s.id}-h`}>{s.heading}</h2>
+                {s.body}
+              </section>
+            ))}
+          </article>
         </div>
-      </header>
 
-      <main id="lg-top" className="lg-main">
-        <section className="lg-panel" aria-labelledby="lg-h">
-          <div className="lg-content">
-            <div className="lp-wrap">
-              <h1 className="lg-sr">{title}</h1>
-              <div className="lg-meta">
-                <span className="lg-crumb">{title}</span>
-                {updated && <span className="lg-upd">Updated {updated}</span>}
-              </div>
-
-              <article key={cur.id} className="lg-in ft-selectable">
-                <div className="lp-section-head">
-                  {cur.tagline && <p className="lp-kicker">{cur.tagline}</p>}
-                  <h2 id="lg-h" className="lg-h">
-                    {cur.heading}
-                  </h2>
-                </div>
-                {cur.body}
-              </article>
-
-              <div className="lg-ctl">
-                <div className="lg-row">
-                  <span>
-                    Section {i + 1} of {n}
-                  </span>
-                  <span className="flex gap-2">
-                    <button
-                      className="lg-nb"
-                      onClick={() => go(i - 1)}
-                      aria-label="Previous section"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      className="lg-nb p"
-                      onClick={() => go(i + 1)}
-                      aria-label="Next section"
-                    >
-                      {i === n - 1 ? 'Start over' : 'Next'}
-                    </button>
-                  </span>
-                </div>
-                <p className="lg-fine">
-                  Questions about this page? Write to{' '}
-                  <a href={`mailto:${contact}`}>{contact}</a>.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+        <aside className="lp-doc__contact">
+          <p>Questions about this page?</p>
+          <a className="lp-btn lp-btn--accent" href={mailto(contact, { subject: `${title} question` })}>Write to {contact}</a>
+        </aside>
+      </div>
+    </PublicShell>
   );
 }

@@ -1,8 +1,17 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui';
+import { PublicShell } from '@/components/landing';
 import { useSeo } from '@/hooks/useSeo';
 import { BRAND } from '@/lib/site';
+import '@/styles/landing.css';
+
 export default function NotFound() {
   useSeo({ title: 'Page not found', description: `The page you asked for does not exist on ${BRAND}.`, path: '/404', noIndex: true });
-  return <div className="flex h-screen flex-col items-center justify-center gap-4"><h1 className="text-4xl font-bold">Page not found</h1><p className="text-muted">That link doesn't lead anywhere.</p><Link to="/"><Button>Back to {BRAND}</Button></Link></div>;
+  return (
+    <PublicShell mainClassName="lp-lost">
+      <p className="lp-lost__n" aria-hidden="true">4<i>0</i>4</p>
+      <h1>This page wandered off</h1>
+      <p>That link does not lead anywhere. It may have moved, or the address has a typo.</p>
+      <Link to="/" className="lp-btn lp-btn--accent">Back to {BRAND}</Link>
+    </PublicShell>
+  );
 }

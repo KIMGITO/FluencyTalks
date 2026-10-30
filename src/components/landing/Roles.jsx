@@ -17,7 +17,7 @@ export default function Roles() {
               <li>Message people who speak it natively</li>
               <li>Save what you learn in your own phrasebook</li>
             </ul>
-            <Link to={join.to} className="lp-btn lp-btn--solid">{join.signedIn ? 'Go to your account' : 'Join as a learner'}</Link>
+            <Link to={join.to} className="lp-btn lp-btn--accent">{join.signedIn ? 'Go to your account' : 'Join as a learner'}</Link>
           </article>
           <article className="lp-role lp-role--speak" data-reveal style={{ '--d': '.12s' }}>
             <p className="lp-kicker">If you speak it well</p>

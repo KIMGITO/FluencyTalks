@@ -21,7 +21,7 @@ export const Logo = ({ compact, light }: { compact?: boolean; light?: boolean })
           className="font-display text-xl font-bold ft-logo-text"
           style={light ? { color: '#ffffff' } : undefined}
         >
-          The Fluency<span className="ft-gradient-text" style={{ color: C.indigo }}>Talks</span>
+          The Fluency<span className="ft-gradient-text" style={{ color: light ? '#ffffff' : C.indigo }}>Talks</span>
         </span>
       )}
     </span>

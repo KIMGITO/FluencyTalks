@@ -3,14 +3,17 @@ import { Logo } from '@/components/ui';
 import { EMAILS, mailto } from '@/lib/emails';
 import { BRAND, SUPPORT_SUBJECT, TAGLINE } from '@/lib/site';
 
+/** The same footer on every public page. */
 export default function Footer() {
   return (
     <footer className="lp-footer">
       <div className="lp-wrap">
         <div className="lp-footer__grid">
-          <div className="lp-footer__brand"><Logo /><p>{TAGLINE}</p></div>
+          <div className="lp-footer__brand"><Logo light /><p>{TAGLINE}</p></div>
           <nav aria-label="Explore"><h4>Explore</h4><ul>
-            <li><a href="#services">What you get</a></li><li><a href="#languages">Languages</a></li><li><a href="#faq">FAQ</a></li>
+            <li><Link to={{ pathname: '/', hash: '#services' }}>What you get</Link></li>
+            <li><Link to={{ pathname: '/', hash: '#languages' }}>Languages</Link></li>
+            <li><Link to={{ pathname: '/', hash: '#faq' }}>FAQ</Link></li>
           </ul></nav>
           <nav aria-label="Account"><h4>Account</h4><ul>
             <li><Link to="/login">Log in</Link></li><li><Link to="/signup">Sign up</Link></li><li><Link to="/forgot-password">Forgot password</Link></li>

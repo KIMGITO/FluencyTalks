@@ -9,7 +9,7 @@ export default function Cta() {
         <div className="lp-cta__block" data-reveal>
           <h2 id="cta-title">Ready for your first <em>conversation?</em></h2>
           <p>{join.signedIn ? 'Pick up where you left off.' : 'Create a free account, choose your languages, and message someone today.'}</p>
-          <Link to={join.to} className="lp-btn lp-btn--light">{join.signedIn ? 'Go to your account' : 'Create your account'}</Link>
+          <Link to={join.to} className="lp-btn lp-btn--accent">{join.signedIn ? 'Go to your account' : 'Create your account'}</Link>
         </div>
       </div>
     </section>
