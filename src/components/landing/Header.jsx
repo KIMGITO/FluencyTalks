@@ -7,7 +7,7 @@ export const NAV = [
   { id: 'services', label: 'What you get' },
   { id: 'languages', label: 'Languages' },
   { id: 'speakers', label: 'For speakers' },
-  { id: 'project', label: 'The project' },
+  // { id: 'project', label: 'The project' },
   { id: 'faq', label: 'FAQ' },
 ];
 const IDS = NAV.map((n) => n.id);
@@ -48,7 +48,7 @@ export default function Header() {
       const d = document.documentElement;
       const max = d.scrollHeight - d.clientHeight;
       setProgress(max > 0 ? d.scrollTop / max : 0);
-      if (d.scrollTop < 200) setActive(null);   // back at the top: no section is current (the observer may not fire again)
+      if (d.scrollTop < 200) setActive(null);   
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -101,7 +101,7 @@ export default function Header() {
           ? <Link to="/home" className="lp-btn lp-btn--accent" onClick={() => close()}>Go to your account</Link>
           : <><Link to="/signup" className="lp-btn lp-btn--accent" onClick={() => close()}>Sign up free</Link><Link to="/login" className="lp-drawer__login" onClick={() => close()}>Log in</Link></>)}
       </div>
-      <div className="lp-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />
+      {/* <div className="lp-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" /> */}
     </header>
   );
 }

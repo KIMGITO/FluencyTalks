@@ -10,7 +10,7 @@ export default function Languages() {
         </div>
         <ul className="lp-hellos  " aria-label="Hello in some of the languages you can practise">
           {HELLOS.map(([word, lang, size, dir], i) => (
-            <li  key={word} data-reveal style={{ '--s': `${size}rem`, '--d': `${(i % 6) * 0.05}s` }}><span lang={lang} dir={dir} className="text-xl">{word}</span></li>
+            <li  key={word} data-reveal style={{ '--s': `${size}rem`, '--d': `${(i % 6) * 0.05}s` }}><span lang={lang} dir={dir} className="">{word}</span></li>
           ))}
         </ul>
         {/* <p className="lp-languages__more" data-reveal>

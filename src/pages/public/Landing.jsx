@@ -17,12 +17,12 @@ export default function Landing() {
   return (
     <PublicShell>
       <Hero />
-      <Marquee />
+      {/* <Marquee /> */}
       <Intro />
       <Services />
       <Languages />
       <Roles />
-      <Project />
+      {/* <Project /> */}
       <Faq />
       <Cta />
       <StickyCta />
