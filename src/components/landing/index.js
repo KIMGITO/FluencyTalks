@@ -8,6 +8,7 @@ export { default as Services } from './Services';
 export { default as Languages } from './Languages';
 export { default as Roles } from './Roles';
 export { default as Project } from './Project';
+export { default as Compare } from './Compare';
 export { default as Faq } from './Faq';
 export { default as Cta } from './Cta';
 export { default as StickyCta } from './StickyCta';

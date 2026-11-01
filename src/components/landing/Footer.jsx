@@ -12,8 +12,10 @@ export default function Footer() {
           <div className="lp-footer__brand"><Logo light /><p>{TAGLINE}</p></div>
           <nav aria-label="Explore"><h4>Explore</h4><ul>
             <li><Link to={{ pathname: '/', hash: '#services' }}>What you get</Link></li>
-            <li><Link to={{ pathname: '/', hash: '#languages' }}>Languages</Link></li>
+            <li><Link to="/languages">Languages</Link></li>
             <li><Link to={{ pathname: '/', hash: '#faq' }}>FAQ</Link></li>
+            <li><Link to="/blog">Language learning guides</Link></li>
+            <li><Link to="/about">About us</Link></li>
           </ul></nav>
           <nav aria-label="Account"><h4>Account</h4><ul>
             <li><Link to="/login">Log in</Link></li><li><Link to="/signup">Sign up</Link></li><li><Link to="/forgot-password">Forgot password</Link></li>

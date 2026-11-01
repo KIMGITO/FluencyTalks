@@ -25,8 +25,8 @@ export default function Roles() {
             <p>Help someone who is a few steps behind you.</p>
             <ul>
               <li>Correct sentences and earn 5 points for each one accepted</li>
-              <li>Answer bounties for 50 points</li>
-              <li>Add phrases to the public library</li>
+              <li>Answer bounties and earn 50 points when your answer is accepted</li>
+              <li>Post phrases, idioms and grammar tips to the community library</li>
             </ul>
             <Link to={join.to} className="lp-link">{join.signedIn ? 'Open the app' : 'Join as a speaker'} <span aria-hidden="true">→</span></Link>
           </article>

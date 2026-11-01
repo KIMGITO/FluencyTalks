@@ -106,7 +106,7 @@ export default function Home() {
               <EmptyState
                 title="No language match yet"
 
-                text="Nobody here shares one of your languages right now — browse posts and everyone below, or add more languages."
+                text="Nobody here shares one of your languages right now. Browse posts and everyone below while more people join."
                 action={
                   <Link to="/profile/edit">
                     <Button size="sm" variant="secondary">

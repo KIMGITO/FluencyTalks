@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookMarked, MessageCircle, Newspaper, Users, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
@@ -9,8 +9,7 @@ import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { searchMessages, searchPeople, searchPhrases, searchPosts, type PhraseHit, type PostHit } from '@/services';
-import { BRAND } from '@/lib/site';
-import { useDisplayLocales, useLanguageStore, useLanguages } from '@/store/languageStore';
+import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { MessageHit, Person } from '@/types/db';
 
@@ -46,9 +45,8 @@ function useResults<T>(enabled: boolean, preview: boolean, fetch: (limit: number
 
 export default function Search() {
   const [params, setParams] = useSearchParams();
-  const me = useProfileStore((s) => s.me); const myLanguages = useProfileStore((s) => s.languages);
-  const languages = useLanguages(); const labelOf = useLanguageStore((s) => s.labelOf); const languageName = useLanguageStore((s) => s.name);
-  const locales = useDisplayLocales();
+  const me = useProfileStore((s) => s.me);
+  const languageName = useLanguageStore((s) => s.name);
 
   const query = params.get('q') ?? '';
   const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? 'all') as Tab;
@@ -89,10 +87,6 @@ export default function Search() {
   const dropPost = (id: string) => posts.setRows((p) => p.filter((x) => x.id !== id));
   const exact = handle && people.rows[0]?.username?.toLowerCase() === handle ? people.rows[0] : null;
   const isMe = !!me?.username && !!handle && handle === me.username.toLowerCase();
-  const quick = useMemo(() => {
-    const mine = myLanguages.filter((l) => l.role === 'learning').map((l) => l.language_id);
-    return (mine.length ? mine : languages.slice(0, 6).map((l) => l.id)).slice(0, 6);
-  }, [myLanguages, languages]);
 
   // ---------- Rows ----------
   const personRows = (
@@ -168,11 +162,7 @@ export default function Search() {
       {errors.map((e) => <p key={e} className="ft-inset mb-3 text-danger">{e}</p>)}
 
       {idle && tab === 'all' ? (
-        <EmptyState title={`Search ${BRAND}`} text="Find people, library posts, something said in your chats, or a phrase you saved." action={
-          <div className="mt-2 flex flex-wrap justify-center gap-1.5">{quick.map((c) => (
-            <Button key={c} size="sm" variant="secondary" onClick={() => patch({ tab: 'people', lang: c, role: 'native' })}>{labelOf({ language_id: c }, locales)} speakers</Button>
-          ))}</div>
-        } />
+        <p className="ft-inset py-6 text-center text-sm text-muted">Search people, posts, your chats and your saved phrases.</p>
       ) : tab === 'all' ? (
         <>
           {busy && !total && <div className="flex justify-center p-6"><Spinner /></div>}

@@ -5,7 +5,7 @@ import type { AccountStatus } from '@/types/db';
 
 export interface ModTarget { userId: string; name: string; status: AccountStatus; reportId?: string }
 const copy: Record<AccountStatus, { title: string; hint: string; button: string }> = {
-  suspended: { title: 'Suspend', hint: 'They keep their data but cannot message, follow or report until reinstated.', button: 'Suspend' },
+  suspended: { title: 'Suspend', hint: 'They keep their data but cannot message or report until reinstated.', button: 'Suspend' },
   banned: { title: 'Ban', hint: 'Also blocks this email address from signing up again.', button: 'Ban' },
   active: { title: 'Reinstate', hint: 'Restores access and lifts the email ban if there was one.', button: 'Reinstate' },
 };

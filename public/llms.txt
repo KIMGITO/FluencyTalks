@@ -6,12 +6,14 @@
 
 - Website: https://thefluencytalks.com/
 - Price: free. There are no paid plans.
-- Languages: 40 at launch, including English, Spanish, French, German, Portuguese, Italian, Arabic, Chinese, Japanese, Korean, Hindi, Russian, Turkish, Swahili, Amharic, Yoruba, Dutch, Persian, Hebrew, Indonesian and several Kenyan languages.
+- Languages: 40 at launch: English, Swahili, Vietnamese, French, Spanish, German, Portuguese, Italian, Chinese, Cantonese, Japanese, Korean, Hindi, Arabic, Russian, Turkish, Indonesian, Thai, Dutch, Polish, Ukrainian, Greek, Hebrew, Persian, Bengali, Urdu, Tagalog, Malay, Tamil, Punjabi, Swedish, Czech, Romanian, Amharic, Somali, Yoruba, Igbo, Hausa, Zulu and Kinyarwanda. Full list: https://thefluencytalks.com/languages
 - Who it is for: language learners at any CEFR level from A1 to C2, and native or fluent speakers (B1 and above) who want to help others.
 - Practice format: one-to-one text chat with matched partners.
-- Corrections: a native speaker, or a learner at B1 or above, edits your sentence where you wrote it; you see exactly what changed and accept it or not.
-- Matching: by language pair (your native language and the one you are learning), not by popularity. There is no public feed and no followers.
-- Points: every user starts with 100 points. An accepted correction earns the corrector 5 points. A bounty costs 50 points and puts a message in front of more speakers; if nobody helps within two days, the points are refunded.
+- Corrections: a native speaker, or a learner at B1 or above, edits your sentence where you wrote it; you see exactly what changed and accept it or not. Example: an English speaker learning Vietnamese writes "Tôi là đói" and a native speaker corrects it to "Tôi đói" ("I am hungry").
+- Phrasebook and translation: accepted corrections are saved to your phrasebook automatically, you can save any other message, and you can translate any message; every translation is kept on your Learning page.
+- Matching: by language pair (your native language and the one you are learning), not by popularity. There are no followers or likes.
+- Points: every user starts with 100 points. An accepted correction earns the corrector 5 points. A bounty costs 50 points and puts a question in front of people qualified in that language; the helper gets the 50 points when the asker accepts the answer, and if no answer is accepted within 48 hours the points are refunded. Up to 3 open bounties at a time.
+- Community library: native speakers and learners at B1 or above can post phrases, idioms, usage notes and grammar tips, with an optional photo, for other members to read and save.
 - Safety: new contacts arrive as message requests you can decline; you can block or report anyone; reports are reviewed by admins.
 - Origin: started as a university computer science project; it is a working app.
 
@@ -24,6 +26,12 @@
 ## Pages
 
 - [Home: what it is, how it works, FAQ](https://thefluencytalks.com/)
+- [All 40 languages, each with its own page](https://thefluencytalks.com/languages)
+- [About The Fluency Talks](https://thefluencytalks.com/about)
+- [Blog: language learning guides](https://thefluencytalks.com/blog)
+- [What is a language exchange and how does it work?](https://thefluencytalks.com/blog/what-is-a-language-exchange)
+- [How to find a language exchange partner online (free)](https://thefluencytalks.com/blog/find-a-language-exchange-partner)
+- [How to get corrections from native speakers](https://thefluencytalks.com/blog/corrections-from-native-speakers)
 - [Privacy policy](https://thefluencytalks.com/privacy)
 - [Terms of service](https://thefluencytalks.com/terms)
 - [Delete your account and data](https://thefluencytalks.com/data-deletion)

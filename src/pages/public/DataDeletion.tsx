@@ -55,6 +55,6 @@ const sections = [
 ];
 
 export default function DataDeletion() {
-  useSeo({ title: 'Delete my data', description: 'How to delete your The Fluency Talks account and what happens to your data.', path: '/data-deletion' });
-  return <LegalLayout title="Delete my data" active="/data-deletion" updated="24 October 2026" contact={EMAILS.privacy} sections={sections} />;
+  useSeo({ title: 'Delete Your Account and Data', description: 'How to permanently delete your The Fluency Talks account, messages and phrasebook, and what happens to your data afterwards.', path: '/data-deletion' });
+  return <LegalLayout title="Delete your account and data" active="/data-deletion" updated="24 October 2026" contact={EMAILS.privacy} sections={sections} />;
 }

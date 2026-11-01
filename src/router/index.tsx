@@ -8,6 +8,11 @@ import NotFound from '@/pages/public/NotFound';
 import Privacy from '@/pages/public/Privacy';
 import Terms from '@/pages/public/Terms';
 import DeleteForm from '@/pages/public/DataDeletion';
+import Blog from '@/pages/public/Blog';
+import BlogPost from '@/pages/public/BlogPost';
+import LanguagesIndex from '@/pages/public/LanguagesIndex';
+import LanguagePage from '@/pages/public/LanguagePage';
+import About from '@/pages/public/About';
 import Login from '@/pages/auth/Login';
 import Signup from '@/pages/auth/Signup';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
@@ -37,6 +42,11 @@ export const router = createBrowserRouter([
   { path: '/privacy', element: <Privacy /> },
   { path: '/terms', element: <Terms /> },
   { path: '/data-deletion', element: <DeleteForm /> },
+  { path: '/blog', element: <Blog /> },
+  { path: '/blog/:slug', element: <BlogPost /> },
+  { path: '/languages', element: <LanguagesIndex /> },
+  { path: '/languages/:slug', element: <LanguagePage /> },
+  { path: '/about', element: <About /> },
   {
     element: <ProtectedRoute />,
     children: [

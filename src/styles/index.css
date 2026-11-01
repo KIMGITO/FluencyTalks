@@ -33,7 +33,6 @@
   .ft-tag { @apply inline-flex items-center rounded-sm border border-border px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-ink; }
   /* The kicker used above page titles: a short rule and small capitals. */
   .ft-kicker { @apply flex items-center gap-2 text-2xs font-bold uppercase tracking-widest text-muted; }
-  .ft-kicker::before { content: ''; width: 1.5rem; height: 1.5px; background: currentColor; }
   /* The current item in the dark sidebar: a coral mark on its left edge. */
   .ft-nav-active { box-shadow: inset 3px 0 0 rgb(var(--c-accent)); }
   .ft-card-pad { padding: var(--layout-cardPad); }

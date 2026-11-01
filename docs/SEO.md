@@ -22,12 +22,12 @@ Per-page titles and descriptions are set with `useSeo()` from
 | `https://thefluencytalks.com/privacy` | ✅ live | Privacy policy (trust signal) | 0.3 |
 | `https://thefluencytalks.com/terms` | ✅ live | Terms of service (trust signal) | 0.3 |
 | `https://thefluencytalks.com/data-deletion` | ✅ live | Account / data deletion (required by Google & Facebook login reviews) | 0.2 |
-| `https://thefluencytalks.com/blog` | 🟡 to build | Blog index: learning guides | 0.8 |
-| `https://thefluencytalks.com/blog/<slug>` | 🟡 to build | One URL per article (see §5) | 0.7 |
-| `https://thefluencytalks.com/languages` | 🟡 to build | All 40 languages you can practise, each linking to its page | 0.8 |
-| `https://thefluencytalks.com/languages/<language>` | 🟡 to build | e.g. `/languages/swahili`: "Practise Swahili with native speakers" | 0.7 |
+| `https://thefluencytalks.com/blog` | ✅ live | Blog index: learning guides | 0.8 |
+| `https://thefluencytalks.com/blog/<slug>` | ✅ live (3 articles) | One URL per article (see §5) | 0.7 |
+| `https://thefluencytalks.com/languages` | ✅ live | All 40 languages you can practise, each linking to its page | 0.8 |
+| `https://thefluencytalks.com/languages/<language>` | ✅ live (40 pages, from `src/content/languages.ts`) | e.g. `/languages/vietnamese`: "Practise Vietnamese with native speakers" | 0.7 |
 | `https://thefluencytalks.com/how-it-works` | 🟡 optional | Longer version of the 3 steps, corrections, points & bounties | 0.6 |
-| `https://thefluencytalks.com/about` | 🟡 optional | Who built it, why, contact. Strong trust signal for Google and AI answers | 0.5 |
+| `https://thefluencytalks.com/about` | ✅ live | Who built it, why, contact. Strong trust signal for Google and AI answers | 0.5 |
 
 > **Rule:** a URL only goes into `public/sitemap.xml` once the page exists and
 > returns real HTML content. Never list a page that 404s or is a login wall.
@@ -61,7 +61,7 @@ the first ~150 words. Current state and the wording to use:
 | **Who is it for?** | Hero kicker / lead, Roles section | *"For anyone learning a language, from A1 beginners to C1, and for native speakers who want to help."* |
 | **What can users do on it?** | Services cards | *"Find a language partner, chat, get corrections inside the chat, save them to a phrasebook, and earn points for helping others."* |
 | **How does it work?** | Intro 3 steps | *"1. Pick your native and target language. 2. Message a matched partner. 3. They correct you in the chat; you keep the phrase."* |
-| **Why choose it over alternatives?** | Services + FAQ | *"Corrections happen inside the conversation, matches are by language not popularity, there's no social feed, and it's completely free."* |
+| **Why choose it over alternatives?** | Services + FAQ | *"Corrections happen inside the conversation, matches are by language not popularity, there are no followers or likes, and it's completely free."* |
 | **How do I start?** | Hero CTA, final CTA | *"Create a free account in a minute: choose your languages and send your first message today."* |
 
 ### Recommended home-page copy changes
@@ -71,7 +71,7 @@ memorable but never says *language exchange*, *practice* or *native
 speakers*, which are the words people actually search for. Keep the tone
 and add the keywords:
 
-- **Kicker (above H1):** `Free language exchange · 40+ languages`
+- **Kicker (above H1):** `Free language exchange · 40 languages`
 - **H1:** `Practise a language with native speakers who correct you as you chat`
   *(or keep the current H1 and put the keyword sentence in the lead paragraph
   as the very first words)*
@@ -95,7 +95,7 @@ Add to `faqs` in `src/components/landing/Faq.jsx`. These match real search
 and AI-assistant questions:
 
 - *What is a language exchange?* "A language exchange is when two people who speak different languages help each other practise. On The Fluency Talks you chat in writing and correct each other's messages."
-- *How is The Fluency Talks different from other language exchange apps?* "Corrections are built into the chat, you're matched by language rather than popularity, there's no public feed, and it's free with no paid tier."
+- *How is The Fluency Talks different from other language exchange apps?* "Corrections are built into the chat, you're matched by language rather than popularity, there are no followers or likes, and it's free with no paid tier."
 - *Can I practise English with native speakers for free?* "Yes. Choose English as the language you're learning, and native English speakers who are learning your language will see you as a match."
 - *Do I have to speak on video?* "No. Practice happens in text chat, so you can take your time and see every correction written out."
 - *What level do I need?* (already covered: keep it)
@@ -110,15 +110,15 @@ gets and invites the click); exactly one `<h1>` describing the page's purpose.
 
 | URL | `<title>` | Meta description | H1 |
 |---|---|---|---|
-| `/` | `Free Language Exchange: Practise with Native Speakers \| The Fluency Talks` | `Chat with native speakers in 40+ languages and get your mistakes corrected inside the conversation. Free language exchange for A1 to C2 learners. Start today.` | `Practise a language with native speakers who correct you as you chat` |
+| `/` | `Free Language Exchange: Practise with Native Speakers \| The Fluency Talks` | `Chat with native speakers in 40 languages and get your mistakes corrected inside the conversation. Free language exchange for A1 to C2 learners. Start today.` | `Practise a language with native speakers who correct you as you chat` |
 | `/privacy` | `Privacy Policy \| The Fluency Talks` | *(current is good)* | `Privacy Policy` |
 | `/terms` | `Terms of Service \| The Fluency Talks` | *(current is good)* | `Terms of Service` |
 | `/data-deletion` | `Delete Your Account and Data \| The Fluency Talks` | `How to permanently delete your The Fluency Talks account, messages and phrasebook, and what happens to your data afterwards.` | `Delete your account and data` |
-| `/languages` | `Practise 40+ Languages with Native Speakers \| The Fluency Talks` | `Find a language exchange partner for Spanish, French, English, Swahili, Japanese, Arabic and 35+ more languages. Free, with corrections in every chat.` | `Languages you can practise` |
-| `/languages/spanish` *(pattern)* | `Practise Spanish with Native Speakers, Free \| The Fluency Talks` | `Find a Spanish language exchange partner. Chat with native Spanish speakers, get your sentences corrected in the conversation, and save phrases. Free.` | `Practise Spanish with native speakers` |
+| `/languages` | `Practise 40 Languages with Native Speakers \| The Fluency Talks` | `Find a language exchange partner for Vietnamese, Swahili, English, French, Spanish, Japanese, Arabic and 33 more languages. Free, with corrections in every chat.` | `Languages you can practise` |
+| `/languages/vietnamese` *(pattern)* | `Practise Vietnamese with Native Speakers, Free \| The Fluency Talks` | `Find a Vietnamese language exchange partner. Chat with native Vietnamese speakers, get your sentences corrected in the conversation, and save phrases. Free.` | `Practise Spanish with native speakers` |
 | `/blog` | `Language Learning Guides and Tips \| The Fluency Talks Blog` | `Practical guides on language exchange, speaking confidence and learning with native speakers, written for real learners from A1 to C2.` | `Language learning guides` |
 | `/blog/<slug>` | `<Article title> \| The Fluency Talks` | Article summary, 150 chars, answers the question in the title | Article title |
-| `/about` | `About The Fluency Talks: Who We Are` | `The Fluency Talks started as a university project and is now a free language exchange used by learners in 40+ languages. Meet the people behind it.` | `About The Fluency Talks` |
+| `/about` | `About The Fluency Talks: Who We Are` | `The Fluency Talks started as a university project and is now a free language exchange used by learners in 40 languages. Meet the people behind it.` | `About The Fluency Talks` |
 
 To apply the home-page title/description: update `TAGLINE`,
 `DEFAULT_TITLE`, `DEFAULT_DESCRIPTION` in `src/lib/site.ts` **and** the
@@ -151,7 +151,7 @@ mention. What to do:
    sentences like this verbatim.
 5. **State facts as facts:** number of languages (40), price (free, no paid
    plans), levels (A1–C2), points (start with 100, +5 per accepted correction,
-   bounties cost 50 and are refunded after 2 days). Consistent numbers across
+   bounties cost 50 and are refunded if no answer is accepted within 48 hours). Consistent numbers across
    the home page, FAQ, `llms.txt` and structured data build trust.
 6. **Get mentioned elsewhere.** AI assistants trust brands other sites talk
    about. Free options: a Product Hunt launch, r/languagelearning and
@@ -161,7 +161,7 @@ mention. What to do:
    **"The Fluency Talks"** and link to `https://thefluencytalks.com/`.
 7. **Test it.** Every month ask ChatGPT, Perplexity, Gemini and Claude:
    *"free language exchange app with corrections"*, *"where can I practise
-   Swahili with native speakers"*, *"what is The Fluency Talks"*. Note what
+   Vietnamese with native speakers"*, *"what is The Fluency Talks"*. Note what
    they say and which pages they cite.
 
 ---
@@ -169,25 +169,37 @@ mention. What to do:
 ## 5. The learning blog
 
 **Why:** most people searching are not ready to sign up yet. They're asking
-"how do I get better at speaking Spanish?" A blog lets you show up for those
+"how do I get better at Vietnamese?" A blog lets you show up for those
 questions and lead the reader to the product.
 
-### 5a. How to build it (must be crawlable HTML)
+### 5a. How it is built (crawlable HTML) ✅
 
-The site is a Vite SPA: Google sees an empty `<div id="root">` until
-JavaScript runs. Google *can* render JS, but slowly and not always, and
-**most AI crawlers do not run JavaScript at all.** So blog pages must be
-**pre-rendered to static HTML at build time**:
+The site is a Vite SPA: without help, crawlers see an empty `<div id="root">`
+until JavaScript runs. Google *can* render JS, but slowly and not always, and
+**most AI crawlers do not run JavaScript at all.** So the public pages are
+**prerendered to static HTML at build time**:
 
-- Write articles as Markdown files in `src/content/blog/*.md` with front
-  matter (`title`, `description`, `date`, `updated`, `author`, `slug`, `image`, `imageAlt`, `language`).
-- Pre-render public routes (`/`, `/blog`, `/blog/*`, `/languages/*`, legal pages)
-  with **`vite-react-ssg`** (or a small `scripts/prerender.mjs` using
-  `react-dom/server` `renderToString`) so each one ships as its own
-  `dist/<route>/index.html` with the real title, description, H1 and text.
-- Generate `sitemap.xml` from the article list at build time (with `<lastmod>`).
-- Each article gets `BlogPosting` JSON-LD (headline, description, author,
-  datePublished, dateModified, image) and a `BreadcrumbList`.
+- `npm run build` = `vite build` → `vite build --ssr src/entry-server.tsx --outDir dist-ssr` → `node scripts/prerender.mjs`.
+- `src/entry-server.tsx` lists the public pages (`PUBLIC_PAGES`) and renders each with `renderToString`.
+  `useSeo()` records the page's title/description/canonical during that render.
+- `scripts/prerender.mjs` writes `dist/index.html`, `dist/blog.html`, `dist/blog/<slug>.html`,
+  `dist/privacy.html`, … each with its own `<title>`, description, canonical, `og:*`/`twitter:*`,
+  the design tokens inlined, and the full page HTML inside `#root`. Cloudflare serves
+  `/blog` from `blog.html` without a redirect, so canonicals have no trailing slash.
+- The same script generates **`dist/sitemap.xml`** from `PUBLIC_PAGES` (with `<lastmod>` for articles).
+  `public/sitemap.xml` was removed. **Never edit the sitemap by hand.** Add a page to `PUBLIC_PAGES`.
+- Each article renders `BlogPosting` + `BreadcrumbList` JSON-LD in its body.
+- The browser app replaces the prerendered HTML when it starts. Cloudflare serves `index.html`
+  for unknown URLs (e.g. `/home`), so a tiny inline script clears the prerendered home page
+  on any other path before it paints.
+
+**Publishing an article:** add `src/content/blog/<slug>.tsx` (copy an existing one), import it
+in `src/content/blog/index.ts` at the top of `POSTS`, add it to `public/llms.txt`, build, deploy,
+then request indexing in Search Console.
+
+**Adding another public page** (e.g. `/about`, `/languages/vietnamese`): add the route to
+`src/router/index.tsx`, to the `<Routes>` and `PUBLIC_PAGES` in `src/entry-server.tsx`, and
+make sure the page calls `useSeo()` and does not touch `window`/`document` while rendering.
 
 ### 5b. Article checklist
 
@@ -196,12 +208,15 @@ JavaScript runs. Google *can* render JS, but slowly and not always, and
 - 800–1,500 words, H2s phrased the way people search ("How long does it take to…").
 - Real examples, including a correction example in the "red → green" style the app uses.
 - **2–4 internal links** with descriptive anchor text, e.g. *"find a
-  [Spanish language exchange partner](/languages/spanish)"*, never *"click here"*.
+  [Vietnamese language exchange partner](/languages/vietnamese)"*, never *"click here"*.
 - One CTA box at the end: *"Practise this with a native speaker, free →"* linking to `/signup`.
 - Author name + short bio (a real person, e.g. the student team), and the date published/updated.
 - Every meaningful image has alt text describing it (see §6).
 
 ### 5c. First 12 articles (titles match real searches)
+
+> **Superseded:** the full keyword plan and the 24-article calendar are now
+> in [`CONTENT_PLAN.md`](./CONTENT_PLAN.md). The list below is kept for reference.
 
 | # | Title (H1) | Target search | Links to |
 |---|---|---|---|
@@ -226,17 +241,17 @@ Publish 2 a month, update older ones, and link new articles to older ones.
 
 | Element | What good looks like | Status / action |
 |---|---|---|
-| **Page titles** | Unique per page, keyword first, brand last, ≤ 60 chars | ✅ unique via `useSeo`. 🔧 Home title should lead with "Free Language Exchange" (§3) |
-| **Meta descriptions** | 140–160 chars, says who it's for and what they get | ✅ all public pages. 🔧 Home + data-deletion rewrites in §3 |
-| **H1 headings** | Exactly one per page, describes the purpose | ✅ Hero, LegalLayout, NotFound each have one. 🔧 Home H1 lacks search keywords (§2) |
-| **Internal links** | Descriptive anchors between home, languages, blog, sign-up | 🟡 Footer links home sections + legal. 🔧 Add Blog + Languages to header/footer once built; articles link per §5b |
+| **Page titles** | Unique per page, keyword first, brand last, ≤ 60 chars | ✅ unique via `useSeo`; home is now `Free Language Exchange with Native Speakers \| The Fluency Talks` |
+| **Meta descriptions** | 140–160 chars, says who it's for and what they get | ✅ all public pages; home rewritten. data-deletion rewritten too |
+| **H1 headings** | Exactly one per page, describes the purpose | ✅ one per page (Hero, LegalLayout, NotFound, blog, each article). Home H1 kept for its voice; the keyword kicker ("Free language exchange · 40 languages") and the definition sentence opening the lead carry the search terms |
+| **Internal links** | Descriptive anchors between home, languages, blog, sign-up | ✅ Blog in header, drawer and footer; FAQ links to the language-exchange article; articles link to each other, home and sign-up. ✅ Languages index + 40 language pages, linked from the home Languages section, footer and each other |
 | **Image alt text** | Meaningful images described; decorative images `alt=""` | ✅ Hero photos are decorative (`alt=""`, `aria-hidden`), logo has `alt`. 🔧 Blog/language page images need real descriptions, e.g. `alt="Two students chatting over coffee while practising French"`, not keyword lists |
-| **Structured data** | Accurate Organization, WebSite, SoftwareApplication, FAQPage | ✅ `index.html` has WebSite, WebApplication, Organization. ✅ FAQPage (rendered by React). 🔧 Add `BlogPosting` + `BreadcrumbList` per article. Validate at search.google.com/test/rich-results |
+| **Structured data** | Accurate Organization, WebSite, SoftwareApplication, FAQPage | ✅ `index.html` has WebSite, WebApplication, Organization. ✅ FAQPage (rendered by React). ✅ `BlogPosting` + `BreadcrumbList` per article. Validate at search.google.com/test/rich-results |
 | **Mobile performance** | LCP < 2.5 s, CLS < 0.1, INP < 200 ms on mobile | ✅ Hero image has `fetchpriority`, `srcset`, sizes; logo is 5–9 KB. 🔧 `favicon.png` (100 KB) and `favicon-dark.png` (164 KB): shrink to 32/180/512 px versions. Check PageSpeed Insights + Search Console Core Web Vitals after launch |
-| **Public HTML content** | Crawler sees real text without running JS | 🟡 `index.html` `<noscript>` now has a full text summary answering the six questions. 🔧 Real fix: pre-render public routes (§5a) |
+| **Public HTML content** | Crawler sees real text without running JS | ✅ Public routes are prerendered to static HTML (§5a). The bare SPA shell keeps a `<noscript>` summary |
 | **Canonical URLs** | One version per page, apex domain, https | ✅ `useSeo` sets canonical. 🔧 `www` and old-domain 301s are in `vercel.json`, which **Cloudflare ignores**. Add Cloudflare *Rules → Redirect Rules* (`www.thefluencytalks.com/*` → `https://thefluencytalks.com/$1`, 301) |
 | **robots.txt / sitemap** | App routes blocked, public pages listed | ✅ Updated: now also blocks `/library`, `/partners`, `/bounty-queue`, `/points-history` and names AI crawlers |
-| **Social card** | 1200×630 designed image | 🔧 `public/og-image.png` is still a placeholder |
+| **Social card** | 1200×630 designed image | ✅ Designed card (`public/og-image.png`); source in `scripts/og-image.html` |
 | **`llms.txt`** | Plain summary for AI models | ✅ `public/llms.txt` |
 
 ---
@@ -246,7 +261,7 @@ Publish 2 a month, update older ones, and link new articles to older ones.
 1. **Google Search Console:** follow [`GOOGLE_SEARCH_CONSOLE.md`](./GOOGLE_SEARCH_CONSOLE.md).
 2. **Bing Webmaster Tools:** import from Search Console, submit sitemap (feeds ChatGPT search & Copilot).
 3. **Cloudflare:** add www → apex redirect rule; make sure "Block AI bots" / "AI Labyrinth" are off; confirm `robots.txt` isn't replaced by Cloudflare's managed robots.txt.
-4. **Replace `public/og-image.png`** with a designed card (logo + "Free language exchange with native speakers").
+4. ✅ **Social card** designed (`public/og-image.png`, source `scripts/og-image.html`).
 5. **Supabase Auth URL config / Google & Facebook OAuth:** apex domain only (unchanged from the rebrand notes).
 6. **Email sender domain (DKIM/SPF)** for `@thefluencytalks.com`.
 7. **Analytics:** add a privacy-friendly one (Cloudflare Web Analytics is free and cookieless) to see which pages and searches bring sign-ups.

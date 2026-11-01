@@ -49,7 +49,7 @@ export default function BountyQueue() {
           : !open.length ? <EmptyState title="No open bounties" text="Bounties in a language you speak natively, or know at B1 or above, show up here." />
           : <div className="space-y-3">{open.map((b) => <OpenCard key={b.message_id} bounty={b} language={nameOf(b.language_id)} />)}</div>)
         : (mine === null ? <div className="flex justify-center p-8"><Spinner /></div>
-          : !mine.length ? <EmptyState title="No bounties yet" text="In a chat, tick “Ask the community” before sending a message. It costs 50 points, refunded if nobody helps within 48 hours." />
+          : !mine.length ? <EmptyState title="No bounties yet" text="In a chat, tick “Ask the community” before sending a message. It costs 50 points, refunded if you don't accept an answer within 48 hours." />
           : <div className="space-y-3">{mine.map((b) => <MineCard key={b.message_id} bounty={b} language={b.language_id ? nameOf(b.language_id) : ''} />)}</div>)}
     </div>
   );

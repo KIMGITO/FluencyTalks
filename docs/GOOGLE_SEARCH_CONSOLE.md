@@ -29,7 +29,8 @@ personal one, so access survives team changes).
 1. Left menu → **Sitemaps**.
 2. Under *Add a new sitemap* type `sitemap.xml` → **Submit**.
 3. Status should become **Success** with the number of discovered URLs
-   (currently 4: `/`, `/privacy`, `/terms`, `/data-deletion`).
+   (currently 8: `/`, `/blog`, the 3 articles, `/privacy`, `/terms`, `/data-deletion`).
+   The sitemap is generated on every build, so new articles appear in it automatically.
    If it says *Couldn't fetch*, open `https://thefluencytalks.com/sitemap.xml`
    in a browser. It must show XML, not the app.
 
@@ -43,9 +44,10 @@ the sitemap by itself after that.
 1. Paste `https://thefluencytalks.com/` into the **search bar at the top** (URL Inspection).
 2. Click **Test live URL** → then **View tested page → Screenshot / HTML**.
    Check the screenshot shows the real home page and the HTML contains the
-   headline text. If it's blank, Google can't render the app (see SEO.md §5a).
+   headline text. Public pages are prerendered (SEO.md §5a), so the text should be
+   in the HTML even before JavaScript runs.
 3. Click **Request indexing**.
-4. Repeat for `/privacy`, `/terms`, and later for `/blog` and each new article.
+4. Repeat for `/blog`, each article under `/blog/…`, `/privacy` and `/terms`.
    (There's a daily limit of ~10 requests; the sitemap covers the rest.)
 
 ---

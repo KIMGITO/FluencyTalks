@@ -157,7 +157,7 @@ export default function ContributePage() {
           label="Translation (optional)"
           value={translation}
           onChange={(e) => setTranslation(e.target.value)}
-          placeholder="e.g. initier une conversation"
+          placeholder="e.g. phá băng"
         />
 
         <Select

@@ -33,6 +33,7 @@ function useActiveSection(enabled) {
 export default function Header() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';
+  const onBlog = pathname.startsWith('/blog');
   const user = useAuthStore((s) => s.user);
   const authLoading = useAuthStore((s) => s.loading);
   const [open, setOpen] = useState(false);
@@ -78,7 +79,7 @@ export default function Header() {
       <a className="lp-skip" href="#main">Skip to main content</a>
       <div className="lp-wrap lp-header__row">
         <Logo />
-        <nav className="lp-nav" aria-label="Main">{NAV.map((n, i) => link(n, i, false))}</nav>
+        <nav className="lp-nav" aria-label="Main">{NAV.map((n, i) => link(n, i, false))}<Link to="/blog" aria-current={onBlog ? 'true' : undefined}>Blog</Link></nav>
         <div className="lp-header__actions">
           {/* {user && <ThemeToggle />} */}
           {authLoading ? null : user ? (
@@ -94,6 +95,7 @@ export default function Header() {
       </div>
       <div id="lp-drawer" className="lp-drawer" aria-hidden={!open}>
         {NAV.map((n, i) => link(n, i, true))}
+        <Link to="/blog" aria-current={onBlog ? 'true' : undefined}>Blog</Link>
         {!authLoading && (user
           ? <Link to="/home" className="lp-btn lp-btn--accent" onClick={() => close()}>Go to your account</Link>
           : <><Link to="/signup" className="lp-btn lp-btn--accent" onClick={() => close()}>Sign up free</Link><Link to="/login" className="lp-drawer__login" onClick={() => close()}>Log in</Link></>)}

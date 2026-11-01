@@ -13,7 +13,7 @@ export default function Hero() {
     <section className="lp-hero" aria-labelledby="hero-title">
       <div className="lp-wrap lp-hero__grid">
         <div className="lp-hero__head">
-          <p className="lp-kicker">Language exchange, person to person</p>
+          <p className="lp-kicker">Free language exchange · 40 languages</p>
           <h1 id="hero-title" className="lp-hero__title">
             <span className="lp-strip">Speak a language with the people who <span className="lp-scribble text-accent"><em>speak it.</em></span></span>
           </h1>
@@ -22,15 +22,16 @@ export default function Hero() {
         <div className="lp-hero__art" aria-hidden="true">
           <figure className="lp-photo lp-photo--a"><img src={unsplash(BIG, 900)} srcSet={srcset(BIG, [500, 900, 1300])} sizes="(max-width: 56rem) 66vw, 34vw" width="900" height="1125" alt="" fetchpriority="high" decoding="async" /></figure>
           <figure className="lp-photo lp-photo--b"><img src={unsplash(SMALL, 500)} srcSet={srcset(SMALL, [300, 500])} sizes="(max-width: 56rem) 46vw, 18vw" width="600" height="600" alt="" loading="lazy" decoding="async" /></figure>
-          <div className="lp-sticker"><span>Learn <b >40+</b>languages</span></div>
+          <div className="lp-sticker"><span>Learn <b >40</b>languages</span></div>
         </div>
 
         <div className="lp-hero__body">
-          <p className="lp-hero__lead">Tell us the language you speak and the one you are learning. We find people who want the opposite, you chat, and they correct you right inside the conversation.</p>
+          <p className="lp-hero__lead">The Fluency Talks is a free language exchange with native speakers. Tell us the language you speak and the one you are learning, we find people who want the opposite, and they correct your messages right inside the chat.</p>
           <div className="lp-hero__cta" id="hero-cta">
             <Link to={join.to} className="lp-btn lp-btn--accent">{join.signedIn ? 'Go to your account' : 'Start talking, it is free'}</Link>
             <a href="#services" className="lp-link">See what you get <span aria-hidden="true">→</span></a>
           </div>
+          <p className="lp-hero__note">Free, no paid plans · Beginners (A1) to near-native (C2) welcome</p>
         </div>
       </div>
     </section>

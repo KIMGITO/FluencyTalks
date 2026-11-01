@@ -13,7 +13,7 @@ export const Logo = ({ compact, light, to = '/' }: { compact?: boolean; light?: 
 
   const isDark =
     mode === 'dark' ||
-    (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    (mode === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const onDark = isDark || !!light;
 
   return (

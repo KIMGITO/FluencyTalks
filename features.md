@@ -23,7 +23,7 @@ Gives the application the information it needs to recommend relevant language pa
 ## 3. Supported Language List
 
 **What it does**  
-Provides a searchable list of supported languages. The list includes international languages and selected Kenyan languages. Language names can be displayed in their native form, and the list identifies languages currently offered for learning.
+Provides a searchable list of supported languages. 40 major world languages are offered at launch, including English, Vietnamese and Swahili. Language names can be displayed in their native form, and the list identifies languages currently offered for learning.
 
 **How it helps**  
 Makes it easier for users to find and select the right language, including languages they may know by a local or native name. A shared list also helps language choices remain consistent across profiles, partner discovery, conversations, corrections, and saved learning materials.
@@ -93,7 +93,7 @@ Recognizes the time and effort users put into helping other learners. A visible 
 ## 11. Bounties — Requests for Extra Help
 
 **What it does**  
-Lets a learner attach a points reward to a question or message that needs an answer. Eligible speakers can view open requests and submit an answer. The learner can accept the answer, which awards the points to the helper. If no answer is provided within 48 hours, the points are refunded. A user can have up to three open bounties at a time.
+Lets a learner attach a points reward to a question or message that needs an answer. Eligible speakers can view open requests and submit an answer. The learner can accept the answer, which awards the points to the helper. If no answer is accepted within 48 hours, or the question is deleted, the points are refunded. A user can have up to three open bounties at a time.
 
 **How it helps**  
 Gives learners a way to draw attention to a question they particularly need help with. The reward encourages knowledgeable community members to spend time answering, while the acceptance step lets the learner decide whether the answer resolves the question.

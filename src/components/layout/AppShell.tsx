@@ -16,7 +16,7 @@ export function AppShell() {
       <TopBar />
       <div className="ft-shell">
         <Sidebar />
-        <main className="mx-auto w-full max-w-[var(--layout-feedMaxW)] py-4 pb-24 md:px-4 md:py-6 md:pb-8"><Outlet /></main>
+        <main className="mx-auto w-full max-w-[var(--layout-feedMaxW)] py-4 pb-[calc(var(--layout-bottomNavH)+2.5rem+env(safe-area-inset-bottom,0px))] md:px-4 md:py-6 md:pb-8"><Outlet /></main>
         <RightRail />
       </div>
       <BottomNav />

@@ -133,9 +133,10 @@ on conflict (id) do update
 
 
 -- Launch list: only these 40 languages can be chosen. Runs after the upsert above so a
--- `supabase db reset` ends in the same state as migration 0030. Keep both lists identical.
+-- `supabase db reset` ends in the same state as migration 20261101000003_launch_languages.
+-- Keep both lists identical.
 update public.languages set is_supported_learning = (id in (
-  'eng','swh','vie','kik','fra','spa','deu','por','ita','zho',
+  'eng','swh','vie','fra','spa','deu','por','ita','zho','yue',
   'jpn','kor','hin','ara','rus','tur','ind','tha','nld','pol',
-  'ukr','ell','heb','pes','ben','urd','tgl','msa','amh','som',
-  'yor','ibo','hau','zul','kin','luo','kal','luy','kam','guz'));
+  'ukr','ell','heb','pes','ben','urd','tgl','msa','tam','pan',
+  'swe','ces','ron','amh','som','yor','ibo','hau','zul','kin'));

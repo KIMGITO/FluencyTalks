@@ -193,7 +193,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
   sendPasswordReset: (email) => run(set, () => supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin()}/reset-password` })),
   updatePassword: async (password) => {
     if (isOAuthOnly(get().user)) {
-      set({ error: 'This account signs in with Google. Use Google to log in — no password to change here.' });
+      set({ error: 'This account signs in with Google. Use Google to log in. There is no password to change here.' });
       return false;
     }
     const ok = await run(set, () => supabase.auth.updateUser({ password }));

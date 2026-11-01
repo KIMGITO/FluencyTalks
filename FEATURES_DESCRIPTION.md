@@ -68,8 +68,10 @@ They also declare consent to the privacy policy, terms, and age requirement.
 ### What it depends on
 - The profiles table with native_language_id, learning_language_id,
   learning_level, onboarding_done, and consents columns.
-- The languages reference table (about 100 curated languages, incl. Kenyan
-  languages such as Kikuyu, Luo, Kalenjin, Luhya, Kamba, Kisii).
+- The languages reference table (100 curated languages; 40 of them are on
+  the launch list, is_supported_learning, set by migration
+  20261101000003_launch_languages). Users can only pick launch-list
+  languages; a profile that already holds another language keeps it.
 - The set_language_profile and record_consent database functions.
 
 ### When it is used
@@ -657,7 +659,7 @@ project, and production on Cloudflare Pages.
   panel all read or write the same profiles row.
 - **Languages** are the shared vocabulary of the platform. Onboarding,
   matching, search filters, message tagging, phrasebook, corrections, and
-  the public library all key on the same language table.
+  the community library all key on the same language table.
 - **Chat is the hub.** Messages link to corrections, bounties, translations,
   and source conversations. The notification bell reads from the same
   conversation data.

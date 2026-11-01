@@ -10,7 +10,7 @@
 
 FluencyTalks is a **study-partner platform, not a social network**. A user declares the one language they speak natively and, optionally, the one language they are learning. The app matches them with people whose languages complement theirs (a Kenyan learning Vietnamese ↔ a Vietnamese speaker learning English or Swahili). Partners chat, native speakers correct each other's sentences inline, learners save phrases into a personal phrasebook, and points reward helpful corrections. There is no feed, no follower counts, no popularity contest.
 
-**Demo story for the project defence:** *Amina (Nairobi, native Swahili, learning Vietnamese) is matched with Linh (Hanoi, native Vietnamese, learning English). Amina writes a Vietnamese sentence, Linh corrects it inline (red → green), Amina accepts, Linh earns +5, the corrected phrase lands in Amina's phrasebook with an Unsplash image. Amina is stuck on an exam phrase, spends 50 points on a bounty, and a native speaker answers it within minutes.*
+**Demo story for the project defence:** *Tom (native English, learning Vietnamese, A2) is matched with Linh (Hanoi, native Vietnamese, learning English). Tom writes "Tôi là đói", Linh corrects it inline to "Tôi đói" (red → green), Tom accepts, Linh earns +5, and the corrected phrase lands in Tom's phrasebook. Tom is stuck on an exam phrase, spends 50 points on a bounty, and a native speaker answers it within minutes.*
 
 ---
 
@@ -235,7 +235,7 @@ This is the most important section. Language selection decides who can match wit
 ## 7b. Decisions made
 
 - One native language, strict. A second native language can be added later if users ask.
-- Launch list of 40 languages (`languages.is_supported_learning`), including Swahili (`swh`, the code for Kenyan Swahili) and Vietnamese (`vie`). English, French, Spanish, German, Portuguese, Italian, Mandarin, Japanese, Korean, Hindi, Arabic and others, plus Kenyan languages (Kikuyu, Luo, Kalenjin, Luhya, Kamba, Kisii) and major African languages.
+- Launch list of 40 languages (`languages.is_supported_learning`), including Swahili (`swh`, the code for Kenyan Swahili) and Vietnamese (`vie`). 40 major world languages (migration `20261101000003_launch_languages`): English, Vietnamese, Swahili, Spanish, French, German, Portuguese, Italian, Chinese, Cantonese, Japanese, Korean, Hindi, Arabic and others, including major African languages. The six smaller Kenyan languages were taken off the list on 2026-11-01.
 - Language changes: the first change is free, then once every 30 days; level changes are always free.
 
 ## 8. Open Decisions for the Team
