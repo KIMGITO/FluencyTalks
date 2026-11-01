@@ -4,6 +4,7 @@ import type { Post } from '.';
 const post: Post = {
   slug: 'find-a-language-exchange-partner',
   title: 'How to Find a Language Exchange Partner Online (Free)',
+  seoTitle: 'Find a Free Language Exchange Partner Online',
   description: 'Where to find a language exchange partner online for free, what to look for in a good match, and what to write in your first message so they say yes.',
   kicker: 'Getting started',
   published: '2026-11-01',

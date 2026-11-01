@@ -13,7 +13,7 @@ export default function LanguagePage() {
   const l = languageBySlug(slug);
   useSeo(l
     ? {
-      title: `${l.name} Language Exchange: Practise with Native Speakers`,
+      title: `Practise ${l.name} with Native Speakers`,   // 60 characters or fewer with the brand, so Google does not cut it off
       description: `Find a ${l.name} language exchange partner. Chat with native ${l.name} speakers, get your sentences corrected inside the conversation, and save every phrase. Free.`,
       path: `/languages/${l.slug}`,
     }

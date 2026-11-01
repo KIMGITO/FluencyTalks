@@ -11,6 +11,8 @@ import correctionsFromNativeSpeakers from './corrections-from-native-speakers';
 export interface Post {
   slug: string;
   title: string;
+  /** Shorter <title> for search results (Google cuts titles off near 60 characters with the brand). The H1 stays `title`. */
+  seoTitle?: string;
   description: string;
   kicker: string;
   published: string;

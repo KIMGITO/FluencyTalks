@@ -58,7 +58,7 @@ export const themes: Record<'light' | 'dark', Palette> = {
     ink: '23 22 58', muted: '91 90 126', 'on-brand': '255 255 255',
     brand: '27 26 85', 'brand-soft': '232 229 242', accent: '255 106 77', aqua: '18 181 166',
     sun: '255 200 61', deep: '27 26 85', 'on-deep': '250 246 238',
-    success: '22 120 76', danger: '200 36 58', warning: '150 92 8',
+    success: '18 104 66', danger: '200 36 58', warning: '150 92 8',
     'lvl-a': '14 165 150', 'lvl-b': '27 26 85', 'lvl-c': '255 106 77', 'lvl-n': '240 170 20',
   },
   dark: {

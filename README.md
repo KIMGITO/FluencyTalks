@@ -173,6 +173,17 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 6. ✅ Account deletion (needs a server-side function with the service role), data export
 7. Voice/video sessions, PWA + push, i18n/RTL
 
+## Search, AI and indexing docs
+
+| Doc | What it answers |
+|---|---|
+| `docs/INDEXING_CHECKLIST.md` | Exactly which URLs to submit, in what order, and the Cloudflare settings that can break SEO |
+| `docs/AI_VISIBILITY.md` | How ChatGPT, Gemini, Claude, Perplexity and Google AI Overviews find a site, what matters, what does not |
+| `docs/PUBLIC_CONTENT_SEO.md` | How to make content members publish searchable on the web (not built yet; a plan) |
+| `docs/SEO.md`, `docs/GOOGLE_SEARCH_CONSOLE.md`, `docs/CONTENT_PLAN.md` | On-page rules, Search Console setup, the article plan |
+
+`npm run build && npm run check:seo` tests what a crawler without JavaScript sees on every public page. CI runs it.
+
 ## Tests
 
 `supabase/tests/app_flow.sql` (run by `scripts/test-db.sh`) replays the exact RPC calls the app makes (same function and parameter names as `src/services`): onboarding (language profile, profile, consents), the language rules, profiles and feed, messaging, corrections and points, reports and blocking, and admin access. It stops with a non-zero exit on the first broken step.

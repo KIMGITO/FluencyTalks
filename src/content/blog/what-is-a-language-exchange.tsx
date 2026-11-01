@@ -4,6 +4,7 @@ import type { Post } from '.';
 const post: Post = {
   slug: 'what-is-a-language-exchange',
   title: 'What Is a Language Exchange and How Does It Work?',
+  seoTitle: 'What Is a Language Exchange?',
   description: 'A language exchange pairs two people who want to learn each other\'s language. Here is how it works, what you get from it, and how to make the most of it.',
   kicker: 'Language exchange basics',
   published: '2026-11-01',

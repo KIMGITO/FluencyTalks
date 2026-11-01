@@ -4,6 +4,7 @@ import type { Post } from '.';
 const post: Post = {
   slug: 'corrections-from-native-speakers',
   title: 'How to Get Corrections from Native Speakers Without Feeling Embarrassed',
+  seoTitle: 'How to Get Corrected by Native Speakers',
   description: 'Corrections are how you go from understandable to natural. How to ask native speakers to correct you, what kind of feedback to ask for, and how to remember it.',
   kicker: 'Speaking confidence',
   published: '2026-11-01',

@@ -3,7 +3,9 @@
 This file is the plan for getting found on Google and cited by AI assistants
 (ChatGPT, Gemini, Claude, Perplexity, Copilot, Google AI Overviews).
 The step-by-step for Google Search Console is in
-[`GOOGLE_SEARCH_CONSOLE.md`](./GOOGLE_SEARCH_CONSOLE.md).
+[`GOOGLE_SEARCH_CONSOLE.md`](./GOOGLE_SEARCH_CONSOLE.md). Which URLs to submit: [`INDEXING_CHECKLIST.md`](./INDEXING_CHECKLIST.md).
+AI assistants: [`AI_VISIBILITY.md`](./AI_VISIBILITY.md). Making member-created content searchable: [`PUBLIC_CONTENT_SEO.md`](./PUBLIC_CONTENT_SEO.md).
+Every rule in this file that can be checked by a program is checked by `npm run check:seo` after a build, and in CI.
 
 Single source of truth for brand strings: **`src/lib/site.ts`** (`BRAND`,
 `SITE_URL`, `TAGLINE`, `DEFAULT_TITLE`, `DEFAULT_DESCRIPTION`, `OG_IMAGE`).
@@ -36,7 +38,7 @@ Per-page titles and descriptions are set with `useSeo()` from
 
 | Routes | How they are kept out |
 |---|---|
-| `/login`, `/signup`, `/forgot-password`, `/reset-password` | `useSeo({ noIndex: true })` → `<meta name="robots" content="noindex, nofollow">` |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/onboarding` | `X-Robots-Tag: noindex, nofollow` (`public/_headers`, works without JavaScript) **and** `useSeo({ noIndex: true })` → `<meta name="robots" content="noindex, nofollow">`. Not blocked in `robots.txt` |
 | `/404` / unknown URLs | `noIndex: true` |
 | `/onboarding`, `/home`, `/search`, `/discover`, `/messages/*`, `/profile/*`, `/u/*`, `/settings`, `/learning`, `/phrasebook`, `/library/*`, `/partners`, `/bounty-queue`, `/points-history`, `/admin` | `Disallow` in `public/robots.txt` + behind login |
 
@@ -142,9 +144,9 @@ mention. What to do:
 2. **Be in Bing.** ChatGPT search and Copilot use Bing's index. Set up
    **Bing Webmaster Tools** (it can import your Google Search Console property
    in one click) and submit the sitemap there too.
-3. **Publish `/llms.txt`.** A plain-text summary of the site for language
-   models: what it is, who it's for, key facts, links. Done: `public/llms.txt`.
-   Keep it in sync with the home page.
+3. **`/llms.txt` exists (`public/llms.txt`), but do not expect it to do much.** Google says its Search
+   ignores the file, and there is little evidence the main AI crawlers read it. It costs nothing; keep it
+   accurate, and spend the time on indexing and on getting mentioned elsewhere. See `AI_VISIBILITY.md`.
 4. **Write "quotable" sentences.** One-sentence definitions near the top of
    each page: *"The Fluency Talks is a free language exchange app where native
    speakers correct your messages inside the chat."* AI models lift

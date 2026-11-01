@@ -15,7 +15,7 @@ export default function Hero() {
         <div className="lp-hero__head">
           <p className="lp-kicker">Free language exchange · 40 languages</p>
           <h1 id="hero-title" className="lp-hero__title">
-            <span className="lp-strip">Speak a language with the people who <span className="lp-scribble text-accent"><em>speak it.</em></span></span>
+            <span className="lp-strip">Speak a language with the people who <span className="lp-scribble"><em>speak it.</em></span></span>
           </h1>
         </div>
 

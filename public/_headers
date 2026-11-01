@@ -4,3 +4,19 @@
 
 /robots.txt
   Content-Type: text/plain
+
+# Kept out of search without needing JavaScript. (Not blocked in robots.txt: Google must be able to read this.)
+/login
+  X-Robots-Tag: noindex, nofollow
+/signup
+  X-Robots-Tag: noindex, nofollow
+/forgot-password
+  X-Robots-Tag: noindex, nofollow
+/reset-password
+  X-Robots-Tag: noindex, nofollow
+/onboarding
+  X-Robots-Tag: noindex, nofollow
+
+# Fingerprinted build files can be cached for a year; the HTML is revalidated every time.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -17,7 +17,7 @@ export function Avatar({ name, src, size = 'md', online, ring }: { name: string;
   const circle = clsx('aspect-square shrink-0 rounded-full', sizes[size]);
   const inner = src && !broken
     ? <img src={src} alt={name} onError={() => setBroken(true)} className={clsx(circle, 'object-cover')} />
-    : <span className={clsx(circle, 'flex items-center justify-center bg-brand-soft font-semibold leading-none text-brand')} aria-label={name}>{initials(name || 'U')}</span>;
+    : <span className={clsx(circle, 'flex items-center justify-center bg-brand-soft font-semibold leading-none text-ink')} aria-label={name}>{initials(name || 'U')}</span>;
   return (
     <span className="relative inline-flex shrink-0">
       {ring ? <span className="ft-avatar-ring flex">{inner}</span> : inner}
