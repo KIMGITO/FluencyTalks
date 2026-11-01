@@ -25,7 +25,7 @@ export const Logo = ({ compact, light, to = '/' }: { compact?: boolean; light?: 
       <span className="flex items-center gap-2">
         <span className="flex h-9 w-9 items-center justify-center overflow-hidden">
           <img
-            src={onDark ? '/favicon.png' : '/favicon-dark.png'}
+            src={onDark ? '/logo-on-dark.png' : '/logo-on-light.png'}
             alt={`${BRAND} Logo`}
             className="h-full w-full object-contain"
           />
