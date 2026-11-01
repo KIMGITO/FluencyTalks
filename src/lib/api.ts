@@ -17,6 +17,9 @@ const friendly: Record<string, string> = {
   language_change_cooldown: 'You changed languages recently. You can change them again after 30 days.', forbidden: "You don't have access to that.",
   not_contribution_eligible: 'You need a native language or a B1+ learning level set in your profile to contribute.',
   empty_phrase: 'Phrase cannot be empty.',
+  post_not_found: 'That post is no longer available.', already_reported: 'You already reported this post. Our team is on it.',
+  cannot_report_self: "You can't report your own post.", saved_limit: 'You can save up to 500 posts. Remove some first.',
+  invalid_alignment: 'Choose left, center or right alignment.',
 };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
 

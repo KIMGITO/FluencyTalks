@@ -36,6 +36,7 @@ export interface ReportEvidence { id: string; sender_id: string; body: string; c
 export interface AdminReport {
   id: string; reason: string; details: string | null; evidence: ReportEvidence[]; status: 'open' | 'reviewing' | 'actioned' | 'dismissed'; created_at: string; conversation_id: string | null;
   reporter_id: string | null; reporter_username: string | null; reporter_name: string | null; target_id: string | null; target_username: string | null; target_name: string | null; target_status: AccountStatus | null; target_open_reports: number;
+  post_id: string | null;   // set when the report is about a library post
 }
 export interface AdminUser { id: string; username: string; display_name: string | null; role: 'user' | 'moderator' | 'admin'; status: AccountStatus; created_at: string; open_reports: number }
 export interface AdminAction { id: string; action: 'suspend' | 'ban' | 'reinstate' | 'dismiss_report' | 'auto_suspend'; reason: string | null; created_at: string; admin_name: string | null; target_username: string | null; target_name: string | null }
@@ -44,6 +45,8 @@ export interface ContributionPost {
   id: string; user_id: string; certified_at: string; language_id: string | null;
   phrase: string; translation: string | null; category: 'phrase' | 'idiom' | 'usage' | 'grammar'; source_context: string | null;
   unsplash_image_url: string | null; created_at: string; updated_at: string;
+  text_align: 'left' | 'center' | 'right'; pinned_at: string | null;
+  saved?: boolean;   // whether the current user saved it
   author?: Person | null;
 }
 

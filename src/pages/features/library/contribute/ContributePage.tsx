@@ -1,21 +1,27 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Image, X, ChevronLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Image, X, ChevronLeft, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Button, Select, Textarea, Input } from '@/components/ui';
+import { Button, Select, Spinner, Textarea, Input } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
 import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
-import { isContributionEligible, postContribution } from '@/services/library';
+import { getContribution, isContributionEligible, postContribution, updateContribution, type TextAlign } from '@/services/library';
 import { UnsplashPicker } from '@/components/features/library/UnsplashPicker';
 
 export default function ContributePage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editId = useSearchParams()[0].get('edit');
+  const [loadingPost, setLoadingPost] = useState(!!editId);
+  // Back to wherever the user came from (Home composer, Library, a profile); Library on a direct load.
+  const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/library'));
   const [phrase, setPhrase] = useState('');
   const [translation, setTranslation] = useState('');
   const [language, setLanguage] = useState('');
   const [category, setCategory] = useState<'phrase' | 'idiom' | 'usage' | 'grammar'>('phrase');
   const [sourceContext, setSourceContext] = useState('');
+  const [textAlign, setTextAlign] = useState<TextAlign>('left');
   const [unsplashUrl, setUnsplashUrl] = useState('');
   const [unsplashThumb, setUnsplashThumb] = useState('');
   const [unsplashAttrib, setUnsplashAttrib] = useState<{ name: string; link: string } | null>(null);
@@ -25,7 +31,26 @@ export default function ContributePage() {
 
   const languageName = useLanguageStore((s) => s.name);
   const me = useProfileStore((s) => s.me);
-  const languages = qualifiedLanguages(me);   // only languages you are qualified to teach (the server checks too)
+  const qualified = qualifiedLanguages(me);   // only languages you are qualified to teach (the server checks too)
+  // When editing, keep the post's own language selectable even if it is not in the list.
+  const languages = language && !qualified.includes(language) ? [language, ...qualified] : qualified;
+
+  useEffect(() => {
+    if (!editId) return;
+    getContribution(editId)
+      .then((p) => {
+        if (!p || p.user_id !== me?.id) { setError('This post cannot be edited.'); return; }
+        setPhrase(p.phrase);
+        setTranslation(p.translation ?? '');
+        setLanguage(p.language_id ?? '');
+        setCategory(p.category);
+        setSourceContext(p.source_context ?? '');
+        setTextAlign(p.text_align ?? 'left');
+        setUnsplashUrl(p.unsplash_image_url ?? '');
+      })
+      .catch(() => setError('Could not load this post.'))
+      .finally(() => setLoadingPost(false));
+  }, [editId, me?.id]);
   const canContribute = isContributionEligible(me);
 
   const submit = async () => {
@@ -34,19 +59,24 @@ export default function ContributePage() {
     if (!language) { setError('Please select a language.'); return; }
     setBusy(true);
     try {
-      await postContribution(
-        phrase.trim(),
-        translation.trim() || null as any,
-        language,
-        category,
-        sourceContext.trim() || null as any,
-        unsplashUrl || null as any,
-      );
+      if (editId) {
+        await updateContribution(editId, phrase.trim(), translation.trim() || null, language, category, sourceContext.trim() || null, unsplashUrl || null, textAlign);
+      } else {
+        await postContribution(
+          phrase.trim(),
+          translation.trim() || null as any,
+          language,
+          category,
+          sourceContext.trim() || null as any,
+          unsplashUrl || null as any,
+          textAlign,
+        );
+      }
       await new Promise(r => setTimeout(r, 500));
 
-      navigate('/library');
+      goBack();
     } catch (e: any) {
-      setError(e.message || 'Could not post to the library.');
+      setError(e.message || (editId ? 'Could not save your changes.' : 'Could not post to the library.'));
     } finally {
       setBusy(false);
     }
@@ -67,25 +97,47 @@ export default function ContributePage() {
       </div>
     );
   }
+  if (loadingPost) return <div className="flex justify-center p-8"><Spinner /></div>;
+
   return (
     <div className="mx-auto w-full max-w-3xl p-4 pb-24">
       <button
-        onClick={() => navigate('/library')}
+        onClick={goBack}
         className="mb-4 flex items-center gap-1 text-sm text-muted hover:text-ink"
       >
-        <ChevronLeft size={16} /> Back to Library
+        <ChevronLeft size={16} /> Back
       </button>
 
-      <PageHeader title="New Contribution" />
+      <PageHeader title={editId ? 'Edit post' : 'New Contribution'} />
 
       <div className="space-y-4">
-        <Textarea
-          label="Phrase / idiom *"
-          rows={2}
-          value={phrase}
-          onChange={(e) => setPhrase(e.target.value)}
-          placeholder="e.g. break the ice"
-        />
+        <div>
+          <Textarea
+            label="Phrase / idiom *"
+            rows={3}
+            value={phrase}
+            onChange={(e) => setPhrase(e.target.value)}
+            placeholder="e.g. break the ice"
+            className={textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}
+          />
+          {/* Alignment of the text on the post (left by default) */}
+          <div role="radiogroup" aria-label="Text alignment" className="mt-2 inline-flex rounded-md border border-border bg-surface-2 p-0.5">
+            {([['left', AlignLeft, 'Align left'], ['center', AlignCenter, 'Align center'], ['right', AlignRight, 'Align right']] as const).map(([value, Icon, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={textAlign === value}
+                aria-label={label}
+                title={label}
+                onClick={() => setTextAlign(value)}
+                className={`flex h-8 w-9 items-center justify-center rounded-sm transition ${textAlign === value ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink'}`}
+              >
+                <Icon size={16} />
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Select
           label="Language *"
@@ -171,7 +223,7 @@ export default function ContributePage() {
         {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end pt-4">
-          <Button size="lg" loading={busy} onClick={submit}>Post to Library</Button>
+          <Button size="lg" loading={busy} onClick={submit}>{editId ? 'Save changes' : 'Post to Library'}</Button>
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Input, Spinner, buttonClass } from '@/components/ui';
+import { Button, EmptyState, Input, Spinner, Tabs, buttonClass } from '@/components/ui';
 import { BookOpen, Plus, RefreshCw, Filter, X } from 'lucide-react';
-import { listContributionPosts, isContributionEligible, type ContributionPost } from '@/services/library';
+import { listContributionPosts, listSavedPosts, isContributionEligible, type ContributionPost } from '@/services/library';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { PostCard } from '@/components/features/library';
@@ -17,12 +17,15 @@ const CATEGORIES = [
 ];
 
 export default function Library() {
-  const [, setParams] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  // ?tab=saved opens the posts you saved.
+  const view = params.get('tab') === 'saved' ? 'saved' : 'all';
   const [lang, setLang] = useState('');
   const [cat, setCat] = useState('');
   const [searchText, setSearchText] = useState('');
   const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const languageName = useLanguageStore((s) => s.name);
@@ -32,15 +35,23 @@ export default function Library() {
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const r = await listContributionPosts(lang || undefined, cat || undefined);
-      setPosts(r.posts ?? null);
-    } catch {
+      if (view === 'saved') {
+        const saved = await listSavedPosts();
+        setPosts(saved.filter((p) => (!lang || p.language_id === lang) && (!cat || p.category === cat)));
+      } else {
+        const r = await listContributionPosts(lang || undefined, cat || undefined);
+        setPosts(r.posts ?? null);
+      }
+    } catch (e) {
+      console.error('Loading posts failed', e);
+      setLoadError(true);
       setPosts([]);
     } finally {
       setLoading(false);
     }
-  }, [lang, cat]);
+  }, [lang, cat, view]);
 
   useEffect(() => { void fetchPosts(); }, [fetchPosts]);
 
@@ -64,7 +75,14 @@ export default function Library() {
         subtitle="Browse phrases, idioms and examples contributed by the community"
       />
 
-      {}
+      <div className="ft-inset mb-3">
+        <Tabs
+          value={view}
+          onChange={(key) => setParams(key === 'saved' ? { tab: 'saved' } : {}, { replace: true })}
+          items={[{ key: 'all', label: 'All posts' }, { key: 'saved', label: 'Saved' }]}
+        />
+      </div>
+
       <div className="ft-inset mb-4 flex flex-wrap items-center gap-2">
         {}
         <div className="relative flex-1 min-w-[180px]">
@@ -170,13 +188,17 @@ export default function Library() {
         <div className="flex justify-center py-16">
           <Spinner />
         </div>
+      ) : loadError ? (
+        <EmptyState title="Couldn't load posts" text="Check your connection and tap refresh." />
       ) : !displayed.length ? (
         <EmptyState
-          title={searchText || hasFilters ? 'No matching posts' : 'Nothing here yet'}
+          title={searchText || hasFilters ? 'No matching posts' : view === 'saved' ? 'No saved posts' : 'Nothing here yet'}
           text={
             searchText || hasFilters
               ? 'Try different filters or search terms.'
-              : 'Be the first to share a phrase, idiom or usage example.'
+              : view === 'saved'
+                ? 'Use “Save post” in a post’s ⋮ menu to keep it here.'
+                : 'Be the first to share a phrase, idiom or usage example.'
           }
           action={
             me && eligible ? (
@@ -191,9 +213,15 @@ export default function Library() {
           }
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {displayed.map((p) => (
-            <PostCard key={p.id} post={p} />
+            <PostCard
+              key={p.id}
+              post={p}
+              variant="compact"
+              removeOnUnsave={view === 'saved'}
+              onRemoved={(id) => setPosts((list) => list?.filter((x) => x.id !== id) ?? null)}
+            />
           ))}
         </div>
       )}

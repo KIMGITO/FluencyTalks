@@ -225,7 +225,18 @@ export default function UserProfile() {
           <p className="px-1 text-sm text-muted italic">No contributions yet.</p>
         ) : (
           posts.map((p) => (
-            <PostCard key={p.id} post={p} />
+            <PostCard
+              key={p.id}
+              post={p}
+              onRemoved={(id) => setPosts((list) => list?.filter((x) => x.id !== id) ?? null)}
+              onPinChange={(id, pinned) => setPosts((list) => {
+                if (!list) return list;
+                // One pinned post per profile: it moves to the top, any other loses its pin.
+                const now = new Date().toISOString();
+                const next = list.map((x) => ({ ...x, pinned_at: x.id === id ? (pinned ? now : null) : pinned ? null : x.pinned_at }));
+                return [...next].sort((x, y) => (y.pinned_at ? 1 : 0) - (x.pinned_at ? 1 : 0) || y.created_at.localeCompare(x.created_at));
+              })}
+            />
           ))
         )}
       </div>

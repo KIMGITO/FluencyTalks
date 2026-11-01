@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PageHeader } from '@/components/layout';
+import { ImagePlus } from 'lucide-react';
+import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { ProfileCard } from '@/components/features';
 import {
   Avatar,
@@ -25,19 +26,21 @@ export default function Home() {
   const labelOf = useLanguageStore((s) => s.labelOf);
   const languageName = useLanguageStore((s) => s.name);
   const locales = useDisplayLocales();
+  const providerAvatar = useProviderAvatar();
   useCountries(); 
   const [people, setPeople] = useState<FeedPerson[] | null>(null);
   const [hidden, setHidden] = useState<string[]>([]);
 
-  const learning = languages.filter((l) => l.role === 'learning');
   
   const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
   const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
 
+  const [postsError, setPostsError] = useState(false);
+
   useEffect(() => {
     listContributionPosts()
       .then((r) => setPosts(r.posts))
-      .catch(() => setPosts([]));
+      .catch((e) => { console.error('Loading posts failed', e); setPostsError(true); setPosts([]); });
   }, []);
 
   const nativeName = nameOf(me?.native_language_id);
@@ -62,16 +65,21 @@ export default function Home() {
   }, [people, hidden]);
 
   const drop = (id: string) => setHidden((h) => [...h, id]);
-  const subtitle = learning.length
-    ? `Find people to practice with.`
-    : 'Add the languages you are learning to get matched with the right people';
 
   return (
     <>
-      <PageHeader
-        title={me?.display_name ? `Hello, ${me.display_name.split(' ')[0]}` : 'Welcome'}
-        subtitle={subtitle}
-      />
+      {/* Composer: looks like an input so it invites typing, but opens the contribute page */}
+      <Link
+        to="/library/contribute"
+        aria-label="Create a post"
+        className="ft-card mb-4 flex items-center gap-3 p-3 transition-colors hover:bg-surface-2"
+      >
+        <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="md" />
+        <span className="min-w-0 flex-1 truncate rounded-full border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted">
+          Share a phrase, idiom or example…
+        </span>
+        <ImagePlus size={22} className="shrink-0 text-accent" aria-hidden />
+      </Link>
       <div className="flex flex-col gap-2">
         {people === null ? (
           <div className="flex justify-center p-6">
@@ -120,6 +128,8 @@ export default function Home() {
           <div className="flex justify-center p-6">
             <Spinner />
           </div>
+        ) : postsError ? (
+          <EmptyState title="Couldn't load posts" text="Check your connection and refresh the page." />
         ) : posts.length === 0 ? (
           <EmptyState
             title="No posts yet"
@@ -133,7 +143,7 @@ export default function Home() {
         ) : (
           <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
             {posts.map((p) => (
-              <PostCard key={p.id} post={p} />
+              <PostCard key={p.id} post={p} onRemoved={(id) => setPosts((list) => list?.filter((x) => x.id !== id) ?? null)} />
             ))}
           </div>
         )}
