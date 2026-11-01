@@ -7,6 +7,7 @@ import { useLanguageStore } from '@/store/languageStore';
 import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
 import { getContribution, isContributionEligible, postContribution, updateContribution, type TextAlign } from '@/services/library';
+import { useFeedCache } from '@/store/feedCache';
 import { UnsplashPicker } from '@/components/features/library/UnsplashPicker';
 
 export default function ContributePage() {
@@ -74,6 +75,7 @@ export default function ContributePage() {
       }
       await new Promise(r => setTimeout(r, 500));
 
+      useFeedCache.getState().invalidate('posts:');   // every post list refreshes on the next visit
       goBack();
     } catch (e: any) {
       setError(e.message || (editId ? 'Could not save your changes.' : 'Could not post to the library.'));

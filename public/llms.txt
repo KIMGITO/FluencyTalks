@@ -1,0 +1,29 @@
+# The Fluency Talks
+
+> The Fluency Talks is a free language exchange web app. You choose the language you speak and the one you are learning, it matches you with people who want the opposite, and they correct your messages inside the chat. Accepted corrections are saved to your personal phrasebook.
+
+## Key facts
+
+- Website: https://thefluencytalks.com/
+- Price: free. There are no paid plans.
+- Languages: 40 at launch, including English, Spanish, French, German, Portuguese, Italian, Arabic, Chinese, Japanese, Korean, Hindi, Russian, Turkish, Swahili, Amharic, Yoruba, Dutch, Persian, Hebrew, Indonesian and several Kenyan languages.
+- Who it is for: language learners at any CEFR level from A1 to C2, and native or fluent speakers (B1 and above) who want to help others.
+- Practice format: one-to-one text chat with matched partners.
+- Corrections: a native speaker, or a learner at B1 or above, edits your sentence where you wrote it; you see exactly what changed and accept it or not.
+- Matching: by language pair (your native language and the one you are learning), not by popularity. There is no public feed and no followers.
+- Points: every user starts with 100 points. An accepted correction earns the corrector 5 points. A bounty costs 50 points and puts a message in front of more speakers; if nobody helps within two days, the points are refunded.
+- Safety: new contacts arrive as message requests you can decline; you can block or report anyone; reports are reviewed by admins.
+- Origin: started as a university computer science project; it is a working app.
+
+## How to start
+
+1. Create a free account: https://thefluencytalks.com/signup
+2. Choose your native language and the language (and level) you are learning.
+3. Message a suggested partner and start chatting.
+
+## Pages
+
+- [Home: what it is, how it works, FAQ](https://thefluencytalks.com/)
+- [Privacy policy](https://thefluencytalks.com/privacy)
+- [Terms of service](https://thefluencytalks.com/terms)
+- [Delete your account and data](https://thefluencytalks.com/data-deletion)

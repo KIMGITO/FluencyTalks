@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bookmark, BookmarkCheck, Flag, MoreVertical, Pencil, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
@@ -9,6 +9,7 @@ import { deleteContribution, pinContribution, toggleSavedPost, type Contribution
 import { timeAgo } from '@/lib/format';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
+import { useFeedCache } from '@/store/feedCache';
 
 export interface PostCardProps {
   post: Omit<ContributionPost, 'author'> & {
@@ -62,6 +63,32 @@ function phraseSize(text: string, onPanel: boolean) {
   return 'text-base font-semibold';
 }
 
+/** Shows at most 6 lines (the minimum card); a See more / See less toggle appears only when the text is cut off. */
+function ClampText({ children, className, align }: { children: React.ReactNode; className?: string; align?: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [open, setOpen] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const check = () => setOverflows(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [children, open]);
+  return (
+    <div className={clsx('w-full', align)}>
+      <p ref={ref} className={clsx('whitespace-pre-line break-words', !open && 'line-clamp-6', className)}>{children}</p>
+      {(overflows || open) && (
+        <button type="button" onClick={() => setOpen((o) => !o)} className="mt-1 text-sm font-semibold text-muted hover:text-ink">
+          {open ? 'See less' : 'See more'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, onPinChange }: PostCardProps) {
   const navigate = useNavigate();
   const [removed, setRemoved] = useState(false);
@@ -87,6 +114,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
     return () => document.removeEventListener('pointerdown', close);
   }, [menuOpen]);
 
+  const cache = useFeedCache.getState();   // actions only — no re-render on every cache change
   const remove = () => { setRemoved(true); onRemoved?.(post.id); };
   const run = async (fn: () => Promise<void>) => {
     setMenuOpen(false);
@@ -97,17 +125,23 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const handleDelete = () => run(async () => {
     if (!confirm('Are you sure you want to delete this post?')) return;
     await deleteContribution(post.id);
+    cache.removeEverywhere(post.id);   // gone from Home, Library, profile and Saved lists
     remove();
   });
   const handlePin = () => run(async () => {
     await pinContribution(post.id, !pinned);
     setPinned(!pinned);
+    if (!pinned) cache.patchEverywhere(post.id, { pinned_at: new Date().toISOString() });
+    else cache.patchEverywhere(post.id, { pinned_at: null });
+    cache.invalidate(`posts:user:${post.user_id}`);   // profile order changes (one pinned post)
     onPinChange?.(post.id, !pinned);
     setNotice(!pinned ? 'Pinned to your profile.' : '');
   });
   const handleSave = () => run(async () => {
     const now = await toggleSavedPost(post.id);
     setSaved(now);
+    cache.patchEverywhere(post.id, { saved: now });
+    cache.invalidate('posts:saved');
     if (!now && removeOnUnsave) remove();
     else setNotice(now ? 'Saved. Find it under Library → Saved.' : '');
   });
@@ -115,6 +149,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const handleBlock = () => run(async () => {
     if (!confirm(`Block ${authorName}? They won't be notified. You'll both disappear from each other's view.`)) return;
     await blockUser(post.user_id);
+    cache.removeByUser(post.user_id);
     remove();
   });
 
@@ -207,11 +242,6 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   // ---------- Full ----------
   return (
     <article className="ft-card overflow-hidden p-3 md:p-4">
-      {pinned && (
-        <p className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold text-muted">
-          <Pin size={12} className="text-accent" /> Pinned
-        </p>
-      )}
       {/* Author row */}
       <header className="flex items-center gap-3 px-1">
         {profileLink(
@@ -222,7 +252,8 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
         )}
         <div className="min-w-0 flex-1">
           {profileLink(authorName, 'block truncate font-semibold text-ink hover:underline')}
-          <p className="truncate text-xs text-muted">
+          <p className="flex items-center gap-1 truncate text-xs text-muted">
+            {pinned && <><Pin size={11} className="shrink-0 text-accent" aria-hidden /><span className="font-semibold">Pinned</span> · </>}
             {timeAgo(post.created_at)}
             {language && ` · ${language}`}
           </p>
@@ -250,21 +281,19 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
               <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
             </>
           ) : (
-            <div className={clsx('flex min-h-[9.6rem] items-center px-6 pb-14 pt-12', align)}>
-              <p className={clsx('w-full whitespace-pre-line break-words leading-snug text-ink', phraseSize(post.phrase, true))}>{post.phrase}</p>
+            <div className="flex min-h-[9.6rem] items-center px-5 py-9">
+              <ClampText align={align} className={clsx('leading-snug text-ink', phraseSize(post.phrase, true))}>{post.phrase}</ClampText>
             </div>
           )}
 
-          <span className="absolute right-3 top-3 rounded-full bg-ink/60 px-2.5 py-0.5 text-xs font-semibold text-on-deep backdrop-blur-sm">
+          <span className="absolute right-2 top-2 rounded-full bg-ink/55 px-2 py-px text-2xs font-semibold text-on-deep backdrop-blur-sm">
             {category}
           </span>
 
           {post.language_id && (
-            <span className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-surface/90 py-1 pl-1 pr-3 text-xs font-semibold text-ink shadow-card backdrop-blur-sm">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent font-mono text-2xs font-bold text-on-deep">
-                {post.language_id.toUpperCase()}
-              </span>
-              {language}
+            <span className="absolute bottom-2 left-2 flex max-w-[70%] items-center gap-1.5 rounded-full bg-surface/85 px-2 py-px text-2xs font-semibold text-ink backdrop-blur-sm">
+              <span className="font-mono font-bold text-accent">{post.language_id.toUpperCase()}</span>
+              <span className="truncate">{language}</span>
             </span>
           )}
         </div>
@@ -280,7 +309,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
       {/* Caption */}
       <div className={clsx('space-y-1.5 px-1 pt-3', align)}>
         {(post.unsplash_image_url || isLong) && (
-          <h3 className={clsx('whitespace-pre-line break-words leading-relaxed text-ink', phraseSize(post.phrase, false))}>{post.phrase}</h3>
+          <ClampText className={clsx('leading-relaxed text-ink', phraseSize(post.phrase, false))}>{post.phrase}</ClampText>
         )}
         {post.translation && <p className="whitespace-pre-line text-sm text-muted">{post.translation}</p>}
         {post.source_context && (

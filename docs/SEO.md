@@ -1,48 +1,253 @@
-# SEO — The Fluency Talks (`thefluencytalks.com`)
+# SEO and AI visibility: The Fluency Talks (`thefluencytalks.com`)
 
-Single source of truth: **`src/lib/site.ts`** (`BRAND`, `SITE_URL`, `TAGLINE`,
-`DEFAULT_TITLE`, `DEFAULT_DESCRIPTION`, `OG_IMAGE`). Every SEO surface below
-derives from it, so the next rebrand is a one-file change.
+This file is the plan for getting found on Google and cited by AI assistants
+(ChatGPT, Gemini, Claude, Perplexity, Copilot, Google AI Overviews).
+The step-by-step for Google Search Console is in
+[`GOOGLE_SEARCH_CONSOLE.md`](./GOOGLE_SEARCH_CONSOLE.md).
 
-## What changed in this rebrand (FluencyTalks → The Fluency Talks)
+Single source of truth for brand strings: **`src/lib/site.ts`** (`BRAND`,
+`SITE_URL`, `TAGLINE`, `DEFAULT_TITLE`, `DEFAULT_DESCRIPTION`, `OG_IMAGE`).
+Per-page titles and descriptions are set with `useSeo()` from
+`src/hooks/useSeo.ts`.
 
-| Area | File(s) | Change |
+---
+
+## 1. Pages: what gets indexed and what does not
+
+### 1a. Index these (submit in the sitemap, request indexing in Search Console)
+
+| URL | Status | Purpose | Priority |
+|---|---|---|---|
+| `https://thefluencytalks.com/` | ✅ live | Home page: what it is, who it is for, how it works, sign-up | 1.0 |
+| `https://thefluencytalks.com/privacy` | ✅ live | Privacy policy (trust signal) | 0.3 |
+| `https://thefluencytalks.com/terms` | ✅ live | Terms of service (trust signal) | 0.3 |
+| `https://thefluencytalks.com/data-deletion` | ✅ live | Account / data deletion (required by Google & Facebook login reviews) | 0.2 |
+| `https://thefluencytalks.com/blog` | 🟡 to build | Blog index: learning guides | 0.8 |
+| `https://thefluencytalks.com/blog/<slug>` | 🟡 to build | One URL per article (see §5) | 0.7 |
+| `https://thefluencytalks.com/languages` | 🟡 to build | All 40 languages you can practise, each linking to its page | 0.8 |
+| `https://thefluencytalks.com/languages/<language>` | 🟡 to build | e.g. `/languages/swahili`: "Practise Swahili with native speakers" | 0.7 |
+| `https://thefluencytalks.com/how-it-works` | 🟡 optional | Longer version of the 3 steps, corrections, points & bounties | 0.6 |
+| `https://thefluencytalks.com/about` | 🟡 optional | Who built it, why, contact. Strong trust signal for Google and AI answers | 0.5 |
+
+> **Rule:** a URL only goes into `public/sitemap.xml` once the page exists and
+> returns real HTML content. Never list a page that 404s or is a login wall.
+
+### 1b. Never index these
+
+| Routes | How they are kept out |
+|---|---|
+| `/login`, `/signup`, `/forgot-password`, `/reset-password` | `useSeo({ noIndex: true })` → `<meta name="robots" content="noindex, nofollow">` |
+| `/404` / unknown URLs | `noIndex: true` |
+| `/onboarding`, `/home`, `/search`, `/discover`, `/messages/*`, `/profile/*`, `/u/*`, `/settings`, `/learning`, `/phrasebook`, `/library/*`, `/partners`, `/bounty-queue`, `/points-history`, `/admin` | `Disallow` in `public/robots.txt` + behind login |
+
+Private user content (profiles, chats, phrasebooks) must never be public. It
+is personal data, and it would be thin, duplicate content anyway.
+
+> **Note on `noindex` + `Disallow`:** Google can't read a `noindex` tag on a
+> page that robots.txt blocks. That's fine here because the auth pages are
+> *not* disallowed (Google reads their `noindex`), and the app pages are
+> disallowed *and* behind login.
+
+---
+
+## 2. The home page: answer six questions in the first screen
+
+A visitor (and a crawler, and an AI model) should get all six answers from
+the first ~150 words. Current state and the wording to use:
+
+| Question | Where it is answered | Copy to use |
 |---|---|---|
-| Brand constant | `src/lib/site.ts` (new), `src/theme/theme.js` (`NAME`), `src/theme/tokens.ts` | `"The Fluency Talks"` everywhere; `NAME` drives footer tagline |
-| Logo | `src/components/ui/Logo.tsx` | Renders "The Fluency…" text, `alt="The Fluency Talks Logo"`, `aria-label="The Fluency Talks Home"`; accepts `light` prop for dark footers |
-| Page `<title>` / meta / canonical / OG / Twitter | `index.html`, `src/hooks/useSeo.ts` (new) | All point at `https://thefluencytalks.com/`; every public route sets its own title + canonical via `useSeo` |
-| Structured data | `index.html` (WebSite + WebApplication + Organization), `src/components/landing/Faq.jsx` (FAQPage) | `name: "The Fluency Talks"`, `alternateName: ["Fluency Talks","FluencyTalks"]` keeps old-name traffic |
-| `robots.txt` / `sitemap.xml` | `public/robots.txt`, `public/sitemap.xml` (new) | Index `/`, `/privacy`, `/terms`, `/data-deletion`; disallow all app/auth routes; sitemap URL uses apex domain |
-| PWA manifest | `public/manifest.webmanifest` (new), linked from `index.html` | `name: "The Fluency Talks"`, `start_url: "/"` |
-| Social card | `public/og-image.png` (new, 1200×630) | Referenced by `og:image` + `twitter:image`. **Replace with a designed card before launch** — current one is a generated placeholder |
-| Domain + redirects | `vercel.json`, `src/store/authStore.ts` (`PROD_ORIGIN`), `supabase/config.toml` | Apex `thefluencytalks.com` canonical; `www.*` + legacy `fluencytalks.com` 301 → apex; auth redirects use apex origin |
-| UI copy | Footer, FAQ, Header aria-label, Search, Settings, Login, 404, Terms | All user-visible strings use `BRAND` (`"The Fluency Talks"`); data-export filename `the-fluency-talks-data.json` |
-| Docs | `README.md` | Brand + Supabase/Vercel domain instructions updated |
+| **What is The Fluency Talks?** | Hero H1 + lead | *"The Fluency Talks is a free language exchange where you chat with native speakers who correct your messages as you write."* |
+| **Who is it for?** | Hero kicker / lead, Roles section | *"For anyone learning a language, from A1 beginners to C1, and for native speakers who want to help."* |
+| **What can users do on it?** | Services cards | *"Find a language partner, chat, get corrections inside the chat, save them to a phrasebook, and earn points for helping others."* |
+| **How does it work?** | Intro 3 steps | *"1. Pick your native and target language. 2. Message a matched partner. 3. They correct you in the chat; you keep the phrase."* |
+| **Why choose it over alternatives?** | Services + FAQ | *"Corrections happen inside the conversation, matches are by language not popularity, there's no social feed, and it's completely free."* |
+| **How do I start?** | Hero CTA, final CTA | *"Create a free account in a minute: choose your languages and send your first message today."* |
 
-## Per-page SEO map (via `useSeo`)
+### Recommended home-page copy changes
 
-| Route | Title | Indexed? |
+The current H1, *"Speak a language with the people who speak it."*, is
+memorable but never says *language exchange*, *practice* or *native
+speakers*, which are the words people actually search for. Keep the tone
+and add the keywords:
+
+- **Kicker (above H1):** `Free language exchange · 40+ languages`
+- **H1:** `Practise a language with native speakers who correct you as you chat`
+  *(or keep the current H1 and put the keyword sentence in the lead paragraph
+  as the very first words)*
+- **Lead paragraph (first sentence must stand alone as a definition):**
+  `The Fluency Talks is a free language exchange app. Tell us the language you speak and the one you're learning, we match you with people who want the opposite, and they correct your messages right inside the chat.`
+- **Under the CTA:** `Free forever · No paid plans · A1 to C2 welcome`
+- **Add a "Why The Fluency Talks" comparison block** (3–4 rows) above the FAQ:
+
+  | | The Fluency Talks | Flashcard apps | Paid tutors |
+  |---|---|---|---|
+  | Real conversations | ✅ | ❌ | ✅ |
+  | Corrections in context | ✅ inside the chat | ❌ | Sometimes |
+  | Cost | Free | Freemium | Per hour |
+  | Native speakers | ✅ | ❌ | ✅ |
+
+  Name categories, not competitors. It's fairer and it ages better.
+
+### FAQ additions (each becomes FAQPage structured data automatically)
+
+Add to `faqs` in `src/components/landing/Faq.jsx`. These match real search
+and AI-assistant questions:
+
+- *What is a language exchange?* "A language exchange is when two people who speak different languages help each other practise. On The Fluency Talks you chat in writing and correct each other's messages."
+- *How is The Fluency Talks different from other language exchange apps?* "Corrections are built into the chat, you're matched by language rather than popularity, there's no public feed, and it's free with no paid tier."
+- *Can I practise English with native speakers for free?* "Yes. Choose English as the language you're learning, and native English speakers who are learning your language will see you as a match."
+- *Do I have to speak on video?* "No. Practice happens in text chat, so you can take your time and see every correction written out."
+- *What level do I need?* (already covered: keep it)
+
+---
+
+## 3. Titles, descriptions and H1s, page by page
+
+Rules: one unique `<title>` per page (50–60 characters, main keyword first,
+brand last); one meta description (140–160 characters, says what the reader
+gets and invites the click); exactly one `<h1>` describing the page's purpose.
+
+| URL | `<title>` | Meta description | H1 |
+|---|---|---|---|
+| `/` | `Free Language Exchange: Practise with Native Speakers \| The Fluency Talks` | `Chat with native speakers in 40+ languages and get your mistakes corrected inside the conversation. Free language exchange for A1 to C2 learners. Start today.` | `Practise a language with native speakers who correct you as you chat` |
+| `/privacy` | `Privacy Policy \| The Fluency Talks` | *(current is good)* | `Privacy Policy` |
+| `/terms` | `Terms of Service \| The Fluency Talks` | *(current is good)* | `Terms of Service` |
+| `/data-deletion` | `Delete Your Account and Data \| The Fluency Talks` | `How to permanently delete your The Fluency Talks account, messages and phrasebook, and what happens to your data afterwards.` | `Delete your account and data` |
+| `/languages` | `Practise 40+ Languages with Native Speakers \| The Fluency Talks` | `Find a language exchange partner for Spanish, French, English, Swahili, Japanese, Arabic and 35+ more languages. Free, with corrections in every chat.` | `Languages you can practise` |
+| `/languages/spanish` *(pattern)* | `Practise Spanish with Native Speakers, Free \| The Fluency Talks` | `Find a Spanish language exchange partner. Chat with native Spanish speakers, get your sentences corrected in the conversation, and save phrases. Free.` | `Practise Spanish with native speakers` |
+| `/blog` | `Language Learning Guides and Tips \| The Fluency Talks Blog` | `Practical guides on language exchange, speaking confidence and learning with native speakers, written for real learners from A1 to C2.` | `Language learning guides` |
+| `/blog/<slug>` | `<Article title> \| The Fluency Talks` | Article summary, 150 chars, answers the question in the title | Article title |
+| `/about` | `About The Fluency Talks: Who We Are` | `The Fluency Talks started as a university project and is now a free language exchange used by learners in 40+ languages. Meet the people behind it.` | `About The Fluency Talks` |
+
+To apply the home-page title/description: update `TAGLINE`,
+`DEFAULT_TITLE`, `DEFAULT_DESCRIPTION` in `src/lib/site.ts` **and** the
+hard-coded copies in `index.html` (title, `og:*`, `twitter:*`). The
+`index.html` copies are what non-JS crawlers and link previews see.
+
+---
+
+## 4. Getting seen by AI assistants (ChatGPT, Gemini, Claude, Perplexity, AI Overviews)
+
+AI answers draw from (a) search indexes (Google, Bing) and (b) their own
+crawlers. They quote pages that state facts plainly and that other sites
+mention. What to do:
+
+1. **Let the AI crawlers in.** `public/robots.txt` allows everyone (`User-agent: *`),
+   which includes `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`,
+   `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `Bingbot`.
+   They are also listed explicitly so the intent is clear. If you use
+   **Cloudflare**, check *Security → Bots → "Block AI bots"* is **off**, or
+   Cloudflare will block them before robots.txt is even read.
+2. **Be in Bing.** ChatGPT search and Copilot use Bing's index. Set up
+   **Bing Webmaster Tools** (it can import your Google Search Console property
+   in one click) and submit the sitemap there too.
+3. **Publish `/llms.txt`.** A plain-text summary of the site for language
+   models: what it is, who it's for, key facts, links. Done: `public/llms.txt`.
+   Keep it in sync with the home page.
+4. **Write "quotable" sentences.** One-sentence definitions near the top of
+   each page: *"The Fluency Talks is a free language exchange app where native
+   speakers correct your messages inside the chat."* AI models lift
+   sentences like this verbatim.
+5. **State facts as facts:** number of languages (40), price (free, no paid
+   plans), levels (A1–C2), points (start with 100, +5 per accepted correction,
+   bounties cost 50 and are refunded after 2 days). Consistent numbers across
+   the home page, FAQ, `llms.txt` and structured data build trust.
+6. **Get mentioned elsewhere.** AI assistants trust brands other sites talk
+   about. Free options: a Product Hunt launch, r/languagelearning and
+   language subreddits (be helpful, not spammy), a university / department
+   showcase page, GitHub README, LinkedIn post, AlternativeTo listing,
+   language-learning directories. Each mention should use the exact name
+   **"The Fluency Talks"** and link to `https://thefluencytalks.com/`.
+7. **Test it.** Every month ask ChatGPT, Perplexity, Gemini and Claude:
+   *"free language exchange app with corrections"*, *"where can I practise
+   Swahili with native speakers"*, *"what is The Fluency Talks"*. Note what
+   they say and which pages they cite.
+
+---
+
+## 5. The learning blog
+
+**Why:** most people searching are not ready to sign up yet. They're asking
+"how do I get better at speaking Spanish?" A blog lets you show up for those
+questions and lead the reader to the product.
+
+### 5a. How to build it (must be crawlable HTML)
+
+The site is a Vite SPA: Google sees an empty `<div id="root">` until
+JavaScript runs. Google *can* render JS, but slowly and not always, and
+**most AI crawlers do not run JavaScript at all.** So blog pages must be
+**pre-rendered to static HTML at build time**:
+
+- Write articles as Markdown files in `src/content/blog/*.md` with front
+  matter (`title`, `description`, `date`, `updated`, `author`, `slug`, `image`, `imageAlt`, `language`).
+- Pre-render public routes (`/`, `/blog`, `/blog/*`, `/languages/*`, legal pages)
+  with **`vite-react-ssg`** (or a small `scripts/prerender.mjs` using
+  `react-dom/server` `renderToString`) so each one ships as its own
+  `dist/<route>/index.html` with the real title, description, H1 and text.
+- Generate `sitemap.xml` from the article list at build time (with `<lastmod>`).
+- Each article gets `BlogPosting` JSON-LD (headline, description, author,
+  datePublished, dateModified, image) and a `BreadcrumbList`.
+
+### 5b. Article checklist
+
+- One H1 = the question or promise in the title.
+- Answer the question in the **first 2–3 sentences** (featured snippets and AI answers take this).
+- 800–1,500 words, H2s phrased the way people search ("How long does it take to…").
+- Real examples, including a correction example in the "red → green" style the app uses.
+- **2–4 internal links** with descriptive anchor text, e.g. *"find a
+  [Spanish language exchange partner](/languages/spanish)"*, never *"click here"*.
+- One CTA box at the end: *"Practise this with a native speaker, free →"* linking to `/signup`.
+- Author name + short bio (a real person, e.g. the student team), and the date published/updated.
+- Every meaningful image has alt text describing it (see §6).
+
+### 5c. First 12 articles (titles match real searches)
+
+| # | Title (H1) | Target search | Links to |
+|---|---|---|---|
+| 1 | What Is a Language Exchange and How Does It Work? | what is a language exchange | `/`, `/how-it-works` |
+| 2 | How to Find a Language Exchange Partner Online (Free) | find language exchange partner | `/languages`, `/signup` |
+| 3 | 10 Ways to Practise Speaking a Language When You Have No One to Talk To | practise speaking a language alone | `/` |
+| 4 | How to Get Corrections from Native Speakers Without Feeling Embarrassed | get corrected by native speakers | `/#services` |
+| 5 | A1 to C2 Explained: What Each CEFR Level Means for Conversation | CEFR levels explained | `/languages` |
+| 6 | Your First Message to a Language Partner: 15 Openers That Work | how to start a conversation with a language partner | `/signup` |
+| 7 | How to Learn Swahili Online: A Beginner's Guide | learn Swahili online | `/languages/swahili` |
+| 8 | Practise English with Native Speakers for Free: A Practical Guide | practise English with native speakers free | `/languages/english` |
+| 9 | Spanish Phrases Learners Get Wrong (and the Native Way to Say Them) | common Spanish mistakes | `/languages/spanish` |
+| 10 | Why Flashcard Apps Alone Won't Make You Fluent | why can't I speak after Duolingo | `/` |
+| 11 | How to Build a Personal Phrasebook That You'll Actually Remember | how to remember vocabulary | `/#services` |
+| 12 | Language Exchange Safety: How to Practise Online Safely | is language exchange safe | `/#faq` |
+
+Publish 2 a month, update older ones, and link new articles to older ones.
+
+---
+
+## 6. On-page checklist (status)
+
+| Element | What good looks like | Status / action |
 |---|---|---|
-| `/` | `The Fluency Talks, Practice Languages…` (default) | ✅ |
-| `/privacy` | `Privacy Policy \| The Fluency Talks` | ✅ |
-| `/terms` | `Terms of Service \| The Fluency Talks` | ✅ |
-| `/data-deletion` | `Delete my data \| The Fluency Talks` | ✅ (low priority) |
-| `/login`, `/signup`, `/forgot-password`, `/reset-password` | `… \| The Fluency Talks` | ❌ `noindex` |
-| `/404` | `Page not found` | ❌ `noindex` |
-| All app routes (`/home`, `/search`, …) | default (untouched) | ❌ blocked in `robots.txt` |
+| **Page titles** | Unique per page, keyword first, brand last, ≤ 60 chars | ✅ unique via `useSeo`. 🔧 Home title should lead with "Free Language Exchange" (§3) |
+| **Meta descriptions** | 140–160 chars, says who it's for and what they get | ✅ all public pages. 🔧 Home + data-deletion rewrites in §3 |
+| **H1 headings** | Exactly one per page, describes the purpose | ✅ Hero, LegalLayout, NotFound each have one. 🔧 Home H1 lacks search keywords (§2) |
+| **Internal links** | Descriptive anchors between home, languages, blog, sign-up | 🟡 Footer links home sections + legal. 🔧 Add Blog + Languages to header/footer once built; articles link per §5b |
+| **Image alt text** | Meaningful images described; decorative images `alt=""` | ✅ Hero photos are decorative (`alt=""`, `aria-hidden`), logo has `alt`. 🔧 Blog/language page images need real descriptions, e.g. `alt="Two students chatting over coffee while practising French"`, not keyword lists |
+| **Structured data** | Accurate Organization, WebSite, SoftwareApplication, FAQPage | ✅ `index.html` has WebSite, WebApplication, Organization. ✅ FAQPage (rendered by React). 🔧 Add `BlogPosting` + `BreadcrumbList` per article. Validate at search.google.com/test/rich-results |
+| **Mobile performance** | LCP < 2.5 s, CLS < 0.1, INP < 200 ms on mobile | ✅ Hero image has `fetchpriority`, `srcset`, sizes; logo is 5–9 KB. 🔧 `favicon.png` (100 KB) and `favicon-dark.png` (164 KB): shrink to 32/180/512 px versions. Check PageSpeed Insights + Search Console Core Web Vitals after launch |
+| **Public HTML content** | Crawler sees real text without running JS | 🟡 `index.html` `<noscript>` now has a full text summary answering the six questions. 🔧 Real fix: pre-render public routes (§5a) |
+| **Canonical URLs** | One version per page, apex domain, https | ✅ `useSeo` sets canonical. 🔧 `www` and old-domain 301s are in `vercel.json`, which **Cloudflare ignores**. Add Cloudflare *Rules → Redirect Rules* (`www.thefluencytalks.com/*` → `https://thefluencytalks.com/$1`, 301) |
+| **robots.txt / sitemap** | App routes blocked, public pages listed | ✅ Updated: now also blocks `/library`, `/partners`, `/bounty-queue`, `/points-history` and names AI crawlers |
+| **Social card** | 1200×630 designed image | 🔧 `public/og-image.png` is still a placeholder |
+| **`llms.txt`** | Plain summary for AI models | ✅ `public/llms.txt` |
 
-`useSeo` sets `document.title`, `description`, `og:*`, `twitter:*`,
-`canonical`, and `robots` (`noindex, nofollow` when `noIndex: true`).
+---
 
-## Still to do (outside the codebase)
+## 7. Off-site / ops to-do
 
-1. **Replace `public/og-image.png`** with a designed 1200×630 card (logo + tagline on brand background). Re-deploy after.
-2. **Vercel → Domains:** add `thefluencytalks.com` (apex, A-record `76.76.21.21` or ANAME) + `www.thefluencytalks.com`; set apex as primary. `vercel.json` already 301s `www` → apex.
-3. **Supabase Dashboard → Authentication → URL Configuration:** Site URL `https://thefluencytalks.com`; add `https://thefluencytalks.com/**` to Redirect URLs (keep `http://localhost:5173/**` for dev). Remove the old `fluency-talks.vercel.app` entry once DNS is live.
-4. **Google OAuth:** authorized JavaScript origin `https://thefluencytalks.com`; redirect URI stays `https://<project-ref>.supabase.co/auth/v1/callback`.
-5. **Google Search Console:** add the apex property, submit `https://thefluencytalks.com/sitemap.xml`, request indexing for `/`. Add 301s if the old domain ever served traffic.
-6. **Apple / Facebook login:** update Return URLs / Valid OAuth Redirect URIs to the new domain if configured with domain restrictions.
-7. **Transactional email (Supabase):** confirm sender domain / DKIM for `@thefluencytalks.com` so auth emails don't land in spam.
-8. **Favicon:** `public/favicon.png` still shows the old mark — regenerate with the new wordmark if the logo changed, keeping the same filename.
-9. **Analytics:** add Plausible / PostHog / Vercel Analytics *after* consent wording is in Privacy (currently no tracker installed).
-10. **Ongoing:** one `<h1>` per route (landing Hero already has it); keep URLs stable; never index app routes; run Lighthouse SEO + Rich Results Test before launch.
+1. **Google Search Console:** follow [`GOOGLE_SEARCH_CONSOLE.md`](./GOOGLE_SEARCH_CONSOLE.md).
+2. **Bing Webmaster Tools:** import from Search Console, submit sitemap (feeds ChatGPT search & Copilot).
+3. **Cloudflare:** add www → apex redirect rule; make sure "Block AI bots" / "AI Labyrinth" are off; confirm `robots.txt` isn't replaced by Cloudflare's managed robots.txt.
+4. **Replace `public/og-image.png`** with a designed card (logo + "Free language exchange with native speakers").
+5. **Supabase Auth URL config / Google & Facebook OAuth:** apex domain only (unchanged from the rebrand notes).
+6. **Email sender domain (DKIM/SPF)** for `@thefluencytalks.com`.
+7. **Analytics:** add a privacy-friendly one (Cloudflare Web Analytics is free and cookieless) to see which pages and searches bring sign-ups.
+8. **Backlinks/mentions:** see §4.6.

@@ -19,6 +19,7 @@ import { actionBtn } from '@/components/features/ActionButtonStyle';
 import { C } from '@/theme/theme';
 import { listUserContributionPosts, type ContributionPost } from '@/services/library';
 import { PostCard } from '@/components/features/library';
+import { useInfiniteScroll, usePagedList } from '@/store/feedCache';
 
 export default function UserProfile() {
   const { username = '' } = useParams();
@@ -40,15 +41,12 @@ export default function UserProfile() {
   const staff = role === 'admin' || role === 'moderator';
   const myPoints = useProfileStore((s) => s.me?.points_balance);
   const providerAvatar = useProviderAvatar();
-  const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
-
-  useEffect(() => {
-    if (profile?.id) {
-      listUserContributionPosts(profile.id)
-        .then((r) => setPosts(r.posts))
-        .catch(() => setPosts([]));
-    }
-  }, [profile?.id]);
+  // Cached and paged like Home: instant when you come back, more as you scroll.
+  const postList = usePagedList<ContributionPost>(profile?.id ? `posts:user:${profile.id}` : null,
+    async (offset, limit) => (await listUserContributionPosts(profile!.id, { offset, limit })).posts);
+  const posts = postList.initialLoading ? null : postList.items;
+  const setPosts = (fn: (list: ContributionPost[] | null) => ContributionPost[] | null) => postList.update((items) => fn(items) ?? []);
+  const sentinel = useInfiniteScroll(postList.loadMore, !postList.done && !postList.initialLoading, postList.items.length);
 
 
   if (profile === undefined)
@@ -239,6 +237,8 @@ export default function UserProfile() {
             />
           ))
         )}
+        <div ref={sentinel} aria-hidden />
+        {postList.loading && posts && <div className="flex justify-center p-4"><Spinner /></div>}
       </div>
 
     </div>

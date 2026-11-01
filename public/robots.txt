@@ -11,11 +11,21 @@ Disallow: /u/
 Disallow: /settings
 Disallow: /learning
 Disallow: /phrasebook
+Disallow: /library
+Disallow: /partners
+Disallow: /bounty-queue
+Disallow: /points-history
 Disallow: /onboarding
 Disallow: /admin
 Disallow: /login
 Disallow: /signup
 Disallow: /forgot-password
 Disallow: /reset-password
+
+# AI assistants and AI search crawlers are welcome on the public pages.
+# They follow the same Disallow rules as everyone else (the `*` group above);
+# they're named here only so the intent is explicit.
+# GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User,
+# PerplexityBot, Google-Extended, Applebot-Extended, Bingbot
 
 Sitemap: https://thefluencytalks.com/sitemap.xml

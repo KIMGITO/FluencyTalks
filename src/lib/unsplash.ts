@@ -25,7 +25,11 @@ export async function searchUnsplashPhotos(query: string, perPage = 12): Promise
   const search = query.trim();
   if (search.length < 2) return [];
   const { data, error } = await supabase.functions.invoke('unsplash-proxy', { body: { search, perPage } });
-  if (error) throw new Error('Image search is unavailable right now.');
+  if (error) {
+    // The function answers with { error: '...' } (e.g. 503 "Image search is not configured" when the secret is missing).
+    const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    throw new Error(detail?.error ? `${detail.error}.` : 'Image search is unavailable right now.');
+  }
   const results = (data as { results?: RawPhoto[] } | null)?.results ?? [];
   return results.map((p) => ({
     id: p.id, url: p.urls.regular, small: p.urls.small, thumb: p.urls.thumb,

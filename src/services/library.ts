@@ -14,34 +14,40 @@ const toPost = ({ user, saved, ...p }: PostRow) => ({
   author: { ...user, languages: [] },
 });
 
-export const listContributionPosts = async (p_languageId?: string, p_category?: string) => {
+export interface Page { offset?: number; limit?: number }
+const rangeOf = ({ offset = 0, limit = 12 }: Page = {}) => [offset, offset + limit - 1] as const;
+
+export const listContributionPosts = async (p_languageId?: string, p_category?: string, page?: Page) => {
   let q = supabase
     .from('contribution_posts')
-    .select(POST_SELECT, { count: 'exact' })
-    .order('created_at', { ascending: false });
+    .select(POST_SELECT)
+    .order('created_at', { ascending: false })
+    .range(...rangeOf(page));
   if (p_languageId) q = q.eq('language_id', p_languageId);
   if (p_category) q = q.eq('category', p_category);
-  const { data, error, count } = await q;
+  const { data, error } = await q;
   if (error) throw error;
-  return { posts: ((data ?? []) as PostRow[]).map(toPost), total: count ?? 0 };
+  return { posts: ((data ?? []) as PostRow[]).map(toPost) };
 };
 /** A person's posts, their pinned post first. */
-export const listUserContributionPosts = async (userId: string) => {
-  const { data, error, count } = await supabase
+export const listUserContributionPosts = async (userId: string, page?: Page) => {
+  const { data, error } = await supabase
     .from('contribution_posts')
-    .select(POST_SELECT, { count: 'exact' })
+    .select(POST_SELECT)
     .eq('user_id', userId)
     .order('pinned_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(...rangeOf(page));
   if (error) throw error;
-  return { posts: ((data ?? []) as PostRow[]).map(toPost), total: count ?? 0 };
+  return { posts: ((data ?? []) as PostRow[]).map(toPost) };
 };
 /** Posts I saved, most recently saved first. */
-export const listSavedPosts = async () => {
+export const listSavedPosts = async (page?: Page) => {
   const { data, error } = await supabase
     .from('saved_posts')
     .select(`created_at, post:contribution_posts(${POST_SELECT})`)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(...rangeOf(page));
   if (error) throw error;
   return ((data ?? []) as unknown as { post: PostRow | null }[]).filter((r) => r.post).map((r) => toPost(r.post!));
 };

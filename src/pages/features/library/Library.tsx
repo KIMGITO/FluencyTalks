@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { Button, EmptyState, Input, Spinner, Tabs, buttonClass } from '@/components/ui';
 import { BookOpen, Plus, RefreshCw, Filter, X } from 'lucide-react';
 import { listContributionPosts, listSavedPosts, isContributionEligible, type ContributionPost } from '@/services/library';
+import { searchPosts } from '@/services/search';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useInfiniteScroll, usePagedList } from '@/store/feedCache';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { PostCard } from '@/components/features/library';
@@ -23,9 +26,6 @@ export default function Library() {
   const [lang, setLang] = useState('');
   const [cat, setCat] = useState('');
   const [searchText, setSearchText] = useState('');
-  const [posts, setPosts] = useState<(ContributionPost & { author?: { display_name?: string | null; username?: string; id?: string } | null })[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const languageName = useLanguageStore((s) => s.name);
@@ -33,38 +33,29 @@ export default function Library() {
   const me = useProfileStore((s) => s.me);
   const eligible = isContributionEligible(me);
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
-    try {
-      if (view === 'saved') {
-        const saved = await listSavedPosts();
-        setPosts(saved.filter((p) => (!lang || p.language_id === lang) && (!cat || p.category === cat)));
-      } else {
-        const r = await listContributionPosts(lang || undefined, cat || undefined);
-        setPosts(r.posts ?? null);
-      }
-    } catch (e) {
-      console.error('Loading posts failed', e);
-      setLoadError(true);
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [lang, cat, view]);
-
-  useEffect(() => { void fetchPosts(); }, [fetchPosts]);
+  // Typing searches the server (all posts, not only the loaded pages); saved posts are filtered locally.
+  const q = useDebouncedValue(searchText, 300).trim();
+  const serverSearch = view === 'all' && !!q;
+  // Cached, paged lists: one cache entry per tab + filter combination.
+  const key = view === 'saved' ? 'posts:saved' : serverSearch ? `posts:search:${q}:${lang}` : `posts:library:${lang}:${cat}`;
+  const list = usePagedList<ContributionPost>(key, async (offset, limit) => {
+    if (view === 'saved') return listSavedPosts({ offset, limit });
+    if (serverSearch) return (await searchPosts({ query: q, language: lang || undefined, offset, limit })) as unknown as ContributionPost[];
+    return (await listContributionPosts(lang || undefined, cat || undefined, { offset, limit })).posts;
+  });
+  const sentinel = useInfiniteScroll(list.loadMore, !list.done && !list.initialLoading, list.items.length);
 
   const displayed = useMemo(() => {
-    if (!posts) return [];
-    const q = searchText.trim().toLowerCase();
-    if (!q) return posts;
-    return posts.filter((p) =>
-      p.phrase.toLowerCase().includes(q) ||
-      (p.translation ?? '').toLowerCase().includes(q) ||
-      (p.source_context ?? '').toLowerCase().includes(q),
-    );
-  }, [posts, searchText]);
+    const needle = q.toLowerCase();
+    return list.items.filter((p) =>
+      // The server already filtered "all posts" by language/category (and text when searching);
+      // the saved list and the search results still need the remaining filters here.
+      (!cat || p.category === cat) &&
+      (view !== 'saved' || ((!lang || p.language_id === lang) && (!needle ||
+        p.phrase.toLowerCase().includes(needle) ||
+        (p.translation ?? '').toLowerCase().includes(needle) ||
+        (p.source_context ?? '').toLowerCase().includes(needle)))));
+  }, [list.items, q, cat, lang, view]);
 
   const hasFilters = lang || cat;
 
@@ -118,12 +109,12 @@ export default function Library() {
 
         <button
           type="button"
-          onClick={() => void fetchPosts()}
-          disabled={loading}
+          onClick={() => void list.refresh()}
+          disabled={list.loading}
           title="Refresh"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-muted transition hover:bg-border hover:text-ink disabled:opacity-40"
         >
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={15} className={list.loading ? 'animate-spin' : ''} />
         </button>
 
         {me && (
@@ -184,11 +175,11 @@ export default function Library() {
       )}
 
       {}
-      {loading ? (
+      {list.initialLoading ? (
         <div className="flex justify-center py-16">
           <Spinner />
         </div>
-      ) : loadError ? (
+      ) : list.error ? (
         <EmptyState title="Couldn't load posts" text="Check your connection and tap refresh." />
       ) : !displayed.length ? (
         <EmptyState
@@ -220,9 +211,11 @@ export default function Library() {
               post={p}
               variant="compact"
               removeOnUnsave={view === 'saved'}
-              onRemoved={(id) => setPosts((list) => list?.filter((x) => x.id !== id) ?? null)}
+              onRemoved={(id) => list.update((items) => items.filter((x) => x.id !== id))}
             />
           ))}
+          <div ref={sentinel} aria-hidden />
+          {list.loading && <div className="flex justify-center p-4"><Spinner /></div>}
         </div>
       )}
     </div>
