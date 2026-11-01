@@ -2,7 +2,7 @@
 
 > Practice a foreign language by actually talking to people who speak it well.
 
-The Fluency Talks connects **language learners** (students abroad, expats, anyone studying a language) with **native and fluent speakers**. People follow each other, message, and help each other improve. This repo is the **web app frontend (MVP phase 1)**. Supabase is the backend for everything.
+The Fluency Talks connects **language learners** (students abroad, expats, anyone studying a language) with **native and fluent speakers**. People message each other and help each other improve. A match never needs to be a perfect swap: you see native speakers of the language you are learning and learners of the language you speak. This repo is the **web app frontend (MVP phase 1)**. Supabase is the backend for everything.
 
 ## Intentions
 

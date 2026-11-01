@@ -56,7 +56,7 @@ export default function LanguagePage() {
             <h2>How to practise {l.name} here</h2>
             <ol>
               <li><strong>Say who you are.</strong> Choose {l.name} as the language you are learning, and your level from A1 (beginner) to C2 (near-native).</li>
-              <li><strong>Meet a match.</strong> We suggest people who speak {l.name} natively and people learning your language whom you can help. Send a message; they can accept or decline.</li>
+              <li><strong>Meet a match.</strong> We suggest everyone who speaks {l.name} natively, even if they are learning nothing, and anyone learning your language. A perfect swap comes first but is never required. Send a message; they can accept or decline.</li>
               <li><strong>Talk, get corrected, keep it.</strong> Your partner fixes a sentence right where you wrote it. Accept the change and the phrase goes into your phrasebook.</li>
             </ol>
             <p>Practice happens in text chat, so you can take your time, look words up, and read every correction again later. New to this? Read <Link to="/blog/what-is-a-language-exchange">what a language exchange is</Link> and <Link to="/blog/find-a-language-exchange-partner">how to find a good partner</Link>.</p>

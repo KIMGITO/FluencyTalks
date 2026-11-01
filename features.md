@@ -31,13 +31,13 @@ Makes it easier for users to find and select the right language, including langu
 ## 4. Home Feed and Language-Partner Suggestions
 
 **What it does**  
-Shows users a ranked list of potential language partners based on their language profiles. Suggestions prioritize people who may be able to teach the language the user wants to learn, followed by other people with relevant language-learning connections.
+Shows users a ranked list of potential language partners based on their language profiles. A perfect swap ranks first, then native speakers of the language the user is learning (whatever they are learning, even nothing), then anyone learning the user's native language. A swap is never required.
 
 **How it helps**  
-Reduces the effort required to find a suitable conversation partner. Instead of searching randomly, learners can start with people whose language skills may make the exchange useful to both sides.
+Reduces the effort required to find a suitable conversation partner. Instead of searching randomly, learners can start with people who can teach them, or people they can help. Both at once ranks highest, but one is enough.
 
 **Current limitation**  
-Recommendations are currently one-directional: the feed does not yet provide a separate view showing people who should message the current user.
+The feed merges teachers and learners into one list, labelled by reason.
 
 ## 5. Search for People and Messages
 

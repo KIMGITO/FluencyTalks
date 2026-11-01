@@ -6,7 +6,7 @@ export type LevelCode = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Native';
 export interface UserLanguage { language_id: string; role: Role; level: LevelCode; native_name?: string | null; english_name?: string | null }
 export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; languages: UserLanguage[] }
 
-export type MatchKind = 'native' | 'learning' | 'other';
+export type MatchKind = 'swap' | 'native' | 'learning' | 'other';
 
 export type FeedPerson = Person & { match_kind: MatchKind; match_language: string | null };
 export interface Country { code: string; name: string }

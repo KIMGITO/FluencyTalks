@@ -10,14 +10,14 @@ const post: Post = {
   published: '2026-11-01',
   updated: '2026-11-01',
   readMinutes: 7,
-  summary: 'The quickest way to find a language exchange partner is to look for someone who speaks the language you are learning and is learning the language you speak. Use a platform that matches by language pair, write a short, specific first message, and agree early on how often you will talk.',
+  summary: 'The quickest way to find a language exchange partner is to look for a native speaker of the language you are learning, or a learner of the language you speak. Someone who is both is a bonus, not a requirement. Use a platform that matches by language pair, write a short, specific first message, and agree early on how often you will talk.',
   body: (
     <>
       <h2>Start with the right match</h2>
-      <p>The best partner is someone whose needs mirror yours. If you speak English and are learning Vietnamese, look for a native Vietnamese speaker who is learning English. Both of you then have a reason to keep showing up.</p>
+      <p>You do not need a perfect mirror. If you speak English and are learning Vietnamese, any native Vietnamese speaker can help you, even one who is learning nothing, and you can help anyone who is learning English, even a French speaker. A native Vietnamese speaker who is also learning English is the ideal pair, because each of you has a reason to keep showing up, but waiting for one slows you down.</p>
       <p>Three things matter more than anything else:</p>
       <ul>
-        <li><strong>The language pair.</strong> They speak what you are learning; you speak what they are learning.</li>
+        <li><strong>The language pair.</strong> Someone speaks what you are learning, or is learning what you speak. Both at once is a bonus.</li>
         <li><strong>A similar level.</strong> Not identical, but if one person is at A1 and the other at C1, conversations tend to drift into one language.</li>
         <li><strong>Similar availability.</strong> Time zones matter less for text chat, but you still need to reply within a day or two.</li>
       </ul>

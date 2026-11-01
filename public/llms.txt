@@ -1,6 +1,6 @@
 # The Fluency Talks
 
-> The Fluency Talks is a free language exchange web app. You choose the language you speak and the one you are learning, it matches you with people who want the opposite, and they correct your messages inside the chat. Accepted corrections are saved to your personal phrasebook.
+> The Fluency Talks is a free language exchange web app. You choose the language you speak and the one you are learning, it shows you native speakers of the language you are learning and learners of the language you speak (a perfect two-way swap is ranked first but not required), and they correct your messages inside the chat. Accepted corrections are saved to your personal phrasebook.
 
 ## Key facts
 

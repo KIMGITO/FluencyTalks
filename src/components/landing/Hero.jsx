@@ -26,7 +26,7 @@ export default function Hero() {
         </div>
 
         <div className="lp-hero__body">
-          <p className="lp-hero__lead">The Fluency Talks is a free language exchange with native speakers. Tell us the language you speak and the one you are learning, we find people who want the opposite, and they correct your messages right inside the chat.</p>
+          <p className="lp-hero__lead">The Fluency Talks is a free language exchange with native speakers. Tell us the language you speak and the one you are learning. We show you anyone who speaks the language you are learning, and anyone learning yours. They don't have to want what you offer, and they correct your messages right inside the chat.</p>
           <div className="lp-hero__cta" id="hero-cta">
             <Link to={join.to} className="lp-btn lp-btn--accent">{join.signedIn ? 'Go to your account' : 'Start talking, it is free'}</Link>
             <a href="#services" className="lp-link">See what you get <span aria-hidden="true">→</span></a>

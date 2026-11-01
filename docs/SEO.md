@@ -78,7 +78,7 @@ and add the keywords:
   *(or keep the current H1 and put the keyword sentence in the lead paragraph
   as the very first words)*
 - **Lead paragraph (first sentence must stand alone as a definition):**
-  `The Fluency Talks is a free language exchange app. Tell us the language you speak and the one you're learning, we match you with people who want the opposite, and they correct your messages right inside the chat.`
+  `The Fluency Talks is a free language exchange app. Tell us the language you speak and the one you're learning, we show you native speakers of your target language and learners of yours (no perfect swap needed), and they correct your messages right inside the chat.`
 - **Under the CTA:** `Free forever · No paid plans · A1 to C2 welcome`
 - **Add a "Why The Fluency Talks" comparison block** (3–4 rows) above the FAQ:
 

@@ -48,7 +48,7 @@ export default function Home() {
   const nativeName = nameOf(me?.native_language_id);
   const learningName = nameOf(me?.learning_language_id);
   const emptyText = learningName
-    ? `Nobody matches yet. People who speak ${learningName} natively, or are learning ${nativeName}, will appear here as they join. You can also search by name or @username.`
+    ? `Nobody matches yet. Anyone who speaks ${learningName} natively, and anyone learning ${nativeName}, will appear here as they join. They don't need to want what you offer. You can also search by name or @username.`
     : nativeName
       ? `Add a language you are learning in your profile to get matched. People learning ${nativeName} will appear here as they join, or search by name or @username.`
       : 'Search for anyone by name or @username.';

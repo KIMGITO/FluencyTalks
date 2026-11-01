@@ -23,7 +23,7 @@ export default function Services() {
           <article className="lp-card lp-card--b" data-reveal style={{ '--d': '.1s' }}>
             <span className="lp-num" aria-hidden="true">02</span>
             <h3>Matched by language, not by popularity</h3>
-            <p>Your native language and the one you are learning decide who you see. The best match is someone who wants exactly what you can offer.</p>
+            <p>Your native language and the one you are learning decide who you see. A perfect swap ranks first, but you don't need one. Speak English and learning Chinese? You see every Chinese speaker, even one who is learning nothing, and every learner of English.</p>
           </article>
 
           <article className="lp-card lp-card--c" data-reveal>

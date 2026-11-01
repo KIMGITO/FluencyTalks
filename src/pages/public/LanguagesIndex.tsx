@@ -19,7 +19,7 @@ export default function LanguagesIndex() {
         <header className="lp-doc__head">
           <p className="lp-kicker">{LANGUAGES.length} languages at launch</p>
           <h1>Languages you can practise</h1>
-          <p className="lp-lead lp-blog__lead">Pick the language you speak and the one you are learning. We match you with people who want the opposite, and they correct you inside the chat.</p>
+          <p className="lp-lead lp-blog__lead">Pick the language you speak and the one you are learning. We show you native speakers of your target language and learners of your own, and they correct you inside the chat.</p>
         </header>
         <nav className="lp-tabs lp-regions" aria-label="Jump to a region">
           {REGIONS.map((region) => <a key={region} href={`#${regionId(region)}`}>{region}</a>)}

@@ -8,7 +8,7 @@
 
 ## 1. The Product in One Paragraph
 
-FluencyTalks is a **study-partner platform, not a social network**. A user declares the one language they speak natively and, optionally, the one language they are learning. The app matches them with people whose languages complement theirs (a Kenyan learning Vietnamese ↔ a Vietnamese speaker learning English or Swahili). Partners chat, native speakers correct each other's sentences inline, learners save phrases into a personal phrasebook, and points reward helpful corrections. There is no feed, no follower counts, no popularity contest.
+FluencyTalks is a **study-partner platform, not a social network**. A user declares the one language they speak natively and, optionally, the one language they are learning. The app shows them native speakers of the language they are learning and learners of the language they speak. A perfect swap ranks first but is never required (a Kenyan learning Vietnamese sees every Vietnamese speaker, even one who learns nothing, and every learner of Swahili). Partners chat, native speakers correct each other's sentences inline, learners save phrases into a personal phrasebook, and points reward helpful corrections. There is no feed, no follower counts, no popularity contest.
 
 **Demo story for the project defence:** *Tom (native English, learning Vietnamese, A2) is matched with Linh (Hanoi, native Vietnamese, learning English). Tom writes "Tôi là đói", Linh corrects it inline to "Tôi đói" (red → green), Tom accepts, Linh earns +5, and the corrected phrase lands in Tom's phrasebook. Tom is stuck on an exam phrase, spends 50 points on a bounty, and a native speaker answers it within minutes.*
 
@@ -56,14 +56,15 @@ React + Vite + TypeScript, Tailwind driven by a single token file, Zustand store
 - The two cannot be equal.
 - Changing languages is allowed but limited (e.g. once per 30 days) to stop users hopping between pools to farm corrections.
 
-### F2. Reciprocal Match Engine
-**What:** Replaces `home_feed()`. Shows partners ranked by match quality.
+### F2. Tiered Match Engine (built, migration `20261101000004`)
+**What:** `home_feed()` shows partners ranked by match quality. A swap is the top tier, not a requirement.
 **Match tiers:**
-1. **Perfect swap:** their native = my target **and** their target = my native.
-2. **Teacher:** their native = my target (they can help me, I may not be able to help them).
-3. **Bridge:** no direct fit, but both speak a shared third language at B1 or higher (e.g. English). Optional, off by default.
+1. **Swap:** their native = my target **and** their target = my native. Best match.
+2. **Teacher:** their native = my target, whatever they are learning (even nothing).
+3. **Learner:** their target = my native, whatever their native language is. I can help them.
+4. **Bridge (not built):** no direct fit, but both speak a shared third language at B1 or higher (e.g. English). Optional, off by default.
 
-No ranking by follower count. Within a tier, order by **recent activity** and **timezone overlap**, so new users are not buried.
+No ranking by follower count. Within a tier: newest first, then closest timezone.
 
 ### F3. Saved Study Partners (replaces follow/unfollow)
 **What:** A private bookmark list. Tapping "Save partner" adds someone to *your* list. They are not notified, there are no counts, no follow requests, no private accounts.
@@ -161,15 +162,15 @@ This is the most important section. Language selection decides who can match wit
 **Impact:** Contradictory profiles and false matches.
 **Fix:** the `CHECK` in B1.
 
-### B4. Matching is one-directional
-**Where:** `home_feed()` puts anyone who speaks natively what I'm learning in the top tier, whether or not they want what I offer.
-**Impact:** Native speakers get flooded with requests from learners and have no incentive to answer, so response rates fall and learners churn. A true exchange (both sides gain) is what keeps people returning.
-**Fix:** The three-tier engine in F2, with "perfect swap" first. Show the reason on the card ("You teach Swahili, they teach Vietnamese").
+### B4. Native speakers can be flooded by learners (resolved as a design choice)
+**Decision:** Matching must not require a perfect swap. An English speaker learning Chinese must see Chinese speakers who are learning nothing, and a French speaker learning English must see them too. Requiring both sides to want something would leave most users with an empty feed.
+**Remaining risk:** Native speakers may receive many requests. The message-request flow lets them decline, and the points and bounty system rewards answering.
+**Built:** the tiered engine in F2, swap first, with the reason shown on the card.
 
 ### B5. The "learning" bucket mixes unrelated people
 **Where:** the `match_kind = 'learning'` branch includes people learning the same language as me and people who share my native language.
 **Impact:** Two learners of the same language cannot correct each other reliably, and two speakers of the same native language have no practice reason. The feed looks full but is not useful.
-**Fix:** Drop those cases from the main feed. Offer "learning the same language" only as an explicit "study buddy" filter.
+**Fix (done):** those cases are no longer partners; they fall into "other". Offer "learning the same language" only as an explicit "study buddy" filter.
 
 ### B6. Ranking by follower count
 **Where:** `order by followers_count desc` in `home_feed()`.

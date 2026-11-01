@@ -5,16 +5,17 @@ const post: Post = {
   slug: 'what-is-a-language-exchange',
   title: 'What Is a Language Exchange and How Does It Work?',
   seoTitle: 'What Is a Language Exchange?',
-  description: 'A language exchange pairs two people who want to learn each other\'s language. Here is how it works, what you get from it, and how to make the most of it.',
+  description: 'A language exchange pairs people who help each other learn. Here is how it works, why a perfect swap is not required, and how to get the most from it.',
   kicker: 'Language exchange basics',
   published: '2026-11-01',
   updated: '2026-11-01',
   readMinutes: 6,
-  summary: 'A language exchange is two people helping each other learn: you help someone with your native language, and they help you with theirs. It is free, it gives you real conversation practice, and it works best when both partners correct each other kindly and regularly.',
+  summary: 'A language exchange is two people helping each other learn: you help someone with your native language, and someone helps you with theirs, though not always the same person. It is free, it gives you real conversation practice, and it works best when both partners correct each other kindly and regularly.',
   body: (
     <>
       <h2>The idea in one sentence</h2>
       <p>You speak English and want to learn Vietnamese. Someone else speaks Vietnamese and wants to learn English. You talk, you help each other, and nobody pays anybody. That is a language exchange, sometimes called a <em>tandem</em>.</p>
+      <p>It does not have to be a perfect pair. A Vietnamese speaker who is learning nothing can still help you with Vietnamese, and you can help a French speaker who is learning English, even though you speak neither French nor Vietnamese with them. Helping a learner of your language is the point, and getting help from a native speaker is the other half. They don't have to be the same person.</p>
       <p>It works because each person is the expert in one half of the conversation. When you are stuck, your partner knows the natural way to say it. When they are stuck, you do.</p>
 
       <h2>What happens in a typical exchange</h2>
@@ -56,7 +57,7 @@ const post: Post = {
       <p>Ready to try one? Read <Link to="/blog/find-a-language-exchange-partner">how to find a language exchange partner online</Link>, or see <Link to="/blog/corrections-from-native-speakers">how to ask native speakers for corrections</Link> without feeling awkward.</p>
 
       <h2>How The Fluency Talks does it</h2>
-      <p>On <Link to="/">The Fluency Talks</Link> you choose the language you speak and the one you are learning, and we show you people who want the opposite. You chat in writing, and your partner can correct a sentence right where you wrote it. You see exactly what changed, accept it or not, and accepted corrections go into your own phrasebook to review later. It is free, with no paid plans.</p>
+      <p>On <Link to="/">The Fluency Talks</Link> you choose the language you speak and the one you are learning, and we show you every native speaker of your target language plus everyone learning yours. A perfect swap ranks first, but you never need one. You chat in writing, and your partner can correct a sentence right where you wrote it. You see exactly what changed, accept it or not, and accepted corrections go into your own phrasebook to review later. It is free, with no paid plans.</p>
     </>
   ),
 };
