@@ -84,11 +84,6 @@ export default function Home() {
                 <ProfileCard key={p.id} person={p} onHidden={drop} />
               ))}
 
-            {}
-            {partners.length > 0 && others.length > 0 && (
-              <Divider label="Everyone else" className="my-2" position="ne" />
-            )}
-
             {partners.length === 0 && others.length === 0 && (
               <EmptyState
                 title="No matches yet"
@@ -106,7 +101,7 @@ export default function Home() {
               <EmptyState
                 title="No language match yet"
 
-                text="Nobody here shares one of your languages right now — browse everyone below, or add more languages."
+                text="Nobody here shares one of your languages right now — browse posts and everyone below, or add more languages."
                 action={
                   <Link to="/profile/edit">
                     <Button size="sm" variant="secondary">
@@ -116,16 +111,41 @@ export default function Home() {
                 }
               />
             )}
+          </>
+        )}
 
+        {/* Community feed: newest published posts, between your matches and everyone else */}
+        <Divider label="From the community" className="mt-4 mb-1" position="ne" />
+        {posts === null ? (
+          <div className="flex justify-center p-6">
+            <Spinner />
+          </div>
+        ) : posts.length === 0 ? (
+          <EmptyState
+            title="No posts yet"
+            text="Phrases, idioms and examples people share will show up here."
+            action={
+              <Link to="/library/contribute">
+                <Button size="sm">Share a phrase</Button>
+              </Link>
+            }
+          />
+        ) : (
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+            {posts.map((p) => (
+              <PostCard key={p.id} post={p} />
+            ))}
+          </div>
+        )}
+
+        {others.length > 0 && (
+          <>
+            <Divider label="Everyone else" className="mt-4 mb-1" position="ne" />
             {others.map((p) => (
               <ProfileCard key={p.id} person={p} onHidden={drop} />
             ))}
           </>
         )}
-            {posts && posts.map((p) => (
-              <PostCard key={p.id} post={p} />
-            ))}
-
       </div>
     </>
   );
