@@ -9,13 +9,10 @@ export function TopBar() {
   const providerAvatar = useProviderAvatar();
   return (
     <header className="sticky top-0 z-20 flex h-[var(--layout-topbarH)] items-center justify-between gap-2 border-b border-border bg-bg px-3 sm:gap-4 sm:px-4">
-      <Logo to="/home" />
+      {/* Phones: just the mark; the full name from sm up */}
+      <span className="sm:hidden"><Logo to="/home" compact /></span>
+      <span className="hidden sm:block"><Logo to="/home" /></span>
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-        {me?.points_balance !== undefined && (
-          <Link to="/bounty-queue" className="ft-btn whitespace-nowrap rounded-sm border border-border bg-surface px-2 py-1 text-xs font-bold text-ink hover:bg-surface-2" aria-label={`${me.points_balance} points. Open bounties`}>
-            {me.points_balance} pts
-          </Link>
-        )}
         <NotificationBell />
         <Link to="/profile" aria-label="Your profile">
           <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="xs" />

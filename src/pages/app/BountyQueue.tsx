@@ -39,11 +39,11 @@ export default function BountyQueue() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <PageHeader title="Bounties" subtitle="Help others with their writing and earn points, or ask the community for help" />
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="ft-inset mb-4 flex items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'open', label: 'I can answer' }, { key: 'mine', label: 'My bounties' }]} />
         <Link to="/points-history" className="text-sm text-brand">Points history</Link>
       </div>
-      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
+      {error && <p className="ft-inset mb-3 text-sm text-danger">{error}</p>}
       {tab === 'open'
         ? (open === null ? <div className="flex justify-center p-8"><Spinner /></div>
           : !open.length ? <EmptyState title="No open bounties" text="Bounties in a language you speak natively, or know at B1 or above, show up here." />

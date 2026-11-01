@@ -108,9 +108,9 @@ export default function Search() {
   return (
     <>
       <PageHeader title="Search" subtitle="Find people to talk to, or something you said" />
-      <div className="mb-2"><SearchBox value={text} onChange={(v) => patch({ q: v })} /></div>
+      <div className="ft-inset mb-2"><SearchBox value={text} onChange={(v) => patch({ q: v })} /></div>
       {}
-      <div className="sticky top-[var(--layout-topbarH)] z-10 -mx-1 mb-2 flex items-center gap-2 bg-bg/95 px-1 py-1.5 backdrop-blur">
+      <div className="sticky top-[var(--layout-topbarH)] z-10 mb-2 flex items-center gap-2 bg-bg/95 px-3 py-1.5 md:-mx-1 md:px-1 backdrop-blur">
         <div className="min-w-0 flex-1 overflow-x-auto"><Tabs value={tab} onChange={(key) => patch({ tab: key })} items={tabs} /></div>
         {tab !== 'messages' && (
           <SearchFilters value={{ language, role, level }} onChange={(p) => patch({ lang: p.language ?? '', role: p.role ?? '', level: p.level ?? '' })} />

@@ -34,10 +34,12 @@ export default function PointsHistory() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Points History</h1>
-      <p>Your points transaction history</p>
+      <div className="ft-inset">
+        <h1 className="text-2xl font-bold">Points History</h1>
+        <p>Your points transaction history</p>
+      </div>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="ft-inset mt-4 flex items-center justify-between">
         <span className="text-lg font-medium">+{totalEarned} pts earned</span>
         <span className="text-lg text-brand">-{totalSpent} pts spent</span>
       </div>

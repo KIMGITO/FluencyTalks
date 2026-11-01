@@ -36,13 +36,13 @@ export default function Settings() {
   return (
     <>
       <PageHeader title="Settings" subtitle="Profile, privacy and appearance" />
-      <div role="tablist" aria-label="Settings sections" className={tabsClass}>
+      <div role="tablist" aria-label="Settings sections" className={clsx("ft-inset", tabsClass)}>
         {tabs.map(({ key, label, icon: Icon }) => (
           <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={clsx(tabClass(tab === key), 'flex items-center gap-1.5')}>
             <Icon size={15} /> {label}</button>))}
       </div>
       <div className="mt-3 flex flex-col gap-2">
-        {(msg || error) && <p className={error ? 'text-danger' : 'text-success'}>{error || msg}</p>}
+        {(msg || error) && <p className={clsx('ft-inset', error ? 'text-danger' : 'text-success')}>{error || msg}</p>}
 
         {tab === 'profile' && (<>
           <Card className="flex flex-col gap-2"><h2 className="font-semibold">Profile card</h2>

@@ -85,7 +85,7 @@ export default function UserProfile() {
   };
   return (
     <div className="flex flex-col gap-3">
-      {msg && <p className="text-sm text-danger">{msg}</p>}
+      {msg && <p className="ft-inset text-sm text-danger">{msg}</p>}
       <Card className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
           <Avatar

@@ -58,14 +58,14 @@ export default function Library() {
   const hasFilters = lang || cat;
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-4 pb-24 md:pb-4">
+    <div className="mx-auto w-full max-w-3xl py-4 pb-24 md:p-4">
       <PageHeader
         title="Community Library"
         subtitle="Browse phrases, idioms and examples contributed by the community"
       />
 
       {}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="ft-inset mb-4 flex flex-wrap items-center gap-2">
         {}
         <div className="relative flex-1 min-w-[180px]">
           <Input
@@ -121,7 +121,7 @@ export default function Library() {
 
       {}
       {showFilters && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 p-3">
+        <div className="mb-4 flex flex-wrap items-center gap-2 border-y md:rounded-md md:border border-border bg-surface-2 p-3">
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value)}
@@ -157,7 +157,7 @@ export default function Library() {
 
       {}
       {me && !eligible && (
-        <div className="mb-4 flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
+        <div className="mb-4 flex items-start gap-3 border-y border-warning/40 md:rounded-md md:border bg-warning/10 px-4 py-3 text-sm text-warning">
           <span className="mt-0.5 text-lg">🔒</span>
           <span>
             To contribute, verify your native language or reach <strong>B1+</strong> in your learning language from your profile.

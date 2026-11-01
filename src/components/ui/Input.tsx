@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import { forwardRef, useId, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, useState, type InputHTMLAttributes } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -20,18 +21,23 @@ const sizes: Record<InputSize, { input: string; label: string; message: string }
 };
 
 export const Input = forwardRef<HTMLInputElement, Props>(
-  ({ label, error, size = 'sm', className, id, ...rest }, ref) => {
+  ({ label, error, size = 'sm', className, id, type, ...rest }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
     const errorId = `${inputId}-error`;
     const s = sizes[size];
+    // Password fields get a show/hide toggle.
+    const isPassword = type === 'password';
+    const [reveal, setReveal] = useState(false);
 
     return (
       <label className="block" htmlFor={inputId}>
         {label && <span className={clsx('block font-semibold text-ink', s.label)}>{label}</span>}
+        <span className="relative block">
         <input
           ref={ref}
           id={inputId}
+          type={isPassword && reveal ? 'text' : type}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           className={clsx(
@@ -39,10 +45,23 @@ export const Input = forwardRef<HTMLInputElement, Props>(
             'focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60',
             error ? 'border-danger focus:ring-danger/30' : 'border-border hover:border-ink/40 focus:border-ink focus:ring-accent/40',
             s.input,
+            isPassword && 'pr-10',
             className,
           )}
           {...rest}
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); setReveal((r) => !r); }}
+            aria-label={reveal ? 'Hide password' : 'Show password'}
+            aria-pressed={reveal}
+            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted transition-colors hover:text-ink focus:outline-none focus-visible:text-ink"
+          >
+            {reveal ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
+        </span>
         {error && (
           <span id={errorId} role="alert" className={clsx('block text-danger', s.message)}>
             {error}

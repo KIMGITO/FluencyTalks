@@ -61,10 +61,10 @@ export default function Partners() {
   const isSaved = (id: string) => savedIds.has(id);
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-4">
+    <div className="mx-auto w-full max-w-3xl py-4 md:p-4">
       <PageHeader title="Saved Partners" subtitle="Manage your language partner list" />
 
-      <div className="mb-3 flex gap-2">
+      <div className="ft-inset mb-3 flex gap-2">
         <Tabs<'saved' | 'browse'> value={tab} onChange={setTab} items={[{ key: 'saved', label: 'Saved' }, { key: 'browse', label: 'Browse people' }]} />
       </div>
 
@@ -76,7 +76,7 @@ export default function Partners() {
             <EmptyState title="No saved partners yet" text="Save a language partner from the Browse tab to see them here." />
           ) : (
             <div className="space-y-2">{partners.map((p) => (
-              <div key={p.partner_id} className="ft-card flex items-center justify-between rounded-md border border-border bg-surface-2 p-3">
+              <div key={p.partner_id} className="ft-card flex items-center justify-between bg-surface-2 p-3">
                 <div className="flex items-center gap-2">
                   <UserAvatar userId={p.partner_id} />
                   <span className="font-medium">{p.partner_id}</span>
@@ -88,7 +88,7 @@ export default function Partners() {
         </>
       ) : (
         <>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="ft-inset mb-3 flex flex-wrap items-center gap-2">
             <Input placeholder="Search people…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <select value={langFilter} onChange={(e) => setLangFilter(e.target.value)} className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
               <option value="">All languages</option>

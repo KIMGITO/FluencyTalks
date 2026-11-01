@@ -8,7 +8,7 @@ export default function Admin() {
   return (
     <>
       <PageHeader title="Moderation" subtitle="Review reports and manage accounts" />
-      <div className="mb-4"><Tabs value={tab} onChange={setTab} items={[{ key: 'reports', label: 'Reports' }, { key: 'people', label: 'People' }, { key: 'activity', label: 'Activity' }]} /></div>
+      <div className="ft-inset mb-4"><Tabs value={tab} onChange={setTab} items={[{ key: 'reports', label: 'Reports' }, { key: 'people', label: 'People' }, { key: 'activity', label: 'Activity' }]} /></div>
       {tab === 'reports' ? <AdminReports /> : tab === 'people' ? <AdminUsers /> : <AdminActivity />}
     </>
   );

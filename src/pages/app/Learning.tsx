@@ -56,7 +56,7 @@ export default function Learning() {
   return (
     <>
       <PageHeader title="Learning" subtitle="Phrases you saved, corrections and translations." />
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="ft-inset mb-3 flex flex-wrap items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'phrases', label: 'Phrases' }, { key: 'corrections', label: 'Corrections' }, { key: 'translations', label: 'Translations' }]} />
         <div className="flex w-full items-center gap-2 mt-2">
           <Input placeholder="Search Unsplash for image..." value={unsplashQuery} onChange={(e) => setUnsplashQuery(e.target.value)} />

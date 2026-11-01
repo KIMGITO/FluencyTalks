@@ -20,6 +20,8 @@
 @layer components {
   /* Compact by default; `--layout-cardPadLg` on md+ so laptops/tablets breathe. */
   .ft-card { @apply bg-surface rounded-lg border border-border shadow-card; }
+  /* Phones: text and controls that sit outside a card keep a small inset from the screen edge. */
+  .ft-inset { @apply px-3 md:px-0; }
   /* A card you can click: lifts 4px with a soft shadow, like the cards on the public pages. */
   .ft-lift { transition: transform .35s var(--motion-ease), box-shadow .35s var(--motion-ease), border-color .2s; }
   .ft-lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-pop); border-color: rgb(var(--c-ink) / 0.3); }
@@ -100,3 +102,9 @@
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
+/* Phones: cards run edge to edge — no rounded corners or side borders. Unlayered so it
+   wins over per-card rounded/border utilities. Nested cards and menus keep their shape. */
+@media (max-width: 767px) {
+  .ft-card { border-radius: 0; border-left-width: 0; border-right-width: 0; }
+  .ft-card .ft-card, .ft-menu, .ft-thread-shell .ft-card { border-radius: theme('borderRadius.lg'); border-left-width: 1px; border-right-width: 1px; }
+}

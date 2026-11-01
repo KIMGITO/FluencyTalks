@@ -61,10 +61,10 @@ export function PostCard({ post }: PostCardProps) {
       {/* Author row */}
       <header className="flex items-center gap-3 px-1">
         {profileLink(
-          <span className="block rounded-full border-2 border-accent p-0.5">
+          <span className="flex aspect-square rounded-full border-2 border-accent p-0.5">
             <Avatar name={authorName} src={post.author?.avatar_url} size="md" />
           </span>,
-          'shrink-0',
+          'flex shrink-0',
         )}
         <div className="min-w-0 flex-1">
           {profileLink(authorName, 'block truncate font-semibold text-ink hover:underline')}
