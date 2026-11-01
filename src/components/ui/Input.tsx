@@ -28,7 +28,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(
 
     return (
       <label className="block" htmlFor={inputId}>
-        {label && <span className={clsx('block font-medium text-muted', s.label)}>{label}</span>}
+        {label && <span className={clsx('block font-semibold text-ink', s.label)}>{label}</span>}
         <input
           ref={ref}
           id={inputId}
@@ -37,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(
           className={clsx(
             'w-full border bg-surface text-ink placeholder:text-muted transition duration-200',
             'focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60',
-            error ? 'border-danger focus:ring-danger/30' : 'border-border hover:border-brand/50 focus:border-brand focus:ring-brand/30',
+            error ? 'border-danger focus:ring-danger/30' : 'border-border hover:border-ink/40 focus:border-ink focus:ring-accent/40',
             s.input,
             className,
           )}

@@ -76,7 +76,7 @@ export default function Partners() {
             <EmptyState title="No saved partners yet" text="Save a language partner from the Browse tab to see them here." />
           ) : (
             <div className="space-y-2">{partners.map((p) => (
-              <div key={p.partner_id} className="ft-card flex items-center justify-between rounded-xl border border-border bg-surface-2 p-3">
+              <div key={p.partner_id} className="ft-card flex items-center justify-between rounded-md border border-border bg-surface-2 p-3">
                 <div className="flex items-center gap-2">
                   <UserAvatar userId={p.partner_id} />
                   <span className="font-medium">{p.partner_id}</span>

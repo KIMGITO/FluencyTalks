@@ -100,11 +100,11 @@ export default function UserProfile() {
           />
           <div className="min-w-0 flex-1">
            <div className="flex items-center justify-between">
-             <h1 className="truncate text-xl font-bold">
+             <h1 className="break-words font-display text-2xl font-medium leading-tight">
               {profile.display_name}
             </h1>
              {profile.timezone && (
-                <span className="truncate flex items-end gap-0.5 text-aqua text-[10px] self-start ">
+                <span className="flex items-end gap-0.5 self-start text-[10px] text-muted">
                   {' '}
                    <Clock4Icon size={16}/> {profile.timezone}
                 </span>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Input, Spinner } from '@/components/ui';
+import { Button, EmptyState, Input, Spinner, buttonClass } from '@/components/ui';
 import { BookOpen, Plus, RefreshCw, Filter, X } from 'lucide-react';
 import { listContributionPosts, isContributionEligible, type ContributionPost } from '@/services/library';
 import { useLanguageStore } from '@/store/languageStore';
@@ -88,7 +88,7 @@ export default function Library() {
         <button
           type="button"
           onClick={() => setShowFilters((f) => !f)}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition ${
+          className={`flex items-center gap-1.5 rounded-sm px-3 py-2 text-sm font-medium transition ${
             showFilters || hasFilters
               ? 'bg-brand text-on-brand'
               : 'bg-surface-2 text-muted hover:bg-border hover:text-ink'
@@ -111,7 +111,7 @@ export default function Library() {
         {me && (
           <Link
             to="/library/contribute"
-            className="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition disabled:opacity-50 bg-brand text-on-brand hover:opacity-90 px-2 py-2 text-sm"
+            className={buttonClass('primary', 'sm')}
           >
             <Plus size={15} />
             Contribute
@@ -121,7 +121,7 @@ export default function Library() {
 
       {}
       {showFilters && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-2 p-3">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 p-3">
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value)}
@@ -147,7 +147,7 @@ export default function Library() {
             <button
               type="button"
               onClick={() => { setLang(''); setCat(''); }}
-              className="flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs text-muted hover:text-danger transition"
+              className="flex items-center gap-1 rounded-sm bg-surface px-2.5 py-1 text-xs text-muted hover:text-danger transition"
             >
               <X size={12} /> Clear
             </button>
@@ -157,7 +157,7 @@ export default function Library() {
 
       {}
       {me && !eligible && (
-        <div className="mb-4 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
+        <div className="mb-4 flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
           <span className="mt-0.5 text-lg">🔒</span>
           <span>
             To contribute, verify your native language or reach <strong>B1+</strong> in your learning language from your profile.
@@ -182,7 +182,7 @@ export default function Library() {
             me && eligible ? (
               <Link
                 to="/library/contribute"
-                className="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition disabled:opacity-50 bg-brand text-on-brand hover:opacity-90 px-3 py-3 text-lg"
+                className={buttonClass('primary', 'lg')}
               >
                 <Plus size={16} />
                 Contribute

@@ -29,7 +29,7 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <Button variant="ghost" size="sm" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span className="relative"><Bell size={20} />{unread > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-danger px-1 text-center text-xs font-semibold text-on-brand">{unread > 9 ? '9+' : unread}</span>}</span>
+        <span className="relative"><Bell size={20} />{unread > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-sm bg-accent px-1 text-center text-xs font-bold text-deep">{unread > 9 ? '9+' : unread}</span>}</span>
       </Button>
       {open && (<>
         <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
@@ -44,7 +44,7 @@ export function NotificationBell() {
                 <button onClick={() => go(n)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <Avatar name={n.actor_name ?? '?'} src={n.actor_avatar} size="sm" />
                   <span className="min-w-0 flex-1 break-words text-sm"><b>{n.actor_name ?? 'Someone'}</b> {verb(n)}<span className="block text-xs text-muted">{formatTime(n.created_at)}</span></span>
-                  {!n.read_at && <span aria-label="Unread" className="h-3 w-3 shrink-0 rounded-full bg-brand" />}
+                  {!n.read_at && <span aria-label="Unread" className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent" />}
                 </button>
                 <button aria-label="Delete notification" title="Delete" onClick={(e) => del(e, n)} className="shrink-0 rounded-full p-1.5 text-muted hover:bg-surface hover:text-danger"><Trash2 size={15} /></button>
               </li>))}</ul>)}

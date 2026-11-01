@@ -18,7 +18,7 @@ export function ReportCard({ report: r, onAct, onResolved }: { report: AdminRepo
     <Card className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <b>{reasonLabel(r.reason)}</b><span className="text-sm text-muted">{formatTime(r.created_at)}</span>
-        {!open && <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold capitalize">{r.status}</span>}
+        {!open && <span className="rounded-sm bg-surface-2 px-2 py-1 text-xs font-semibold capitalize">{r.status}</span>}
       </div>
       <p className="text-sm">
         <span className="text-muted">Reported by </span>{r.reporter_username ? <Link className="font-medium hover:underline" to={`/u/${r.reporter_username}`}>{r.reporter_name}</Link> : 'a deleted user'}

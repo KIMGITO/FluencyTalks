@@ -69,7 +69,7 @@ export default function Home() {
   return (
     <>
       <PageHeader
-        title={` ${me?.display_name?.toUpperCase() ?? 'Welcome'}`}
+        title={me?.display_name ? `Hello, ${me.display_name.split(' ')[0]}` : 'Welcome'}
         subtitle={subtitle}
       />
       <div className="flex flex-col gap-2">

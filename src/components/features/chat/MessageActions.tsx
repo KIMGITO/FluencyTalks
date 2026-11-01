@@ -51,12 +51,12 @@ export function MessageActions({
           
           'rounded-t-2xl px-2 pb-6 pt-3 animate-in slide-in-from-bottom duration-150',
           
-          'md:max-w-[240px] md:rounded-xl md:p-1.5 md:animate-in md:fade-in md:zoom-in-95'
+          'md:max-w-[240px] md:rounded-md md:p-1.5 md:animate-in md:fade-in md:zoom-in-95'
         )}
       >
         <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-border md:hidden" />
 
-        <div className="flex items-center justify-between gap-1 px-2 py-1 bg-surface-2/50 rounded-xl md:bg-transparent md:p-0" aria-label="Quick reactions">
+        <div className="flex items-center justify-between gap-1 px-2 py-1 bg-surface-2/50 rounded-md md:bg-transparent md:p-0" aria-label="Quick reactions">
           {QUICK.map((e) => (
             <button
               key={e}
@@ -73,30 +73,30 @@ export function MessageActions({
         <div className="hidden my-1 border-t border-border md:block" />
 
         <div className="mt-3 flex flex-col gap-0.5 md:mt-0">
-          <button onClick={() => { onReply(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+          <button onClick={() => { onReply(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
             <Reply size={16} className="text-muted" /> 
             <span>Reply</span>
           </button>
 
-          <button onClick={() => { onTranslate(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+          <button onClick={() => { onTranslate(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
             <Languages size={16} className="text-muted" /> 
             <span>Translate message</span>
           </button>
 
-          <button onClick={() => { onPin(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+          <button onClick={() => { onPin(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
             <Pin size={16} className="text-muted" /> 
             <span>{pinned ? 'Unpin' : 'Pin to top'}</span>
           </button>
 
           <div className="my-1 border-t border-border" />
 
-          <button onClick={() => { onDeleteMe(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-surface-2 text-muted md:py-1.5 md:rounded-lg">
+          <button onClick={() => { onDeleteMe(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 text-muted md:py-1.5 md:rounded-lg">
             <UserX size={16} /> 
             <span>Delete for me</span>
           </button>
 
           {mine && (
-            <button onClick={() => { onDeleteAll(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-danger/10 text-danger md:py-1.5 md:rounded-lg">
+            <button onClick={() => { onDeleteAll(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-danger/10 text-danger md:py-1.5 md:rounded-lg">
               <Trash2 size={16} /> 
               <span>Delete for everyone</span>
             </button>

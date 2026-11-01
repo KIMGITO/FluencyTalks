@@ -6,8 +6,8 @@
 @layer base {
   html { font-family: var(--font-sans); }
   body { @apply bg-bg text-ink antialiased; line-height: 1.6; transition: background-color var(--motion-base); }
-  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
-  :focus-visible { outline: 2px solid rgb(var(--c-brand)); outline-offset: 2px; }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; font-weight: 500; }
+  :focus-visible { outline: 3px solid rgb(var(--c-accent)); outline-offset: 2px; border-radius: 2px; }
 
   /* Facebook-style: app chrome is not selectable, so a drag never highlights
      the UI. Real content (chat, phrasebook, legal copy) opts back in, and form
@@ -19,7 +19,21 @@
 }
 @layer components {
   /* Compact by default; `--layout-cardPadLg` on md+ so laptops/tablets breathe. */
-  .ft-card { @apply bg-surface rounded-lg shadow-card; }
+  .ft-card { @apply bg-surface rounded-lg border border-border shadow-card; }
+  /* A card you can click: lifts 4px with a soft shadow, like the cards on the public pages. */
+  .ft-lift { transition: transform .35s var(--motion-ease), box-shadow .35s var(--motion-ease), border-color .2s; }
+  .ft-lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-pop); border-color: rgb(var(--c-ink) / 0.3); }
+  /* Buttons: a small lift on hover, back down when pressed. */
+  .ft-btn { transition: transform .3s var(--motion-ease), box-shadow .3s var(--motion-ease), background-color .2s, border-color .2s, color .2s; }
+  .ft-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 22px -12px rgb(var(--c-ink) / 0.5); }
+  .ft-btn:active:not(:disabled) { transform: none; box-shadow: none; }
+  /* Small outlined tag: language levels, categories, status. */
+  .ft-tag { @apply inline-flex items-center rounded-sm border border-border px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-ink; }
+  /* The kicker used above page titles: a short rule and small capitals. */
+  .ft-kicker { @apply flex items-center gap-2 text-2xs font-bold uppercase tracking-widest text-muted; }
+  .ft-kicker::before { content: ''; width: 1.5rem; height: 1.5px; background: currentColor; }
+  /* The current item in the dark sidebar: a coral mark on its left edge. */
+  .ft-nav-active { box-shadow: inset 3px 0 0 rgb(var(--c-accent)); }
   .ft-card-pad { padding: var(--layout-cardPad); }
   @media (min-width: 768px) { .ft-card-pad { padding: var(--layout-cardPadLg); } }
   /* Horizontal chip/pill row that wraps — used instead of a grid where the
@@ -30,11 +44,11 @@
   .ft-menu-item { @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-ink transition-colors; }
   .ft-menu-item:hover { @apply bg-surface-2; }
   .ft-gradient-text { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .ft-avatar-ring { background: var(--grad-brand); padding: 2px; border-radius: var(--radius-full); }
+  .ft-avatar-ring { background: rgb(var(--c-deep)); padding: 2px; border-radius: var(--radius-full); }
   .ft-hero-bg { background-image: var(--grad-hero); }
   .ft-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
   /* Facebook-style responsive grid: 3 cols (lg+) / 2 cols (md) / 1 col (mobile) */
-  .ft-shell { display: grid; grid-template-columns: 1fr; }
+  .ft-shell { display: grid; grid-template-columns: minmax(0, 1fr); }   /* not 1fr: that lets wide content stretch the whole page past the phone screen */
   @media (min-width: 768px)  { .ft-shell { grid-template-columns: var(--layout-sidebarCompactW) minmax(0,1fr); } }
   @media (min-width: 1100px) { .ft-shell { grid-template-columns: var(--layout-sidebarW) minmax(0,1fr) var(--layout-railW); } }
 }
@@ -48,7 +62,7 @@
   .ft-thread { @apply flex-1 overflow-y-auto overscroll-contain; position: relative; padding: 0.5rem 0.5rem 0.75rem; }
   @media (min-width: 768px) { .ft-thread { padding: 0.75rem 1rem 1rem; } }
   .ft-daybadge {
-    @apply mx-auto w-fit max-w-[90%] truncate rounded-full border border-border bg-surface px-3 py-1 text-2xs font-semibold text-muted shadow-card;
+    @apply mx-auto w-fit max-w-[90%] truncate rounded-sm border border-border bg-surface px-3 py-1 text-2xs font-bold uppercase tracking-wide text-muted;
     position: sticky; top: 0.25rem; z-index: 10;
   }
   .ft-cluster-gap { margin-top: 0.65rem; }
@@ -60,8 +74,8 @@
   }
   @media (min-width: 768px) { .ft-bubble { padding: 0.4rem 0.75rem 0.35rem; } }
   /* Tail corner is sharp (zero radius = zero corner padding) so the pointer joins flush with the edge. */
-  .ft-bubble-in { @apply bg-surface-2 text-ink; border-radius: 0 0.9rem 0.9rem 0.9rem; box-shadow: 0 1px 1px rgb(var(--c-ink) / 0.06); }
-  .ft-bubble-out { background: rgb(var(--c-brand)); color: rgb(var(--c-on-brand)); border-radius: 0.9rem 0 0.9rem 0.9rem; }
+  .ft-bubble-in { @apply bg-surface-2 text-ink; border-radius: 0 0.6rem 0.6rem 0.6rem; }
+  .ft-bubble-out { background: rgb(var(--c-brand)); color: rgb(var(--c-on-brand)); border-radius: 0.6rem 0 0.6rem 0.6rem; }
   /* Edge-pointer tails: same paint as the bubble, top edge exactly flush with the
      bubble top, tucked 1px under the bubble horizontally to hide any seam.
      Only on .ft-tail (cluster start). Corner radius is zero on the tail side. */

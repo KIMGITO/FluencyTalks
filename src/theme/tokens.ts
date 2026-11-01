@@ -32,11 +32,11 @@ export const spacing = {
   8: '2rem', 9: '2.25rem', 10: '2.5rem', 12: '3rem', 14: '3.5rem', 16: '4rem', 20: '5rem', 24: '6rem',
 } as const;
 
-export const radii = { sm: '0.5rem', md: '0.875rem', lg: '1.25rem', xl: '1.75rem', full: '9999px' } as const;
+export const radii = { sm: '0.1875rem', md: '0.25rem', lg: '0.25rem', xl: '0.375rem', full: '9999px' } as const;   // square-ish, like the public pages
 
 export const shadows = {
-  card: '0 1px 2px rgb(var(--c-ink) / 0.06), 0 4px 16px rgb(var(--c-ink) / 0.06)',
-  pop: '0 12px 40px rgb(var(--c-deep) / 0.25)',
+  card: '0 1px 0 rgb(var(--c-ink) / 0.04)',
+  pop: '0 18px 34px -18px rgb(var(--c-ink) / 0.34), 0 4px 10px -4px rgb(var(--c-ink) / 0.12)',
 } as const;
 
 
@@ -44,7 +44,7 @@ export const breakpoints = { sm: 640, md: 768, lg: 1100, xl: 1400 } as const;
 
 
 export const layout = {
-  topbarH: '3.25rem', bottomNavH: '3.5rem',
+  topbarH: '3.5rem', bottomNavH: '3.75rem',
   sidebarW: '15.5rem', sidebarCompactW: '4rem', railW: '18.5rem', feedMaxW: '40rem',
   cardPad: '0.75rem', cardPadLg: '1rem',
 } as const;
@@ -54,28 +54,30 @@ export const levelColors = { A1: 'lvl-a', A2: 'lvl-a', B1: 'lvl-b', B2: 'lvl-b',
 type Palette = Record<string, string>;
 export const themes: Record<'light' | 'dark', Palette> = {
   light: {
-    bg: '247 248 253', surface: '255 255 255', 'surface-2': '236 242 252', border: '221 227 243',
+    bg: '250 246 238', surface: '255 255 255', 'surface-2': '241 234 220', border: '222 214 199',
     ink: '23 22 58', muted: '91 90 126', 'on-brand': '255 255 255',
-    brand: '43 42 122', 'brand-soft': '230 244 255', accent: '255 106 77', aqua: '18 181 166',
-    sun: '255 200 61', deep: '27 26 85',
-    success: '22 163 98', danger: '229 57 74',
-    'lvl-a': '14 165 150', 'lvl-b': '43 42 122', 'lvl-c': '255 106 77', 'lvl-n': '240 170 20',
+    brand: '27 26 85', 'brand-soft': '232 229 242', accent: '255 106 77', aqua: '18 181 166',
+    sun: '255 200 61', deep: '27 26 85', 'on-deep': '250 246 238',
+    success: '22 120 76', danger: '200 36 58', warning: '150 92 8',
+    'lvl-a': '14 165 150', 'lvl-b': '27 26 85', 'lvl-c': '255 106 77', 'lvl-n': '240 170 20',
   },
   dark: {
     bg: '14 13 40', surface: '24 23 68', 'surface-2': '36 35 94', border: '56 55 120',
-    ink: '240 240 255', muted: '160 160 205', 'on-brand': '255 255 255',
+    ink: '240 240 255', muted: '160 160 205', 'on-brand': '14 13 40',
     brand: '124 122 240', 'brand-soft': '40 39 108', accent: '255 129 102', aqua: '45 212 198',
     sun: '255 211 94', deep: '27 26 85',
-    success: '52 211 140', danger: '255 99 114',
+    success: '52 211 140', danger: '255 99 114', warning: '255 196 80',
     'lvl-a': '45 212 198', 'lvl-b': '124 122 240', 'lvl-c': '255 129 102', 'lvl-n': '255 211 94',
+    'on-deep': '250 246 238',
   },
 };
 
+// Flat on purpose: gradients read as template styling. The keys stay so existing var(--grad-*) references keep working.
 export const gradients = {
-  brand: 'linear-gradient(135deg, rgb(var(--c-brand)) 0%, rgb(var(--c-aqua)) 100%)',
-  spark: 'linear-gradient(135deg, rgb(var(--c-accent)) 0%, rgb(var(--c-sun)) 100%)',
-  hero: 'radial-gradient(60rem 30rem at 15% -10%, rgb(var(--c-brand) / 0.25), transparent), radial-gradient(40rem 25rem at 90% 0%, rgb(var(--c-aqua) / 0.2), transparent), radial-gradient(35rem 20rem at 60% 110%, rgb(var(--c-accent) / 0.15), transparent)',
-  ring: 'conic-gradient(from 180deg, rgb(var(--c-aqua)), rgb(var(--c-brand)), rgb(var(--c-accent)), rgb(var(--c-sun)), rgb(var(--c-aqua)))',
+  brand: 'linear-gradient(rgb(var(--c-deep)), rgb(var(--c-deep)))',
+  spark: 'linear-gradient(rgb(var(--c-accent)), rgb(var(--c-accent)))',
+  hero: 'none',
+  ring: 'linear-gradient(rgb(var(--c-deep)), rgb(var(--c-deep)))',
 } as const;
 
 export const motion = { fast: '120ms', base: '200ms', slow: '320ms', ease: 'cubic-bezier(.2,.8,.2,1)' } as const;

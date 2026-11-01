@@ -30,7 +30,7 @@ export function ProfileCard({
     ('match_language' in person ? person.match_language : null);
   return (
     
-    <Card className="flex flex-col gap-2">
+    <Card className="ft-lift flex flex-col gap-2">
       <div className="flex items-start gap-2.5">
         <Link to={`/u/${person.username}`}>
           <Avatar

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { Check, SlidersHorizontal, X } from 'lucide-react';
 import clsx from 'clsx';
-import { Select } from '@/components/ui';
+import { Select, buttonClass } from '@/components/ui';
 import { LEARNER_LEVELS } from '@/lib/constants';
 import { normalizeCode } from '@/lib/languages';
 import { displayLabel, useDisplayLocales, useLanguages, useLanguageStore } from '@/store/languageStore';
@@ -45,15 +45,15 @@ export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; 
         {chips.length > 0 && (
           <div className="flex min-w-0 max-w-[38vw] items-center gap-1 overflow-x-auto sm:max-w-none" aria-live="polite">
             {chips.map((c) => (
-              <span key={c.k} className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-soft py-0.5 pl-2 pr-1 text-xs font-semibold text-brand">
+              <span key={c.k} className="inline-flex shrink-0 items-center gap-0.5 rounded-sm bg-brand-soft py-0.5 pl-2 pr-1 text-xs font-semibold text-brand">
                 {c.label}
                 <button type="button" aria-label={`Remove ${c.label}`} onClick={() => drop(c.k)} className="rounded-full p-0.5 hover:bg-brand/20"><X size={11} aria-hidden /></button>
               </span>))}
           </div>)}
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={n ? `Filters, ${n} active` : 'Filters'}
-          className={clsx('inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-sm font-semibold transition', n || open ? 'border-brand bg-brand-soft text-brand' : 'border-border bg-surface text-muted hover:text-ink') }>
+          className={clsx('inline-flex shrink-0 items-center gap-1 rounded-sm border px-2.5 py-1.5 text-sm font-semibold transition', n || open ? 'border-brand bg-brand-soft text-brand' : 'border-border bg-surface text-muted hover:text-ink') }>
           <SlidersHorizontal size={14} aria-hidden />
-          {n > 0 && <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-2xs font-bold text-on-brand">{n}</span>}
+          {n > 0 && <span className="flex h-4 min-w-4 items-center justify-center rounded-sm bg-brand px-1 text-2xs font-bold text-on-brand">{n}</span>}
         </button>
         {n > 0 && <button type="button" onClick={clear} className="shrink-0 text-xs font-semibold text-muted hover:text-danger hover:underline">Clear</button>}
       </div>
@@ -70,9 +70,9 @@ export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; 
           <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
             <span className="text-xs text-muted">{n ? `${n} active` : 'No filters'}{restCount > 0 && (showAll ? ` - all ${languages.length}` : ` - top ${common.length}`)}</span>
             <div className="flex gap-1.5">
-              {restCount > 0 && <button type="button" onClick={() => setShowAll((v) => !v)} className="rounded-full px-2.5 py-1 text-sm font-semibold text-brand hover:bg-brand-soft">{showAll ? 'Less' : `More (${restCount})`}</button>}
-              {n > 0 && <button type="button" onClick={clear} className="rounded-full px-2.5 py-1 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-danger">Clear</button>}
-              <button type="button" onClick={() => setOpen(false)} className="inline-flex items-center gap-1 rounded-full bg-brand px-3.5 py-1 text-sm font-semibold text-on-brand hover:opacity-90"><Check size={13} aria-hidden />Done</button>
+              {restCount > 0 && <button type="button" onClick={() => setShowAll((v) => !v)} className="rounded-sm px-2.5 py-1 text-sm font-semibold text-brand hover:bg-brand-soft">{showAll ? 'Less' : `More (${restCount})`}</button>}
+              {n > 0 && <button type="button" onClick={clear} className="rounded-sm px-2.5 py-1 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-danger">Clear</button>}
+              <button type="button" onClick={() => setOpen(false)} className={buttonClass('primary', 'sm')}><Check size={14} aria-hidden />Done</button>
             </div>
           </div>
         </div>)}

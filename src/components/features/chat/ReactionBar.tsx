@@ -42,7 +42,7 @@ export function ReactionBar({ reactions, myId, onToggle }: { reactions: Reaction
     <div className="flex flex-wrap items-center gap-1 px-2">
       {[...groups].map(([emoji, g]) => (
         <button key={emoji} aria-label={`${emoji} ${g.count}${g.mine ? ', you reacted' : ''}`} aria-pressed={g.mine} onClick={() => toggle(emoji)}
-          className={clsx('rounded-full border px-2 py-1 text-xs', g.mine ? 'border-brand bg-brand-soft text-brand' : 'border-border bg-surface text-muted hover:bg-surface-2')}>{emoji} {g.count}</button>))}
+          className={clsx('rounded-sm border px-2 py-1 text-xs', g.mine ? 'border-brand bg-brand-soft text-brand' : 'border-border bg-surface text-muted hover:bg-surface-2')}>{emoji} {g.count}</button>))}
       <button aria-label="Add reaction" aria-expanded={picking} onClick={openPicker} className="rounded-full p-1 text-muted hover:bg-surface-2 hover:text-brand"><SmilePlus size={16} /></button>
       {picking && <>
         <div className="fixed inset-0 z-30" onClick={() => setPicking(false)} />

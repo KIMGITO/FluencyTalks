@@ -43,7 +43,7 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface-2 p-3">
+    <div className="rounded-md border border-border bg-surface-2 p-3">
       <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -67,7 +67,7 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface hover:text-ink transition"
+          className="rounded-sm px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface hover:text-ink transition"
         >
           Cancel
         </button>
@@ -105,7 +105,7 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
                 />
                 {selected === p.id && (
                   <div className="absolute inset-0 flex items-center justify-center bg-brand/30">
-                    <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold text-white">✓</span>
+                    <span className="rounded-sm bg-brand px-2 py-0.5 text-[10px] font-bold text-on-deep">✓</span>
                   </div>
                 )}
               </button>

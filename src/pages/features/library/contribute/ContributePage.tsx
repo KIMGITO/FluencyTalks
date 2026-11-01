@@ -126,18 +126,18 @@ export default function ContributePage() {
         />
 
         {unsplashUrl ? (
-          <div className="relative overflow-hidden rounded-xl">
+          <div className="relative overflow-hidden rounded-md">
             <img src={unsplashThumb || unsplashUrl} alt="Selected" className="h-48 w-full object-cover" />
             <div className="absolute inset-0 flex flex-col justify-between p-2">
               <button
                 type="button"
                 onClick={() => { setUnsplashUrl(''); setUnsplashThumb(''); setUnsplashAttrib(null); }}
-                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-ink/60 text-white hover:bg-ink/80 transition"
+                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-ink/60 text-on-deep hover:bg-ink/80 transition"
               >
                 <X size={16} />
               </button>
               {unsplashAttrib && (
-                <p className="bg-black/40 px-2 py-1 text-[10px] text-white/80">
+                <p className="bg-deep/40 px-2 py-1 text-[10px] text-on-deep/80">
                   Photo by{' '}
                   <a href={unsplashAttrib.link} target="_blank" rel="noopener noreferrer" className="underline">
                     {unsplashAttrib.name}
@@ -161,7 +161,7 @@ export default function ContributePage() {
           <button
             type="button"
             onClick={() => setShowPicker(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-sm text-muted transition hover:border-brand/50 hover:text-brand"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border py-4 text-sm text-muted transition hover:border-brand/50 hover:text-brand"
           >
             <Image size={18} />
             Add an image from Unsplash (optional)

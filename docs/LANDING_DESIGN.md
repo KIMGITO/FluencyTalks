@@ -42,3 +42,27 @@ The old "delete my data" form was fake (it only pretended to send an email); the
 ## Content rules
 Every claim describes something the app does. Invented testimonials, made-up "online now" counts, a Premium plan, voice or video, and streaks were removed.
 Photos are Unsplash images, decorative (empty alt text) and credited in the footer; change them in `src/components/landing/Hero.jsx`.
+
+---
+
+# Inside the app (signed-in screens)
+
+The signed-in screens share the public pages' look. It comes from the design tokens (`src/theme/tokens.ts`) and the shared components
+(`src/components/ui/`), so a new screen picks it up without extra work.
+
+| Part | Style |
+|---|---|
+| Page background, cards | Paper background; white cards with a hairline border and 4px corners; flat shadows |
+| Primary button | **Coral** with deep-indigo text (`<Button>`, or `buttonClass()` for links). One per screen. Lifts 2px on hover. |
+| Everything else | Outlined buttons (`secondary`), plain text (`ghost`), outlined red (`danger`) |
+| Inputs, selects, text areas | White, hairline border, 4px corners, coral focus ring, labels in ink |
+| Tabs | Underlined, the open tab gets a coral rule (`Tabs`, `tabClass`, `tabsClass`) |
+| Tags (levels, categories, status) | Small outlined squares (`.ft-tag`); "native" is filled deep indigo |
+| Navigation | Dark indigo sidebar on a laptop, dark indigo tab bar on a phone; the current page has a coral mark |
+| Chat | Sent bubbles deep indigo, received paper; corrections show red and green |
+| Clickable cards | `.ft-lift`: rise 4px with a soft shadow |
+| Page titles | Serif (Newsreader), sentence case |
+
+**A trap in this project's Tailwind setup:** `tailwind.config.ts` replaces the default palette with the tokens, so classes such as
+`text-white`, `bg-black/40`, `bg-indigo-100` or `text-aqua` generate **nothing** and the text silently falls back to the default colour.
+Use token colours only (`text-on-deep`, `bg-deep`, `text-on-brand`, `bg-brand-soft`, ...). To see which exist, read `themes.light` in `tokens.ts`.

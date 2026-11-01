@@ -103,7 +103,7 @@ export function ChatThread({ id }: { id: string }) {
       </div>
       {peerTyping && (
         <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center" aria-live="polite">
-          <span className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-2xs font-semibold text-muted shadow-pop">
+          <span className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-1 text-2xs font-semibold text-muted shadow-pop">
             <span className="flex gap-0.5"><span className="ft-typing-dot" /><span className="ft-typing-dot" style={{ animationDelay: '.2s' }} /><span className="ft-typing-dot" style={{ animationDelay: '.4s' }} /></span>
             {row.other_name.split(' ')[0]} is typing
           </span>

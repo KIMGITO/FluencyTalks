@@ -2,9 +2,9 @@ import { C } from "@/theme/theme";
 import { Link } from "react-router-dom";
 import { BRAND } from "@/lib/site";
 
-export const Logo = ({ compact, light }: { compact?: boolean; light?: boolean }) => (
+export const Logo = ({ compact, light, to = '/' }: { compact?: boolean; light?: boolean; to?: string }) => (
   <Link
-    to="/"
+    to={to}
     style={{ textDecoration: 'none' }}
     aria-label={`${BRAND} Home`}
   >
@@ -18,7 +18,7 @@ export const Logo = ({ compact, light }: { compact?: boolean; light?: boolean })
       </span>
       {!compact && (
         <span
-          className="font-display text-xl font-bold ft-logo-text"
+          className="whitespace-nowrap font-display text-lg font-semibold ft-logo-text sm:text-xl"
           style={light ? { color: '#ffffff' } : undefined}
         >
           The Fluency<span className="ft-gradient-text" style={{ color: light ? '#ffffff' : C.indigo }}>Talks</span>

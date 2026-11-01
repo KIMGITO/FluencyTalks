@@ -36,7 +36,7 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
           {mine.length > 1 && (
             <label className="flex items-center gap-1.5">Writing in
-              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="rounded-md border border-border bg-surface px-2 py-1 text-ink">
+              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="rounded-md border border-border bg-surface px-2 py-1.5 text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40">
                 {mine.map((id) => <option key={id} value={id}>{nameOf(id)}</option>)}
               </select>
             </label>
@@ -50,7 +50,7 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
         <div className="flex items-end gap-2">
           <textarea rows={1} value={text} maxLength={4000} placeholder="Write a message…" onChange={(e) => { setText(e.target.value); onType?.(); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
-            className="max-h-32 flex-1 resize-none rounded-lg border border-border bg-surface px-4 py-3 text-base text-ink placeholder:text-muted" />
+            className="max-h-32 flex-1 resize-none rounded-md border border-border bg-surface px-4 py-3 text-base text-ink transition duration-200 placeholder:text-muted hover:border-ink/40 focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
           <Button aria-label="Send" onClick={submit} disabled={!text.trim() || busy}><Send size={18} /></Button>
         </div>
       </div>

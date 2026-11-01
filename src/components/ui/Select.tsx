@@ -200,7 +200,7 @@ export function Select({
   return (
     <div className="block">
       {label && (
-        <label id={labelId} htmlFor={triggerId} className="mb-1 block text-sm font-medium text-muted">
+        <label id={labelId} htmlFor={triggerId} className="mb-1 block text-sm font-semibold text-ink">
           {label}
         </label>
       )}
@@ -224,10 +224,10 @@ export function Select({
           onClick={() => (open ? close(true) : openList())}
           onKeyDown={onTriggerKeyDown}
           className={clsx(
-            'flex min-h-11 w-full items-center justify-between gap-2 rounded-md border bg-surface px-3 py-2.5 text-left text-sm text-ink transition duration-200 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 sm:py-3 sm:text-base',
+            'flex min-h-11 w-full items-center justify-between gap-2 rounded-md border bg-surface px-3 py-2.5 text-left text-sm text-ink transition duration-200 focus:outline-none focus:border-ink focus:ring-2 focus:ring-accent/40 sm:py-3 sm:text-base',
             disabled
               ? 'cursor-not-allowed opacity-60'
-              : clsx('hover:border-brand/50', open && 'border-brand ring-2 ring-brand/30'),
+              : clsx('hover:border-ink/40', open && 'border-ink ring-2 ring-accent/40'),
             className,
           )}
         >
@@ -306,7 +306,7 @@ export function Select({
                       className={clsx(
                         'flex cursor-default select-none items-center justify-between gap-2 px-3 py-2.5 text-sm sm:text-base',
                         o.disabled && 'cursor-not-allowed opacity-50',
-                        act && !o.disabled && (sel ? 'bg-brand/10' : 'bg-surface-2'),
+                        act && !o.disabled && (sel ? 'bg-brand-soft' : 'bg-surface-2'),
                         sel && 'font-semibold',
                       )}
                     >

@@ -37,7 +37,7 @@ export default function BountyQueue() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   return (
-    <div className="mx-auto w-full max-w-2xl p-4">
+    <div className="mx-auto w-full max-w-2xl">
       <PageHeader title="Bounties" subtitle="Help others with their writing and earn points, or ask the community for help" />
       <div className="mb-4 flex items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'open', label: 'I can answer' }, { key: 'mine', label: 'My bounties' }]} />

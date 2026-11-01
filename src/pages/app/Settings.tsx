@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Palette, UserRound } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Button, Card, Input, tabClass } from '@/components/ui';
+import { Button, Card, Input, tabClass, tabsClass } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { isOAuthOnly } from '@/lib/session';
 import { useThemeStore } from '@/store/themeStore';
@@ -36,7 +36,7 @@ export default function Settings() {
   return (
     <>
       <PageHeader title="Settings" subtitle="Profile, privacy and appearance" />
-      <div role="tablist" aria-label="Settings sections" className="flex flex-wrap gap-1.5">
+      <div role="tablist" aria-label="Settings sections" className={tabsClass}>
         {tabs.map(({ key, label, icon: Icon }) => (
           <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={clsx(tabClass(tab === key), 'flex items-center gap-1.5')}>
             <Icon size={15} /> {label}</button>))}

@@ -1,16 +1,22 @@
 import clsx from 'clsx';
 import type { ButtonHTMLAttributes } from 'react';
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; full?: boolean; loading?: boolean };
+// The same roles as the public pages: coral = the one thing to press (text on it is always deep indigo, 5.5:1),
+// outlined = everything else. Corners are square-ish and the button lifts a little on hover (see .ft-btn).
 const variants = {
-  primary: 'bg-brand text-on-brand hover:opacity-90',
-  secondary: 'bg-surface-2 text-ink hover:bg-border',
-  ghost: 'text-muted hover:bg-surface-2 hover:text-ink',
-  danger: 'bg-danger text-on-brand hover:opacity-90',
+  primary: 'border border-accent bg-accent text-deep hover:brightness-105',
+  secondary: 'border border-ink/30 bg-transparent text-ink hover:bg-surface-2',
+  ghost: 'border border-transparent text-muted hover:bg-surface-2 hover:text-ink',
+  danger: 'border border-danger bg-transparent text-danger hover:bg-danger/10',
 };
-const sizes = { sm: 'px-2 py-2 text-sm', md: 'px-2.5 py-2.5 text-base', lg: 'px-3 py-3 text-lg' };
+const sizes = { sm: 'min-h-9 px-3 text-sm', md: 'min-h-11 px-4 text-base', lg: 'min-h-12 px-5 text-lg' };
+/** The Button look for anything that is not a <button> (a router Link, an <a>). */
+export const buttonClass = (variant: keyof typeof variants = 'primary', size: keyof typeof sizes = 'md', full?: boolean) =>
+  clsx('ft-btn inline-flex items-center justify-center gap-2 rounded-md font-bold', variants[variant], sizes[size], full && 'w-full');
+
 export function Button({ variant = 'primary', size = 'md', full, loading, className, children, disabled, ...rest }: Props) {
   return (
-    <button disabled={disabled || loading} className={clsx('inline-flex items-center justify-center gap-2 rounded-full font-semibold transition disabled:opacity-50', variants[variant], sizes[size], full && 'w-full', className)} {...rest}>
+    <button disabled={disabled || loading} className={clsx('ft-btn inline-flex items-center justify-center gap-2 rounded-md font-bold disabled:cursor-not-allowed disabled:opacity-50', variants[variant], sizes[size], full && 'w-full', className)} {...rest}>
       {loading ? 'Please wait…' : children}
     </button>
   );

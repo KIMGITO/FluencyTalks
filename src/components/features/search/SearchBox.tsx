@@ -13,7 +13,7 @@ export function SearchBox({ value, onChange, placeholder = 'Search people and ch
         ref={input} value={value} onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { onChange(''); input.current?.focus(); } }}
         placeholder={placeholder} aria-label={`Search ${BRAND}`} autoComplete="off"
-        className="w-full rounded-full border border-border bg-surface-2 py-2.5 pl-10 pr-10 text-base text-ink transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+        className="w-full rounded-sm border border-border bg-surface-2 py-2.5 pl-10 pr-10 text-base text-ink transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
       />
       {value && (
         <button type="button" aria-label="Clear search" onClick={() => { onChange(''); input.current?.focus(); }}

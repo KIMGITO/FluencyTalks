@@ -12,11 +12,11 @@ export function AppShell() {
   useEffect(() => { loadLanguages(); startRealtime(); return stopRealtime; }, []);
   useEffect(() => { if (!userId) return; startNotifications(userId); return stopNotifications; }, [userId]);
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-bg">
       <TopBar />
       <div className="ft-shell">
         <Sidebar />
-        <main className="mx-auto w-full max-w-[var(--layout-feedMaxW)] px-2 py-3 pb-20 sm:px-3 md:pb-6"><Outlet /></main>
+        <main className="mx-auto w-full max-w-[var(--layout-feedMaxW)] px-3 py-4 pb-24 sm:px-4 md:py-6 md:pb-8"><Outlet /></main>
         <RightRail />
       </div>
       <BottomNav />

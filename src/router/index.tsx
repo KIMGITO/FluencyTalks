@@ -26,6 +26,7 @@ import Library from '@/pages/features/library/Library';
 import ContributePage from '@/pages/features/library/contribute/ContributePage';
 import Partners from '@/pages/features/partners/Partners';
 import BountyQueue from '@/pages/app/BountyQueue';
+import PointsHistory from '@/pages/app/PointsHistory';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
           { path: '/learning', element: <Learning /> },
           { path: '/phrasebook', element: <Navigate to='/learning' replace /> },
           { path: '/bounty-queue', element: <BountyQueue /> },
+          { path: '/points-history', element: <PointsHistory /> },
           { path: '/library', element: <Library /> },
           { path: '/library/contribute', element: <ContributePage /> },
           { path: '/partners', element: <Partners /> },

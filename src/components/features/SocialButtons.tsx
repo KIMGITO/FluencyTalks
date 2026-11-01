@@ -37,7 +37,7 @@ export function SocialButtons() {
           disabled={pending !== null}
           aria-busy={pending === p.id}
           onClick={() => go(p.id)}
-          className="flex h-auto py-3  w-full items-center justify-center rounded-full border border-border bg-surface text-sm font-semibold text-ink shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-pop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-auto py-3  w-full items-center justify-center rounded-sm border border-border bg-surface text-sm font-semibold text-ink shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-pop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="flex w-52 items-center gap-3">
             {p.icon}

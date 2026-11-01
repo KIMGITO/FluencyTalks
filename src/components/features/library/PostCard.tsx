@@ -11,10 +11,10 @@ export interface PostCardProps {
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  phrase: 'bg-brand/10 text-brand',
-  idiom: 'bg-purple-500/10 text-purple-500',
-  usage: 'bg-emerald-500/10 text-emerald-600',
-  grammar: 'bg-amber-500/10 text-amber-600',
+  phrase: 'border border-ink/30 bg-brand-soft text-ink',
+  idiom: 'border border-ink/30 bg-surface-2 text-ink',
+  usage: 'border border-ink/30 bg-surface text-ink',
+  grammar: 'border border-ink/30 bg-surface-2 text-ink',
 };
 
 export function PostCard({ post }: PostCardProps) {
@@ -39,7 +39,7 @@ export function PostCard({ post }: PostCardProps) {
   const initials = authorName.slice(0, 2).toUpperCase();
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-sm transition hover:shadow-md">
+    <article className="ft-card ft-lift overflow-hidden">
       {post.unsplash_image_url && (
         <div className="relative h-40 w-full overflow-hidden bg-surface">
           <img
@@ -61,7 +61,7 @@ export function PostCard({ post }: PostCardProps) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${CATEGORY_COLORS[post.category] ?? 'bg-surface text-muted'}`}>
+            <span className={`shrink-0 rounded-sm px-2.5 py-0.5 text-xs font-semibold ${CATEGORY_COLORS[post.category] ?? 'bg-surface text-muted'}`}>
               {post.category}
             </span>
             {isOwner && (
@@ -85,7 +85,7 @@ export function PostCard({ post }: PostCardProps) {
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="flex items-center gap-2">
             {post.language_id && (
-              <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-brand">
+              <span className="rounded-sm bg-brand/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-brand">
                 {post.language_id.toUpperCase()}
                 {post.language_id && ` · ${languageName(post.language_id)}`}
               </span>
