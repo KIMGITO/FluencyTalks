@@ -21,15 +21,15 @@ const post: Post = {
       <h2>What happens in a typical exchange</h2>
       <p>Exchanges come in many shapes, but most follow the same rhythm:</p>
       <ul>
-        <li><strong>You agree on a language pair.</strong> For example English and Vietnamese: you write in Vietnamese, they write in English, and each of you corrects the other.</li>
-        <li><strong>You take turns.</strong> Some partners split each chat in half, one language each. Others simply answer in the language they are learning.</li>
-        <li><strong>You correct each other.</strong> Not every mistake, just the ones that would sound odd to a native speaker or change the meaning.</li>
+        <li><strong>You pick who to talk to.</strong> For example you speak English and are learning Vietnamese: you write to a native Vietnamese speaker, or help someone who is learning English. If your partner is learning your language too, you can each write in the language you are learning and correct the other.</li>
+        <li><strong>You write in the language you are learning.</strong> With a swap partner you can split a chat, one language each. Otherwise you simply write in the language you are practising and they answer however suits them.</li>
+        <li><strong>You correct and get corrected.</strong> Not every mistake, just the ones that would sound odd to a native speaker or change the meaning.</li>
         <li><strong>You keep what you learn.</strong> A good correction is only useful if you see it again later, so write it down or save it.</li>
       </ul>
 
-      <h2>Text chat or video call?</h2>
-      <p>Both count. Video and voice calls train listening and pronunciation. Text chat is easier to start, fits around work and school, and gives you time to think. It also leaves a written record, so a correction is right there to read again instead of disappearing after the call.</p>
-      <p>Many learners begin in text, build confidence, and add calls once they know their partner. If speaking feels scary, text is a perfectly good first step, not a lesser one.</p>
+      <h2>Why text chat works well</h2>
+      <p>On The Fluency Talks, practice happens in writing. Text is easy to start, fits around work and school, and gives you time to think before you reply. It also leaves a written record, so a correction is right there to read again instead of disappearing after a call.</p>
+      <p>If speaking feels scary, text is a perfectly good place to begin, not a lesser one. Many exchanges elsewhere add voice or video later, once partners know each other. We don't offer calls yet, and we'll say so here if that changes.</p>
 
       <h2>What a language exchange is good for</h2>
       <ul>

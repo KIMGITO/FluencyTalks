@@ -28,7 +28,7 @@ const post: Post = {
         <li><strong>Language exchange apps and sites.</strong> These are built for exactly this, and the good ones match you by language rather than by photos or follower counts.</li>
         <li><strong>Local meetups and university groups.</strong> Many universities run tandem programmes, and cities often have language cafés.</li>
         <li><strong>Online communities.</strong> Language-learning forums and subreddits often have partner-finding threads. Be specific about your languages and level.</li>
-        <li><strong>People you already know.</strong> A colleague or classmate who grew up speaking another language may be glad to swap.</li>
+        <li><strong>People you already know.</strong> A colleague or classmate who grew up speaking another language may be glad to help, and you can help them back.</li>
       </ul>
 
       <h2>What to look for in a profile</h2>
@@ -60,7 +60,7 @@ const post: Post = {
       <p>It happens, and it is rarely personal: people get busy. Send one friendly follow-up, then move on. It is normal to message several people before one exchange really clicks, and many learners keep two or three partners going at once.</p>
 
       <h2>Finding a partner on The Fluency Talks</h2>
-      <p>On <Link to="/">The Fluency Talks</Link>, you pick your native language and the language and level you are learning, and the people you see are chosen by that language pair, not by popularity. New contacts arrive as requests that the other person can accept or decline, and you can block or report anyone. It is free: <Link to="/signup">create an account</Link> and send your first message today.</p>
+      <p>On <Link to="/">The Fluency Talks</Link>, you pick your native language and the language and level you are learning, and you see native speakers of your target language and learners of yours, ranked by language and not by popularity. A perfect swap comes first but is never required. New contacts arrive as requests that the other person can accept or decline, and you can block or report anyone. It is free: <Link to="/signup">create an account</Link> and send your first message today.</p>
       <p>New to the idea? Start with <Link to="/blog/what-is-a-language-exchange">what a language exchange is and how it works</Link>.</p>
     </>
   ),
