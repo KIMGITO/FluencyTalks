@@ -1,10 +1,12 @@
 import { create } from 'zustand';
-import { acceptCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondCorrection, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type SendOptions, type ReactionEvent } from '@/services';
+import { acceptCorrection, rateCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondCorrection, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type SendOptions, type ReactionEvent } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
+import { toast } from '@/store/toastStore';
 import type { ConversationRow, Correction, Message, Reaction } from '@/types/db';
 
 let unsub: (() => void) | null = null;
+const reacting = new Set<string>();
 
 export const isGone = (m: { deleted_at?: string | null; body?: string | null }) => !!m.deleted_at || m.body === '[deleted]';
 
@@ -21,7 +23,7 @@ interface S {
   send: (id: string, body: string, replyTo?: string, opts?: SendOptions) => Promise<void>; respond: (id: string, accept: boolean) => Promise<void>;
   loadCorrections: (convId: string) => Promise<void>; upsertCorrection: (c: Correction) => void;
   suggest: (convId: string, messageId: string, text: string, note?: string) => Promise<void>;
-  accept: (c: Correction) => Promise<void>; dismiss: (c: Correction) => Promise<void>;
+  accept: (c: Correction) => Promise<void>; rate: (c: Correction, helpful: boolean) => Promise<void>; dismiss: (c: Correction) => Promise<void>;
   loadReactions: (convId: string) => Promise<void>; applyReaction: (e: ReactionEvent) => void; react: (messageId: string, emoji: string) => Promise<void>;
   startRealtime: () => void; stopRealtime: () => void; append: (m: Message) => void; applyUpdate: (m: Message) => void;
   togglePin: (convId: string, messageId: string) => void; isPinned: (convId: string, messageId: string) => boolean;
@@ -74,6 +76,7 @@ export const useChatStore = create<S>((set, get) => ({
     return { corrections: { ...s.corrections, [c.message_id]: next } };
   }),
   suggest: async (convId, messageId, text, note) => { await suggestCorrection(messageId, text, note); await get().loadCorrections(convId); },
+  rate: async (c, helpful) => { await rateCorrection(c.id, helpful); get().upsertCorrection({ ...c, feedback: helpful ? 'helpful' : 'not_helpful' }); },
   accept: async (c) => { await acceptCorrection(c.id); get().upsertCorrection({ ...c, status: 'accepted' }); },
   dismiss: async (c) => { await respondCorrection(c.id, false); get().upsertCorrection({ ...c, status: 'dismissed' }); },
   loadReactions: async (convId) => {
@@ -87,22 +90,24 @@ export const useChatStore = create<S>((set, get) => ({
     if (added) return list.some(same) ? s : { reactions: { ...s.reactions, [r.message_id]: [...list, r] } };
     return list.some(same) ? { reactions: { ...s.reactions, [r.message_id]: list.filter((x) => !same(x)) } } : s;
   }),
+  // Shows at once; the server's answer settles it, and a failure puts back what was there.
   react: async (messageId, emoji) => {
+    if (reacting.has(messageId)) return;   // rapid taps: one change at a time per message
+    reacting.add(messageId);
     const me = useAuthStore.getState().user!.id;
-    const mine = (get().reactions[messageId] ?? []).filter((r) => r.user_id === me);
-    if (mine.some((r) => r.emoji === emoji)) {
-      const added = await toggleReaction(messageId, emoji);
-      get().applyReaction({ added, reaction: { message_id: messageId, user_id: me, emoji } });
-      return;
-    }
-    for (const old of mine) {
-      try {
-        const removed = await toggleReaction(messageId, old.emoji);
-        if (!removed) get().applyReaction({ added: false, reaction: old });
-      } catch { }
-    }
-    const added = await toggleReaction(messageId, emoji);
-    get().applyReaction({ added, reaction: { message_id: messageId, user_id: me, emoji } });
+    const before = get().reactions[messageId] ?? [];
+    const mine = before.filter((r) => r.user_id === me);
+    const same = mine.some((r) => r.emoji === emoji);
+    const others = before.filter((r) => r.user_id !== me);
+    set((s) => ({ reactions: { ...s.reactions, [messageId]: same ? others : [...others, { message_id: messageId, user_id: me, emoji }] } }));
+    try {
+      if (same) { await toggleReaction(messageId, emoji); return; }
+      for (const old of mine) await toggleReaction(messageId, old.emoji);
+      await toggleReaction(messageId, emoji);
+    } catch (e) {
+      set((s) => ({ reactions: { ...s.reactions, [messageId]: before } }));
+      toast.error((e as Error).message);
+    } finally { reacting.delete(messageId); }
   },
   togglePin: (convId, messageId) => set((s) => {
     const cur = s.pins[convId] ?? [];

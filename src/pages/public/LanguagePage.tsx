@@ -68,7 +68,7 @@ export default function LanguagePage() {
             <ul>
               <li><strong>Is it free?</strong> Yes. {BRAND} has no paid plans.</li>
               <li><strong>Do I need to be good already?</strong> No. Beginners are welcome; your partner corrects you as you go.</li>
-              <li><strong>Who can correct me?</strong> Native {l.name} speakers, and learners at B1 or above.</li>
+              <li><strong>Who can correct me?</strong> Native {l.name} speakers, and learners whose practice has verified them at B1 or above.</li>
               <li><strong>Is it safe?</strong> New contacts arrive as requests you can decline, and you can block or report anyone.</li>
             </ul>
             <p>More advice: <Link to="/blog/corrections-from-native-speakers">how to get corrections from native speakers</Link>.</p>

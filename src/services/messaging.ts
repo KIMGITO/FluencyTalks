@@ -10,11 +10,12 @@ export async function getPeerReadAt(conv: string): Promise<string | null> {
 }
 
 
-export function subscribeToReceipts(conv: string, onRead: (at: string) => void) {
+/** Only the other person's row: mine moves too, every time I read or send. */
+export function subscribeToReceipts(conv: string, myId: string, onRead: (at: string) => void) {
   const ch = supabase.channel(`receipts:${conv}`)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_members', filter: `conversation_id=eq.${conv}` }, (p) => {
       const row = p.new as { user_id?: string; last_read_at?: string };
-      if (row?.last_read_at) onRead(row.last_read_at);
+      if (row?.last_read_at && row.user_id !== myId) onRead(row.last_read_at);
     })
     .subscribe();
   return () => { supabase.removeChannel(ch); };
@@ -33,6 +34,7 @@ export const deleteMessage = (id: string) => rpc('delete_message', { p_id: id })
 export const toggleReaction = (messageId: string, emoji: string) => rpc<boolean>('toggle_reaction', { p_message: messageId, p_emoji: emoji });
 export const suggestCorrection = (messageId: string, text: string, note?: string) => rpc<string>('suggest_correction', { p_message: messageId, p_text: text, p_note: note ?? null });
 export const acceptCorrection = (id: string) => rpc('accept_correction', { p_id: id });
+export const rateCorrection = (id: string, helpful: boolean) => rpc('rate_correction', { p_id: id, p_helpful: helpful });
 export const respondCorrection = (id: string, accept: boolean) => rpc('respond_correction', { p_id: id, p_accept: accept });
 
 

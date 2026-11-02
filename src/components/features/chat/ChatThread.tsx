@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pin, X } from 'lucide-react';
-import { Avatar, Button, EmptyState, Spinner } from '@/components/ui';
+import { Avatar, Button, ChatSkeleton, EmptyState } from '@/components/ui';
 import { UserMenu } from '../UserMenu';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
@@ -14,7 +14,8 @@ import { useAuthStore } from '@/store/authStore';
 import { isGone, useChatStore } from '@/store/chatStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
-import { usePresence } from '@/hooks/usePresence';
+import { usePresenceOf, useTyping } from '@/hooks/usePresence';
+import { activityLabel } from '@/lib/format';
 
 export function ChatThread({ id }: { id: string }) {
   const nav = useNavigate(); const myId = useAuthStore((s) => s.user?.id);
@@ -27,19 +28,23 @@ export function ChatThread({ id }: { id: string }) {
   const row = [...active, ...requests].find((c) => c.conversation_id === id); const list = messages[id];
   const isRequest = requests.some((c) => c.conversation_id === id);
   const peerId = row?.other_user_id ?? null;
-  const { onlineIds, peerTyping, touchTyping } = usePresence(list ? id : null, peerId, myId ?? null);
-  const peerOnline = peerId ? onlineIds.includes(peerId) : false;
+  const { peerTyping, setTyping, clearPeerTyping } = useTyping(list ? id : null, myId ?? null);
+  const seen = usePresenceOf([peerId])[peerId ?? ''];
+  // Typing proves they're here, sooner than the next poll would say so.
+  const peerOnline = !!seen?.online || peerTyping;
   const [peerReadAt, setPeerReadAt] = useState<string | null>(null);
   useEffect(() => { setPeerReadAt(null); getPeerReadAt(id).then(setPeerReadAt).catch(() => undefined); }, [id]);
-  useEffect(() => subscribeToReceipts(id, setPeerReadAt), [id]);
+  useEffect(() => (myId ? subscribeToReceipts(id, myId, setPeerReadAt) : undefined), [id, myId]);
   useEffect(() => { open(id); return close; }, [id]);
   const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
   const tickFor = (m: Message): TickState => {
     if (peerReadAt && m.created_at <= peerReadAt) return 'read';
-    if (peerOnline) return 'delivered';
+    if (seen?.last_seen_at && m.created_at <= seen.last_seen_at) return 'delivered';   // they've been on the app since
     const laterPeer = visible.some((x) => x.sender_id !== myId && x.created_at > m.created_at);
     return laterPeer ? 'delivered' : 'sent';
   };
+  const lastPeerMessage = [...(list ?? [])].reverse().find((m) => m.sender_id !== myId)?.id;
+  useEffect(() => { if (lastPeerMessage) clearPeerTyping(); }, [lastPeerMessage]);
   const byId = new Map(visible.map((m) => [m.id, m]));
   const pinnedIds = pins[id] ?? [];
   const pinnedMsgs = pinnedIds.map((pid) => byId.get(pid)).filter((m): m is Message => !!m && !isGone(m));
@@ -47,7 +52,7 @@ export function ChatThread({ id }: { id: string }) {
   const replyTarget = rawReply && isGone(rawReply) ? null : rawReply;
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [visible.length, replyTarget?.id, peerTyping]);
 
-  if (!list) return <div className="flex justify-center p-8"><Spinner /></div>;
+  if (!list) return <ChatSkeleton />;
   if (!row) return <EmptyState title="Conversation unavailable" action={<Button onClick={() => nav('/messages')}>Back to messages</Button>} />;
   const days = groupByDay(visible);
   const jumpTo = (mid: string) => { setShowPins(false); document.getElementById(`msg-${mid}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
@@ -59,7 +64,7 @@ export function ChatThread({ id }: { id: string }) {
           <Avatar name={row.other_name} src={row.other_avatar} size="sm" online={peerOnline} />
           <span className="min-w-0">
             <span className="block truncate font-semibold leading-tight">{row.other_name}</span>
-            <span className="block text-2xs leading-tight text-muted" aria-live="polite">{peerTyping ? 'typing…' : peerOnline ? 'Online' : 'Offline'}</span>
+            <span className="block text-2xs leading-tight text-muted" aria-live="polite">{peerTyping ? 'typing…' : peerOnline ? 'Online' : activityLabel(seen)}</span>
           </span>
         </Link>
         {!!pinnedMsgs.length && (
@@ -99,15 +104,14 @@ export function ChatThread({ id }: { id: string }) {
                   onTranslated={(msg, out, lang) => { saveTranslation({ source: msg.body, translated: out, languageCode: lang, sourceMessageId: msg.id }).catch(() => undefined); }} />
               </div>))}
           </section>))}
+        {peerTyping && (
+          <div className="mt-1 flex" aria-hidden>
+            <span className="flex items-center gap-1 rounded-lg bg-surface-2 px-3 py-2.5">
+              <span className="ft-typing-dot" /><span className="ft-typing-dot" style={{ animationDelay: '.2s' }} /><span className="ft-typing-dot" style={{ animationDelay: '.4s' }} />
+            </span>
+          </div>)}
         <div ref={endRef} />
       </div>
-      {peerTyping && (
-        <div className="pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center" aria-live="polite">
-          <span className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-1 text-2xs font-semibold text-muted shadow-pop">
-            <span className="flex gap-0.5"><span className="ft-typing-dot" /><span className="ft-typing-dot" style={{ animationDelay: '.2s' }} /><span className="ft-typing-dot" style={{ animationDelay: '.4s' }} /></span>
-            {row.other_name.split(' ')[0]} is typing
-          </span>
-        </div>)}
       {isRequest ? (
         <div className="space-y-2 border-t border-border bg-surface p-3">
           <p className="text-sm text-muted">This is a message request. Accept to reply, or ignore it.</p>
@@ -116,7 +120,7 @@ export function ChatThread({ id }: { id: string }) {
             <Button size="sm" variant="secondary" onClick={async () => { await respond(id, false); nav('/messages'); }}>Ignore</Button>
             <Button size="sm" variant="danger" onClick={async () => { await blockUser(row.other_user_id); nav('/messages'); }}>Block</Button>
           </div>
-        </div>) : <Composer onSend={(t, opts) => send(id, t, undefined, opts)} replyTo={replyTarget} onCancelReply={() => setReply(id, null)} onType={touchTyping} />}
+        </div>) : <Composer onSend={(t, opts) => send(id, t, undefined, opts)} replyTo={replyTarget} onCancelReply={() => setReply(id, null)} onType={setTyping} />}
       <CorrectionDialog message={correcting} onClose={() => setCorrecting(null)} onSubmit={async (t, n) => { await suggest(id, correcting!.id, t, n || undefined); setCorrecting(null); }} />
     </div>
   );

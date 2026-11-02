@@ -20,7 +20,7 @@ export function CorrectionDialog({ message, onClose, onSubmit }: { message: Mess
   return (
     <Modal open={!!message} onClose={onClose} title="Suggest a correction">
       {message && (<>
-        {message && !canEdit && <p className="mb-2 text-sm text-danger">Corrections in {message.language_id ? nameOf(message.language_id) : 'this language'} come from native speakers or learners at B1 or above.</p>}
+        {message && !canEdit && <p className="mb-2 text-sm text-danger">Corrections in {message.language_id ? nameOf(message.language_id) : 'this language'} come from native speakers or learners verified at B1 or above.</p>}
         <Textarea label="Corrected version" rows={3} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} disabled={!canEdit} />
         {!unchanged && <div className="rounded-md bg-surface-2 p-3 text-sm"><DiffText original={message.body} corrected={text} /></div>}
         <Input label="Why? (optional)" maxLength={500} value={note} placeholder="A short explanation helps them learn" onChange={(e) => setNote(e.target.value)} disabled={!canEdit} />

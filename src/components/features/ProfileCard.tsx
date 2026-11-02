@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Card } from '@/components/ui';
-import { LanguageChip } from './LanguageChip';
+import { LanguageChip, languageEntry } from './LanguageChip';
+import { usePresenceOf } from '@/hooks/usePresence';
 import { CountryBadge } from './CountryBadge';
 import { MatchBadge } from './MatchBadge';
 import { MessageButton } from './MessageButton';
@@ -22,6 +23,7 @@ export function ProfileCard({
   const labelOf = useLanguageStore((s) => s.labelOf);
   const locales = useDisplayLocales();
   const [hidden, setHidden] = useState(false);
+  const online = !!usePresenceOf([person.id])[person.id]?.online;
   if (hidden) return null;
   const kind =
     match?.kind ?? ('match_kind' in person ? person.match_kind : 'other');
@@ -38,6 +40,7 @@ export function ProfileCard({
             src={person.avatar_url}
             size="md"
             ring
+            online={online}
           />
         </Link>
         <div className="min-w-0 flex-1">
@@ -77,10 +80,7 @@ export function ProfileCard({
       <div className="ft-chips">
         <LanguageChip
           className="mt-2"
-          languages={person.languages.map((l) => ({
-            language: labelOf(l, locales),
-            level: l.level,
-          }))}
+          languages={person.languages.map((l) => languageEntry(l, labelOf(l, locales)))}
         />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-1.5">

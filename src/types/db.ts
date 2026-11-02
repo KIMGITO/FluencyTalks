@@ -3,10 +3,10 @@ import type { DisplayLanguage, Language } from '@/lib/languages';
 export type Role = 'native' | 'learning';
 export type LevelCode = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Native';
 
-export interface UserLanguage { language_id: string; role: Role; level: LevelCode; native_name?: string | null; english_name?: string | null }
+export interface UserLanguage { language_id: string; role: Role; level: LevelCode; verified_level?: LevelCode | null; native_name?: string | null; english_name?: string | null }
 export interface Person { id: string; username: string; display_name: string; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; languages: UserLanguage[] }
 
-export type MatchKind = 'native' | 'learning' | 'other';
+export type MatchKind = 'swap' | 'native' | 'learning' | 'other';
 
 export type FeedPerson = Person & { match_kind: MatchKind; match_language: string | null };
 export interface Country { code: string; name: string }
@@ -18,17 +18,22 @@ export interface MessageHit { message_id: string; conversation_id: string; body:
 export interface ConversationRow { conversation_id: string; other_user_id: string; other_name: string; other_username: string; other_avatar: string | null; last_body: string | null; last_at: string; unread_count: number; status: 'active' | 'request' | 'ignored' }
 
 export type { Language, DisplayLanguage } from '@/lib/languages';
-export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; points_balance: number; native_language_id: string | null; learning_language_id: string | null; learning_level: string | null; last_language_change_at: string | null }
-export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; created_at: string }
+export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; points_balance: number; native_language_id: string | null; learning_language_id: string | null; learning_level: string | null; verified_level: string | null; show_activity: boolean; notification_prefs?: Record<string, boolean>; last_language_change_at: string | null }
+export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; feedback?: 'helpful' | 'not_helpful' | null; created_at: string }
 export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_id: string | null; source_message_id: string | null; created_at: string; is_public: boolean; unsplash_image_url: string | null }
 
 export interface TranslationRecord { id: string; source_text: string; translated_text: string; language_id: string | null; source_message_id: string | null; created_at: string }
 
 export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
 export interface Reaction { message_id: string; user_id: string; emoji: string }
-export type NotificationType = 'message_request' | 'correction' | 'correction_accepted' | 'bounty_paid';
+export type NotificationType = 'message_request' | 'correction' | 'correction_accepted' | 'bounty_paid' | 'level_up' | 'level_vouch'
+  | 'post_correction' | 'post_challenged' | 'post_clarification' | 'post_reply' | 'post_endorsed'
+  | 'post_accepted' | 'post_declined' | 'post_withdrawn' | 'post_superseded' | 'post_resolved' | 'post_reverted' | 'post_override'
+  | 'action_reminder' | 'action_overdue' | 'action_escalated' | 'restriction_applied' | 'restriction_lifted' | 'appeal_decided';
+export type NotificationCategory = 'corrections' | 'decisions' | 'reminders' | 'system';
 export interface AppNotification {
-  id: string; type: NotificationType; data: { conversation_id?: string; message_id?: string; points?: number }; read_at: string | null; created_at: string;
+  id: string; type: NotificationType; data: { conversation_id?: string; message_id?: string; points?: number; level?: string; language?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; waiting?: boolean; overdue?: number; due_at?: string };
+  category?: NotificationCategory; read_at: string | null; created_at: string;
   actor_id: string | null; actor_username: string | null; actor_name: string | null; actor_avatar: string | null;
 }
 export type AccountStatus = 'active' | 'suspended' | 'banned';
@@ -45,6 +50,8 @@ export interface ContributionPost {
   id: string; user_id: string; certified_at: string; language_id: string | null;
   phrase: string; translation: string | null; category: 'phrase' | 'idiom' | 'usage' | 'grammar'; source_context: string | null;
   unsplash_image_url: string | null; created_at: string; updated_at: string;
+  current_phrase?: string | null; current_translation?: string | null; accepted_item_id?: string | null;
+  review_status?: 'unreviewed' | 'confirmed' | 'disputed' | 'corrected'; open_corrections?: number; thread_count?: number; endorse_count?: number;
   text_align: 'left' | 'center' | 'right'; pinned_at: string | null;
   saved?: boolean;   // whether the current user saved it
   author?: Person | null;

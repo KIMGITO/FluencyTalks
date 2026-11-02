@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { ExternalLink, Trash2, Search as SearchIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Spinner, Tabs, Input } from '@/components/ui';
+import { Button, EmptyState, ErrorState, RowListSkeleton, Tabs, Input } from '@/components/ui';
 import { DiffText } from '@/components/features';
 import { deletePhrase, deleteTranslation, listMyCorrections, listPhrases, listTranslations } from '@/services';
 import { useLanguageStore } from '@/store/languageStore';
@@ -18,7 +18,7 @@ const sizeClass: Record<TextSize, string> = { tiny: 'text-xs', small: 'text-sm' 
 const statusChip: Record<CorrectionHistory['status'], string> = {
   accepted: 'bg-success/15 text-success', pending: 'bg-brand-soft text-brand', dismissed: 'bg-surface-2 text-muted',
 };
-const Loading = () => <div className="flex justify-center p-8"><Spinner /></div>;
+const Loading = () => <RowListSkeleton label="Loading" />;
 
 export default function Learning() {
   const [tab, setTab] = useState<Tab>('phrases');
@@ -36,9 +36,14 @@ export default function Learning() {
   const [phrasesData, setPhrasesData] = useState<{ phrases: (SavedPhrase & { conversation_id: string | null })[]; total: number } | null>(null);
   const [corrections, setCorrections] = useState<CorrectionHistory[] | null>(null);
   const [translations, setTranslations] = useState<(TranslationRecord & { conversation_id: string | null })[] | null>(null);
-  useEffect(() => { listPhrases(selectedLanguage ?? undefined).then(setPhrasesData).catch(() => setPhrasesData({ phrases: [], total: 0 })); }, [selectedLanguage]);
-  useEffect(() => { listMyCorrections().then(setCorrections).catch(() => setCorrections([])); }, []);
-  useEffect(() => { listTranslations().then(setTranslations).catch(() => setTranslations([])); }, []);
+  // Each list fails on its own: the others still show, and a failure is never drawn as an empty list.
+  const [failed, setFailed] = useState<Record<string, boolean>>({});
+  const loadPhrases = () => { setFailed((f) => ({ ...f, phrases: false })); listPhrases(selectedLanguage ?? undefined).then(setPhrasesData).catch(() => setFailed((f) => ({ ...f, phrases: true }))); };
+  const loadCorrections = () => { setFailed((f) => ({ ...f, corrections: false })); listMyCorrections().then(setCorrections).catch(() => setFailed((f) => ({ ...f, corrections: true }))); };
+  const loadTranslations = () => { setFailed((f) => ({ ...f, translations: false })); listTranslations().then(setTranslations).catch(() => setFailed((f) => ({ ...f, translations: true }))); };
+  useEffect(loadPhrases, [selectedLanguage]);
+  useEffect(loadCorrections, []);
+  useEffect(loadTranslations, []);
 
   const handleSearchUnsplash = async () => {
     setUnsplashError('');
@@ -71,7 +76,7 @@ export default function Learning() {
         )}
       </div>
 
-      {tab === 'phrases' && (!phrasesData ? <Loading /> : !phrasesData.phrases.length
+      {tab === 'phrases' && (failed.phrases ? <ErrorState title="Couldn't load your phrases" onRetry={loadPhrases} /> : !phrasesData ? <Loading /> : !phrasesData.phrases.length
         ? <EmptyState title="Nothing saved yet" text="Tap “Save phrase” under any message, or accept a correction, and it will show up here." />
         : <div className="flex flex-col gap-1.5">{phrasesData.phrases.map((p) => (
             <div key={p.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
@@ -83,7 +88,7 @@ export default function Learning() {
               <Button variant="ghost" size="sm" aria-label="Delete phrase" onClick={async () => { await deletePhrase(p.id); setPhrasesData(prev => prev ? { ...prev, phrases: prev.phrases.filter((x) => x.id !== p.id) } : null); }}><Trash2 size={16} /></Button>
             </div>))}</div>)}
 
-      {tab === 'corrections' && (!corrections ? <Loading /> : !corrections.length
+      {tab === 'corrections' && (failed.corrections ? <ErrorState title="Couldn't load your corrections" onRetry={loadCorrections} /> : !corrections ? <Loading /> : !corrections.length
         ? <EmptyState title="No corrections yet" text="When someone corrects your message it is stored here with the original wording, the suggestion and the outcome." />
         : <div className="flex flex-col gap-1.5">{corrections.map((c) => (
             <div key={c.id} className={clsx('ft-card ft-card-pad flex flex-col gap-1', sizeClass[size])}>
@@ -99,7 +104,7 @@ export default function Learning() {
               </div>
             </div>))}</div>)}
 
-      {tab === 'translations' && (!translations ? <Loading /> : !translations.length
+      {tab === 'translations' && (failed.translations ? <ErrorState title="Couldn't load your translations" onRetry={loadTranslations} /> : !translations ? <Loading /> : !translations.length
         ? <EmptyState title="No translations yet" text="Every message you translate is stored here automatically, traceable to the chat it came from." />
         : <div className="flex flex-col gap-1.5">{translations.map((t) => (
             <div key={t.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>

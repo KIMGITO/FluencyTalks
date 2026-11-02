@@ -13,7 +13,7 @@ export default function Services() {
           <article className="lp-card lp-card--a" data-reveal>
             <span className="lp-num" aria-hidden="true">01</span>
             <h3>Corrections inside the chat</h3>
-            <p>A native speaker, or a learner at B1 or above, edits your sentence right where you wrote it. You see exactly what changed, and accept it or not.</p>
+            <p>A native speaker, or a learner verified at B1 or above, edits your sentence right where you wrote it. You see exactly what changed, and accept it or not.</p>
             <p className="lp-demo" aria-label="Example: an English speaker learning Vietnamese writes Tôi là đói, corrected to Tôi đói (I am hungry)">
               <del lang="vi">Tôi là đói</del> <ins lang="vi">Tôi đói</ins>
               <small>“I am hungry.” Red is what you wrote, green is the correction.</small>

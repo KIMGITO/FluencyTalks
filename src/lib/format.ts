@@ -17,3 +17,15 @@ export function timeAgo(iso: string) {
   if (days < 7) return `${days}d ago`;
   return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
+
+/** "Online", "Active 5min ago", or nothing when we may not know. */
+export function activityLabel(seen?: { online: boolean; last_seen_at: string | null } | null) {
+  if (seen?.online) return 'Online';
+  return seen?.last_seen_at ? `Active ${timeAgo(seen.last_seen_at)}` : '';
+}
+
+/** How long something has been waiting, for "waiting 2d". */
+export function waited(iso: string) {
+  const ago = timeAgo(iso);
+  return ago === 'just now' ? 'under a minute' : ago.replace(' ago', '');
+}

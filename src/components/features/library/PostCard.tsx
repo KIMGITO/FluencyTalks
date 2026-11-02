@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bookmark, BookmarkCheck, Flag, MoreVertical, Pencil, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Flag, MessagesSquare, MoreVertical, Pencil, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
-import { Avatar, Button } from '@/components/ui';
+import { Avatar, Button, ConfirmDialog } from '@/components/ui';
+import { StatusPill } from '@/components/features/review/StatusPill';
+import { toast } from '@/store/toastStore';
 import { ReportDialog } from '@/components/features/ReportDialog';
 import { blockUser } from '@/services';
 import { deleteContribution, pinContribution, toggleSavedPost, type ContributionPost } from '@/services/library';
@@ -97,7 +99,8 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const [saved, setSaved] = useState(!!post.saved);
   const [pinned, setPinned] = useState(!!post.pinned_at);
   const [expanded, setExpanded] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [confirming, setConfirming] = useState<'delete' | 'block' | null>(null);
+  const saving = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const me = useProfileStore((s) => s.me);
   const languageName = useLanguageStore((s) => s.name);
@@ -118,16 +121,15 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const remove = () => { setRemoved(true); onRemoved?.(post.id); };
   const run = async (fn: () => Promise<void>) => {
     setMenuOpen(false);
-    setNotice('');
-    try { await fn(); } catch (e: any) { setNotice(e.message || 'Something went wrong. Please try again.'); }
+    try { await fn(); } catch (e: any) { toast.error(e.message || 'Something went wrong. Please try again.', () => { void run(fn); }); }
   };
 
-  const handleDelete = () => run(async () => {
-    if (!confirm('Are you sure you want to delete this post?')) return;
+  const handleDelete = async () => {
     await deleteContribution(post.id);
     cache.removeEverywhere(post.id);   // gone from Home, Library, profile and Saved lists
     remove();
-  });
+    toast.success('Post deleted.');
+  };
   const handlePin = () => run(async () => {
     await pinContribution(post.id, !pinned);
     setPinned(!pinned);
@@ -135,31 +137,56 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
     else cache.patchEverywhere(post.id, { pinned_at: null });
     cache.invalidate(`posts:user:${post.user_id}`);   // profile order changes (one pinned post)
     onPinChange?.(post.id, !pinned);
-    setNotice(!pinned ? 'Pinned to your profile.' : '');
+    toast.success(!pinned ? 'Pinned to your profile.' : 'Unpinned.');
   });
-  const handleSave = () => run(async () => {
-    const now = await toggleSavedPost(post.id);
-    setSaved(now);
-    cache.patchEverywhere(post.id, { saved: now });
-    cache.invalidate('posts:saved');
-    if (!now && removeOnUnsave) remove();
-    else setNotice(now ? 'Saved. Find it under Library → Saved.' : '');
-  });
+  // Changes at once, then settles on what the server says; goes back if it failed.
+  const handleSave = async () => {
+    setMenuOpen(false);
+    if (saving.current) return;
+    saving.current = true;
+    const was = saved;
+    setSaved(!was);
+    try {
+      const now = await toggleSavedPost(post.id);
+      setSaved(now);
+      cache.patchEverywhere(post.id, { saved: now });
+      cache.invalidate('posts:saved');
+      if (!now && removeOnUnsave) remove();
+      toast.success(now ? 'Saved. Find it under Library, Saved.' : 'Removed from saved.');
+    } catch (e: any) {
+      setSaved(was);
+      toast.error(e.message || 'Could not save this post.');
+    } finally { saving.current = false; }
+  };
   const authorName = post.author?.display_name || post.author?.username || 'Anonymous';
-  const handleBlock = () => run(async () => {
-    if (!confirm(`Block ${authorName}? They won't be notified. You'll both disappear from each other's view.`)) return;
+  const handleBlock = async () => {
     await blockUser(post.user_id);
     cache.removeByUser(post.user_id);
     remove();
-  });
+    toast.success(`${authorName} is blocked.`);
+  };
 
   if (removed) return null;
 
   const username = post.author?.username;
+  // What a reader should trust: the accepted correction when there is one. The original stays one tap away.
+  const shownPhrase = post.current_phrase ?? post.phrase;
+  const shownTranslation = post.current_translation ?? post.translation;
+  const threadLink = `/library/post/${post.id}`;
+  const threadSize = post.thread_count ?? 0;
+  const review = (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <StatusPill status={post.review_status ?? 'unreviewed'} />
+      {post.accepted_item_id && <span className="min-w-0 truncate text-xs text-muted">Original: {post.phrase}</span>}
+      <Link to={threadLink} className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
+        <MessagesSquare size={14} aria-hidden /> {threadSize ? `Discussion · ${threadSize}` : 'Review'}{(post.open_corrections ?? 0) > 0 && ` · ${post.open_corrections} open`}
+      </Link>
+    </div>
+  );
   const language = post.language_id ? languageName(post.language_id) ?? post.language_id : null;
   const category = CATEGORY_LABELS[post.category] ?? post.category;
   const align = ALIGN[post.text_align ?? 'left'] ?? ALIGN.left;
-  const isLong = lineCount(post.phrase) > LONG_LINES;
+  const isLong = lineCount(post.current_phrase ?? post.phrase) > LONG_LINES;
 
   const profileLink = (children: React.ReactNode, className?: string) =>
     username ? <Link to={`/u/${username}`} className={className}>{children}</Link> : <span className={className}>{children}</span>;
@@ -179,7 +206,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
               <button role="menuitem" className="ft-menu-item" onClick={handlePin}>
                 {pinned ? <><PinOff size={14} /> Unpin from profile</> : <><Pin size={14} /> Pin to profile</>}
               </button>
-              <button role="menuitem" className="ft-menu-item text-danger hover:bg-danger/10" onClick={handleDelete}>
+              <button role="menuitem" className="ft-menu-item text-danger hover:bg-danger/10" onClick={() => { setMenuOpen(false); setConfirming('delete'); }}>
                 <Trash2 size={14} /> Delete post
               </button>
             </>
@@ -191,7 +218,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
               <button role="menuitem" className="ft-menu-item" onClick={() => { setMenuOpen(false); setReporting(true); }}>
                 <Flag size={14} /> Report post
               </button>
-              <button role="menuitem" className="ft-menu-item text-danger hover:bg-danger/10" onClick={handleBlock}>
+              <button role="menuitem" className="ft-menu-item text-danger hover:bg-danger/10" onClick={() => { setMenuOpen(false); setConfirming('block'); }}>
                 <UserX size={14} /> Block {authorName}
               </button>
             </>
@@ -203,7 +230,12 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
 
   const extras = (
     <>
-      {notice && <p className="px-1 pt-2 text-xs text-muted" role="status">{notice}</p>}
+      <ConfirmDialog open={confirming === 'delete'} title="Delete this post?" confirmLabel="Delete" danger onClose={() => setConfirming(null)} onConfirm={handleDelete}>
+        The post and its discussion go away for everyone. This can't be undone.
+      </ConfirmDialog>
+      <ConfirmDialog open={confirming === 'block'} title={`Block ${authorName}?`} confirmLabel="Block" danger onClose={() => setConfirming(null)} onConfirm={handleBlock}>
+        They won't be told. You'll both disappear from each other's view.
+      </ConfirmDialog>
       {!isOwner && <ReportDialog open={reporting} onClose={() => setReporting(false)} userId={post.user_id} postId={post.id} />}
     </>
   );
@@ -217,7 +249,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             type="button"
             onClick={() => setExpanded(true)}
             className="flex min-w-0 flex-1 items-start gap-3 text-left"
-            aria-label={`Open post: ${post.phrase}`}
+            aria-label={`Open post: ${shownPhrase}`}
           >
             <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-brand-soft">
               {post.unsplash_image_url
@@ -225,8 +257,8 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
                 : <span className="font-mono text-xs font-bold text-brand">{(post.language_id ?? category).toUpperCase().slice(0, 3)}</span>}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{post.phrase}</span>
-              {post.translation && <span className="mt-0.5 line-clamp-1 text-xs text-muted">{post.translation}</span>}
+              <span className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{shownPhrase}</span>
+              {shownTranslation && <span className="mt-0.5 line-clamp-1 text-xs text-muted">{shownTranslation}</span>}
               <span className="mt-1 block truncate text-2xs text-muted">
                 {pinned && '📌 '}{authorName} · {timeAgo(post.created_at)} · {category}{language && ` · ${language}`}
               </span>
@@ -234,6 +266,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
           </button>
           {menu}
         </div>
+        <div className="mt-1.5">{review}</div>
         {extras}
       </article>
     );
@@ -274,7 +307,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             <>
               <img
                 src={post.unsplash_image_url}
-                alt={post.phrase}
+                alt={shownPhrase}
                 className="aspect-[4/3] w-full object-cover"
                 loading="lazy"
               />
@@ -282,7 +315,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             </>
           ) : (
             <div className="flex min-h-[9.6rem] items-center px-5 py-9">
-              <ClampText align={align} className={clsx('leading-snug text-ink', phraseSize(post.phrase, true))}>{post.phrase}</ClampText>
+              <ClampText align={align} className={clsx('leading-snug text-ink', phraseSize(shownPhrase, true))}>{shownPhrase}</ClampText>
             </div>
           )}
 
@@ -309,9 +342,9 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
       {/* Caption */}
       <div className={clsx('space-y-1.5 px-1 pt-3', align)}>
         {(post.unsplash_image_url || isLong) && (
-          <ClampText className={clsx('leading-relaxed text-ink', phraseSize(post.phrase, false))}>{post.phrase}</ClampText>
+          <ClampText className={clsx('leading-relaxed text-ink', phraseSize(shownPhrase, false))}>{shownPhrase}</ClampText>
         )}
-        {post.translation && <p className="whitespace-pre-line text-sm text-muted">{post.translation}</p>}
+        {shownTranslation && <p className="whitespace-pre-line text-sm text-muted">{shownTranslation}</p>}
         {post.source_context && (
           <p className={clsx('flex gap-1.5 text-sm text-ink', post.text_align === 'center' && 'justify-center', post.text_align === 'right' && 'justify-end')}>
             <Quote size={14} className="mt-0.5 shrink-0 text-accent" />
@@ -322,6 +355,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
           </p>
         )}
       </div>
+      <div className="px-1 pt-2">{review}</div>
       {extras}
     </article>
   );

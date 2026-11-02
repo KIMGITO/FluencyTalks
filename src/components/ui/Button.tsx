@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import type { ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; full?: boolean; loading?: boolean };
 // The same roles as the public pages: coral = the one thing to press (text on it is always deep indigo, 5.5:1),
 // outlined = everything else. Corners are square-ish and the button lifts a little on hover (see .ft-btn).
@@ -14,10 +14,11 @@ const sizes = { sm: 'min-h-9 px-3 text-sm', md: 'min-h-11 px-4 text-base', lg: '
 export const buttonClass = (variant: keyof typeof variants = 'primary', size: keyof typeof sizes = 'md', full?: boolean) =>
   clsx('ft-btn inline-flex items-center justify-center gap-2 rounded-md font-bold', variants[variant], sizes[size], full && 'w-full');
 
-export function Button({ variant = 'primary', size = 'md', full, loading, className, children, disabled, ...rest }: Props) {
+export const Button = forwardRef<HTMLButtonElement, Props>(function Button({ variant = 'primary', size = 'md', full, loading, className, children, disabled, ...rest }, ref) {
   return (
-    <button disabled={disabled || loading} className={clsx('ft-btn inline-flex items-center justify-center gap-2 rounded-md font-bold disabled:cursor-not-allowed disabled:opacity-50', variants[variant], sizes[size], full && 'w-full', className)} {...rest}>
-      {loading ? 'Please wait…' : children}
+    <button ref={ref} aria-busy={loading || undefined} disabled={disabled || loading} className={clsx('ft-btn inline-flex items-center justify-center gap-2 rounded-md font-bold disabled:cursor-not-allowed disabled:opacity-50', variants[variant], sizes[size], full && 'w-full', className)} {...rest}>
+      {loading && <span aria-hidden className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+      {children}
     </button>
   );
-}
+});

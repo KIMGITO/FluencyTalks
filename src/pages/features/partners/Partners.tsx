@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Input, Spinner, Tabs } from '@/components/ui';
+import { Button, EmptyState, Input, RowListSkeleton, Tabs } from '@/components/ui';
 import { LanguageChip } from '@/components/features';
 import { listSavedPartners, savePartner, deletePartner, type SavedPartner } from '@/services/library';
 import { useProfileStore } from '@/store/profileStore';
@@ -71,7 +71,7 @@ export default function Partners() {
       {tab === 'saved' ? (
         <>
           {loading ? (
-            <div className="flex justify-center p-8"><Spinner /></div>
+            <RowListSkeleton label="Loading partners" />
           ) : !partners?.length ? (
             <EmptyState title="No saved partners yet" text="Save a language partner from the Browse tab to see them here." />
           ) : (

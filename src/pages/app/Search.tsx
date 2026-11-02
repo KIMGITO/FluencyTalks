@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout';
 import { ProfileCard } from '@/components/features';
 import { PostCard } from '@/components/features/library';
 import { MessageResult, PersonResult, SearchBox, SearchFilters } from '@/components/features/search';
-import { Button, EmptyState, Spinner, Tabs } from '@/components/ui';
+import { Button, EmptyState, RowListSkeleton, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { searchMessages, searchPeople, searchPhrases, searchPosts, type PhraseHit, type PostHit } from '@/services';
@@ -141,7 +141,7 @@ export default function Search() {
   const single = (g: ReturnType<typeof useResults<any>>, rows: ReactNode, empty: ReactNode) => (
     <>
       {g.rows.length > 0 ? rows : !g.busy && !g.err && empty}
-      {g.busy && <div className="flex justify-center p-6"><Spinner /></div>}
+      {g.busy && (g.rows.length ? <div className="flex justify-center p-6"><Spinner /></div> : <RowListSkeleton count={3} label="Searching" />)}
       {g.more && !g.busy && <div className="mt-4 flex justify-center"><Button variant="secondary" onClick={g.loadMore}>Show more</Button></div>}
     </>
   );
@@ -165,7 +165,7 @@ export default function Search() {
         <p className="ft-inset py-6 text-center text-sm text-muted">Search people, posts, your chats and your saved phrases.</p>
       ) : tab === 'all' ? (
         <>
-          {busy && !total && <div className="flex justify-center p-6"><Spinner /></div>}
+          {busy && !total && <RowListSkeleton count={3} label="Searching" />}
           {group('people', 'People', Users, people, personRows)}
           {group('posts', 'Posts', Newspaper, posts, postRows)}
           {group('messages', 'Messages', MessageCircle, hits, hitRows)}

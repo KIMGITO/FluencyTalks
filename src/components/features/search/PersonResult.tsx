@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Avatar, Card } from '@/components/ui';
-import { LanguageChip } from '../LanguageChip';
+import { usePresenceOf } from '@/hooks/usePresence';
+import { LanguageChip, languageEntry } from '../LanguageChip';
 import { CountryBadge } from '../CountryBadge';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import type { Person } from '@/types/db';
@@ -9,6 +10,7 @@ import type { Person } from '@/types/db';
 export function PersonResult({ person }: { person: Person }) {
   const labelOf = useLanguageStore((s) => s.labelOf);
   const locales = useDisplayLocales();
+  const online = !!usePresenceOf([person.id])[person.id]?.online;
   return (
     <Link to={`/u/${person.username}`} className="block">
       <Card className="flex items-center gap-3 transition hover:bg-surface-2">
@@ -17,6 +19,7 @@ export function PersonResult({ person }: { person: Person }) {
           src={person.avatar_url}
           size="lg"
           ring
+          online={online}
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{person.display_name}</p>
@@ -31,10 +34,7 @@ export function PersonResult({ person }: { person: Person }) {
             <div className="ft-chips mt-1">
               <LanguageChip
                 className="mt-2"
-                languages={person.languages.map((l) => ({
-                  language: labelOf(l, locales),
-                  level: l.level,
-                }))}
+                languages={person.languages.map((l) => languageEntry(l, labelOf(l, locales)))}
               />
             </div>
           )}

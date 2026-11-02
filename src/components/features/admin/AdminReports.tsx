@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { EmptyState, Spinner, Tabs } from '@/components/ui';
+import { EmptyState, RowListSkeleton, Tabs } from '@/components/ui';
 import { ReportCard } from './ReportCard';
 import { ModerationDialog, type ModTarget } from './ModerationDialog';
 import { adminReportQueue } from '@/services';
@@ -15,7 +15,7 @@ export function AdminReports() {
     <div className="space-y-4">
       <Tabs value={filter} onChange={setFilter} items={[{ key: 'open', label: 'Open' }, { key: 'actioned', label: 'Actioned' }, { key: 'dismissed', label: 'Dismissed' }]} />
       {error && <p className="text-danger">{error}</p>}
-      {!items ? <div className="flex justify-center p-6"><Spinner /></div>
+      {!items ? <RowListSkeleton label="Loading reports" />
         : !items.length ? <EmptyState title={filter === 'open' ? 'No open reports' : 'Nothing here'} text={filter === 'open' ? 'The queue is clear.' : undefined} />
         : items.map((r) => <ReportCard key={r.id} report={r} onAct={(userId, name, status, reportId) => setTarget({ userId, name, status, reportId })} onResolved={load} />)}
       <ModerationDialog target={target} onClose={() => setTarget(null)} onDone={() => { setTarget(null); load(); }} />

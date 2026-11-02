@@ -28,7 +28,23 @@
   /* Buttons: a small lift on hover, back down when pressed. */
   .ft-btn { transition: transform .3s var(--motion-ease), box-shadow .3s var(--motion-ease), background-color .2s, border-color .2s, color .2s; }
   .ft-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 22px -12px rgb(var(--c-ink) / 0.5); }
-  .ft-btn:active:not(:disabled) { transform: none; box-shadow: none; }
+  .ft-btn:active:not(:disabled) { transform: scale(.97); box-shadow: none; transition-duration: .08s; }
+  /* Skeletons: a slow sweep; flat under reduced motion. */
+  @keyframes ft-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .ft-skeleton { background: linear-gradient(90deg, rgb(var(--c-surface-2)) 25%, rgb(var(--c-border)) 50%, rgb(var(--c-surface-2)) 75%); background-size: 200% 100%; animation: ft-shimmer 1.6s linear infinite; }
+  /* Page change: a quick fade and rise. Never holds up the page. */
+  @keyframes ft-page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .ft-page { animation: ft-page-in .18s var(--motion-ease); }
+  @keyframes ft-toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .ft-toast { animation: ft-toast-in .2s var(--motion-ease); }
+  /* The exact correction a notification pointed at. */
+  @keyframes ft-target { from { background-color: rgb(var(--c-accent) / .22); } to { background-color: transparent; } }
+  .ft-target { animation: ft-target 2.4s ease-out; }
+  /* A thread level: the line is the connector back to its parent. */
+  .ft-branch { border-left: 2px solid rgb(var(--c-border)); }
+  /* Quick reactions that took: a small pop. */
+  @keyframes ft-pop { 50% { transform: scale(1.18); } }
+  .ft-pop { animation: ft-pop .18s ease-out; }
   /* Small outlined tag: language levels, categories, status. */
   .ft-tag { @apply inline-flex items-center rounded-sm border border-border px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-ink; }
   /* The kicker used above page titles: a short rule and small capitals. */

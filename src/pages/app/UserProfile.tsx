@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Clock4Icon, LogOut } from 'lucide-react';
-import { Avatar, Button, Card, EmptyState, Spinner } from '@/components/ui';
+import { Avatar, Button, Card, EmptyState, ErrorState, PostListSkeleton, ProfileSkeleton, Spinner } from '@/components/ui';
 import {
   CountryBadge,
   LanguageChip,
+  languageEntry,
+  VouchCard,
   MessageButton,
   UserMenu,
 } from '@/components/features';
@@ -20,6 +22,8 @@ import { C } from '@/theme/theme';
 import { listUserContributionPosts, type ContributionPost } from '@/services/library';
 import { PostCard } from '@/components/features/library';
 import { useInfiniteScroll, usePagedList } from '@/store/feedCache';
+import { usePresenceOf } from '@/hooks/usePresence';
+import { activityLabel } from '@/lib/format';
 
 export default function UserProfile() {
   const { username = '' } = useParams();
@@ -30,17 +34,21 @@ export default function UserProfile() {
     undefined,
   );
   const [msg, setMsg] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     setProfile(undefined);
+    setLoadFailed(false);
     getProfile(username)
       .then(setProfile)
-      .catch(() => setProfile(null));
-  }, [username]);
+      .catch(() => { setLoadFailed(true); setProfile(null); });
+  }, [username, attempt]);
   const signOut = useAuthStore((s) => s.signOut);
   const role = useProfileStore((s) => s.me?.role);
   const staff = role === 'admin' || role === 'moderator';
   const myPoints = useProfileStore((s) => s.me?.points_balance);
   const providerAvatar = useProviderAvatar();
+  const seen = usePresenceOf([profile?.id])[profile?.id ?? ''];
   // Cached and paged like Home: instant when you come back, more as you scroll.
   const postList = usePagedList<ContributionPost>(profile?.id ? `posts:user:${profile.id}` : null,
     async (offset, limit) => (await listUserContributionPosts(profile!.id, { offset, limit })).posts);
@@ -51,11 +59,10 @@ export default function UserProfile() {
 
   if (profile === undefined)
     return (
-      <div className="flex justify-center p-8">
-        <Spinner />
-      </div>
+      <ProfileSkeleton />
     );
   
+  if (profile === null && loadFailed) return <ErrorState title="Couldn't load this profile" onRetry={() => setAttempt((a) => a + 1)} />;
   if (profile === null)
     return (
       <EmptyState
@@ -117,7 +124,7 @@ export default function UserProfile() {
                   showName
                 />
               </div>
-             
+              {!r.is_me && seen && activityLabel(seen) && <span className="text-xs">{activityLabel(seen)}</span>}
             </p>
           </div>
           {!r.is_me && (
@@ -143,12 +150,10 @@ export default function UserProfile() {
         <div className="ft-chips">
           <LanguageChip
             className="mt-2"
-            languages={profile.languages.map((l) => ({
-              language: labelOf(l, locales),
-              level: l.level,
-            }))}
+            languages={profile.languages.map((l) => languageEntry(l, labelOf(l, locales)))}
           />
         </div>
+        {!r.is_me && <VouchCard userId={profile.id} name={profile.display_name} />}
         <div className="flex  justify-end items-center gap-1.5">
           {r.is_me ? (
             <>
@@ -218,7 +223,7 @@ export default function UserProfile() {
       <div className="mt-4 space-y-4">
         <h3 className="px-1 font-bold text-lg text-ink">Contributions</h3>
         {posts === null ? (
-          <div className="flex justify-center p-4"><Spinner /></div>
+          <PostListSkeleton count={2} />
         ) : posts.length === 0 ? (
           <p className="px-1 text-sm text-muted italic">No contributions yet.</p>
         ) : (

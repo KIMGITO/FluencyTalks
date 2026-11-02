@@ -29,6 +29,8 @@ import Learning from '@/pages/app/Learning';
 import Admin from '@/pages/app/Admin';
 import Library from '@/pages/features/library/Library';
 import ContributePage from '@/pages/features/library/contribute/ContributePage';
+import PostDetail from '@/pages/features/library/PostDetail';
+import Notifications from '@/pages/app/Notifications';
 import Partners from '@/pages/features/partners/Partners';
 import BountyQueue from '@/pages/app/BountyQueue';
 import PointsHistory from '@/pages/app/PointsHistory';
@@ -74,6 +76,8 @@ export const router = createBrowserRouter([
           { path: '/points-history', element: <PointsHistory /> },
           { path: '/library', element: <Library /> },
           { path: '/library/contribute', element: <ContributePage /> },
+          { path: '/library/post/:id', element: <PostDetail /> },
+          { path: '/notifications', element: <Notifications /> },
           { path: '/partners', element: <Partners /> },
           {
             element: <AdminRoute />,

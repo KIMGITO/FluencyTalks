@@ -2,10 +2,10 @@ import { Home, Search, MessageCircle, GraduationCap, Coins, User, Settings, Shie
 export interface NavItem { to: string; label: string; icon: LucideIcon; desktopOnly?: boolean; mobileOnly?: boolean; staffOnly?: boolean; fabOnly?: boolean }
 export const navItems: NavItem[] = [
   { to: '/home', label: 'Home', icon: Home },
-  { to: '/search', label: 'Search', icon: Search },
+  { to: '/search', label: 'Search', icon: Search, desktopOnly: true },   // phones reach it from the top bar
   { to: '/messages', label: 'Messages', icon: MessageCircle },
   { to: '/library', label: 'Library', icon: BookOpen },
-  { to: '/learning', label: 'Learning', icon: GraduationCap, desktopOnly: true },
+  { to: '/learning', label: 'Learning', icon: GraduationCap },
   { to: '/bounty-queue', label: 'Bounties', icon: Coins },
   { to: '/profile', label: 'Profile', icon: User, desktopOnly: true },   // phones reach it from the avatar in the top bar
   { to: '/settings', label: 'Settings', icon: Settings },

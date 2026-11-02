@@ -13,7 +13,7 @@ export default function Hero() {
     <section className="lp-hero" aria-labelledby="hero-title">
       <div className="lp-wrap lp-hero__grid">
         <div className="lp-hero__head">
-          <p className="lp-kicker">Free language exchange · 40 languages</p>
+          <p className="lp-kicker">Free language exchange up to 40 languages</p>
           <h1 id="hero-title" className="lp-hero__title">
             <span className="lp-strip">Speak a language with the people who <span className="lp-scribble text-accent"><em>speak it.</em></span></span>
           </h1>
@@ -22,7 +22,7 @@ export default function Hero() {
         <div className="lp-hero__art" aria-hidden="true">
           <figure className="lp-photo lp-photo--a"><img src={unsplash(BIG, 900)} srcSet={srcset(BIG, [500, 900, 1300])} sizes="(max-width: 56rem) 66vw, 34vw" width="900" height="1125" alt="" fetchpriority="high" decoding="async" /></figure>
           <figure className="lp-photo lp-photo--b"><img src={unsplash(SMALL, 500)} srcSet={srcset(SMALL, [300, 500])} sizes="(max-width: 56rem) 46vw, 18vw" width="600" height="600" alt="" loading="lazy" decoding="async" /></figure>
-          <div className="lp-sticker"><span>Learn <b >40</b>languages</span></div>
+          <div className="lp-sticker"><span>Learn <b >40+</b>languages</span></div>
         </div>
 
         <div className="lp-hero__body">

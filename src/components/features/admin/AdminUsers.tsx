@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, EmptyState, Input, Spinner } from '@/components/ui';
+import { Button, Card, EmptyState, Input, RowListSkeleton } from '@/components/ui';
 import { StatusBadge } from './StatusBadge';
 import { ModerationDialog, type ModTarget } from './ModerationDialog';
 import { adminSearchUsers } from '@/services';
@@ -18,7 +18,7 @@ export function AdminUsers() {
     <div className="space-y-4">
       <Input aria-label="Search people" placeholder="Search by name or username" value={query} onChange={(e) => setQuery(e.target.value)} />
       {error && <p className="text-danger">{error}</p>}
-      {!users ? <div className="flex justify-center p-6"><Spinner /></div> : !users.length ? <EmptyState title="No one found" /> : users.map((u) => (
+      {!users ? <RowListSkeleton label="Loading people" /> : !users.length ? <EmptyState title="No one found" /> : users.map((u) => (
         <Card key={u.id} className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <Link to={`/u/${u.username}`} className="block truncate font-semibold hover:underline">{u.display_name ?? u.username}</Link>

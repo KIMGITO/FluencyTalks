@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Button, EmptyState, Input, Spinner, Tabs, buttonClass } from '@/components/ui';
+import { EmptyState, ErrorState, Input, PostListSkeleton, Select, Spinner, Tabs, buttonClass } from '@/components/ui';
 import { BookOpen, Plus, RefreshCw, Filter, X } from 'lucide-react';
 import { listContributionPosts, listSavedPosts, isContributionEligible, type ContributionPost } from '@/services/library';
 import { searchPosts } from '@/services/search';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useInfiniteScroll, usePagedList } from '@/store/feedCache';
-import { useLanguageStore } from '@/store/languageStore';
+import { displayLabel, useDisplayLocales, useLanguages } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { PostCard } from '@/components/features/library';
 
@@ -28,10 +28,20 @@ export default function Library() {
   const [searchText, setSearchText] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const languageName = useLanguageStore((s) => s.name);
-  const languages = useLanguageStore((s) => s.list);
+  const languages = useLanguages();
+  const locales = useDisplayLocales();
   const me = useProfileStore((s) => s.me);
   const eligible = isContributionEligible(me);
+
+  // My two languages first, then the launch list A-Z.
+  const languageOptions = useMemo(() => {
+    const mine = [me?.native_language_id, me?.learning_language_id];
+    const label = (l: (typeof languages)[number]) => displayLabel(l, locales);
+    return [
+      ...mine.flatMap((id) => languages.filter((l) => l.id === id)),
+      ...languages.filter((l) => l.is_supported_learning && !mine.includes(l.id)).sort((a, b) => label(a).localeCompare(label(b))),
+    ].map((l) => ({ id: l.id, label: label(l) }));
+  }, [languages, locales, me?.native_language_id, me?.learning_language_id]);
 
   // Typing searches the server (all posts, not only the loaded pages); saved posts are filtered locally.
   const q = useDebouncedValue(searchText, 300).trim();
@@ -131,26 +141,22 @@ export default function Library() {
       {}
       {showFilters && (
         <div className="mb-4 flex flex-wrap items-center gap-2 border-y md:rounded-md md:border border-border bg-surface-2 p-3">
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-            className="h-9 rounded-lg border border-border bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-          >
-            <option value="">All languages</option>
-            {languages.map((l) => (
-              <option key={l.id} value={l.id}>{languageName(l.id)}</option>
-            ))}
-          </select>
+          <div className="min-w-[11rem] flex-1">
+            <Select aria-label="Filter by language" searchable value={lang} onChange={(e) => setLang(e.target.value)}>
+              <option value="">All languages</option>
+              {languageOptions.map((l) => (
+                <option key={l.id} value={l.id}>{l.label}</option>
+              ))}
+            </Select>
+          </div>
 
-          <select
-            value={cat}
-            onChange={(e) => setCat(e.target.value)}
-            className="h-9 rounded-lg border border-border bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
+          <div className="min-w-[11rem] flex-1">
+            <Select aria-label="Filter by category" value={cat} onChange={(e) => setCat(e.target.value)}>
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </Select>
+          </div>
 
           {hasFilters && (
             <button
@@ -169,18 +175,16 @@ export default function Library() {
         <div className="mb-4 flex items-start gap-3 border-y border-warning/40 md:rounded-md md:border bg-warning/10 px-4 py-3 text-sm text-warning">
           <span className="mt-0.5 text-lg">🔒</span>
           <span>
-            To contribute, verify your native language or reach <strong>B1+</strong> in your learning language from your profile.
+            To contribute, set your native language in your profile. Your learning language unlocks once you're verified at <strong>B1</strong>.
           </span>
         </div>
       )}
 
       {}
       {list.initialLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
+        <PostListSkeleton count={4} />
       ) : list.error ? (
-        <EmptyState title="Couldn't load posts" text="Check your connection and tap refresh." />
+        <ErrorState title="Couldn't load posts" busy={list.loading} onRetry={() => void list.refresh()} />
       ) : !displayed.length ? (
         <EmptyState
           title={searchText || hasFilters ? 'No matching posts' : view === 'saved' ? 'No saved posts' : 'Nothing here yet'}

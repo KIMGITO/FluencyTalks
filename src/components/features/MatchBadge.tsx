@@ -3,7 +3,7 @@ import type { MatchKind } from '@/types/db';
 
 
 const label = (kind: MatchKind, lang: string) =>
-  kind === 'native' ? `Teaches ${lang}` : kind === 'learning' ? `Learning ${lang}` : '';
+  kind === 'swap' ? 'Language swap' : kind === 'native' ? `Teaches ${lang}` : kind === 'learning' ? `Learning ${lang}` : '';
 
 export function MatchBadge({ kind, language }: { kind: MatchKind; language?: string | null }) {
   const nameOf = useLanguageStore((s) => s.name);

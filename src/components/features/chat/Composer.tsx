@@ -9,7 +9,7 @@ import type { SendOptions } from '@/services';
 const BOUNTY_COST = 50;
 
 
-export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (text: string, opts: SendOptions) => Promise<void>; replyTo?: Message | null; onCancelReply?: () => void; onType?: () => void }) {
+export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (text: string, opts: SendOptions) => Promise<void>; replyTo?: Message | null; onCancelReply?: () => void; onType?: (typing: boolean) => void }) {
   const [text, setText] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const [isBounty, setIsBounty] = useState(false);
   const me = useProfileStore((s) => s.me);
@@ -22,7 +22,7 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
 
   const submit = async () => {
     if (!text.trim() || busy) return; setBusy(true); setError('');
-    try { await onSend(text, { language: language || undefined, bounty: isBounty }); setText(''); setIsBounty(false); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    try { await onSend(text, { language: language || undefined, bounty: isBounty }); setText(''); setIsBounty(false); onType?.(false); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
   return (
     <div className="border-t border-border p-2.5 md:p-3">
@@ -48,10 +48,10 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
         </div>
         {isBounty && <p className="text-xs text-muted">Speakers of {language ? nameOf(language) : 'this language'} will see this message in the bounty queue. {BOUNTY_COST} points are held; whoever's correction you accept gets them, or you get them back after 48 hours.</p>}
         <div className="flex items-end gap-2">
-          <textarea rows={1} value={text} maxLength={4000} placeholder="Write a message…" onChange={(e) => { setText(e.target.value); onType?.(); }}
+          <textarea rows={1} value={text} maxLength={4000} placeholder="Write a message…" onChange={(e) => { setText(e.target.value); onType?.(!!e.target.value.trim()); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
-            className="max-h-32 flex-1 resize-none rounded-md border border-border bg-surface px-4 py-3 text-base text-ink transition duration-200 placeholder:text-muted hover:border-ink/40 focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
-          <Button aria-label="Send" onClick={submit} disabled={!text.trim() || busy}><Send size={18} /></Button>
+            className="max-h-32 flex-1 resize-none rounded-md border border-border bg-surface px-4 py-[11px] text-base text-ink transition duration-200 placeholder:text-muted hover:border-ink/40 focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
+          <Button aria-label="Send" className="h-12 w-12 shrink-0 px-0" onClick={submit} disabled={!text.trim() || busy}><Send size={18} /></Button>
         </div>
       </div>
     </div>

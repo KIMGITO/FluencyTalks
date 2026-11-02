@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, EmptyState, Spinner } from '@/components/ui';
+import { Card, EmptyState, TableSkeleton } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import { adminRecentActions } from '@/services';
 import type { AdminAction } from '@/types/db';
@@ -9,7 +9,7 @@ const verbs: Record<AdminAction['action'], string> = { suspend: 'suspended', ban
 export function AdminActivity() {
   const [items, setItems] = useState<AdminAction[] | null>(null); const [error, setError] = useState('');
   useEffect(() => { adminRecentActions().then(setItems).catch((e) => { setError((e as Error).message); setItems([]); }); }, []);
-  if (!items) return <div className="flex justify-center p-6"><Spinner /></div>;
+  if (!items) return <TableSkeleton />;
   return (
     <div className="space-y-3">
       {error && <p className="text-danger">{error}</p>}

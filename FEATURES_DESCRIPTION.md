@@ -75,8 +75,23 @@ They also declare consent to the privacy policy, terms, and age requirement.
 - The set_language_profile and record_consent database functions.
 
 ### When it is used
-Only once for a brand-new user, and again whenever they change a language or
-level (the first change is free, then once every 30 days).
+Only once for a brand-new user, and again whenever they change a language
+(the first change is free, then once every 30 days).
+
+### Earned levels
+The level a user picks is their own estimate, and it unlocks nothing. After
+setup it can be lowered but not raised. A separate verified level rises by
+itself, and it alone lets a learner correct, answer bounties, post and earn.
+It reads distinct messages, active days, native partners on the app for 7+
+days who replied, and the error rate over the latest 50 reviewed messages;
+from B2 also accepted corrections, helpfulness ratings and saves of their
+posts. Thresholds live in the level_rules table. Changing the learning
+language resets it. Progress shows on the profile form.
+
+Two native speakers who have really chatted with a learner can also vouch from
+the learner's profile. That reaches B1 and no further, needs the learner's
+recent error rate to hold, and each voucher has 3 vouches a month. Cards show a
+learner's verified level, or their estimate marked "self-assessed".
 
 ---  
 
@@ -116,13 +131,14 @@ worst, so the user can immediately start a conversation with a good match.
 ### How it works
 - A single database function home_feed returns two ranked lists: one of
   partners the user can learn from, and one of other people.
-- The ranking logic is: first can teach me (native language matches the
-  user's learning language), then same goal (one can teach the other and
-  they share a language direction or region), then same native, then
-  everyone else.
+- The ranking logic is: first a perfect swap (each speaks natively what the
+  other is learning), then they can teach me, then I can teach them, then
+  everyone else. Sharing a native or target language is not a match.
+- Within a tier, people are ordered by the most recent day they were active,
+  then timezone closeness, then newest. Follower count plays no part.
 - Each result includes a match_kind label explaining why that person was
-  recommended (example: native = they teach your target language, or
-  learning = you can teach them).
+  recommended: swap, native (they teach your target language), learning (you
+  can teach them), or other.
 
 ### What it depends on
 - The profiles table with language and level columns.
@@ -207,6 +223,18 @@ live for everyone. Bounties are attached to messages but handled by a
 separate feature below.
 
 ---  
+
+### Presence and typing
+- The app sends a heartbeat every 30 seconds while the tab is visible and in
+  use (touch_presence), from any page. Someone counts as online for 70 seconds
+  after a beat. An open tab left alone for 5 minutes stops counting.
+- presence_of answers for specific people. Online is visible to signed-in
+  people who are not blocked; last seen only to accepted chat partners.
+  The Settings toggle (show_activity) hides it both ways.
+- Typing goes between the two browsers over a realtime broadcast and is not
+  stored. It stops when the message is sent or the text is cleared.
+
+---
 
 ## 7. Inline Corrections
 
@@ -316,7 +344,13 @@ helpful corrections and allows users to buy community help through bounties.
 
 ### How it works
 - Every user starts with 100 points.
-- A corrector earns +5 points when a learner accepts their correction.
+- A corrector earns +5 points when a learner accepts their correction: at most
+  10 a day, at most 3 a day from the same person, and only for a real edit on a
+  message with a language tag. Corrections are limited to 20 an hour.
+- A corrector whose recent ratings are mostly "not helpful", from at least 3
+  people, stops earning the +5 until that recovers. Learners rate a correction
+  after accepting or dismissing it.
+- Posting to the library does not earn points.
   All point movements go through a single function adjust_user_points,
   which writes one row to a points_ledger table so every credit is
   auditable.
@@ -454,7 +488,12 @@ feature.
 
 ### How it works
 - Only eligible users can post: a user with a native language, or a learner
-  at B1 or above (checked by isContributionEligible).
+  verified at B1 or above. A post needs a language, and it must be one the
+  author qualifies in (native, or verified B1+ in their learning language). The form lists those, shows a
+  learning language below B1 as locked, and the database checks again.
+- Editing a post may keep its language even if the author no longer qualifies;
+  moving it to another language needs the qualification.
+- Home lists posts in the reader's two languages first, then the rest.
 - postContribution calls post_contribution, writing phrase,
   translation, language_id, category, source_context, and an Unsplash
   image URL into contribution_posts.
@@ -470,15 +509,40 @@ feature.
 
 ### When it is used
 - A user is taken to the Library page from the learning page. The library
-  shows posts. A contributor writes a post from the ContributionModal in the
+  shows posts. A contributor writes a post from the contribute page in the
   same area.
 
-### Known gap
-No public screen currently browses or searches the community library. The
-columns, functions, and eligibility check exist, but a UI that publishes and
-discovers posts is still to be built.
-
 ---  
+
+### Review and corrections
+Anyone qualified in the language (native, or verified B1+) can confirm a post is
+correct, propose a correction, or ask for clarification; anyone can reply. All of
+it lives in post_discussion, on the post page (/library/post/:id).
+- A correction has a target (the post or another correction), a proposed phrase
+  and/or translation, an explanation, an author, a status and a history. A reply
+  has none of that. The table's constraints enforce the difference.
+- Nothing is overwritten. The original stays in phrase/translation; the accepted
+  version is held separately in current_phrase/current_translation.
+- Statuses: pending, accepted, declined, superseded (an accepted correction that
+  another accepted one replaced), withdrawn (by its author, while pending),
+  resolved (clarifications only).
+- The post's owner decides. Accepting replaces only the previously accepted
+  correction; other proposals stay open, and the post stays "In review". Newest
+  does not win. Moderators can decide or reverse with a mandatory reason.
+- Text a post is being reviewed on can't be edited, and a post with open decisions
+  can't be deleted by its owner.
+- An accepted correction earns +5 under the same caps as chat corrections.
+
+### Accountability
+A correction or clarification creates a decision_items row for the post's owner.
+Only an actual decision, a withdrawal or an exemption closes it. Being online or
+opening it never does. accountability_sweep sends reminders, overdue notices and
+escalations; it runs from pg_cron where available and otherwise from app activity.
+New posts pause only at 3 overdue decisions after notice, and restart by themselves
+once answered. Owners can ask for one extension or appeal. Admins set all of this
+in accountability_policy (Moderation, Decisions), and every step is audited.
+
+---
 
 ## 15. Notifications
 

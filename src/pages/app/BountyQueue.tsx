@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Avatar, Button, EmptyState, Input, Spinner, Tabs, Textarea } from '@/components/ui';
+import { Avatar, Button, EmptyState, ErrorState, Input, RowListSkeleton, Tabs, Textarea } from '@/components/ui';
 import { answerBounty, listMyBounties, listOpenBounties, type MyBounty, type OpenBounty } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
@@ -32,7 +32,7 @@ export default function BountyQueue() {
       const [o, m] = await Promise.all([listOpenBounties(), listMyBounties()]);
       setOpen(o); setMine(m);
       if (myId) await loadProfile(myId);          
-    } catch (e) { setError((e as Error).message); setOpen((v) => v ?? []); setMine((v) => v ?? []); }
+    } catch (e) { setError((e as Error).message); }
   }, [myId, loadProfile]);
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -43,12 +43,12 @@ export default function BountyQueue() {
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'open', label: 'I can answer' }, { key: 'mine', label: 'My bounties' }]} />
         <Link to="/points-history" className="text-sm text-brand">Points history</Link>
       </div>
-      {error && <p className="ft-inset mb-3 text-sm text-danger">{error}</p>}
-      {tab === 'open'
-        ? (open === null ? <div className="flex justify-center p-8"><Spinner /></div>
-          : !open.length ? <EmptyState title="No open bounties" text="Bounties in a language you speak natively, or know at B1 or above, show up here." />
+      {error && open !== null && <p className="ft-inset mb-3 text-sm text-danger">{error}</p>}
+      {error && (open === null || mine === null) ? <ErrorState title="Couldn't load bounties" onRetry={() => void refresh()} /> : tab === 'open'
+        ? (open === null ? <RowListSkeleton label="Loading bounties" />
+          : !open.length ? <EmptyState title="No open bounties" text="Bounties in a language you speak natively, or are verified at B1 or above in, show up here." />
           : <div className="space-y-3">{open.map((b) => <OpenCard key={b.message_id} bounty={b} language={nameOf(b.language_id)} />)}</div>)
-        : (mine === null ? <div className="flex justify-center p-8"><Spinner /></div>
+        : (mine === null ? <RowListSkeleton label="Loading bounties" />
           : !mine.length ? <EmptyState title="No bounties yet" text="In a chat, tick “Ask the community” before sending a message. It costs 50 points, refunded if you don't accept an answer within 48 hours." />
           : <div className="space-y-3">{mine.map((b) => <MineCard key={b.message_id} bounty={b} language={b.language_id ? nameOf(b.language_id) : ''} />)}</div>)}
     </div>

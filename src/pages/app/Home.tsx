@@ -9,7 +9,7 @@ import {
   Card,
   Divider,
   EmptyState,
-  Spinner,
+  ErrorState, PostListSkeleton, RowListSkeleton, Spinner,
 } from '@/components/ui';
 import { homeFeed, type MiniUser } from '@/services';
 import { useCountries } from '@/store/countryStore';
@@ -17,6 +17,7 @@ import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
 import { listContributionPosts, type ContributionPost } from '@/services/library';
+import { DecisionBanner } from '@/components/features/review/DecisionQueue';
 import { PostCard } from '@/components/features/library';
 import { useFeedCache, useInfiniteScroll, usePagedList } from '@/store/feedCache';
 
@@ -36,7 +37,8 @@ export default function Home() {
   
   const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
   // Posts: cached and paged — shown instantly when coming back, next page loads on scroll.
-  const feed = usePagedList('posts:home', async (offset, limit) => (await listContributionPosts(undefined, undefined, { offset, limit })).posts);
+  // Posts in my two languages come first; the key changes when those languages do.
+  const feed = usePagedList(`posts:home:${me?.native_language_id ?? ''}:${me?.learning_language_id ?? ''}`, async (offset, limit) => (await listContributionPosts(undefined, undefined, { offset, limit }, true)).posts);
   const removePost = useFeedCache((s) => s.removeEverywhere);
   const sentinel = useInfiniteScroll(feed.loadMore, !feed.done && !feed.initialLoading, feed.items.length);
 
@@ -65,6 +67,7 @@ export default function Home() {
 
   return (
     <>
+      <DecisionBanner />
       {/* Composer: looks like an input so it invites typing, but opens the contribute page */}
       <Link
         to="/library/contribute"
@@ -79,9 +82,7 @@ export default function Home() {
       </Link>
       <div className="flex flex-col gap-2">
         {people === null ? (
-          <div className="flex justify-center p-6">
-            <Spinner />
-          </div>
+          <RowListSkeleton count={3} label="Loading people" />
         ) : (
           <>
             {partners.length > 0 &&
@@ -136,11 +137,9 @@ export default function Home() {
         {/* Community feed: newest posts, loading more as you scroll */}
         <Divider label="From the community" className="mt-4 mb-1" position="ne" />
         {feed.initialLoading ? (
-          <div className="flex justify-center p-6">
-            <Spinner />
-          </div>
+          <PostListSkeleton count={2} />
         ) : feed.error ? (
-          <EmptyState title="Couldn't load posts" text="Check your connection and try again." action={<Button size="sm" variant="secondary" onClick={feed.refresh}>Try again</Button>} />
+          <ErrorState title="Couldn't load posts" busy={feed.loading} onRetry={() => void feed.refresh()} />
         ) : feed.items.length === 0 ? (
           <EmptyState
             title="No posts yet"

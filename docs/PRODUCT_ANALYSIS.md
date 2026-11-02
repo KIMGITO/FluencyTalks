@@ -161,17 +161,17 @@ This is the most important section. Language selection decides who can match wit
 **Impact:** Contradictory profiles and false matches.
 **Fix:** the `CHECK` in B1.
 
-### B4. Matching is one-directional
+### B4. Matching is one-directional *(fixed in 20261102000000_language_rules)*
 **Where:** `home_feed()` puts anyone who speaks natively what I'm learning in the top tier, whether or not they want what I offer.
 **Impact:** Native speakers get flooded with requests from learners and have no incentive to answer, so response rates fall and learners churn. A true exchange (both sides gain) is what keeps people returning.
 **Fix:** The three-tier engine in F2, with "perfect swap" first. Show the reason on the card ("You teach Swahili, they teach Vietnamese").
 
-### B5. The "learning" bucket mixes unrelated people
+### B5. The "learning" bucket mixes unrelated people *(fixed in 20261102000000_language_rules)*
 **Where:** the `match_kind = 'learning'` branch includes people learning the same language as me and people who share my native language.
 **Impact:** Two learners of the same language cannot correct each other reliably, and two speakers of the same native language have no practice reason. The feed looks full but is not useful.
 **Fix:** Drop those cases from the main feed. Offer "learning the same language" only as an explicit "study buddy" filter.
 
-### B6. Ranking by follower count
+### B6. Ranking by follower count *(fixed in 20261102000000_language_rules)*
 **Where:** `order by followers_count desc` in `home_feed()`.
 **Impact:** Popularity bias. New users are invisible, which is a problem on a small user base. It also keeps the Facebook-style mechanic you want to remove.
 **Fix:** Order by last active, then timezone overlap, then newest. Remove the counters.
@@ -236,7 +236,15 @@ This is the most important section. Language selection decides who can match wit
 
 - One native language, strict. A second native language can be added later if users ask.
 - Launch list of 40 languages (`languages.is_supported_learning`), including Swahili (`swh`, the code for Kenyan Swahili) and Vietnamese (`vie`). 40 major world languages (migration `20261101000003_launch_languages`): English, Vietnamese, Swahili, Spanish, French, German, Portuguese, Italian, Chinese, Cantonese, Japanese, Korean, Hindi, Arabic and others, including major African languages. The six smaller Kenyan languages were taken off the list on 2026-11-01.
-- Language changes: the first change is free, then once every 30 days; level changes are always free.
+- Language changes: the first change is free, then once every 30 days.
+- Levels are earned (migration `20261102000001_earned_levels`). The level a person picks is their own estimate and unlocks nothing; after setup it can only be lowered. `verified_level` rises automatically from the thresholds in the `level_rules` table and never falls unless the learning language changes.
+- Corrections and their +5 are open to native speakers and to learners verified at B1+ of that language (not native speakers only, as F4 and B8 first proposed).
+- Vouching: two native speakers who have really chatted with a learner (15+ of the learner's messages over 2+ days) can verify them at B1, and only B1, if the learner's recent error rate holds. Each voucher has 3 vouches a month.
+- Cards show a learner at their verified level; with none yet, their estimate marked "self-assessed".
+- Presence is server-side (`user_presence`): online for non-blocked signed-in people, last seen only between accepted chat partners, and hiding it works both ways.
+- Post review: the owner decides on corrections; accepting supersedes only the previously accepted one; moderators can override with a reason. Accepted post corrections earn +5 under the chat caps. Chat corrections stay their own lighter flow.
+- Helpfulness (B9): learners rate corrections. Mostly negative recent ratings from at least 3 people stop the corrector's +5 until they recover. Bounty payouts are not affected: the asker chose that answer and paid for it.
+- Library posts do not earn points.
 
 ## 8. Open Decisions for the Team
 

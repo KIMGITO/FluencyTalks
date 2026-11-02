@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
+import { qualifiedLanguages } from '@/lib/corrections';
 import type { ContributionPost, Person, SavedPartner } from '@/types/db';
 
 export type { ContributionPost, SavedPartner };
@@ -17,12 +18,11 @@ const toPost = ({ user, saved, ...p }: PostRow) => ({
 export interface Page { offset?: number; limit?: number }
 const rangeOf = ({ offset = 0, limit = 12 }: Page = {}) => [offset, offset + limit - 1] as const;
 
-export const listContributionPosts = async (p_languageId?: string, p_category?: string, page?: Page) => {
-  let q = supabase
-    .from('contribution_posts')
-    .select(POST_SELECT)
-    .order('created_at', { ascending: false })
-    .range(...rangeOf(page));
+export const listContributionPosts = async (p_languageId?: string, p_category?: string, page?: Page, myLanguagesFirst = false) => {
+  let q = supabase.from('contribution_posts').select(POST_SELECT);
+  // A computed column on the database (matches_my_languages): posts in my two languages, then the rest.
+  if (myLanguagesFirst) q = q.order('matches_my_languages', { ascending: false });
+  q = q.order('created_at', { ascending: false }).range(...rangeOf(page));
   if (p_languageId) q = q.eq('language_id', p_languageId);
   if (p_category) q = q.eq('category', p_category);
   const { data, error } = await q;
@@ -73,10 +73,6 @@ export const getContribution = async (id: string): Promise<ContributionPost | nu
 };
 export const deleteContribution = (id: string) => rpc<string>('delete_contribution', { p_id: id });
 
- 
-export const isContributionEligible = (me: { native_language_id: string | null; learning_language_id: string | null; learning_level: string | null } | null) => {
-  if (!me) return false;
-  if (me.native_language_id) return true;
-  const lvl = (me.learning_level ?? '').toUpperCase();
-  return lvl === 'B1' || lvl === 'B2' || lvl === 'C1' || lvl === 'C2';
-};
+
+/** Can this person post at all? In which language is qualifiedLanguages' answer (the server checks too). */
+export const isContributionEligible = (me: Parameters<typeof qualifiedLanguages>[0]) => qualifiedLanguages(me).length > 0;
