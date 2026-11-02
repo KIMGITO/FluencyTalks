@@ -59,7 +59,7 @@ export function ChatThread({ id }: { id: string }) {
   return (
     <div className="ft-thread-shell">
       <header className="flex items-center gap-2 border-b border-border bg-surface p-2.5 md:p-3">
-        <Button variant="ghost" size="sm" aria-label="Back" onClick={() => nav('/messages')}><ArrowLeft size={20} /></Button>
+        <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label="Back" onClick={() => nav('/messages')}><ArrowLeft size={20} /></Button>
         <Link to={`/u/${row.other_username}`} className="flex min-w-0 flex-1 items-center gap-2.5">
           <Avatar name={row.other_name} src={row.other_avatar} size="sm" online={peerOnline} />
           <span className="min-w-0">
@@ -68,7 +68,7 @@ export function ChatThread({ id }: { id: string }) {
           </span>
         </Link>
         {!!pinnedMsgs.length && (
-          <Button variant="ghost" size="sm" aria-label={`Pinned messages (${pinnedMsgs.length})`} onClick={() => setShowPins((v) => !v)}><Pin size={17} className="text-brand" /></Button>)}
+          <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label={`Pinned messages (${pinnedMsgs.length})`} onClick={() => setShowPins((v) => !v)}><Pin size={17} className="text-brand" /></Button>)}
         <UserMenu userId={row.other_user_id} name={row.other_name} conversationId={id} onBlocked={() => nav('/messages')} />
       </header>
       {!!pinnedMsgs.length && (

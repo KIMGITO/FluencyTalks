@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { hasActor, notificationLink, notificationVerb } from '@/lib/notificationText';
 import clsx from 'clsx';
 import { Bell, Trash2 } from 'lucide-react';
-import { Avatar, Button } from '@/components/ui';
+import { Avatar, Button, CountBadge } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { AppNotification } from '@/types/db';
@@ -15,7 +15,7 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open} onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) nav('/notifications'); else setOpen(!open); }}>
-        <span className="relative"><Bell size={20} />{unread > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-sm bg-accent px-1 text-center text-xs font-bold text-deep">{unread > 9 ? '9+' : unread}</span>}</span>
+        <span className="relative"><Bell size={20} /><CountBadge count={unread} label="unread notifications" ring="ring-bg" className="-right-2.5 -top-2" /></span>
       </Button>
       {open && (<>
         <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />

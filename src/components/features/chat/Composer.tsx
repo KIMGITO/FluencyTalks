@@ -41,20 +41,20 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
       <div className="flex items-end gap-1.5">
         <div className="flex h-11 shrink-0 items-center gap-1">
           {mine.length > 1 ? (
-            <div role="radiogroup" aria-label="Message language" className="flex rounded-md bg-surface-2 p-0.5">
+            <div role="radiogroup" aria-label="Message language" className="flex h-11 items-stretch rounded-md border border-border bg-surface-2 p-1">
               {mine.map((id) => (
                 <button key={id} type="button" role="radio" aria-checked={language === id} aria-label={nameOf(id)} title={nameOf(id)} onClick={() => setLanguage(id)}
-                  className={clsx('h-7 rounded px-1.5 text-2xs font-bold tracking-wide transition', language === id ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink')}>
+                  className={clsx('min-w-9 rounded px-1.5 text-xs font-bold tracking-wide transition', language === id ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink')}>
                   {languageTabLabel(id)}
                 </button>))}
             </div>
           ) : mine.length === 1 ? (
-            <span title={`Writing in ${nameOf(mine[0])}`} className="rounded-md bg-surface-2 px-1.5 py-1 text-2xs font-bold tracking-wide text-ink">{languageTabLabel(mine[0])}</span>
+            <span title={`Writing in ${nameOf(mine[0])}`} className="flex h-11 items-center rounded-md border border-border bg-surface-2 px-2.5 text-xs font-bold tracking-wide text-ink">{languageTabLabel(mine[0])}</span>
           ) : null}
           <button type="button" aria-pressed={isBounty} disabled={!canAfford && !isBounty} onClick={() => setIsBounty(!isBounty)}
             aria-label={`Ask the community (${BOUNTY_COST} points)`} title={canAfford ? `Ask the community (${BOUNTY_COST} points)` : `You need ${BOUNTY_COST} points for a bounty`}
-            className={clsx('flex h-8 w-8 items-center justify-center rounded-md transition disabled:opacity-40', isBounty ? 'bg-accent text-deep' : 'text-muted hover:bg-surface-2 hover:text-ink')}>
-            <Coins size={17} aria-hidden />
+            className={clsx('flex h-11 w-11 items-center justify-center rounded-md border transition disabled:opacity-40', isBounty ? 'border-accent bg-accent text-deep' : 'border-border text-muted hover:bg-surface-2 hover:text-ink')}>
+            <Coins size={18} aria-hidden />
           </button>
         </div>
         <textarea rows={1} value={text} maxLength={4000} placeholder="Write a message…" aria-label="Message" onChange={(e) => { setText(e.target.value); onType?.(!!e.target.value.trim()); }}

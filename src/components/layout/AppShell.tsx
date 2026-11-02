@@ -9,6 +9,7 @@ import { useChatStore } from '@/store/chatStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useAuthStore } from '@/store/authStore';
+import { useNavBadgeSync } from '@/hooks/useNavBadge';
 import { useHeartbeat } from '@/hooks/usePresence';
 
 export function AppShell() {
@@ -21,6 +22,7 @@ export function AppShell() {
   useEffect(() => { if (userId) void loadAccountability(); }, [userId, loadAccountability]);
   useEffect(() => { loadLanguages(); startRealtime(); return stopRealtime; }, []);
   useEffect(() => { if (!userId) return; startNotifications(userId); return stopNotifications; }, [userId]);
+  useNavBadgeSync();
   return (
     <div className="min-h-screen bg-bg">
       <ScrollRestoration />

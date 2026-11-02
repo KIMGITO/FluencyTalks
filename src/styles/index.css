@@ -42,6 +42,18 @@
   .ft-target { animation: ft-target 2.4s ease-out; }
   /* A thread level: the line is the connector back to its parent. */
   .ft-branch { border-left: 2px solid rgb(var(--c-border)); }
+  /* Discussion tree, Facebook-style. Geometry follows ThreadBranch: article px-1 py-2, 32px avatar,
+     so the avatar centre is 20px across and 24px down. A parent draws a line down from under its avatar
+     (.ft-descend); each indented reply draws an elbow into its own avatar, and every reply but the last
+     carries the line on to its younger siblings. */
+  .ft-tree { --ft-line: rgb(var(--c-muted) / .35); }
+  .ft-descend { position: relative; }
+  .ft-descend::before { content: ''; position: absolute; left: 19px; top: 40px; bottom: 0; width: 2px; background: var(--ft-line); }
+  .ft-children { margin-left: 19px; padding-left: 22px; }
+  .ft-child { position: relative; }
+  .ft-child::after { content: ''; position: absolute; left: -22px; top: 0; width: 20px; height: 24px; border-left: 2px solid var(--ft-line); border-bottom: 2px solid var(--ft-line); border-bottom-left-radius: 12px; }
+  .ft-child:not(:last-child)::before { content: ''; position: absolute; left: -22px; top: 0; bottom: 0; width: 2px; background: var(--ft-line); }
+  .ft-child-more::after { height: 20px; }
   /* Quick reactions that took: a small pop. */
   @keyframes ft-pop { 50% { transform: scale(1.18); } }
   .ft-pop { animation: ft-pop .18s ease-out; }

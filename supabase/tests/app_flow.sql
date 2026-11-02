@@ -364,6 +364,44 @@ end $$;
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 select public.delete_message((select id from bnt5));   -- tidy: refund, so later sections start from the same balance
 
+-- ============ 5b3. NAV BADGES + MESSAGE PUSH ============
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+select public.mark_tab_seen('bounties');
+select tt.expect_error($q$select public.mark_tab_seen('admin')$q$, 'invalid_tab');
+do $$ begin
+  assert (public.nav_badges()->>'bounties')::int = 0, 'nothing new right after opening Bounties';
+  assert public.nav_badges() ? 'home' and public.nav_badges() ? 'library', 'every tab has a count';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+create temp table bnt6 as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Toi yeu Viet Nam', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt6 to public;
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+do $$ begin assert (public.nav_badges()->>'bounties')::int = 1, 'a new bounty I can answer shows on the Bounties badge'; end $$;
+select public.mark_tab_seen('bounties');
+do $$ begin assert (public.nav_badges()->>'bounties')::int = 0, 'opening the tab clears it'; end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000b7');
+select public.answer_bounty((select id from bnt6), 'Tôi yêu Việt Nam', null);
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+do $$ begin assert (public.nav_badges()->>'bounties')::int = 1, 'an answer waiting for my decision shows on my Bounties badge'; end $$;
+select public.delete_message((select id from bnt6));
+do $$ begin assert (public.nav_badges()->>'bounties')::int = 0, 'refunded: nothing left to decide'; end $$;
+
+-- A chat message is queued for push to the other member's devices once push is configured.
+reset role;
+insert into public.push_settings (function_url, webhook_secret) values ('https://push.invalid/send-push', 'test-secret');
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('00000000-0000-0000-0000-0000000000b2', 'https://push.invalid/device', 'k', 'a');
+create temp table queued as select (select count(*) from net.http_request_queue) as n;
+grant select on queued to public;
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select public.send_message((select conv from ctx), 'Push me', null);
+reset role;
+do $$ begin
+  assert (select count(*) from net.http_request_queue) = (select n from queued) + 1, 'a new chat message queues exactly one push call';
+  assert (select convert_from(body, 'utf8') from net.http_request_queue order by id desc limit 1) like '%message_id%', 'the call carries the message id';
+end $$;
+delete from public.push_subscriptions where endpoint = 'https://push.invalid/device'; delete from public.push_settings where id;
+set role authenticated;
+
 -- ============ 5c. COMMUNITY LIBRARY + SAVED PARTNERS ============
 select tt.as_user('00000000-0000-0000-0000-0000000000c3');   -- Zed: native Dutch, not learning anything
 select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good morning', 'vie', 'phrase', null, null)$q$, 'not_contribution_eligible');

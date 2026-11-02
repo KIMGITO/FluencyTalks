@@ -198,7 +198,7 @@ export default function PostDetail() {
         </h2>
         {roots.length === 0
           ? <p className="py-6 text-center text-sm text-muted">{me.is_owner ? 'Nobody has reviewed this yet. You will be told when they do.' : 'No corrections yet. Is it right? Confirm it, or propose a correction.'}</p>
-          : <ul className="space-y-1">{roots.slice(0, shown).map((r) => <ThreadBranch key={r.id} item={r} ctx={threadCtx} />)}</ul>}
+          : <ul className="ft-tree space-y-1">{roots.slice(0, shown).map((r) => <ThreadBranch key={r.id} item={r} ctx={threadCtx} />)}</ul>}
         {roots.length > shown && <Button size="sm" variant="secondary" full className="mt-2" onClick={() => setShown((n) => n + PAGE)}>Show more ({roots.length - shown})</Button>}
       </section>
 

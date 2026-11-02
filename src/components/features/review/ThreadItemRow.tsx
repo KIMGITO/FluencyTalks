@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Check, ChevronDown, ChevronRight, CornerDownRight, MoreHorizontal, ThumbsUp } from 'lucide-react';
+import { Check, CornerDownRight, MoreHorizontal, ThumbsUp } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button, ConfirmDialog } from '@/components/ui';
@@ -43,12 +43,19 @@ function kindLabel(item: ThreadItem, parent: ThreadItem | undefined) {
   return parent?.kind === 'correction' ? 'Correction of a correction' : 'Correction';
 }
 
-export function ThreadBranch({ item, ctx, level = 0 }: { item: ThreadItem; ctx: Ctx; level?: number }) {
+/** branch: drawn as an indented reply with a connector to its parent (see .ft-tree in index.css). */
+export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: ThreadItem; ctx: Ctx; level?: number; branch?: boolean }) {
   const { thread, byId, children, targetPath, targetId, reload, patchItem, ownerName } = ctx;
   const { me, post } = thread;
   const kids = children.get(item.id) ?? [];
   const below = countBelow(item.id, children);
-  const [open, setOpen] = useState(level < OPEN_DEPTH || targetPath.has(item.id));
+  // Like Facebook: the first reply shows, the rest wait behind "View N more replies". Deep branches start folded.
+  // A notification's target is always reachable without a tap.
+  const [show, setShow] = useState<'none' | 'first' | 'all'>(() =>
+    kids.slice(1).some((k) => targetPath.has(k.id)) ? 'all' : level < OPEN_DEPTH || targetPath.has(item.id) ? 'first' : 'none');
+  const visibleKids = show === 'none' ? [] : show === 'first' ? kids.slice(0, 1) : kids;
+  const hiddenBelow = kids.slice(visibleKids.length).reduce((n, k) => n + 1 + countBelow(k.id, children), 0);
+  const indent = level < MAX_INDENT;
   const [composer, setComposer] = useState<'comment' | 'correction' | null>(null);
   const [dialog, setDialog] = useState<'accept' | 'decline' | 'withdraw' | 'resolve' | 'override-accepted' | 'override-declined' | 'override-pending' | null>(null);
   const [menu, setMenu] = useState(false);
@@ -94,8 +101,8 @@ export function ThreadBranch({ item, ctx, level = 0 }: { item: ThreadItem; ctx: 
   };
 
   return (
-    <li id={`item-${item.id}`} className="scroll-mt-20">
-      <article className={clsx('rounded-md px-1 py-2', targetId === item.id && 'ft-target')} aria-label={`${kindLabel(item, parent)} by ${authorName}`}>
+    <li id={`item-${item.id}`} className={clsx('scroll-mt-20', branch && 'ft-child')}>
+      <article className={clsx('rounded-md px-1 py-2', targetId === item.id && 'ft-target', indent && kids.length > 0 && 'ft-descend')} aria-label={`${kindLabel(item, parent)} by ${authorName}`}>
         <header className="flex items-start gap-2">
           {item.author && !item.hidden
             ? <Link to={`/u/${item.author.username}`} className="shrink-0"><Avatar name={authorName} src={item.author.avatar_url} size="sm" /></Link>
@@ -192,20 +199,25 @@ export function ThreadBranch({ item, ctx, level = 0 }: { item: ThreadItem; ctx: 
               postId={post.id} parentId={item.id} kind={composer}
               currentPhrase={item.proposed_phrase ?? fromPhrase} currentTranslation={item.proposed_translation ?? fromTranslation}
               onCancel={() => setComposer(null)}
-              onDone={async () => { setComposer(null); setOpen(true); await reload(); }}
+              onDone={async () => { setComposer(null); setShow('all'); await reload(); }}
             />
           )}
         </div>
       </article>
 
       {kids.length > 0 && (
-        <div className={clsx(level < MAX_INDENT && 'ml-4 sm:ml-5 ft-branch pl-2 sm:pl-3')}>
-          <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="inline-flex min-h-10 items-center gap-1 rounded-full px-2 text-xs font-semibold text-muted hover:bg-surface-2 hover:text-ink">
-            {open ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
-            {open ? 'Hide' : 'Show'} {below} {below === 1 ? 'reply' : 'replies'}
-          </button>
-          {open && <ul className="space-y-1">{kids.map((k) => <ThreadBranch key={k.id} item={k} ctx={ctx} level={level + 1} />)}</ul>}
-        </div>
+        // Past MAX_INDENT the tree stops stepping right; "Replying to" names the parent instead.
+        <ul className={indent ? 'ft-children' : undefined} aria-label={`Replies to ${authorName}`}>
+          {visibleKids.map((k) => <ThreadBranch key={k.id} item={k} ctx={ctx} level={level + 1} branch={indent} />)}
+          {hiddenBelow > 0 && (
+            <li className={clsx(indent && 'ft-child ft-child-more')}>
+              <button type="button" aria-expanded={false} onClick={() => setShow('all')}
+                className="inline-flex min-h-10 items-center rounded-full px-2 text-xs font-semibold text-muted hover:bg-surface-2 hover:text-ink">
+                {show === 'none' ? `View ${below} ${below === 1 ? 'reply' : 'replies'}` : `View ${hiddenBelow} more ${hiddenBelow === 1 ? 'reply' : 'replies'}`}
+              </button>
+            </li>
+          )}
+        </ul>
       )}
 
       <ConfirmDialog open={dialog === 'accept'} title="Accept this correction?" confirmLabel="Accept"

@@ -3,14 +3,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import { Avatar } from '@/components/ui';
 import { navItems } from './nav';
-import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { NavBadge } from './NavBadge';
 import { useHideOnScroll } from '@/hooks/useHideOnScroll';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { useProfileStore } from '@/store/profileStore';
 
 /** Phone navigation: a floating dark pill that slides away while scrolling down and returns on scroll up. */
 export function BottomNav() {
-  const unread = useUnreadCount();
   const me = useProfileStore((s) => s.me);
   const providerAvatar = useProviderAvatar();
   const { pathname } = useLocation();
@@ -35,7 +34,7 @@ export function BottomNav() {
                 {to === '/profile'
                   ? <span aria-hidden className={clsx('flex rounded-full', isActive && 'ring-2 ring-on-deep')}><Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="xs" /></span>
                   : <Icon size={21} aria-hidden />}
-                {to === '/messages' && unread > 0 && <span className="absolute right-2.5 top-0 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-deep" aria-label="Unread messages" />}
+                <NavBadge to={to} ring="ring-deep" className="left-[calc(50%+4px)] -top-1" />
               </span>
               <span className="max-w-full truncate px-0.5">{label}</span>
               {isActive && <span className="absolute bottom-1 h-1 w-1 rounded-full bg-accent" aria-hidden />}
