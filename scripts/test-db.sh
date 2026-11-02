@@ -27,6 +27,19 @@ psql "$URL" -q -v ON_ERROR_STOP=1 -f supabase/seed.sql >/dev/null
 # Hosted Supabase gives these to the API roles automatically; a plain Postgres does not.
 psql "$URL" -q -c "grant select,insert,update,delete on all tables in schema public to authenticated; grant select on all tables in schema public to anon; grant usage on all sequences in schema public to authenticated" >/dev/null
 
+# Hosted Supabase refuses an UPDATE or DELETE with no WHERE (safeupdate, on the API's login role). Plain
+# Postgres does not, so a bug like that passes here and breaks every API call in production. Switch it on
+# where the library exists: on a Supabase image only supabase_admin may do that.
+SUPER_URL="${URL/\/\/postgres:/\/\/supabase_admin:}"
+if psql "$SUPER_URL" -q -c "alter database $DB set session_preload_libraries = 'safeupdate'" >/dev/null 2>&1; then
+  if psql "$URL" -q -c "update public.accountability_policy set enabled = enabled" >/dev/null 2>&1; then
+    echo "safeupdate was set but did not refuse an UPDATE with no WHERE"; exit 1
+  fi
+  echo "== safeupdate on (same as hosted Supabase)"
+else
+  echo "== WARNING: safeupdate not available on this Postgres, so UPDATEs with no WHERE will not be caught"
+fi
+
 echo "== app/database contract"
 python3 scripts/check-rpc-contract.py "$URL"
 

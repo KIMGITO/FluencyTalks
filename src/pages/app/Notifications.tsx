@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { Avatar, Button, EmptyState, ErrorState, NotificationSkeleton, PartialError, Spinner, Tabs } from '@/components/ui';
+import { PushToggle } from '@/components/features/review/PushToggle';
 import { DecisionQueue } from '@/components/features/review/DecisionQueue';
 import { formatTime } from '@/lib/format';
 import { CATEGORY_LABEL, hasActor, notificationLink, notificationVerb } from '@/lib/notificationText';
@@ -133,6 +134,7 @@ export default function Notifications() {
       </div>
       {showPrefs && (
         <div className="ft-card ft-card-pad mb-3 space-y-2">
+          <PushToggle />
           <p className="text-xs text-muted">Decisions you have to make and restrictions always reach you.</p>
           {OPTIONAL.map((o) => (
             <label key={o.key} className="flex min-h-11 items-start gap-3 text-sm">

@@ -162,3 +162,16 @@ No application source files needed changes.
 - The local anon key and service role key are **development-only** values that reset when you recreate the local stack. Re-run `supabase status --output env` and update `.env` if keys change after a full `supabase stop` + volume removal.
 - `supabase.db` data persists in a Docker volume across `stop`/`start`. Use `supabase db reset --yes` to wipe and re-seed.
 - To fully wipe local data: `supabase stop --delete-up` (removes the Docker volume), then `supabase start --ignore-health-check`.
+
+---
+
+## Things that catch people out
+
+- This repo is linked to the production project. Local commands need `--local`.
+- `.env` points at production. To run the app against the local stack, pass the values for that run:
+  `VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_ANON_KEY=<local anon key> npx vite`
+- After `supabase start`, give storage up to a minute before `supabase migration up --local`:
+  its tables must exist before the baseline migration runs.
+- Real Supabase refuses an UPDATE or DELETE with no WHERE. `scripts/test-db.sh` turns the same rule on when
+  run against the Supabase image, so use `ADMIN_URL=postgresql://postgres:postgres@localhost:54322/postgres`.
+

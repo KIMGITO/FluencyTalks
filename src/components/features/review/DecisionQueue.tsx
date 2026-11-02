@@ -7,6 +7,7 @@ import { waited } from '@/lib/format';
 import { appealRestriction, requestExtension, type OwedDecision } from '@/services/review';
 import { useAccountabilityStore } from '@/store/accountabilityStore';
 import { toast } from '@/store/toastStore';
+import { PushPrompt } from './PushToggle';
 import { dueLabel } from './ThreadItemRow';
 
 /** A one-line pointer for the top of Home: visible until the decisions are actually made. */
@@ -67,6 +68,7 @@ export function DecisionQueue() {
           ))}
         </Card>
       )}
+      <PushPrompt />
       {record.decided > 0 && <p className="ft-inset text-xs text-muted">You've answered {record.on_time} of {record.decided} corrections on time.</p>}
       <details className="ft-inset text-xs text-muted">
         <summary className="min-h-9 cursor-pointer py-2 font-semibold">How this works</summary>

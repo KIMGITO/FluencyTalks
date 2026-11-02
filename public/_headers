@@ -4,3 +4,6 @@
 
 /robots.txt
   Content-Type: text/plain
+
+/sw.js
+  Cache-Control: no-cache

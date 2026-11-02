@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Check, CheckCheck, MoreVertical, Pin } from 'lucide-react';
 import { CorrectionCard } from './CorrectionCard';
+import { ReactionBar } from './ReactionBar';
 import { MessageActions } from './MessageActions';
 import { useMessageGestures } from '@/hooks/useMessageGestures';
 import { formatTime } from '@/lib/format';
@@ -226,6 +227,7 @@ export function MessageBubble({
           </button>
         </div>
       </>
+      {!!reactions?.length && <ReactionBar reactions={reactions} myId={myId} chipsOnly onToggle={(emoji) => onReact(message, emoji)} />}
       {corrections.map((c) => (
         <CorrectionCard
           key={c.id}

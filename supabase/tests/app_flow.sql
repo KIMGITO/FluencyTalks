@@ -828,7 +828,7 @@ do $$ begin
   assert (select count(*) from public.decision_items where user_id = '00000000-0000-0000-0000-00000000d001' and resolution = 'exempted') >= 1, 'exempted, so it is not on their record';
   assert (select (public.response_record('00000000-0000-0000-0000-00000000d001')->>'overdue')::int) = 0;
 end $$;
-update public.accountability_policy set deadline_hours = 168;
+update public.accountability_policy set deadline_hours = 168 where id;
 set role authenticated;
 
 -- Search and export from the last round.
@@ -839,6 +839,26 @@ do $$ declare e jsonb := public.export_my_data(); begin
   assert exists (select 1 from public.search_people(null, 'fra', 'learning', 'B1') s where s.username = 'vera'), 'found at the level she earned';
   assert (select p.review_status from public.search_posts('Habari gani') p limit 1) is not null, 'search carries the review status';
 end $$;
+
+-- ============ 5h. WEB PUSH (the database half: delivery itself needs the edge function) ============
+select tt.as_user('00000000-0000-0000-0000-00000000d002');
+select public.save_push_subscription('https://push.example/one', 'keyA', 'authA');
+select public.save_push_subscription('https://push.example/one', 'keyB', 'authB');   -- same device again: updated, not doubled
+do $$ begin
+  assert (select count(*) from public.push_subscriptions) = 1, 'one row per device';
+  assert (select p256dh from public.push_subscriptions) = 'keyB';
+end $$;
+select tt.expect_error($q$select public.save_push_subscription('http://insecure.example', 'k', 'a')$q$, 'check');
+select tt.expect_error($q$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://direct', 'k', 'a')$q$, 'row-level security');
+select tt.as_user('00000000-0000-0000-0000-00000000d004');
+do $$ begin assert (select count(*) from public.push_subscriptions) = 0, 'another person sees no one else''s devices'; end $$;
+select public.delete_push_subscription('https://push.example/one');   -- not theirs: nothing happens
+-- The same phone, a different person signed in: it follows them.
+select public.save_push_subscription('https://push.example/one', 'keyC', 'authC');
+do $$ begin assert (select count(*) from public.push_subscriptions) = 1, 'the device moved to who is signed in now'; end $$;
+select public.delete_push_subscription('https://push.example/one');
+do $$ begin assert (select count(*) from public.push_subscriptions) = 0, 'removed'; end $$;
+do $$ begin assert (select count(*) from public.push_settings) = 0, 'the webhook secret is not readable'; end $$;
 
 -- ============ 6. SAFETY ============
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');

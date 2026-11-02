@@ -11,7 +11,7 @@ const EmojiPicker = lazy(() => import('emoji-picker-react'));
 const PICKER_W = 352, PICKER_H = 400;   
 
 
-export function ReactionBar({ reactions, myId, onToggle }: { reactions: Reaction[]; myId: string; onToggle: (emoji: string) => Promise<void> }) {
+export function ReactionBar({ reactions, myId, onToggle, chipsOnly }: { reactions: Reaction[]; myId: string; onToggle: (emoji: string) => Promise<void>; chipsOnly?: boolean }) {
   const [picking, setPicking] = useState(false); const [error, setError] = useState('');
   const [pos, setPos] = useState({ left: 0, top: 0 });
   const mode = useThemeStore((s) => s.mode);
@@ -43,7 +43,7 @@ export function ReactionBar({ reactions, myId, onToggle }: { reactions: Reaction
       {[...groups].map(([emoji, g]) => (
         <button key={emoji} aria-label={`${emoji} ${g.count}${g.mine ? ', you reacted' : ''}`} aria-pressed={g.mine} onClick={() => toggle(emoji)}
           className={clsx('rounded-sm border px-2 py-1 text-xs', g.mine ? 'border-brand bg-brand-soft text-brand' : 'border-border bg-surface text-muted hover:bg-surface-2')}>{emoji} {g.count}</button>))}
-      <button aria-label="Add reaction" aria-expanded={picking} onClick={openPicker} className="rounded-full p-1 text-muted hover:bg-surface-2 hover:text-brand"><SmilePlus size={16} /></button>
+      {!chipsOnly && <button aria-label="Add reaction" aria-expanded={picking} onClick={openPicker} className="rounded-full p-1 text-muted hover:bg-surface-2 hover:text-brand"><SmilePlus size={16} /></button>}
       {picking && <>
         <div className="fixed inset-0 z-30" onClick={() => setPicking(false)} />
         <div className="fixed z-40 shadow-pop" style={{ left: pos.left, top: pos.top }} role="dialog" aria-label="Pick an emoji">

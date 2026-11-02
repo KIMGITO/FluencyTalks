@@ -19,7 +19,7 @@ import { activityLabel } from '@/lib/format';
 
 export function ChatThread({ id }: { id: string }) {
   const nav = useNavigate(); const myId = useAuthStore((s) => s.user?.id);
-  const { open, close, messages, corrections, active, requests, send, respond, suggest, accept, dismiss, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
+  const { open, close, messages, corrections, reactions, active, requests, send, respond, suggest, accept, dismiss, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
   const [correcting, setCorrecting] = useState<Message | null>(null);
   const [showPins, setShowPins] = useState(false);
   const translateTo = useProfileStore((s) => s.languages.find((l) => l.role === 'native')?.language_id ?? 'eng');
@@ -94,7 +94,7 @@ export function ChatThread({ id }: { id: string }) {
             <div className="ft-daybadge my-2">{day.label}</div>
             {day.messages.map((m, i) => (
               <div key={m.id} id={`msg-${m.id}`}>
-                <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} otherName={row.other_name}
+                <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name}
                   pinned={pinnedIds.includes(m.id)} showTail={isClusterStart(i === 0 ? undefined : day.messages[i - 1], m)} replyTo={m.reply_to ? byId.get(m.reply_to) ?? null : null}
                   tick={m.sender_id === myId ? tickFor(m) : undefined}
                   translateTo={translateTo} translateApi={translateApi}

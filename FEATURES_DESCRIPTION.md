@@ -542,6 +542,16 @@ New posts pause only at 3 overdue decisions after notice, and restart by themsel
 once answered. Owners can ask for one extension or appeal. Admins set all of this
 in accountability_policy (Moderation, Decisions), and every step is audited.
 
+### Push
+A notifications row is delivered to the owner's devices after it commits:
+trg_push_notification (pg_net), then the send-push edge function, then the service
+worker (public/sw.js). The function claims the row first, so a retry cannot send
+twice. Only rows that passed preferences and mutes exist, so push follows the same
+rules. Events on one post replace each other on the device, a focused app shows no
+banner, signing out removes that device, and devices the push service reports as
+gone are deleted. There is no retry if the function itself fails; the in-app
+notification is still there. iPhones need the app added to the Home Screen.
+
 ---
 
 ## 15. Notifications

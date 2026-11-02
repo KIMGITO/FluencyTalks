@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { disablePush } from '@/lib/push';
 import type { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { friendlyAuthError, parseLanding, type LandingInfo } from '@/lib/authHelpers';
@@ -185,6 +186,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
     if (error) set({ error: error.message });
   },
   signOut: async () => {
+    await disablePush().catch(() => undefined);   // a shared phone must not keep buzzing for the last person, and this needs the session
     clearSessionMarkers();
     await resetUserCaches();
     await supabase.auth.signOut();
