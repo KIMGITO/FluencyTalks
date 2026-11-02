@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import qrcode from 'qrcode-generator';
-import { Button, Card, Input, Spinner } from '@/components/ui';
+import { Copy } from 'lucide-react';
+import { Button, Card, Input, Select, Spinner } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { friendlyAuthError, totpSetupLink } from '@/lib/authHelpers';
 import { adminGenerateRecoveryCodes, redeemRecoveryCode, reportMfaFailure } from '@/services/admin';
 import { useAuthStore } from '@/store/authStore';
+import { toast } from '@/store/toastStore';
+import { Switch, copyText } from './AdminKit';
 
 const cleanCode = (v: string) => v.replace(/\D/g, '').slice(0, 6);
+const copy = (text: string, done: string) => copyText(text).then(() => toast.success(done)).catch(() => toast.error("Couldn't copy. Select the text and copy it yourself."));
 const CodeInput = ({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) => (
-  <Input id={id} label="6-digit code" inputMode="numeric" autoComplete="one-time-code" autoFocus value={value} onChange={(e) => onChange(cleanCode(e.target.value))} required />
+  <Input id={id} label="6-digit code" size="lg" className="text-center font-semibold tracking-[0.4em] tabular-nums" inputMode="numeric" autoComplete="one-time-code" autoFocus value={value} onChange={(e) => onChange(cleanCode(e.target.value))} required />
 );
 
 /** Drawn here, not by Supabase: its code carries a longer link at a higher error-correction level, and phones struggle to scan it. */
@@ -57,7 +61,8 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
       <div className="flex justify-center"><img src={factor.qr} alt="QR code for your authenticator app" width={304} height={304} className="h-auto max-w-full rounded-md bg-white" /></div>
       <details className="text-sm text-muted"><summary className="cursor-pointer font-semibold">Can't scan it?</summary>
         <p className="mt-1">Choose <b className="text-ink">Enter a setup key</b> in the app and type:</p>
-        <code className="mt-1 block break-all rounded-md bg-surface-2 p-2 text-xs text-ink">{factor.secret}</code>
+        <code className="ft-selectable mt-1 block break-all rounded-md bg-surface-2 p-2 text-xs text-ink">{factor.secret}</code>
+        <Button type="button" size="sm" variant="ghost" className="mt-1" onClick={() => void copy(factor.secret, 'Setup key copied.')}><Copy size={14} aria-hidden /> Copy the key</Button>
       </details>
       <CodeInput id="enroll-code" value={code} onChange={setCode} />
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
@@ -111,9 +116,9 @@ export function MfaChallenge({ onDone, onRecovered }: { onDone: () => void; onRe
     <form onSubmit={verify} className="space-y-4">
       <p className="text-sm text-muted">Open Google Authenticator and type the code for The Fluency Talks.</p>
       {factors.length > 1 && (
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Which authenticator">
-          {factors.map((f) => <Button key={f.id} type="button" size="sm" variant={f.id === factorId ? 'primary' : 'secondary'} onClick={() => setFactorId(f.id)}>{f.name}</Button>)}
-        </div>
+        <Select className="border-border" label="Which authenticator" value={factorId} onChange={(e) => setFactorId(e.target.value)}>
+          {factors.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+        </Select>
       )}
       <CodeInput id="mfa-code" value={code} onChange={setCode} />
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
@@ -125,7 +130,7 @@ export function MfaChallenge({ onDone, onRecovered }: { onDone: () => void; onRe
 
 /** The only time these codes are ever visible: the database keeps just their hashes. */
 export function RecoveryCodes({ onDone }: { onDone: () => void }) {
-  const [codes, setCodes] = useState<string[] | null>(null); const [error, setError] = useState(''); const [saved, setSaved] = useState(false); const [copied, setCopied] = useState(false);
+  const [codes, setCodes] = useState<string[] | null>(null); const [error, setError] = useState(''); const [saved, setSaved] = useState(false);
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;   // a second run would cancel the set on screen
@@ -137,9 +142,9 @@ export function RecoveryCodes({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted">Save these somewhere safe and away from your phone, such as a password manager. They get you back in if you lose your authenticator, and you won't see them again.</p>
-      <Card pad={false} className="grid grid-cols-1 gap-x-4 gap-y-1 bg-surface-2 p-3 font-mono text-xs sm:grid-cols-2">{codes.map((c) => <code key={c} className="whitespace-nowrap">{c}</code>)}</Card>
-      <Button type="button" variant="secondary" size="sm" onClick={() => void navigator.clipboard?.writeText(codes.join('\n')).then(() => setCopied(true))}>{copied ? 'Copied' : 'Copy all'}</Button>
-      <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} /> I have saved these codes</label>
+      <Card pad={false} className="ft-selectable grid grid-cols-1 gap-x-4 gap-y-1 !rounded-lg !border bg-surface-2 p-3 text-xs sm:grid-cols-2">{codes.map((c) => <code key={c} className="whitespace-nowrap">{c}</code>)}</Card>
+      <Button type="button" variant="secondary" size="sm" onClick={() => void copy(codes.join('\n'), 'Recovery codes copied.')}><Copy size={14} aria-hidden /> Copy all</Button>
+      <Switch label="I have saved these codes" checked={saved} onChange={setSaved} />
       <Button full disabled={!saved} onClick={onDone}>Continue</Button>
     </div>
   );

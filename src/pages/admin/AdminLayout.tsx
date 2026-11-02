@@ -1,81 +1,97 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet, ScrollRestoration, useLocation, useOutletContext } from 'react-router-dom';
 import clsx from 'clsx';
-import { Activity, Flag, HeartPulse, LayoutDashboard, ListChecks, LogOut, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
-import { Logo, Toaster } from '@/components/ui';
+import { LogOut, WifiOff } from 'lucide-react';
+import { Avatar, CountBadge, Logo, ThemeToggle, Toaster } from '@/components/ui';
 import { NotificationBell } from '@/components/features/NotificationBell';
+import { Chip } from '@/components/features/admin/AdminKit';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { useAction } from '@/hooks/useAction';
+import { useOnline } from '@/hooks/useOnline';
 import type { StaffTier } from '@/services/admin';
+import { useAdminStore } from '@/store/adminStore';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
-
-interface Section { to: string; label: string; subtitle: string; icon: LucideIcon; fullAdmin?: boolean }
-const GROUPS: { label: string; sections: Section[] }[] = [
-  { label: 'Moderation', sections: [
-    { to: '/admin', label: 'Overview', subtitle: 'What needs you, and how the community is doing', icon: LayoutDashboard },
-    { to: '/admin/reports', label: 'Reports', subtitle: 'Every report from the community, waiting for a decision', icon: Flag },
-    { to: '/admin/decisions', label: 'Decisions', subtitle: 'Appeals, escalations, restrictions and the accountability policy', icon: ListChecks },
-    { to: '/admin/people', label: 'People', subtitle: 'Find anyone, and suspend, ban or reinstate them', icon: Users },
-    { to: '/admin/activity', label: 'Activity', subtitle: 'What the moderation team has done', icon: Activity },
-  ] },
-  { label: 'System', sections: [
-    { to: '/admin/team', label: 'Team', subtitle: 'Staff accounts and invitations', icon: UserCog, fullAdmin: true },
-    { to: '/admin/health', label: 'Health', subtitle: 'Services, database, uptime and security', icon: HeartPulse, fullAdmin: true },
-    { to: '/admin/logs', label: 'Logs', subtitle: 'Application errors, the staff audit trail and sign-ins', icon: ScrollText, fullAdmin: true },
-  ] },
-  { label: 'Your account', sections: [
-    { to: '/admin/security', label: 'Security', subtitle: 'Your authenticators, recovery codes and password', icon: ShieldCheck },
-  ] },
-];
-const TIER_LABEL: Record<StaffTier, string> = { super: 'Super admin', admin: 'Admin', moderator: 'Moderator' };
+import { useProfileStore } from '@/store/profileStore';
+import { AdminBottomNav } from './AdminBottomNav';
+import { ADMIN_GROUPS, TIER_LABEL, badgeFor, groupsFor, sectionFor } from './adminNav';
 
 export const useStaffTier = () => useOutletContext<StaffTier>();
 
 export function AdminLayout() {
   const tier = useStaffTier();
   const { user, signOut } = useAuthStore();
+  const me = useProfileStore((s) => s.me);
   const startNotifications = useNotificationStore((s) => s.start); const stopNotifications = useNotificationStore((s) => s.stop);
+  const { overview, refresh, reset } = useAdminStore();
   const { pathname } = useLocation();
+  const online = useOnline();
+  const leave = useAction(signOut, { error: "Couldn't sign you out. Please try again." });
   useEffect(() => { if (!user?.id) return; startNotifications(user.id); return stopNotifications; }, [user?.id]);
-  const groups = GROUPS.map((g) => ({ ...g, sections: g.sections.filter((s) => !s.fullAdmin || tier !== 'moderator') })).filter((g) => g.sections.length);
-  const current = GROUPS.flatMap((g) => g.sections).find((s) => s.to === pathname);
-  const itemClass = ({ isActive }: { isActive: boolean }) => clsx('flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-bold transition-colors', isActive ? 'ft-nav-active bg-on-deep/10 text-on-deep' : 'text-on-deep/65 hover:bg-on-deep/10 hover:text-on-deep');
+  useEffect(() => { void refresh(); }, [pathname]);
+  useEffect(() => reset, []);
+  const name = me?.display_name ?? user?.email ?? 'Staff';
+  const section = sectionFor(pathname);
+  const group = section && ADMIN_GROUPS.find((g) => g.sections.includes(section));
+  const showTitle = section && section.to === pathname && section.to !== '/admin';   // Overview opens with its own greeting
 
   return (
-    <div className="min-h-screen bg-bg md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
+    <div className="min-h-screen bg-bg md:grid md:grid-cols-[var(--layout-sidebarCompactW)_minmax(0,1fr)] lg:grid-cols-[var(--layout-sidebarW)_minmax(0,1fr)]">
       <ScrollRestoration />
-      <aside className="bg-deep md:sticky md:top-0 md:flex md:h-screen md:flex-col md:justify-between md:overflow-y-auto md:p-3">
-        <nav aria-label="Admin" className="flex gap-1 overflow-x-auto px-3 py-2 md:flex-col md:gap-5 md:overflow-visible md:p-0 md:pt-2">
-          {groups.map((g) => (
-            <div key={g.label} className="flex shrink-0 gap-1 md:flex-col">
-              <p className="hidden px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-on-deep/55 md:block">{g.label}</p>
-              {g.sections.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end className={itemClass}><Icon size={18} aria-hidden /> {label}</NavLink>)}
-            </div>
-          ))}
-        </nav>
-        <div className="hidden space-y-1 md:block">
-          <button type="button" className={clsx(itemClass({ isActive: false }), 'w-full')} onClick={() => void signOut()}><LogOut size={18} aria-hidden /> Sign out</button>
+      <aside className="sticky top-0 hidden h-screen flex-col justify-between gap-4 overflow-y-auto bg-deep p-3 md:flex">
+        <div className="space-y-5">
+          <span className="flex justify-center lg:hidden"><Logo light compact to="/admin" /></span>
+          <span className="hidden px-2 lg:block"><Logo light to="/admin" /></span>
+          <nav aria-label="Admin" className="space-y-5">
+            {groupsFor(tier).map((g) => (
+              <div key={g.label} className="space-y-1">
+                <p className="hidden px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-on-deep/55 lg:block">{g.label}</p>
+                {g.sections.map(({ to, label, icon: Icon }) => (
+                  <NavLink key={to} to={to} title={label} aria-current={section?.to === to ? 'page' : undefined} className={clsx('flex items-center justify-center gap-3 rounded-md p-2.5 text-sm font-bold transition-colors lg:justify-start', section?.to === to ? 'ft-nav-active bg-on-deep/10 text-on-deep' : 'text-on-deep/65 hover:bg-on-deep/10 hover:text-on-deep')}>
+                    <span className="relative"><Icon size={20} aria-hidden /><CountBadge count={badgeFor(to, overview)} label="waiting" ring="ring-deep" className="-right-2.5 -top-1.5 lg:hidden" /></span>
+                    <span className="hidden flex-1 lg:inline">{label}</span>
+                    {badgeFor(to, overview) > 0 && <span aria-hidden className="hidden rounded-full bg-accent px-1.5 text-xs font-bold tabular-nums text-deep lg:inline">{badgeFor(to, overview)}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </div>
+        <div className="space-y-1 border-t border-on-deep/15 pt-3">
+          <p className="hidden items-center gap-2.5 px-2 pb-1 lg:flex">
+            <Avatar name={name} size="sm" />
+            <span className="min-w-0 text-xs text-on-deep"><b className="block truncate">{name}</b><span className="block truncate text-on-deep/65">{TIER_LABEL[tier]}</span></span>
+          </p>
+          <button type="button" title="Sign out" aria-busy={leave.busy} disabled={leave.busy} onClick={() => void leave.run()} className="flex w-full items-center justify-center gap-3 rounded-md p-2.5 text-sm font-bold text-on-deep/65 transition-colors hover:bg-on-deep/10 hover:text-on-deep disabled:opacity-60 lg:justify-start">
+            {leave.busy ? <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <LogOut size={20} aria-hidden />}
+            <span className="hidden lg:inline">{leave.busy ? 'Signing out…' : 'Sign out'}</span>
+          </button>
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 flex h-[var(--layout-topbarH)] items-center justify-between gap-3 border-b border-border bg-bg px-3 md:px-6">
-          <span className="sm:hidden"><Logo to="/admin" compact /></span>
-          <span className="hidden sm:block"><Logo to="/admin" /></span>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="hidden min-w-0 text-right text-xs sm:block"><span className="block font-bold">{TIER_LABEL[tier]}</span><span className="block truncate text-muted">{user?.email}</span></span>
+        <header className="sticky top-0 z-20 flex h-[var(--layout-topbarH)] items-center justify-between gap-3 border-b border-border bg-bg/90 px-3 backdrop-blur-md md:px-6">
+          <span className="md:hidden"><Logo to="/admin" compact /></span>
+          <p className="hidden min-w-0 truncate text-sm text-muted md:block">{group && <>{group.label} <span aria-hidden>/</span> </>}<b className="text-ink">{section?.label ?? 'Admin'}</b></p>
+          <div className="flex min-w-0 items-center gap-1">
+            <span className="mr-1"><Chip tone={tier === 'super' ? 'accent' : tier === 'admin' ? 'brand' : 'aqua'}>{TIER_LABEL[tier]}</Chip></span>
+            <span className="hidden md:block"><ThemeToggle /></span>
             <NotificationBell />
-            <button type="button" aria-label="Sign out" className="p-2 text-muted hover:text-ink md:hidden" onClick={() => void signOut()}><LogOut size={20} aria-hidden /></button>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-5xl py-4 md:px-6 md:py-6">
-          {current && (
-            <div className="ft-inset mb-4 md:mb-6">
-              <h1 className="font-display text-3xl font-medium leading-tight">{current.label}</h1>
-              <p className="mt-1 text-sm text-muted">{current.subtitle}</p>
-            </div>
-          )}
-          <Outlet context={tier} />
+        {!online && <p role="status" className="flex items-center justify-center gap-2 bg-deep px-3 py-1.5 text-xs font-semibold text-on-deep"><WifiOff size={14} aria-hidden /> You're offline. Decisions and changes need a connection.</p>}
+        <main className="mx-auto w-full max-w-5xl py-4 pb-[calc(var(--layout-bottomNavH)+2.5rem+env(safe-area-inset-bottom,0px))] md:px-6 md:py-6 md:pb-8">
+          <div key={pathname} className="ft-page">
+            {showTitle && (
+              <>
+                <p className="ft-kicker ft-inset mb-1"><span aria-hidden className="h-px w-5 bg-accent" />{group?.label}</p>
+                <PageHeader title={section.label} subtitle={section.subtitle} />
+              </>
+            )}
+            <Outlet context={tier} />
+          </div>
         </main>
       </div>
+      <AdminBottomNav tier={tier} name={name} email={user?.email} signingOut={leave.busy} onSignOut={() => void leave.run()} />
       <Toaster />
     </div>
   );
