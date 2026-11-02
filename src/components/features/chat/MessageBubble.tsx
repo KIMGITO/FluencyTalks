@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { Check, CheckCheck, MoreVertical, Pin } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Check, CheckCheck, Coins, Languages, MoreVertical, Pencil, Pin, RotateCw } from 'lucide-react';
 import { CorrectionCard } from './CorrectionCard';
 import { ReactionBar } from './ReactionBar';
 import { MessageActions } from './MessageActions';
@@ -20,6 +20,8 @@ interface Props {
   corrections: Correction[];
   reactions?: Reaction[]; 
   otherName: string;
+  /** The person you chat with: only their corrections can be discussed in the chat. */
+  otherId?: string | null;
   pinned: boolean;
   showTail: boolean;
   replyTo?: Message | null;
@@ -29,7 +31,7 @@ interface Props {
   onSave: (m: Message, translation?: string) => Promise<unknown>;
   onReact: (m: Message, emoji: string) => Promise<void>;
   onAccept: (c: Correction) => Promise<void>;
-  onDismiss: (c: Correction) => Promise<void>;
+  onDecline: (c: Correction, reason: string) => Promise<void>;
   onReply: (m: Message) => void;
   onPin: (m: Message) => void;
   onDeleteMe: (m: Message) => void;
@@ -41,6 +43,17 @@ interface Props {
   ) => unknown; 
 }
 type Translation = { state: 'loading' | 'done' | 'error'; text: string };
+const ERROR_VISIBLE_MS = 5000;
+
+/** A small, labelled icon button under a message. The label is the tooltip and what screen readers say. */
+function ActionIcon({ label, pressed, disabled, onClick, children }: { label: string; pressed?: boolean; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" aria-label={label} title={label} aria-pressed={pressed} disabled={disabled} onClick={onClick}
+      className={clsx('rounded-full p-1.5 transition hover:bg-surface-2 hover:text-ink disabled:cursor-default', pressed && 'text-ink')}>
+      {children}
+    </button>
+  );
+}
 export function MessageBubble({
   message,
   tick,
@@ -49,6 +62,7 @@ export function MessageBubble({
   corrections,
   reactions,
   otherName,
+  otherId,
   pinned,
   showTail,
   replyTo,
@@ -58,7 +72,7 @@ export function MessageBubble({
   onSave,
   onReact,
   onAccept,
-  onDismiss,
+  onDecline,
   onReply,
   onPin,
   onDeleteMe,
@@ -75,8 +89,13 @@ export function MessageBubble({
     },
     onLongPress: () => setSheet(true),
   });
-  const translate = async () => {
-    if (tr?.state === 'done') return setTr(null); 
+  useEffect(() => {
+    if (tr?.state !== 'error') return;
+    const t = setTimeout(() => setTr(null), ERROR_VISIBLE_MS);
+    return () => clearTimeout(t);
+  }, [tr]);
+  const translate = async (retry = false) => {
+    if (tr?.state === 'done' && !retry) return setTr(null);
     setTr({ state: 'loading', text: '' });
     try {
       const out = await translateText(message.body, translateTo, translateApi);
@@ -144,10 +163,13 @@ export function MessageBubble({
           <p className="ft-bubble-meta">
             {formatTime(message.created_at)}
             {message.edited_at && ' · edited'}
-            {message.is_bounty && <span className="ml-1 font-semibold" title="Bounty">· bounty {message.bounty_status === 'open' ? 'open' : message.bounty_status === 'paid' ? 'answered' : 'refunded'}</span>}
+            {message.is_bounty && (
+              <span className="ml-1 inline-flex items-center gap-0.5 align-middle font-semibold" title={`Bounty: ${message.bounty_cost ?? 50} points`}>
+                · <Coins size={11} aria-hidden /> {message.bounty_status === 'open' ? 'Bounty open' : message.bounty_status === 'paid' ? 'Bounty paid' : 'Bounty refunded'}
+              </span>)}
             {mine && tick && (
               <span
-                className={clsx('ml-1 inline-flex align-middle', tick === 'read' ? 'text-brand' : 'opacity-70')}
+                className={clsx('ml-1 inline-flex align-middle', tick === 'read' ? 'opacity-100' : 'opacity-60')}
                 aria-label={tick}
                 title={tick}
               >
@@ -169,64 +191,39 @@ export function MessageBubble({
           </button>
         </div>
       </div>
-      {tr && (
-        <div
-          className="ft-card max-w-[82%] px-2.5 py-1.5 text-sm"
-          aria-live="polite"
-        >
-          {tr.state === 'loading' && <p className="text-muted">Translating…</p>}
-          {tr.state === 'error' && <p className="text-danger">{tr.text}</p>}
-          {tr.state === 'done' &&
-            (alreadyMine ? (
-              <p className="text-muted">
-                This looks like it's already in your language.
-              </p>
-            ) : (
-              <>
-                <p className="ft-selectable whitespace-pre-wrap break-words">
-                  {tr.text}
-                </p>
-                <p className="mt-0.5 text-[8px] text-muted">
-                  Auto Translation
-                </p>
-              </>
-            ))}
+      {tr && tr.state !== 'error' && (
+        <div className="max-w-[82%] rounded-md bg-surface px-2.5 py-1 text-sm shadow-card" aria-live="polite">
+          {tr.state === 'loading' ? <p className="text-xs text-muted">Translating…</p>
+            : alreadyMine ? <p className="text-xs text-muted">Already in your language.</p>
+            : (<>
+              <p className="flex items-center gap-1 text-2xs font-semibold uppercase tracking-wide text-muted"><Languages size={11} aria-hidden /> Translation</p>
+              <p className="ft-selectable whitespace-pre-wrap break-words text-ink">{tr.text}</p>
+            </>)}
         </div>
       )}
-      <>
-        <div className="flex gap-3 px-1.5 text-xs leading-tight text-muted">
-          {!mine && (
-            <button
-              className="hover:text-brand"
-              onClick={() => onCorrect(message)}
-            >
-              Correct
-            </button>
-          )}
-          {!mine && (
-            <button
-              className="hover:text-brand disabled:opacity-60"
-              disabled={tr?.state === 'loading'}
-              onClick={translate}
-            >
-              {tr?.state === 'done' ? 'Hide translation' : 'Translate'}
-            </button>
-          )}
-          <button
-            className="hover:text-brand disabled:text-success"
-            disabled={saved}
-            onClick={async () => {
-              await onSave(
-                message,
-                tr?.state === 'done' && !alreadyMine ? tr.text : undefined,
-              );
-              setSaved(true);
-            }}
-          >
-            {saved ? 'Saved' : 'Save phrase'}
+      {/* A failure says why for a few seconds, then goes away; the message itself is untouched. */}
+      {tr?.state === 'error' && (
+        <p role="status" className="flex max-w-[82%] items-center gap-1.5 px-1.5 text-xs text-muted">
+          <span><span className="font-semibold text-ink">Not translated.</span> {tr.text}</span>
+          <button type="button" onClick={() => void translate(true)} className="inline-flex items-center gap-0.5 font-semibold text-ink underline-offset-2 hover:underline">
+            <RotateCw size={12} aria-hidden /> Retry
           </button>
-        </div>
-      </>
+        </p>
+      )}
+      <div className={clsx('flex items-center gap-0.5 px-0.5 text-muted', mine ? 'flex-row-reverse' : 'flex-row')}>
+        {!mine && (
+          <ActionIcon label="Suggest a correction" onClick={() => onCorrect(message)}><Pencil size={14} aria-hidden /></ActionIcon>
+        )}
+        {!mine && (
+          <ActionIcon label={tr?.state === 'done' ? 'Hide translation' : 'Translate'} pressed={tr?.state === 'done'} disabled={tr?.state === 'loading'} onClick={() => void translate()}>
+            <Languages size={14} aria-hidden />
+          </ActionIcon>
+        )}
+        <ActionIcon label={saved ? 'Saved to phrasebook' : 'Save to phrasebook'} pressed={saved} disabled={saved}
+          onClick={async () => { await onSave(message, tr?.state === 'done' && !alreadyMine ? tr.text : undefined); setSaved(true); }}>
+          {saved ? <BookmarkCheck size={14} aria-hidden className="text-success" /> : <Bookmark size={14} aria-hidden />}
+        </ActionIcon>
+      </div>
       {!!reactions?.length && <ReactionBar reactions={reactions} myId={myId} chipsOnly onToggle={(emoji) => onReact(message, emoji)} />}
       {corrections.map((c) => (
         <CorrectionCard
@@ -234,9 +231,11 @@ export function MessageBubble({
           correction={c}
           original={message.body}
           isOwner={mine}
-          correctorName={otherName}
+          myId={myId}
+          bounty={message.is_bounty}
           onAccept={onAccept}
-          onDismiss={onDismiss}
+          onDecline={onDecline}
+          onDiscuss={mine && c.corrector_id === otherId ? () => onReply(message) : undefined}
         />
       ))}
       {sheet && (

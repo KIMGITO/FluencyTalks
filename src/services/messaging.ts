@@ -36,6 +36,8 @@ export const suggestCorrection = (messageId: string, text: string, note?: string
 export const acceptCorrection = (id: string) => rpc('accept_correction', { p_id: id });
 export const rateCorrection = (id: string, helpful: boolean) => rpc('rate_correction', { p_id: id, p_helpful: helpful });
 export const respondCorrection = (id: string, accept: boolean) => rpc('respond_correction', { p_id: id, p_accept: accept });
+/** Decline with a reason; the corrector is told why. */
+export const declineCorrection = (id: string, reason: string) => rpc('decline_correction', { p_id: id, p_reason: reason });
 
 
 export async function getMessages(conv: string, before?: string, limit = 40) {
@@ -55,7 +57,7 @@ export function subscribeToConversation(conv: string, onMessage: (m: Message) =>
 
 export async function getCorrections(messageIds: string[]) {
   if (!messageIds.length) return [] as Correction[];
-  return ((await supabase.from('message_corrections').select('*').in('message_id', messageIds)).data ?? []) as Correction[];
+  return ((await supabase.from('message_corrections').select('*, corrector:profiles!message_corrections_corrector_id_fkey(username, display_name)').in('message_id', messageIds)).data ?? []) as Correction[];
 }
 
 

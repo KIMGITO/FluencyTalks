@@ -16,8 +16,9 @@ type TextSize = 'tiny' | 'small';
 
 const sizeClass: Record<TextSize, string> = { tiny: 'text-xs', small: 'text-sm' };   // 12px and 14px: the old 11px was hard to read on a phone
 const statusChip: Record<CorrectionHistory['status'], string> = {
-  accepted: 'bg-success/15 text-success', pending: 'bg-brand-soft text-brand', dismissed: 'bg-surface-2 text-muted',
+  accepted: 'bg-success/15 text-success', pending: 'bg-brand-soft text-ink', dismissed: 'bg-surface-2 text-muted', superseded: 'bg-surface-2 text-muted',
 };
+const statusLabel: Record<CorrectionHistory['status'], string> = { accepted: 'accepted', pending: 'pending', dismissed: 'declined', superseded: 'other answer chosen' };
 const Loading = () => <RowListSkeleton label="Loading" />;
 
 export default function Learning() {
@@ -93,7 +94,7 @@ export default function Learning() {
         : <div className="flex flex-col gap-1.5">{corrections.map((c) => (
             <div key={c.id} className={clsx('ft-card ft-card-pad flex flex-col gap-1', sizeClass[size])}>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className={clsx('rounded-sm px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide', statusChip[c.status])}>{c.status}</span>
+                <span className={clsx('rounded-sm px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide', statusChip[c.status])}>{statusLabel[c.status]}</span>
                 <span className="text-muted">from {c.corrector_name}</span>
                 <span className="ml-auto flex items-center gap-2 text-muted">{when(c.created_at)}{withConv(c.conversation_id)}</span>
               </div>

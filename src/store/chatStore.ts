@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { acceptCorrection, rateCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondCorrection, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type SendOptions, type ReactionEvent } from '@/services';
+import { acceptCorrection, rateCorrection, declineCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type SendOptions, type ReactionEvent } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
@@ -23,7 +23,7 @@ interface S {
   send: (id: string, body: string, replyTo?: string, opts?: SendOptions) => Promise<void>; respond: (id: string, accept: boolean) => Promise<void>;
   loadCorrections: (convId: string) => Promise<void>; upsertCorrection: (c: Correction) => void;
   suggest: (convId: string, messageId: string, text: string, note?: string) => Promise<void>;
-  accept: (c: Correction) => Promise<void>; rate: (c: Correction, helpful: boolean) => Promise<void>; dismiss: (c: Correction) => Promise<void>;
+  accept: (c: Correction) => Promise<void>; rate: (c: Correction, helpful: boolean) => Promise<void>; decline: (c: Correction, reason: string) => Promise<void>;
   loadReactions: (convId: string) => Promise<void>; applyReaction: (e: ReactionEvent) => void; react: (messageId: string, emoji: string) => Promise<void>;
   startRealtime: () => void; stopRealtime: () => void; append: (m: Message) => void; applyUpdate: (m: Message) => void;
   togglePin: (convId: string, messageId: string) => void; isPinned: (convId: string, messageId: string) => boolean;
@@ -72,13 +72,14 @@ export const useChatStore = create<S>((set, get) => ({
   },
   upsertCorrection: (c) => set((s) => {
     const list = s.corrections[c.message_id] ?? [];
-    const next = list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c];
+    // Realtime rows arrive without the joined corrector name: keep the one already loaded.
+    const next = list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? { ...c, corrector: c.corrector ?? x.corrector } : x)) : [...list, c];
     return { corrections: { ...s.corrections, [c.message_id]: next } };
   }),
   suggest: async (convId, messageId, text, note) => { await suggestCorrection(messageId, text, note); await get().loadCorrections(convId); },
   rate: async (c, helpful) => { await rateCorrection(c.id, helpful); get().upsertCorrection({ ...c, feedback: helpful ? 'helpful' : 'not_helpful' }); },
   accept: async (c) => { await acceptCorrection(c.id); get().upsertCorrection({ ...c, status: 'accepted' }); },
-  dismiss: async (c) => { await respondCorrection(c.id, false); get().upsertCorrection({ ...c, status: 'dismissed' }); },
+  decline: async (c, reason) => { await declineCorrection(c.id, reason); get().upsertCorrection({ ...c, status: 'dismissed', decision_note: reason }); },
   loadReactions: async (convId) => {
     const rows = await getReactions((get().messages[convId] ?? []).map((m) => m.id));
     const byMessage: Record<string, Reaction[]> = {}; (get().messages[convId] ?? []).forEach((m) => (byMessage[m.id] = []));
@@ -132,7 +133,13 @@ export const useChatStore = create<S>((set, get) => ({
     get().loadLists();
     unsub = subscribeToInbox(
       (m) => { get().append(m); if (get().openId === m.conversation_id) markRead(m.conversation_id); get().loadLists(); },
-      (c) => get().upsertCorrection(c),
+      (c) => {
+        const known = (get().corrections[c.message_id] ?? []).some((x) => x.id === c.id);
+        const openId = get().openId;
+        // A new correction may come from a bounty helper outside the chat: reload to get their name.
+        if (!known && openId && (get().messages[openId] ?? []).some((m) => m.id === c.message_id)) void get().loadCorrections(openId);
+        else get().upsertCorrection(c);
+      },
       (e) => get().applyReaction(e),
       (m) => get().applyUpdate(m));
   },

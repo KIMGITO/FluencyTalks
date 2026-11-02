@@ -257,6 +257,113 @@ do $$ begin assert (select count(*) from public.points_ledger where reason = 'bo
 select count(*) from public.list_my_bounties();
 do $$ begin assert (select count(*) from public.points_ledger where reason = 'bounty_expired_refund') = 2, 'a second sweep does not refund again'; assert (select points_balance from public.profiles where id = auth.uid()) = 50; end $$;
 
+-- ============ 5b2. BOUNTY LIFECYCLE (docs/CORRECTIONS_AND_BOUNTIES.md) ============
+-- Hoa: native Vietnamese, NOT in Amina's chat (left un-onboarded so later feed checks don't count her). Linh: in the chat.
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000b7', 'hoa@test.vn');
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set username = 'hoa_vn', native_language_id = 'vie' where id = '00000000-0000-0000-0000-0000000000b7';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+create temp table bnt4 as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Hom nay toi di hoc', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt4 to public;
+
+-- Visibility: the bounty from the conversation is in BOTH eligible helpers' "I can answer", from the same row.
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+do $$ declare b record; begin
+  select * into b from public.list_open_bounties() x where x.message_id = (select id from bnt4);
+  assert found, 'the chat partner (eligible) sees the conversation bounty in I can answer';
+  assert b.conversation_id = (select conv from ctx), 'the chat partner gets the chat link';
+  assert b.answers = 0 and b.cost = 50;
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000b7');
+do $$ declare b record; begin
+  select * into b from public.list_open_bounties() x where x.message_id = (select id from bnt4);
+  assert found, 'an eligible helper outside the chat sees it too';
+  assert b.conversation_id is null, 'a helper outside the chat never gets the chat id';
+  assert not exists (select 1 from public.list_open_bounties(50, 50) x where x.message_id = (select id from bnt4)), 'paging: offset skips rows';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');
+do $$ begin assert not exists (select 1 from public.list_open_bounties() x where x.message_id = (select id from bnt4)), 'an ineligible user does not see it'; end $$;
+
+-- Hoa answers from the queue; Linh corrects inside the chat. Both count as answers.
+select tt.as_user('00000000-0000-0000-0000-0000000000b7');
+create temp table hoa1 as select public.answer_bounty((select id from bnt4), 'Hôm nay tôi đi học', null) as id; grant select on hoa1 to public;
+do $$ begin
+  assert exists (select 1 from public.message_corrections where id = (select id from hoa1)), 'a helper outside the chat can read their own answer';
+  assert (select status from public.list_my_bounty_answers() x where x.correction_id = (select id from hoa1)) = 'pending', 'My answers shows it pending';
+  assert not exists (select 1 from public.list_open_bounties() x where x.message_id = (select id from bnt4)), 'answered: it leaves I can answer';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+create temp table linh1 as select public.suggest_correction((select id from bnt4), 'Hôm nay tôi đi học rồi', null) as id; grant select on linh1 to public;
+do $$ begin assert (select conversation_id from public.list_my_bounty_answers() x where x.correction_id = (select id from linh1)) = (select conv from ctx), 'an in-chat answer keeps its chat link'; end $$;
+
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+do $$ begin assert (select answers from public.list_my_bounties() x where x.message_id = (select id from bnt4)) = 2, 'the asker sees 2 answers waiting'; end $$;
+select public.accept_correction((select id from linh1));
+do $$ declare b record; begin
+  select * into b from public.list_my_bounties() x where x.message_id = (select id from bnt4);
+  assert b.status = 'paid' and b.paid_to_username = (select username from public.profiles where id = '00000000-0000-0000-0000-0000000000b2'), 'paid, and the asker sees to whom';
+  assert (select decided_by from public.message_corrections where id = (select id from linh1)) = auth.uid(), 'accept records who decided';
+  assert (select decided_at from public.message_corrections where id = (select id from linh1)) is not null, 'accept records when';
+end $$;
+select tt.expect_error(format($q$select public.accept_correction(%L)$q$, (select id from hoa1)), 'correction_unavailable');
+select tt.as_user('00000000-0000-0000-0000-0000000000b7');
+do $$ declare a record; begin
+  select * into a from public.list_my_bounty_answers() x where x.correction_id = (select id from hoa1);
+  assert a.status = 'superseded' and not a.paid_to_me and a.bounty_status = 'paid', 'the other answer is superseded, not left pending';
+  assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'correction_superseded'), 'its author is told';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000b2');
+do $$ begin
+  assert (select paid_to_me from public.list_my_bounty_answers() x where x.correction_id = (select id from linh1)), 'the winner sees it was paid to them';
+  assert exists (select 1 from public.points_ledger where user_id = auth.uid() and reason = 'bounty_answered_accepted' and ref_id = (select id from bnt4)), 'reward went to the accepted answer''s author';
+end $$;
+
+-- Invalid transitions are refused by the database itself, whoever tries.
+reset role;
+select tt.expect_error(format($q$update public.messages set bounty_status = 'open' where id = %L$q$, (select id from bnt4)), 'invalid_bounty_transition');
+select tt.expect_error(format($q$update public.messages set bounty_paid_to = '00000000-0000-0000-0000-0000000000b7' where id = %L$q$, (select id from bnt4)), 'invalid_bounty_transition');
+select tt.expect_error(format($q$update public.message_corrections set status = 'pending' where id = %L$q$, (select id from hoa1)), 'correction_already_decided');
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set points_balance = 100 where id = '00000000-0000-0000-0000-0000000000a1';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+
+-- Decline needs a reason; only the asker can decline; the helper gets the reason; a reminder before expiry.
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+create temp table bnt5 as select (public.send_message(p_conv => (select conv from ctx), p_body => 'Toi thich an pho', p_language => 'vie', p_bounty => true)).id as id; grant select on bnt5 to public;
+select tt.as_user('00000000-0000-0000-0000-0000000000b7');
+create temp table hoa2 as select public.answer_bounty((select id from bnt5), 'Tôi thích ăn phở', 'diacritics') as id; grant select on hoa2 to public;
+reset role;
+update public.messages set bounty_expires_at = now() + interval '2 hours' where id = (select id from bnt5);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select count(*) from public.list_my_bounties();
+select count(*) from public.list_my_bounties();
+do $$ begin assert (select count(*) from public.notifications where user_id = auth.uid() and type = 'bounty_reminder' and (data->>'message_id')::uuid = (select id from bnt5)) = 1, 'one reminder when answers wait and time is short, however often the sweep runs'; end $$;
+select tt.expect_error(format($q$select public.decline_correction(%L, '  ')$q$, (select id from hoa2)), 'reason_required');
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');
+select tt.expect_error(format($q$select public.decline_correction(%L, 'no')$q$, (select id from hoa2)), 'correction_unavailable');
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select public.decline_correction((select id from hoa2), 'This changes the meaning');
+do $$ declare c record; begin
+  select * into c from public.message_corrections where id = (select id from hoa2);
+  assert c.status = 'dismissed' and c.decision_note = 'This changes the meaning' and c.decided_by = auth.uid() and c.decided_at is not null, 'decline records status, reason, who and when';
+  assert (select bounty_status from public.messages where id = (select id from bnt5)) = 'open', 'declining an answer keeps the bounty open';
+end $$;
+select tt.expect_error(format($q$select public.decline_correction(%L, 'again')$q$, (select id from hoa2)), 'correction_unavailable');
+select tt.as_user('00000000-0000-0000-0000-0000000000b7');
+do $$ declare n record; begin
+  select * into n from public.notifications where user_id = auth.uid() and type = 'correction_declined';
+  assert found and n.data->>'note' = 'This changes the meaning', 'the helper is told why';
+  assert n.data->>'conversation_id' is null, 'a helper outside the chat is not given the chat id';
+  assert (select decision_note from public.list_my_bounty_answers() x where x.correction_id = (select id from hoa2)) = 'This changes the meaning';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select public.delete_message((select id from bnt5));   -- tidy: refund, so later sections start from the same balance
+
 -- ============ 5c. COMMUNITY LIBRARY + SAVED PARTNERS ============
 select tt.as_user('00000000-0000-0000-0000-0000000000c3');   -- Zed: native Dutch, not learning anything
 select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good morning', 'vie', 'phrase', null, null)$q$, 'not_contribution_eligible');

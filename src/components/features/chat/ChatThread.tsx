@@ -19,7 +19,7 @@ import { activityLabel } from '@/lib/format';
 
 export function ChatThread({ id }: { id: string }) {
   const nav = useNavigate(); const myId = useAuthStore((s) => s.user?.id);
-  const { open, close, messages, corrections, reactions, active, requests, send, respond, suggest, accept, dismiss, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
+  const { open, close, messages, corrections, reactions, active, requests, send, respond, suggest, accept, decline, react, pins, hidden, drafts, togglePin, hideForMe, deleteForEveryone, setReply } = useChatStore(); const endRef = useRef<HTMLDivElement>(null);
   const [correcting, setCorrecting] = useState<Message | null>(null);
   const [showPins, setShowPins] = useState(false);
   const translateTo = useProfileStore((s) => s.languages.find((l) => l.role === 'native')?.language_id ?? 'eng');
@@ -72,8 +72,8 @@ export function ChatThread({ id }: { id: string }) {
         <UserMenu userId={row.other_user_id} name={row.other_name} conversationId={id} onBlocked={() => nav('/messages')} />
       </header>
       {!!pinnedMsgs.length && (
-        <button onClick={() => setShowPins((v) => !v)} className="flex items-center gap-2 truncate border-b border-border bg-brand-soft px-3 py-1.5 text-left text-xs text-brand">
-          <Pin size={13} className="shrink-0" />
+        <button onClick={() => setShowPins((v) => !v)} className="flex items-center gap-2 truncate border-b border-border bg-brand-soft px-3 py-1.5 text-left text-xs text-ink">
+          <Pin size={13} className="shrink-0 text-muted" />
           <span className="min-w-0 flex-1 truncate">{pinnedMsgs.length === 1 ? pinnedMsgs[0].body : `${pinnedMsgs.length} pinned messages`}</span>
         </button>)}
       {showPins && !!pinnedMsgs.length && (
@@ -94,11 +94,11 @@ export function ChatThread({ id }: { id: string }) {
             <div className="ft-daybadge my-2">{day.label}</div>
             {day.messages.map((m, i) => (
               <div key={m.id} id={`msg-${m.id}`}>
-                <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name}
+                <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name} otherId={peerId}
                   pinned={pinnedIds.includes(m.id)} showTail={isClusterStart(i === 0 ? undefined : day.messages[i - 1], m)} replyTo={m.reply_to ? byId.get(m.reply_to) ?? null : null}
                   tick={m.sender_id === myId ? tickFor(m) : undefined}
                   translateTo={translateTo} translateApi={translateApi}
-                  onCorrect={setCorrecting} onSave={(msg, translation) => savePhrase({ phrase: msg.body, translation, sourceMessageId: msg.id })} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDismiss={dismiss}
+                  onCorrect={setCorrecting} onSave={(msg, translation) => savePhrase({ phrase: msg.body, translation, sourceMessageId: msg.id })} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDecline={decline}
                   onReply={(msg) => setReply(id, msg)} onPin={(msg) => togglePin(id, msg.id)}
                   onDeleteMe={(msg) => hideForMe(msg.id)} onDeleteAll={(msg) => deleteForEveryone(id, msg.id)}
                   onTranslated={(msg, out, lang) => { saveTranslation({ source: msg.body, translated: out, languageCode: lang, sourceMessageId: msg.id }).catch(() => undefined); }} />

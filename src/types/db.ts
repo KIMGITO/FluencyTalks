@@ -19,12 +19,20 @@ export interface ConversationRow { conversation_id: string; other_user_id: strin
 
 export type { Language, DisplayLanguage } from '@/lib/languages';
 export interface MyProfile { id: string; username: string | null; display_name: string | null; avatar_url: string | null; bio: string; timezone: string | null; country_code: string | null; is_private: boolean; onboarding_done: boolean; role: string; points_balance: number; native_language_id: string | null; learning_language_id: string | null; learning_level: string | null; verified_level: string | null; show_activity: boolean; notification_prefs?: Record<string, boolean>; last_language_change_at: string | null }
-export interface Correction { id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; feedback?: 'helpful' | 'not_helpful' | null; created_at: string }
+/** dismissed = declined by the sender (with a reason); superseded = another answer to the same bounty was accepted. */
+export type CorrectionStatus = 'pending' | 'accepted' | 'dismissed' | 'superseded';
+export interface Correction {
+  id: string; message_id: string; corrector_id: string; suggested_text: string; note: string | null; status: CorrectionStatus;
+  feedback?: 'helpful' | 'not_helpful' | null; created_at: string;
+  decided_at?: string | null; decision_note?: string | null;
+  /** Who wrote it: a bounty answer usually comes from someone outside the chat. */
+  corrector?: { username: string | null; display_name: string | null } | null;
+}
 export interface SavedPhrase { id: string; phrase: string; translation: string | null; language_id: string | null; source_message_id: string | null; created_at: string; is_public: boolean; unsplash_image_url: string | null }
 
 export interface TranslationRecord { id: string; source_text: string; translated_text: string; language_id: string | null; source_message_id: string | null; created_at: string }
 
-export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: 'pending' | 'accepted' | 'dismissed'; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
+export interface CorrectionHistory { id: string; message_id: string; conversation_id: string; original_text: string; suggested_text: string; note: string | null; status: CorrectionStatus; corrector_id: string; corrector_name: string; corrector_username: string; created_at: string }
 export interface Reaction { message_id: string; user_id: string; emoji: string }
 export type NotificationType = 'message_request' | 'correction' | 'correction_accepted' | 'bounty_paid' | 'level_up' | 'level_vouch'
   | 'post_correction' | 'post_challenged' | 'post_clarification' | 'post_reply' | 'post_endorsed'
