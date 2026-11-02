@@ -1,6 +1,6 @@
 // Tests for the password-reset / auth helpers. Run: node --experimental-strip-types scripts/test-auth.mjs
 import assert from 'node:assert/strict';
-import { parseLanding, friendlyAuthError } from '../src/lib/authHelpers.ts';
+import { parseLanding, friendlyAuthError, sessionClaims, isFullStaffLogin } from '../src/lib/authHelpers.ts';
 
 // A working recovery link (implicit flow): tokens and type=recovery in the hash.
 assert.deepEqual(parseLanding('#access_token=abc&refresh_token=x&expires_in=3600&type=recovery', '', '/reset-password'), { recovery: true, linkError: null });
@@ -24,4 +24,14 @@ assert.match(friendlyAuthError('email rate limit exceeded'), /Too many attempts/
 assert.match(friendlyAuthError('For security purposes, you can only request this after 52 seconds.'), /Too many attempts/);
 assert.equal(friendlyAuthError('Invalid login credentials'), 'Wrong email or password.');
 assert.equal(friendlyAuthError('Something unexpected'), 'Something unexpected');
+// Staff logins: password and code both, in any order; anything else is not enough.
+const token = (claims) => `h.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.s`;
+const amr = (...methods) => methods.map((method) => ({ method, timestamp: 1 }));
+assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal2', amr: amr('totp', 'password') }))), true);
+assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal1', amr: amr('password') }))), false);
+assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal2', amr: amr('totp', 'oauth') }))), false);
+assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal2', amr: amr('totp', 'recovery') }))), false);
+assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal2', amr: amr('totp', 'otp') }))), false);
+assert.equal(isFullStaffLogin(sessionClaims('not-a-token')), false);
+assert.equal(isFullStaffLogin(sessionClaims(null)), false);
 console.log('auth helpers: all checks passed');

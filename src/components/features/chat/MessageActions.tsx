@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import clsx from 'clsx';
 import { Pin, Reply, Trash2, UserX, Languages } from 'lucide-react';
 import type { Message } from '@/types/db';
@@ -9,34 +8,26 @@ interface Props {
   message: Message; 
   mine: boolean; 
   pinned: boolean;
+  canReply: boolean;
+  canTranslate: boolean;
   onClose: () => void;
   onReply: () => void; 
   onPin: () => void;
   onTranslate: () => void;
   onDeleteMe: () => void; 
   onDeleteAll: () => void;
-  onReact: (emoji: string) => Promise<void>;
+  onReact: (emoji: string) => unknown;
 }
 
 export function MessageActions({
-  message, mine, pinned, onClose, onReply, onPin, onTranslate, onDeleteMe, onDeleteAll, onReact
+  message, mine, pinned, canReply, canTranslate, onClose, onReply, onPin, onTranslate, onDeleteMe, onDeleteAll, onReact
 }: Props) {
-  const [error, setError] = useState('');
-  const [reacting, setReacting] = useState(false);
-
   if (message.deleted_at || message.body === '[deleted]') return null;
 
-  const pick = async (emoji: string) => {
-    setReacting(true);
-    setError('');
-    try {
-      await onReact(emoji);
-      onClose();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setReacting(false);
-    }
+  // The reaction shows at once; the store reports a failure and takes it back.
+  const pick = (emoji: string) => {
+    void onReact(emoji);
+    onClose();
   };
 
   return (
@@ -60,10 +51,9 @@ export function MessageActions({
           {QUICK.map((e) => (
             <button
               key={e}
-              disabled={reacting}
               onClick={() => pick(e)}
               aria-label={`React ${e}`}
-              className="rounded-lg p-2 text-xl transition active:scale-95 md:p-1 md:text-lg md:hover:scale-110 md:hover:bg-surface-2 disabled:opacity-50"
+              className="rounded-lg p-2 text-xl transition active:scale-95 md:p-1 md:text-lg md:hover:scale-110 md:hover:bg-surface-2"
             >
               {e}
             </button>
@@ -73,15 +63,19 @@ export function MessageActions({
         <div className="hidden my-1 border-t border-border md:block" />
 
         <div className="mt-3 flex flex-col gap-0.5 md:mt-0">
-          <button onClick={() => { onReply(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
-            <Reply size={16} className="text-muted" /> 
-            <span>Reply</span>
-          </button>
+          {canReply && (
+            <button onClick={() => { onReply(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+              <Reply size={16} className="text-muted" /> 
+              <span>Reply</span>
+            </button>
+          )}
 
-          <button onClick={() => { onTranslate(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
-            <Languages size={16} className="text-muted" /> 
-            <span>Translate message</span>
-          </button>
+          {canTranslate && (
+            <button onClick={() => { onTranslate(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+              <Languages size={16} className="text-muted" /> 
+              <span>Translate message</span>
+            </button>
+          )}
 
           <button onClick={() => { onPin(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
             <Pin size={16} className="text-muted" /> 
@@ -102,8 +96,6 @@ export function MessageActions({
             </button>
           )}
         </div>
-
-        {error && <p className="mt-2 px-3 text-xs font-medium text-danger animate-pulse">{error}</p>}
       </div>
     </div>
   );

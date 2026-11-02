@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { rpc } from '@/lib/api';
+import { ApiError, rpc } from '@/lib/api';
 import type { SavedPhrase } from '@/types/db';
 
 export const savePhrase = (p: { phrase: string; translation?: string; languageCode?: string; sourceMessageId?: string }) =>
@@ -16,5 +16,15 @@ export const listPhrases = async (p_languageId?: string) => {
     phrases = phrases.filter((p) => p.language_id === p_languageId);
   }
   return { phrases, total: phrases.length };
+};
+/** The text of everything I saved: the phrasebook holds one row per text, so that is what marks a message as saved. */
+export const listSavedPhraseTexts = async () => {
+  const { data, error } = await supabase.from('saved_phrases').select('phrase');
+  if (error) throw error;
+  return (data ?? []).map((r) => r.phrase as string);
+};
+export const unsavePhrase = async (phrase: string) => {
+  const { error } = await supabase.from('saved_phrases').delete().eq('phrase', phrase);
+  if (error) throw new ApiError('unknown', 'Could not remove it from your phrasebook. Please try again.');
 };
 export const deletePhrase = async (id: string) => { await supabase.from('saved_phrases').delete().eq('id', id); };

@@ -9,5 +9,5 @@ export const navItems: NavItem[] = [
   { to: '/bounty-queue', label: 'Bounties', icon: Coins },
   { to: '/profile', label: 'Profile', icon: User },   // last phone tab: the conventional bottom-right spot
   { to: '/settings', label: 'Settings', icon: Settings, desktopOnly: true },   // phones reach it from the profile page
-  { to: '/admin', label: 'Moderation', icon: Shield, desktopOnly: true, staffOnly: true },   
+  { to: '/admin', label: 'Admin', icon: Shield, desktopOnly: true, staffOnly: true },   
 ];

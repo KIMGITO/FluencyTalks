@@ -7,6 +7,8 @@ import { MessageActions } from './MessageActions';
 import { useMessageGestures } from '@/hooks/useMessageGestures';
 import { formatTime } from '@/lib/format';
 import { translateText } from '@/lib/translate';
+import { canCorrect } from '@/lib/corrections';
+import { useProfileStore } from '@/store/profileStore';
 import type { Correction, Message, Reaction } from '@/types/db';
 
 
@@ -23,12 +25,15 @@ interface Props {
   /** The person you chat with: only their corrections can be discussed in the chat. */
   otherId?: string | null;
   pinned: boolean;
+  saved: boolean;
+  /** No composer on a message request you haven't accepted, so nothing to reply with. */
+  canReply: boolean;
   showTail: boolean;
   replyTo?: Message | null;
   translateTo: string; 
   translateApi: string; 
   onCorrect: (m: Message) => void;
-  onSave: (m: Message, translation?: string) => Promise<unknown>;
+  onSave: (m: Message, translation?: string) => void;
   onReact: (m: Message, emoji: string) => Promise<void>;
   onAccept: (c: Correction) => Promise<void>;
   onDecline: (c: Correction, reason: string) => Promise<void>;
@@ -49,7 +54,7 @@ const ERROR_VISIBLE_MS = 5000;
 function ActionIcon({ label, pressed, disabled, onClick, children }: { label: string; pressed?: boolean; disabled?: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button type="button" aria-label={label} title={label} aria-pressed={pressed} disabled={disabled} onClick={onClick}
-      className={clsx('rounded-full p-1.5 transition hover:bg-surface-2 hover:text-ink disabled:cursor-default', pressed && 'text-ink')}>
+      className={clsx('rounded-full p-1.5 transition hover:bg-surface-2 hover:text-ink active:scale-90 disabled:cursor-default', pressed && 'text-ink')}>
       {children}
     </button>
   );
@@ -64,6 +69,8 @@ export function MessageBubble({
   otherName,
   otherId,
   pinned,
+  saved,
+  canReply,
   showTail,
   replyTo,
   translateTo,
@@ -79,13 +86,13 @@ export function MessageBubble({
   onDeleteAll,
   onTranslated,
 }: Props) {
-  const [saved, setSaved] = useState(false);
+  const me = useProfileStore((s) => s.me);
   const [tr, setTr] = useState<Translation | null>(null);
   const [sheet, setSheet] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
   useMessageGestures(rowRef, {
     onSwipeRight: () => {
-      if (!message.deleted_at) onReply(message);
+      if (!message.deleted_at && canReply) onReply(message);
     },
     onLongPress: () => setSheet(true),
   });
@@ -113,6 +120,9 @@ export function MessageBubble({
     tr.text.trim().toLowerCase() === message.body.trim().toLowerCase();
   const gone = !!message.deleted_at || message.body === '[deleted]';
   if (gone) return null;
+  // Only what this person can actually do: the server refuses a correction from anyone else.
+  const mayCorrect = !mine && canCorrect(me, message.language_id);
+  const mayTranslate = message.language_id !== translateTo;
   return (
     <div
       className={clsx(
@@ -211,16 +221,16 @@ export function MessageBubble({
         </p>
       )}
       <div className={clsx('flex items-center gap-0.5 px-0.5 text-muted', mine ? 'flex-row-reverse' : 'flex-row')}>
-        {!mine && (
+        {mayCorrect && (
           <ActionIcon label="Suggest a correction" onClick={() => onCorrect(message)}><Pencil size={14} aria-hidden /></ActionIcon>
         )}
-        {!mine && (
+        {!mine && mayTranslate && (
           <ActionIcon label={tr?.state === 'done' ? 'Hide translation' : 'Translate'} pressed={tr?.state === 'done'} disabled={tr?.state === 'loading'} onClick={() => void translate()}>
             <Languages size={14} aria-hidden />
           </ActionIcon>
         )}
-        <ActionIcon label={saved ? 'Saved to phrasebook' : 'Save to phrasebook'} pressed={saved} disabled={saved}
-          onClick={async () => { await onSave(message, tr?.state === 'done' && !alreadyMine ? tr.text : undefined); setSaved(true); }}>
+        <ActionIcon label={saved ? 'Remove from phrasebook' : 'Save to phrasebook'} pressed={saved}
+          onClick={() => onSave(message, tr?.state === 'done' && !alreadyMine ? tr.text : undefined)}>
           {saved ? <BookmarkCheck size={14} aria-hidden className="text-success" /> : <Bookmark size={14} aria-hidden />}
         </ActionIcon>
       </div>
@@ -243,6 +253,8 @@ export function MessageBubble({
           message={message}
           mine={mine}
           pinned={pinned}
+          canReply={canReply}
+          canTranslate={mayTranslate}
           onClose={() => setSheet(false)}
           onReply={() => onReply(message)}
           onPin={() => onPin(message)}

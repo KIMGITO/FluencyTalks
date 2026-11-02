@@ -3,6 +3,7 @@ import { Check, ChevronDown, Coins, MessageSquareReply, Pencil, ThumbsDown, Thum
 import clsx from 'clsx';
 import { DiffText } from './DiffText';
 import { useChatStore } from '@/store/chatStore';
+import { toast } from '@/store/toastStore';
 import type { Correction } from '@/types/db';
 
 /** Older declined suggestions stay out of the chat: the question is only asked while it is fresh. */
@@ -12,8 +13,7 @@ const REASONS = ['Already correct', 'Changes the meaning', "Doesn't sound natura
 /** The author says whether a suggestion helped. Decides whether the corrector keeps earning. */
 function RateCorrection({ correction }: { correction: Correction }) {
   const rate = useChatStore((s) => s.rate);
-  const [error, setError] = useState('');
-  const send = (helpful: boolean) => { setError(''); rate(correction, helpful).catch((e) => setError((e as Error).message)); };
+  const send = (helpful: boolean) => { rate(correction, helpful).catch((e) => toast.error((e as Error).message)); };
   const button = (helpful: boolean, Icon: typeof ThumbsUp, label: string) => {
     const on = correction.feedback === (helpful ? 'helpful' : 'not_helpful');
     return (
@@ -27,7 +27,6 @@ function RateCorrection({ correction }: { correction: Correction }) {
     <span className="ml-auto flex items-center gap-0.5" aria-label="Was this helpful?">
       {button(true, ThumbsUp, 'Helpful')}
       {button(false, ThumbsDown, 'Not helpful')}
-      {error && <span className="ml-1 text-danger">{error}</span>}
     </span>
   );
 }
@@ -57,7 +56,7 @@ export function CorrectionCard({ correction, original, isOwner, myId, bounty, on
     if (!fresh || (!isOwner && !mineToo)) return null;
   }
 
-  const run = async (fn: () => Promise<void>) => { setBusy(true); setError(''); try { await fn(); setDeclining(false); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } };
+  const run = async (fn: () => Promise<void>) => { setBusy(true); setError(''); setDeclining(false); try { await fn(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } };
   const pending = status === 'pending';
   const label = {
     pending: isOwner ? `${who} suggests` : mineToo ? 'Your suggestion · waiting' : `${who} suggested`,

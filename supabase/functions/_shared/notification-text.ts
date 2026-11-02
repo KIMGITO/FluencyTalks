@@ -2,7 +2,7 @@
 export interface NotificationLike {
   type: string;
   actor_username?: string | null;
-  data: { conversation_id?: string; points?: number; level?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; waiting?: boolean | number; overdue?: number; bounty?: boolean };
+  data: { reason?: string; conversation_id?: string; points?: number; level?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; waiting?: boolean | number; overdue?: number; bounty?: boolean };
 }
 
 /** The sentence after the actor's name; system notices have no actor. */
@@ -36,14 +36,18 @@ export const notificationVerb = (n: NotificationLike): string => {
     case 'restriction_applied': return `New posts are paused: ${n.data.overdue ?? 'several'} decisions are overdue. Answer them, ask for time, or appeal`;
     case 'restriction_lifted': return 'You can post again';
     case 'appeal_decided': return `Your appeal was ${n.data.granted ? 'granted' : 'not granted'}. ${n.data.note ?? ''}`.trim();
+    case 'admin_report': return `New report${n.data.reason ? `: ${n.data.reason}` : ''}. It needs a decision`;
+    case 'admin_security': return 'A recovery code was used on a staff account';
     default: return 'sent you a notification';
   }
 };
 
 /** System notices stand on their own, without "Someone" in front. */
-export const hasActor = (n: NotificationLike) => !['level_up', 'bounty_reminder', 'action_reminder', 'action_overdue', 'action_escalated', 'restriction_applied', 'restriction_lifted'].includes(n.type) && (n.type !== 'appeal_decided');
+export const hasActor = (n: NotificationLike) => !['level_up', 'bounty_reminder', 'action_reminder', 'action_overdue', 'action_escalated', 'restriction_applied', 'restriction_lifted', 'admin_report', 'admin_security'].includes(n.type) && (n.type !== 'appeal_decided');
 
 export const notificationLink = (n: NotificationLike): string => {
+  if (n.type === 'admin_report') return '/admin/reports';
+  if (n.type === 'admin_security') return '/admin/logs';
   if (n.data.post_id) return `/library/post/${n.data.post_id}${n.data.item_id ? `?item=${n.data.item_id}` : ''}`;
   if (n.type === 'level_up' || n.type === 'level_vouch') return '/profile/edit';
   // A bounty helper is usually not in the asker's chat: their answers page shows the outcome.

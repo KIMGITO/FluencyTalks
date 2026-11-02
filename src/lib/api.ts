@@ -31,6 +31,7 @@ const friendly: Record<string, string> = {
   post_not_found: 'That post is no longer available.', already_reported: 'You already reported this post. Our team is on it.',
   cannot_report_self: "You can't report your own post.", saved_limit: 'You can save up to 500 posts. Remove some first.',
   invalid_alignment: 'Choose left, center or right alignment.',
+  invite_invalid: 'This invitation has expired or was already used. Ask for a new one.', invite_email_mismatch: 'This invitation was sent to a different email address. Log in with that one.',
 };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
 

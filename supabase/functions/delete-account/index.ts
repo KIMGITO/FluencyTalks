@@ -19,6 +19,10 @@ Deno.serve(async (req) => {
   const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const uid = data.user.id;
 
+  // A stolen password must not be able to delete a staff account: the super admin removes staff first.
+  const { data: staff } = await admin.from('admin_accounts').select('user_id').eq('user_id', uid).maybeSingle();
+  if (staff) return reply(403, { error: 'staff_account' });
+
   const { data: files } = await admin.storage.from('avatars').list(uid);
   if (files?.length) await admin.storage.from('avatars').remove(files.map((f) => `${uid}/${f.name}`));
 

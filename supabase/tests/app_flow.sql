@@ -11,7 +11,21 @@
 
 create schema if not exists tt;
 create or replace function tt.as_user(u uuid) returns void language plpgsql as $$
-begin perform set_config('request.jwt.claim.sub', u::text, false); end $$;
+begin perform set_config('request.jwt.claim.sub', u::text, false); perform set_config('request.jwt.claims', '', false); end $$;
+-- A staff member after a full login: password, then an authenticator code.
+create or replace function tt.as_staff(u uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', u::text, false);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', u, 'aal', 'aal2', 'amr', jsonb_build_array(
+    jsonb_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint + 1),
+    jsonb_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+end $$;
+-- The same person who has only typed a password so far.
+create or replace function tt.as_aal1(u uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', u::text, false);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', u, 'aal', 'aal1', 'amr', jsonb_build_array(jsonb_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+end $$;
 create or replace function tt.expect_error(q text, needle text) returns void language plpgsql as $$
 declare ok boolean := false;
 begin
@@ -31,7 +45,10 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b2', 'linh@test.vn'),
   ('00000000-0000-0000-0000-0000000000c3', 'zed@test.com'),
   ('00000000-0000-0000-0000-0000000000d4', 'admin@test.com');
+insert into public.admin_accounts (user_id, tier) values ('00000000-0000-0000-0000-0000000000d4', 'admin');
+select set_config('app.staff_change', 'on', false);
 update public.profiles set role = 'admin', username = 'theadmin' where id = '00000000-0000-0000-0000-0000000000d4';
+select set_config('app.staff_change', 'off', false);
 
 do $$ begin
   assert (select count(*) from public.profiles where id in ('00000000-0000-0000-0000-0000000000a1','00000000-0000-0000-0000-0000000000b2')) = 2, 'signup trigger must create profiles';
@@ -876,7 +893,7 @@ select tt.expect_error($q$select public.submit_discussion((select id from dpost)
 -- Moderators reverse with a reason, on the record.
 select tt.as_user('00000000-0000-0000-0000-00000000d003');
 select tt.expect_error($q$select public.admin_override_correction((select id from cj), 'declined', 'no')$q$, 'forbidden');
-select tt.as_user('00000000-0000-0000-0000-0000000000d4');
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
 select tt.expect_error($q$select public.admin_override_correction((select id from cj), 'declined', '  ')$q$, 'reason_required');
 select public.admin_override_correction((select id from cj), 'declined', 'Offensive in context');
 do $$ begin
@@ -990,7 +1007,7 @@ select tt.expect_error($q$select public.appeal_restriction((select id from rst),
 select tt.as_user('00000000-0000-0000-0000-00000000d002');
 select tt.expect_error($q$select public.admin_accountability()$q$, 'forbidden');
 select tt.expect_error($q$select public.admin_set_accountability_policy('{"deadline_hours":1}', 'x')$q$, 'forbidden');
-select tt.as_user('00000000-0000-0000-0000-0000000000d4');
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
 do $$ declare a jsonb := public.admin_accountability(); begin
   assert jsonb_array_length(a->'appeals') = 1 and jsonb_array_length(a->'restrictions') = 1, 'staff see the appeal and the restriction';
   assert jsonb_array_length(a->'audit') > 0;
@@ -1052,10 +1069,177 @@ do $$ begin
 end $$;
 
 -- ============ 7. ADMIN ============
-select tt.as_user('00000000-0000-0000-0000-0000000000d4');
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
 do $$ begin assert public.is_admin(), 'admin recognised'; assert (select count(*) from public.admin_report_queue('open')) >= 2, 'admin sees reports'; end $$;
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 select tt.expect_error($q$select count(*) from public.admin_report_queue('open')$q$, 'forbidden');
+
+reset role;
+
+-- ============ staff accounts and MFA ============
+-- Fixtures: the real ones come from the bootstrap script and invitations.
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-00000000ee05', 'inv@test.com'),
+  ('00000000-0000-0000-0000-00000000ee06', 'other-mod@test.com');
+update public.profiles set username = 'invited' where id = '00000000-0000-0000-0000-00000000ee05';
+update public.profiles set username = 'othermod' where id = '00000000-0000-0000-0000-00000000ee06';
+
+-- The reserved address cannot come in through signup, and only the bootstrap window lets it in.
+select tt.expect_error($q$insert into auth.users (email) values ('ADMIN@thefluencytalks.com')$q$, 'reserved_email');
+select tt.expect_error($q$update auth.users set email = 'admin@thefluencytalks.com' where id = '00000000-0000-0000-0000-0000000000a1'$q$, 'reserved_email');
+select public.svc_open_super_bootstrap();
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000ee01', 'admin@thefluencytalks.com');
+select tt.expect_error($q$select public.svc_finish_super_bootstrap('00000000-0000-0000-0000-0000000000a1')$q$, 'not_the_reserved_account');
+select public.svc_finish_super_bootstrap('00000000-0000-0000-0000-00000000ee01');
+select tt.expect_error($q$select public.svc_open_super_bootstrap()$q$, 'super_admin_exists');
+select tt.expect_error($q$update auth.users set email = 'moved@test.com' where id = '00000000-0000-0000-0000-00000000ee01'$q$, 'super_admin_email_is_fixed');
+select tt.expect_error($q$update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000a1'$q$, 'only through an invitation');
+select tt.expect_error($q$insert into public.admin_accounts (user_id, tier) values ('00000000-0000-0000-0000-0000000000a1', 'super')$q$, 'admin_accounts_one_super');
+
+do $$ begin
+  assert not has_function_privilege('authenticated', 'public.svc_open_super_bootstrap()', 'execute'), 'bootstrap closed to users';
+  assert not has_function_privilege('authenticated', 'public.svc_finish_super_bootstrap(uuid)', 'execute'), 'bootstrap closed to users';
+  assert not has_function_privilege('authenticated', 'public.svc_break_glass_mfa(text)', 'execute'), 'break glass closed to users';
+  assert not has_function_privilege('authenticated', 'public.set_staff_role(uuid, text)', 'execute'), 'role setter closed to users';
+  assert not has_function_privilege('authenticated', 'public.admin_audit(text, uuid, jsonb)', 'execute'), 'audit writer closed to users';
+  assert not has_function_privilege('anon', 'public.accept_admin_invitation(text)', 'execute'), 'anon cannot accept';
+end $$;
+
+-- Only staff can have factors.
+select tt.expect_error($q$insert into auth.mfa_factors (user_id) values ('00000000-0000-0000-0000-0000000000a1')$q$, 'mfa_is_for_staff');
+insert into auth.mfa_factors (id, user_id, friendly_name) values ('00000000-0000-0000-0000-00000000f001', '00000000-0000-0000-0000-0000000000d4', 'Phone');
+update auth.mfa_factors set status = 'verified' where id = '00000000-0000-0000-0000-00000000f001';
+do $$ begin assert (select count(*) from public.admin_audit_log where action = 'mfa_factor_verified') = 1, 'enrolment is on the record'; end $$;
+select tt.expect_error($q$delete from auth.mfa_factors where id = '00000000-0000-0000-0000-00000000f001'$q$, 'cannot_remove_last_factor');
+insert into auth.mfa_factors (id, user_id, friendly_name, status) values ('00000000-0000-0000-0000-00000000f002', '00000000-0000-0000-0000-0000000000d4', 'Backup', 'verified');
+delete from auth.mfa_factors where id = '00000000-0000-0000-0000-00000000f002';
+do $$ begin assert (select count(*) from public.admin_audit_log where action = 'mfa_factor_removed') = 1, 'removing a backup is on the record'; end $$;
+select tt.expect_error($q$update public.admin_audit_log set action = 'x' where id > 0$q$, 'append-only');
+select tt.expect_error($q$delete from public.admin_audit_log where id > 0$q$, 'append-only');
+
+set role authenticated;
+-- An ordinary person: no way in, by any door.
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select tt.expect_error($q$update public.profiles set role = 'admin' where id = auth.uid()$q$, 'only through an invitation');
+select tt.expect_error($q$insert into public.admin_accounts (user_id, tier) values (auth.uid(), 'admin')$q$, 'row-level security');
+do $$ begin assert (select count(*) from public.admin_recovery_codes) = 0 and (select count(*) from public.admin_accounts) = 0, 'staff tables are closed'; end $$;
+select tt.expect_error($q$select public.admin_create_invitation('x@test.com')$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_list_team()$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_system_health()$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_logs()$q$, 'forbidden');
+select tt.expect_error($q$select public.staff_assert('staff')$q$, 'forbidden');
+select tt.expect_error($q$select public.accept_admin_invitation('made-up')$q$, 'invite_invalid');
+do $$ begin assert public.my_staff_status()->>'is_staff' = 'false', 'a learner is not staff'; end $$;
+
+-- A password alone proves nothing: a real admin with no authenticator step has no powers.
+select tt.as_aal1('00000000-0000-0000-0000-0000000000d4');
+do $$ begin
+  assert not public.is_admin(), 'aal1 is not admin';
+  assert (public.my_staff_status()->>'is_staff')::boolean and not (public.my_staff_status()->>'session_ok')::boolean, 'the gate can tell';
+end $$;
+select tt.expect_error($q$select public.admin_overview()$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_set_user_status('00000000-0000-0000-0000-0000000000a1', 'suspended', 'x')$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_set_accountability_policy('{}', 'x')$q$, 'forbidden');
+select tt.expect_error($q$select count(*) from public.admin_report_queue('open')$q$, 'forbidden');
+-- Nor does Google + TOTP: aal2, but no password.
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-0000-0000-0000000000d4', 'aal', 'aal2', 'amr', jsonb_build_array(
+  jsonb_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint + 1), jsonb_build_object('method', 'oauth', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+do $$ begin assert not public.is_admin(), 'admins must use their password'; end $$;
+
+-- An invited admin: runs the place, but cannot invite, and cannot touch the super admin or a peer.
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
+do $$ begin
+  assert public.is_admin() and public.is_full_admin() and not public.is_super_admin(), 'tier d4';
+  assert not public.staff_can_manage('00000000-0000-0000-0000-00000000ee01'), 'nobody manages the super admin';
+  assert not public.staff_can_manage('00000000-0000-0000-0000-0000000000d4'), 'nobody manages themselves';
+  assert public.staff_can_manage('00000000-0000-0000-0000-0000000000a1'), 'admins manage learners';
+  assert public.admin_system_health()->'database'->>'size_bytes' is not null, 'health reports the database';
+  assert (public.admin_overview()->>'users_total')::int > 0, 'overview counts people';
+end $$;
+select tt.expect_error($q$select public.admin_set_user_status('00000000-0000-0000-0000-00000000ee01', 'banned', 'x')$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_create_invitation('x@test.com')$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_remove_staff('00000000-0000-0000-0000-00000000ee01', 'x')$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_prepare_mfa_reset('00000000-0000-0000-0000-00000000ee01', 'x')$q$, 'forbidden');
+
+-- The super admin invites. The token only works for the invited, confirmed address.
+select tt.as_staff('00000000-0000-0000-0000-00000000ee01');
+select tt.expect_error($q$select public.admin_create_invitation('admin@thefluencytalks.com')$q$, 'reserved_email');
+select tt.expect_error($q$select public.admin_create_invitation('admin@test.com')$q$, 'already_staff');
+select tt.expect_error($q$select public.admin_remove_staff('00000000-0000-0000-0000-00000000ee01', 'x')$q$, 'forbidden');
+create temp table invite on commit preserve rows as select public.admin_create_invitation('INV@test.com') as v;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select tt.expect_error(format('select public.accept_admin_invitation(%L)', (select v->>'token' from invite)), 'invite_email_mismatch');
+select tt.as_user('00000000-0000-0000-0000-00000000ee05');
+do $$ begin
+  assert public.accept_admin_invitation((select v->>'token' from invite)) = 'admin', 'invited person accepts';
+  assert public.accept_admin_invitation((select v->>'token' from invite)) = 'admin', 'a retry is harmless';
+  assert not public.is_admin(), 'accepting does not skip MFA';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');
+select tt.expect_error(format('select public.accept_admin_invitation(%L)', (select v->>'token' from invite)), 'invite_invalid');
+reset role;
+do $$ begin assert (select role from public.profiles where id = '00000000-0000-0000-0000-00000000ee05') = 'admin', 'role mirrors the account'; end $$;
+set role authenticated;
+
+-- Peers cannot manage each other; the super admin can.
+select tt.as_staff('00000000-0000-0000-0000-00000000ee05');
+select tt.expect_error($q$select public.admin_set_user_status('00000000-0000-0000-0000-0000000000d4', 'suspended', 'x')$q$, 'forbidden');
+
+-- Reports land with everyone who decides.
+select tt.as_user('00000000-0000-0000-0000-0000000000c3');
+select public.report_user('00000000-0000-0000-0000-0000000000a1', 'spam', 'again');
+reset role;
+do $$ begin
+  assert (select count(*) from public.notifications where type = 'admin_report' and user_id in ('00000000-0000-0000-0000-00000000ee01','00000000-0000-0000-0000-0000000000d4','00000000-0000-0000-0000-00000000ee05')) >= 3, 'all admins told';
+end $$;
+set role authenticated;
+
+-- Recovery codes: once each, wrong guesses lock the account, and old tokens stop working.
+select tt.as_staff('00000000-0000-0000-0000-00000000ee05');
+create temp table codes on commit preserve rows as select public.admin_generate_recovery_codes() as c;
+do $$ begin assert array_length((select c from codes), 1) = 10, 'ten codes'; end $$;
+select tt.as_user('00000000-0000-0000-0000-00000000ee05');
+select tt.expect_error(format('select public.admin_redeem_recovery_code(%L)', (select c[1] from codes)), 'forbidden');   -- no password step at all
+-- A Google sign-in can't use a code; a mailbox reset link can, but it still isn't a staff login.
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-0000-0000-00000000ee05', 'aal', 'aal1', 'amr', jsonb_build_array(jsonb_build_object('method', 'oauth', 'timestamp', 1)))::text, false);
+select tt.expect_error(format('select public.admin_redeem_recovery_code(%L)', (select c[1] from codes)), 'forbidden');
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-0000-0000-00000000ee05', 'aal', 'aal2', 'amr', jsonb_build_array(jsonb_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint + 1), jsonb_build_object('method', 'otp', 'timestamp', extract(epoch from now())::bigint)))::text, false);
+do $$ begin assert not public.is_admin(), 'a reset link plus a code is not a password login'; end $$;
+select tt.as_aal1('00000000-0000-0000-0000-00000000ee05');
+do $$ begin
+  assert public.admin_redeem_recovery_code('wrong') is false, 'a wrong code fails';
+  assert public.admin_redeem_recovery_code((select c[1] from codes)), 'a right code works';
+  assert public.admin_redeem_recovery_code((select c[1] from codes)) is false, 'a code works once';
+end $$;
+reset role;
+select pg_sleep(1.1);
+set role authenticated;
+-- The aal2 token from before the reset no longer counts.
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-0000-0000-00000000ee05', 'aal', 'aal2', 'amr', jsonb_build_array(
+  jsonb_build_object('method', 'totp', 'timestamp', extract(epoch from now())::bigint - 3600), jsonb_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint - 3600)))::text, false);
+do $$ begin assert not public.is_admin(), 'old sessions are cut off'; end $$;
+select tt.as_aal1('00000000-0000-0000-0000-00000000ee05');
+do $$ begin
+  for i in 1..4 loop assert public.admin_redeem_recovery_code('wrong') is false; end loop;   -- the re-used code above was the first strike
+end $$;
+select tt.expect_error(format('select public.admin_redeem_recovery_code(%L)', (select c[2] from codes)), 'recovery_locked');
+
+-- Logs: anyone signed in can report an error, nobody can read or flood them.
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select public.log_client_error('boom', '{"path":"/home"}');
+do $$ begin for i in 1..30 loop perform public.log_client_error('flood'); end loop; end $$;
+do $$ begin assert (select count(*) from public.app_logs) = 0, 'logs are closed'; end $$;
+reset role;
+do $$ begin assert (select count(*) from public.app_logs where user_id = '00000000-0000-0000-0000-0000000000a1') = 20, 'errors are throttled per person'; end $$;
+select public.system_heartbeat();
+do $$ begin assert public.uptime_percent('1 day') is not null, 'uptime has a number once a beat exists'; end $$;
+set role authenticated;
+
+-- Removing an admin takes their powers at once.
+select tt.as_staff('00000000-0000-0000-0000-00000000ee01');
+select public.admin_remove_staff('00000000-0000-0000-0000-00000000ee05', 'left the team');
+select tt.as_staff('00000000-0000-0000-0000-00000000ee05');
+do $$ begin assert not public.is_admin(), 'removed admin has no powers'; end $$;
 
 reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;

@@ -21,9 +21,25 @@ export function parseLanding(hash: string, search: string, pathname: string): La
   return { recovery, linkError };
 }
 
+export interface SessionClaims { aal: string | null; methods: string[] }
+
+/** What a Supabase access token says about how this login happened. Only for routing: the database checks the real thing. */
+export function sessionClaims(accessToken: string | null | undefined): SessionClaims {
+  try {
+    const payload = JSON.parse(atob(accessToken!.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: string; amr?: { method?: string }[] };
+    return { aal: payload.aal ?? null, methods: (payload.amr ?? []).map((a) => a.method ?? '') };
+  } catch {
+    return { aal: null, methods: [] };
+  }
+}
+
+/** A staff login counts only if it used the password and an authenticator code. Mirrors staff_session_ok() in the database. */
+export const isFullStaffLogin = ({ aal, methods }: SessionClaims) => aal === 'aal2' && methods.includes('password') && methods.includes('totp');
+
 /** Auth errors come back as English sentences from the server; show something a person can act on. */
 export function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();
+  if (m.includes('database error saving new user') || m.includes('reserved_email')) return "This email address can't be used to sign up.";
   if (m.includes('auth session missing')) return 'This reset link has expired or was already used. Request a new one.';
   if (m.includes('different from the old password')) return 'Choose a password you have not used before.';
   if (m.includes('at least') && m.includes('character')) return 'Use at least 8 characters.';

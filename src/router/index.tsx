@@ -26,7 +26,10 @@ import UserProfile from '@/pages/app/UserProfile';
 import EditProfile from '@/pages/app/EditProfile';
 import Settings from '@/pages/app/Settings';
 import Learning from '@/pages/app/Learning';
-import Admin from '@/pages/app/Admin';
+import AcceptInvite from '@/pages/auth/AcceptInvite';
+import { AdminLayout } from '@/pages/admin/AdminLayout';
+import { AdminActivity, AdminAudit, AdminHealth, AdminOverviewPage, AdminReports, AdminSecurity, AdminTeam, AdminUsers } from '@/components/features/admin';
+import { AdminDecisions } from '@/components/features/admin/AdminDecisions';
 import Library from '@/pages/features/library/Library';
 import ContributePage from '@/pages/features/library/contribute/ContributePage';
 import PostDetail from '@/pages/features/library/PostDetail';
@@ -41,6 +44,7 @@ export const router = createBrowserRouter([
   { path: '/signup', element: <Signup /> },
   { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/reset-password', element: <ResetPassword /> },
+  { path: '/admin/accept-invite', element: <AcceptInvite /> },
   { path: '/privacy', element: <Privacy /> },
   { path: '/terms', element: <Terms /> },
   { path: '/data-deletion', element: <DeleteForm /> },
@@ -79,10 +83,29 @@ export const router = createBrowserRouter([
           { path: '/library/post/:id', element: <PostDetail /> },
           { path: '/notifications', element: <Notifications /> },
           { path: '/partners', element: <Partners /> },
+        ],
+      },
+    ],
+  },
+  {
+    // Outside the learner shell: staff accounts have their own login gate and layout.
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <AdminRoute />,
+        children: [
           {
-            element: <AdminRoute />,
+            element: <AdminLayout />,
             children: [
-              { path: '/admin', element: <Admin /> },
+              { path: '/admin', element: <AdminOverviewPage /> },
+              { path: '/admin/reports', element: <AdminReports /> },
+              { path: '/admin/decisions', element: <AdminDecisions /> },
+              { path: '/admin/people', element: <AdminUsers /> },
+              { path: '/admin/activity', element: <AdminActivity /> },
+              { path: '/admin/team', element: <AdminTeam /> },
+              { path: '/admin/health', element: <AdminHealth /> },
+              { path: '/admin/logs', element: <AdminAudit /> },
+              { path: '/admin/security', element: <AdminSecurity /> },
             ],
           },
         ],

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { acceptCorrection, rateCorrection, declineCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, markRead, respondMessageRequest, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, type SendOptions, type ReactionEvent } from '@/services';
+import { acceptCorrection, rateCorrection, declineCorrection, deleteMessage, getCorrections, getMessages, getReactions, listConversations, listSavedPhraseTexts, markRead, respondMessageRequest, savePhrase, sendMessage, subscribeToInbox, suggestCorrection, toggleReaction, unsavePhrase, type SendOptions, type ReactionEvent } from '@/services';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
@@ -7,8 +7,12 @@ import type { ConversationRow, Correction, Message, Reaction } from '@/types/db'
 
 let unsub: (() => void) | null = null;
 const reacting = new Set<string>();
+const savingPhrase = new Map<string, Promise<void>>();
 
 export const isGone = (m: { deleted_at?: string | null; body?: string | null }) => !!m.deleted_at || m.body === '[deleted]';
+
+/** The text as the phrasebook stores it (save_phrase keeps the first 500 characters). */
+export const phraseKey = (body: string) => Array.from(body).slice(0, 500).join('');
 
 const loadJson = (key: string): Record<string, string[]> | Record<string, true> => {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
@@ -30,15 +34,18 @@ interface S {
   hideForMe: (messageId: string) => void;
   deleteForEveryone: (convId: string, messageId: string) => Promise<void>;
   setReply: (convId: string, m: Message | null) => void;
+  saved: Record<string, true>; loadSaved: () => Promise<void>; toggleSaved: (m: Message, translation?: string) => void;
 }
 export const useChatStore = create<S>((set, get) => ({
   active: [], requests: [], messages: {}, corrections: {}, reactions: {}, openId: null,
   pins: loadJson('ft-pins') as Record<string, string[]>,
   hidden: loadJson('ft-hidden') as Record<string, true>,
   drafts: {},
+  saved: {},
   loadLists: async () => { const [active, requests] = await Promise.all([listConversations('active'), listConversations('request')]); set({ active, requests }); },
   open: async (id) => {
     set({ openId: id });
+    void get().loadSaved().catch(() => undefined);
     await get().loadLists();
     const list = (await getMessages(id)).filter((m) => !isGone(m)).reverse();
     set((s) => ({ messages: { ...s.messages, [id]: list } }));
@@ -52,7 +59,15 @@ export const useChatStore = create<S>((set, get) => ({
     set((s) => ({ drafts: { ...s.drafts, [id]: null } }));
     await get().loadLists();
   },
-  respond: async (id, accept) => { await respondMessageRequest(id, accept); await get().loadLists(); },
+  // Moves at once; the reload settles it, and puts the request back if the server said no.
+  respond: async (id, accept) => {
+    set((s) => {
+      const row = s.requests.find((c) => c.conversation_id === id);
+      return { requests: s.requests.filter((c) => c.conversation_id !== id), active: accept && row ? [{ ...row, status: 'active' as const }, ...s.active] : s.active };
+    });
+    try { await respondMessageRequest(id, accept); } catch (e) { toast.error((e as Error).message); }
+    await get().loadLists();
+  },
   append: (m) => set((s) => {
     if (isGone(m)) return s;
     const list = s.messages[m.conversation_id];
@@ -77,9 +92,10 @@ export const useChatStore = create<S>((set, get) => ({
     return { corrections: { ...s.corrections, [c.message_id]: next } };
   }),
   suggest: async (convId, messageId, text, note) => { await suggestCorrection(messageId, text, note); await get().loadCorrections(convId); },
-  rate: async (c, helpful) => { await rateCorrection(c.id, helpful); get().upsertCorrection({ ...c, feedback: helpful ? 'helpful' : 'not_helpful' }); },
-  accept: async (c) => { await acceptCorrection(c.id); get().upsertCorrection({ ...c, status: 'accepted' }); },
-  decline: async (c, reason) => { await declineCorrection(c.id, reason); get().upsertCorrection({ ...c, status: 'dismissed', decision_note: reason }); },
+  // These three show at once; a failure puts the correction back and the caller reports it.
+  rate: async (c, helpful) => { get().upsertCorrection({ ...c, feedback: helpful ? 'helpful' : 'not_helpful' }); try { await rateCorrection(c.id, helpful); } catch (e) { get().upsertCorrection(c); throw e; } },
+  accept: async (c) => { get().upsertCorrection({ ...c, status: 'accepted' }); try { await acceptCorrection(c.id); } catch (e) { get().upsertCorrection(c); throw e; } },
+  decline: async (c, reason) => { get().upsertCorrection({ ...c, status: 'dismissed', decision_note: reason, decided_at: new Date().toISOString() }); try { await declineCorrection(c.id, reason); } catch (e) { get().upsertCorrection(c); throw e; } },
   loadReactions: async (convId) => {
     const rows = await getReactions((get().messages[convId] ?? []).map((m) => m.id));
     const byMessage: Record<string, Reaction[]> = {}; (get().messages[convId] ?? []).forEach((m) => (byMessage[m.id] = []));
@@ -128,6 +144,32 @@ export const useChatStore = create<S>((set, get) => ({
     get().loadLists();
   },
   setReply: (convId, m) => set((s) => ({ drafts: { ...s.drafts, [convId]: m } })),
+  loadSaved: async () => {
+    const texts = await listSavedPhraseTexts();
+    set((s) => {
+      const saved: Record<string, true> = {};
+      texts.forEach((t) => { saved[t] = true; });
+      // A tap still on its way knows better than this list.
+      savingPhrase.forEach((_, p) => { if (s.saved[p]) saved[p] = true; else delete saved[p]; });
+      return { saved };
+    });
+  },
+  // Shows at once; requests for one phrase run in order, so a quick save-then-remove can't cross. A failure puts back what was there.
+  toggleSaved: (m, translation) => {
+    const phrase = phraseKey(m.body);
+    const on = !get().saved[phrase];
+    const mark = (value: boolean) => set((s) => {
+      const saved = { ...s.saved };
+      if (value) saved[phrase] = true; else delete saved[phrase];
+      return { saved };
+    });
+    mark(on);
+    const job: Promise<void> = (savingPhrase.get(phrase) ?? Promise.resolve())
+      .then(async () => { if (on) await savePhrase({ phrase, translation, languageCode: m.language_id ?? undefined, sourceMessageId: m.id }); else await unsavePhrase(phrase); })
+      .catch((e) => { mark(!on); toast.error((e as Error).message); })
+      .finally(() => { if (savingPhrase.get(phrase) === job) savingPhrase.delete(phrase); });
+    savingPhrase.set(phrase, job);
+  },
   startRealtime: () => {
     if (unsub) return;
     get().loadLists();
@@ -143,5 +185,5 @@ export const useChatStore = create<S>((set, get) => ({
       (e) => get().applyReaction(e),
       (m) => get().applyUpdate(m));
   },
-  stopRealtime: () => { unsub?.(); unsub = null; set({ active: [], requests: [], messages: {}, corrections: {}, reactions: {}, openId: null }); },
+  stopRealtime: () => { unsub?.(); unsub = null; set({ active: [], requests: [], messages: {}, corrections: {}, reactions: {}, saved: {}, openId: null }); },
 }));

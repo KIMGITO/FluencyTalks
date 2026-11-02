@@ -76,7 +76,7 @@ export default function UserProfile() {
     { to: '/learning', label: 'Learning', hint: 'Your phrasebook and progress', icon: GraduationCap },
     { to: '/points-history', label: 'Points', hint: myPoints !== undefined ? `${myPoints} points · history` : 'History', icon: Coins },
     { to: '/settings', label: 'Settings', hint: 'Account, privacy and appearance', icon: Settings },
-    ...(staff ? [{ to: '/admin', label: 'Moderation', hint: 'Reports and review', icon: Shield }] : []),
+    ...(staff ? [{ to: '/admin', label: 'Admin', hint: 'Reports and review', icon: Shield }] : []),
   ];
   return (
     <div className="flex flex-col gap-4">

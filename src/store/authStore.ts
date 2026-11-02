@@ -47,13 +47,13 @@ const run = async (set: (s: Partial<AuthState>) => void, fn: () => Promise<{ err
  * fire before our listener is registered.
  */
 const landing = (() => {
-  if (typeof window === 'undefined') return { recovery: false, linkError: null as string | null };
+  if (typeof window === 'undefined') return { recovery: false, linkError: null as string | null, invite: false };
   const { hash, search, pathname } = window.location;
   const params = new URLSearchParams(`${hash.replace(/^#/, '')}&${search.replace(/^\?/, '')}`);
   const linkError = params.get('error_description') ?? (params.get('error') ? 'Link is invalid or has expired' : null);
   const recovery = !linkError && (params.get('type') === 'recovery'
     || (pathname === '/reset-password' && (params.has('code') || params.has('access_token'))));
-  return { recovery, linkError };
+  return { recovery, linkError, invite: pathname === '/admin/accept-invite' };
 })();
 const PROD_ORIGIN = 'https://thefluencytalks.com';
 const origin = () => (typeof window !== 'undefined' ? window.location.origin : PROD_ORIGIN);
@@ -88,8 +88,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
       else { clearSessionMarkers(); set({ user: null, session: null, loading: false }); }
       return;
     }
-    // A recovery session is brand new: the idle marker left in this browser from an old visit must not sign it out.
-    if (get().recovery) touchActivity();
+    // A recovery or invitation session is brand new: the idle marker left in this browser from an old visit must not sign it out.
+    if (get().recovery || landing.invite) touchActivity();
     else if (isIdleExpired()) { await forceLogout('idle'); return; }
     if (isStaleForUser(user.id)) {
       await resetUserCaches();

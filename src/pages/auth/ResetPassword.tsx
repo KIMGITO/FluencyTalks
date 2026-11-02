@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
 import { Button, Input, Spinner } from '@/components/ui';
+import { MfaChallenge } from '@/components/features/admin/MfaForms';
+import { supabase } from '@/lib/supabase';
+import { myStaffStatus } from '@/services/admin';
 import { useAuthStore } from '@/store/authStore';
 import { useSeo } from '@/hooks/useSeo';
 
@@ -11,21 +14,35 @@ import { useSeo } from '@/hooks/useSeo';
  *  - the link is expired or already used (Supabase says so in the URL) or there is no session: say so
  *    and point to a new request, instead of showing a form that can only fail;
  *  - the password is saved: confirm, then go to the app.
+ * Staff have one more step each way: Supabase will not change a password on an account with an authenticator
+ * until the code is given, and afterwards they log in again, because the admin area needs a password login.
  */
 export default function ResetPassword() {
   useSeo({ title: 'Choose a new password', description: 'Choose a new password for your The Fluency Talks account.', path: '/reset-password', noIndex: true });
-  const { updatePassword, clearError, error, session, loading, recoveryLinkError } = useAuthStore();
+  const { updatePassword, signOut, clearError, error, session, loading, recoveryLinkError } = useAuthStore();
   const nav = useNavigate();
   const [pw, setPw] = useState(''); const [again, setAgain] = useState('');
   const [problem, setProblem] = useState(''); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false);
+  const [needsCode, setNeedsCode] = useState(false); const [staff, setStaff] = useState(false);
   useEffect(() => { clearError(); }, [clearError]);
+  useEffect(() => {
+    if (!session) return;
+    void supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => setNeedsCode(data?.nextLevel === 'aal2' && data.currentLevel === 'aal1'));
+    void myStaffStatus().then((s) => setStaff(s.is_staff)).catch(() => undefined);
+  }, [session?.user.id]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setProblem('');
     if (pw !== again) { setProblem('The two passwords do not match.'); return; }
+    if (staff && pw.length < 12) { setProblem('Staff passwords need at least 12 characters.'); return; }
     setBusy(true);
     const ok = await updatePassword(pw);
     setBusy(false);
+    if (ok && staff) {
+      await signOut();
+      nav('/login', { replace: true, state: { reason: 'Password updated. Log in with it to continue.' } });
+      return;
+    }
     if (ok) { setDone(true); window.setTimeout(() => nav('/home', { replace: true }), 1200); }
   };
 
@@ -42,12 +59,14 @@ export default function ResetPassword() {
   }
   if (done) return <AuthLayout title="Password updated"><p className="text-sm text-muted">You are signed in. Taking you to your account…</p></AuthLayout>;
 
+  if (needsCode) return <AuthLayout title="Enter your code"><MfaChallenge onDone={() => setNeedsCode(false)} onRecovered={() => setNeedsCode(false)} /></AuthLayout>;
+
   return (
     <AuthLayout title="Choose a new password">
       <form onSubmit={submit} className="space-y-3">
         <Input id="pw" type="password" label="New password" autoComplete="new-password" minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} required />
         <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" minLength={8} value={again} onChange={(e) => setAgain(e.target.value)} required />
-        <p className="text-xs text-muted">At least 8 characters.</p>
+        <p className="text-xs text-muted">At least {staff ? 12 : 8} characters.</p>
         {(problem || error) && <p className="text-sm text-danger">{problem || error}</p>}
         <Button type="submit" full loading={busy}>Save password</Button>
       </form>

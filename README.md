@@ -84,7 +84,7 @@ Design rules:
 - **Blocking is enforced in every read** via `is_blocked_between()` (both directions, silent).
 - `profiles.role`, `status` and counters cannot be edited from the client (trigger-protected).
 - **After adding any new function**, re-run the grants block at the end of `20261024000001_message_language_and_bounties.sql` (functions are callable by signed-in users only). Keep its last lines: `award_points` and `refund_expired_bounties` must stay internal-only.
-- Make yourself an admin once: `update profiles set role = 'admin' where id = '<your uid>';` in the SQL editor.
+- Create the super admin and invite staff: see [docs/ADMIN_SETUP.md](docs/ADMIN_SETUP.md). Roles can't be set by hand.
 - Deploy account deletion: `supabase functions deploy delete-account`. It is the only Edge Function, so exit cost is one small endpoint.
 - Realtime is used in exactly two places (`services/messaging.ts` for messages, corrections and reactions; `services/notifications.ts` for the bell), so it can be swapped for your own WebSocket layer later.
 
@@ -116,7 +116,7 @@ Everything in the phase-1 scope now has a screen.
 
 ### Admin access
 
-Run `update profiles set role = 'admin' where id = '<uid>';` once. Moderators (`role = 'moderator'`) can review reports and act on regular users; only admins can act on staff. The `AdminRoute` guard only hides the screens, since every admin function checks the role again in SQL.
+The super admin is created with `scripts/admin-accounts.mjs` and invites everyone else; all staff log in with a password and Google Authenticator (see [docs/ADMIN_SETUP.md](docs/ADMIN_SETUP.md)). Moderators (`role = 'moderator'`) can review reports and act on regular users; only admins can act on staff. The `AdminRoute` guard only hides the screens, since every admin function checks the role again in SQL.
 
 ## Theming rules (important)
 
