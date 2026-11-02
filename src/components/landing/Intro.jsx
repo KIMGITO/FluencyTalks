@@ -11,7 +11,7 @@ export default function Intro() {
         </div>
         <ol className="lp-steps">
           <li data-reveal><span className="lp-step__n" aria-hidden="true">1</span><div><h3>Say who you are</h3><p>Pick the language you speak natively and, if you like, the one you are learning and your level.</p></div></li>
-          <li data-reveal style={{ '--d': '.1s' }}><span className="lp-step__n" aria-hidden="true">2</span><div><h3>Meet a match</h3><p>We show people whose languages fit yours. Message them; they can accept or decline.</p></div></li>
+          <li data-reveal style={{ '--d': '.1s' }}><span className="lp-step__n" aria-hidden="true">2</span><div><h3>Meet a match</h3><p>We show native speakers of your target language and learners of your own language. Message them; they can accept or decline.</p></div></li>
           <li data-reveal style={{ '--d': '.2s' }}><span className="lp-step__n" aria-hidden="true">3</span><div><h3>Talk, get corrected, keep it</h3><p>Your partner fixes a sentence inside the chat, you accept the change, and the phrase goes into your phrasebook.</p></div></li>
         </ol>
       </div>

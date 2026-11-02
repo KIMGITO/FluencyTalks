@@ -102,6 +102,39 @@ do $$ declare r jsonb; begin
   assert exists (select 1 from public.home_feed(10, 10) f where f.username = 'amina'), 'Amina (native Swahili) appears in Linh''s feed';
 end $$;
 
+-- ============ 3b. MATCHING: a swap is the best match, not a requirement ============
+-- Extra users, created as superuser so the main flow's users stay untouched.
+reset role;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000e1', 'en@test.com'),   -- English, learning Chinese
+  ('00000000-0000-0000-0000-0000000000e2', 'zh@test.com'),   -- Chinese, learning nothing
+  ('00000000-0000-0000-0000-0000000000e3', 'fr@test.com'),   -- French, learning English
+  ('00000000-0000-0000-0000-0000000000e4', 'sw@test.com'),   -- Chinese, learning English  (a swap)
+  ('00000000-0000-0000-0000-0000000000e5', 'de@test.com');   -- German, learning Spanish (no link)
+select set_config('app.bypass_protect', 'on', false);   -- test setup only: skip the protect-columns trigger
+update public.profiles set username='m_en', display_name='En', onboarding_done=true, native_language_id='eng', learning_language_id='zho', learning_level='A2' where id='00000000-0000-0000-0000-0000000000e1';
+update public.profiles set username='m_zh', display_name='Zh', onboarding_done=true, native_language_id='zho', learning_language_id=null where id='00000000-0000-0000-0000-0000000000e2';
+update public.profiles set username='m_fr', display_name='Fr', onboarding_done=true, native_language_id='fra', learning_language_id='eng', learning_level='A2' where id='00000000-0000-0000-0000-0000000000e3';
+update public.profiles set username='m_cn', display_name='Cn', onboarding_done=true, native_language_id='zho', learning_language_id='eng', learning_level='A2' where id='00000000-0000-0000-0000-0000000000e4';
+update public.profiles set username='m_de', display_name='De', onboarding_done=true, native_language_id='deu', learning_language_id='spa', learning_level='A2' where id='00000000-0000-0000-0000-0000000000e5';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000e1');
+do $$ begin
+  assert (select match_kind from public.home_feed(50, 50) where username = 'm_zh') = 'native', 'a Chinese speaker learning nothing still matches as a teacher';
+  assert (select match_kind from public.home_feed(50, 50) where username = 'm_fr') = 'learning', 'a French speaker learning English matches although they do not speak Chinese';
+  assert (select match_kind from public.home_feed(50, 50) where username = 'm_cn') = 'swap', 'a perfect swap is ranked as swap';
+  assert (select match_kind from public.home_feed(50, 50) where username = 'm_de') = 'other', 'unrelated users are other';
+  assert (select username from public.home_feed(50, 50) limit 1) = 'm_cn', 'the swap comes first';
+  assert (select teachers from public.match_pool()) >= 2 and (select learners from public.match_pool()) >= 2, 'match_pool counts both sides';
+end $$;
+-- Someone who is learning nothing is matched to learners of their language.
+select tt.as_user('00000000-0000-0000-0000-0000000000e2');
+do $$ begin
+  assert (select match_kind from public.home_feed(50, 50) where username = 'm_en') = 'learning', 'a native with no learning language sees learners of their language';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+
 -- ============ 4. MESSAGING ============
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 create temp table ctx as select public.start_conversation('00000000-0000-0000-0000-0000000000b2') as conv;
@@ -244,18 +277,18 @@ do $$ begin assert (select count(*) from public.saved_partners where user_id = a
 -- ============ 5d. LANGUAGE RULES: MATCH TIERS, POST LANGUAGE, POINTS ============
 reset role;
 insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-0000000000e5', 'sharesnative@test.com'),
-  ('00000000-0000-0000-0000-0000000000f6', 'teacher@test.com'),
-  ('00000000-0000-0000-0000-0000000000a7', 'student@test.com'),
-  ('00000000-0000-0000-0000-0000000000a8', 'sametarget@test.com');
+  ('00000000-0000-0000-0000-0000000005e5', 'sharesnative@test.com'),
+  ('00000000-0000-0000-0000-0000000005f6', 'teacher@test.com'),
+  ('00000000-0000-0000-0000-0000000005a7', 'student@test.com'),
+  ('00000000-0000-0000-0000-0000000005a8', 'sametarget@test.com');
 set role authenticated;
-select tt.as_user('00000000-0000-0000-0000-0000000000e5');
+select tt.as_user('00000000-0000-0000-0000-0000000005e5');
 select public.set_language_profile('swh', 'fra', 'A1'); select public.save_profile('sharesnative', 'S', '', 'Africa/Nairobi', false, null, null);
-select tt.as_user('00000000-0000-0000-0000-0000000000f6');
+select tt.as_user('00000000-0000-0000-0000-0000000005f6');
 select public.set_language_profile('vie', null, null); select public.save_profile('teacher', 'T', '', 'Not/AZone', false, null, null);
-select tt.as_user('00000000-0000-0000-0000-0000000000a7');
+select tt.as_user('00000000-0000-0000-0000-0000000005a7');
 select public.set_language_profile('eng', 'swh', 'B1'); select public.save_profile('student', 'St', '', 'Europe/London', false, null, null);
-select tt.as_user('00000000-0000-0000-0000-0000000000a8');
+select tt.as_user('00000000-0000-0000-0000-0000000005a8');
 select public.set_language_profile('fra', 'vie', 'A2'); select public.save_profile('sametarget', 'Sa', '', 'Europe/Paris', false, null, null);
 
 -- Amina is native Swahili, learning Vietnamese. A bad timezone on a profile must not break her feed.

@@ -4,6 +4,7 @@ import type { Post } from '.';
 const post: Post = {
   slug: 'corrections-from-native-speakers',
   title: 'How to Get Corrections from Native Speakers Without Feeling Embarrassed',
+  seoTitle: 'How to Get Corrected by Native Speakers',
   description: 'Corrections are how you go from understandable to natural. How to ask native speakers to correct you, what kind of feedback to ask for, and how to remember it.',
   kicker: 'Speaking confidence',
   published: '2026-11-01',
@@ -43,8 +44,8 @@ const post: Post = {
       <h2>Dealing with the embarrassment</h2>
       <p>Every correction proves you are doing the hard part: using the language for real. A few things help:</p>
       <ul>
-        <li><strong>Remember they are learning too.</strong> In a language exchange your partner is making mistakes in your language. You are on the same side.</li>
-        <li><strong>Correct them back, kindly.</strong> When both people correct each other, it stops feeling like a judgement.</li>
+        <li><strong>Remember they are people too.</strong> Your partner may be learning your language and making mistakes in it. Either way, you are on the same side.</li>
+        <li><strong>Correct others, kindly.</strong> When you help someone with your own language, corrections stop feeling like a judgement.</li>
         <li><strong>Separate the mistake from yourself.</strong> "That sentence was wrong" is not "I am bad at this".</li>
       </ul>
 

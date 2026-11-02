@@ -66,3 +66,21 @@ The signed-in screens share the public pages' look. It comes from the design tok
 **A trap in this project's Tailwind setup:** `tailwind.config.ts` replaces the default palette with the tokens, so classes such as
 `text-white`, `bg-black/40`, `bg-indigo-100` or `text-aqua` generate **nothing** and the text silently falls back to the default colour.
 Use token colours only (`text-on-deep`, `bg-deep`, `text-on-brand`, `bg-brand-soft`, ...). To see which exist, read `themes.light` in `tokens.ts`.
+
+
+---
+
+# Checks that keep the design honest
+
+Three automated checks run against the built site and the app (they were used to fix the drift described below):
+
+| Check | What it enforces |
+|---|---|
+| `npm run check:seo` | Every public page: one unique title (60 characters or fewer), a description, a canonical URL, one `<h1>`, social tags, valid structured data, alt text, no broken internal links, and `robots.txt` blocking only what it should |
+| Contrast audit (in a browser, light and dark) | Every piece of text meets WCAG AA (4.5:1, or 3:1 for large text). Result at the last run: 11/11 public pages in light, 7/7 in dark, 13/13 signed-in screens in both |
+| `npm run test:db` | The database matches what the app calls |
+
+**Rules that had drifted and were put back:**
+- **Coral is not a text colour.** Coral on paper is about 2.6:1, below the 3:1 floor even for large text. Category labels ("kickers"), bullets, quote bars, the greeting cloud and the comparison table highlight had turned coral; they are muted ink or indigo again. Coral stays on buttons, link underlines, the active mark, the badge and focus rings.
+- **Text in the indigo colour must use the `brand` token**, not `deep`: in dark mode `deep` is a dark surface and text set in it disappears. (`--on-accent` is the same indigo as `--deep`, so using it for text on the indigo band made it invisible.)
+- Anything coloured with a fixed value (like the green correction example) must use the theme tokens so it adapts to dark mode.

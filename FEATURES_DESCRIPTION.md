@@ -6,7 +6,7 @@ what it depends on, and when it is used.
 
 The application is a peer-to-peer language exchange platform. A learner
 declares one native language and one language they are learning. The app
-matches them with people whose languages complement theirs. Partners chat,
+shows them native speakers of the language they are learning and learners of the language they speak, with no perfect swap required. Partners chat,
 correction each other inline, save phrases, and trade points.
 
 ---  
@@ -131,14 +131,18 @@ worst, so the user can immediately start a conversation with a good match.
 ### How it works
 - A single database function home_feed returns two ranked lists: one of
   partners the user can learn from, and one of other people.
-- The ranking logic is: first a perfect swap (each speaks natively what the
-  other is learning), then they can teach me, then I can teach them, then
-  everyone else. Sharing a native or target language is not a match.
+- The ranking logic is: first a perfect swap (their native language is my
+  target and their target is my native), then teachers (their native
+  language is my target, whatever they are learning, even nothing), then
+  learners (they are learning my native language, whatever their own native
+  language is), then everyone else. A swap is the best match, never a
+  requirement. Sharing a native or target language is not a match.
 - Within a tier, people are ordered by the most recent day they were active,
   then timezone closeness, then newest. Follower count plays no part.
 - Each result includes a match_kind label explaining why that person was
-  recommended: swap, native (they teach your target language), learning (you
-  can teach them), or other.
+  recommended (swap, native = they speak your target language, learning =
+  they are learning yours and you can help).
+- match_pool returns how many teachers and learners exist, for empty states.
 
 ### What it depends on
 - The profiles table with language and level columns.

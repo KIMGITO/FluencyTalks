@@ -4,19 +4,20 @@ import type { Post } from '.';
 const post: Post = {
   slug: 'find-a-language-exchange-partner',
   title: 'How to Find a Language Exchange Partner Online (Free)',
+  seoTitle: 'Find a Free Language Exchange Partner Online',
   description: 'Where to find a language exchange partner online for free, what to look for in a good match, and what to write in your first message so they say yes.',
   kicker: 'Getting started',
   published: '2026-11-01',
   updated: '2026-11-01',
   readMinutes: 7,
-  summary: 'The quickest way to find a language exchange partner is to look for someone who speaks the language you are learning and is learning the language you speak. Use a platform that matches by language pair, write a short, specific first message, and agree early on how often you will talk.',
+  summary: 'The quickest way to find a language exchange partner is to look for a native speaker of the language you are learning, or a learner of the language you speak. Someone who is both is a bonus, not a requirement. Use a platform that matches by language pair, write a short, specific first message, and agree early on how often you will talk.',
   body: (
     <>
       <h2>Start with the right match</h2>
-      <p>The best partner is someone whose needs mirror yours. If you speak English and are learning Vietnamese, look for a native Vietnamese speaker who is learning English. Both of you then have a reason to keep showing up.</p>
+      <p>You do not need a perfect mirror. If you speak English and are learning Vietnamese, any native Vietnamese speaker can help you, even one who is learning nothing, and you can help anyone who is learning English, even a French speaker. A native Vietnamese speaker who is also learning English is the ideal pair, because each of you has a reason to keep showing up, but waiting for one slows you down.</p>
       <p>Three things matter more than anything else:</p>
       <ul>
-        <li><strong>The language pair.</strong> They speak what you are learning; you speak what they are learning.</li>
+        <li><strong>The language pair.</strong> Someone speaks what you are learning, or is learning what you speak. Both at once is a bonus.</li>
         <li><strong>A similar level.</strong> Not identical, but if one person is at A1 and the other at C1, conversations tend to drift into one language.</li>
         <li><strong>Similar availability.</strong> Time zones matter less for text chat, but you still need to reply within a day or two.</li>
       </ul>
@@ -27,7 +28,7 @@ const post: Post = {
         <li><strong>Language exchange apps and sites.</strong> These are built for exactly this, and the good ones match you by language rather than by photos or follower counts.</li>
         <li><strong>Local meetups and university groups.</strong> Many universities run tandem programmes, and cities often have language cafés.</li>
         <li><strong>Online communities.</strong> Language-learning forums and subreddits often have partner-finding threads. Be specific about your languages and level.</li>
-        <li><strong>People you already know.</strong> A colleague or classmate who grew up speaking another language may be glad to swap.</li>
+        <li><strong>People you already know.</strong> A colleague or classmate who grew up speaking another language may be glad to help, and you can help them back.</li>
       </ul>
 
       <h2>What to look for in a profile</h2>
@@ -59,7 +60,7 @@ const post: Post = {
       <p>It happens, and it is rarely personal: people get busy. Send one friendly follow-up, then move on. It is normal to message several people before one exchange really clicks, and many learners keep two or three partners going at once.</p>
 
       <h2>Finding a partner on The Fluency Talks</h2>
-      <p>On <Link to="/">The Fluency Talks</Link>, you pick your native language and the language and level you are learning, and the people you see are chosen by that language pair, not by popularity. New contacts arrive as requests that the other person can accept or decline, and you can block or report anyone. It is free: <Link to="/signup">create an account</Link> and send your first message today.</p>
+      <p>On <Link to="/">The Fluency Talks</Link>, you pick your native language and the language and level you are learning, and you see native speakers of your target language and learners of yours, ranked by language and not by popularity. A perfect swap comes first but is never required. New contacts arrive as requests that the other person can accept or decline, and you can block or report anyone. It is free: <Link to="/signup">create an account</Link> and send your first message today.</p>
       <p>New to the idea? Start with <Link to="/blog/what-is-a-language-exchange">what a language exchange is and how it works</Link>.</p>
     </>
   ),

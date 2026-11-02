@@ -2,7 +2,7 @@
 
 > Practice a foreign language by actually talking to people who speak it well.
 
-The Fluency Talks connects **language learners** (students abroad, expats, anyone studying a language) with **native and fluent speakers**. People follow each other, message, and help each other improve. This repo is the **web app frontend (MVP phase 1)**. Supabase is the backend for everything.
+The Fluency Talks connects **language learners** (students abroad, expats, anyone studying a language) with **native and fluent speakers**. People message each other and help each other improve. A match never needs to be a perfect swap: you see native speakers of the language you are learning and learners of the language you speak. This repo is the **web app frontend (MVP phase 1)**. Supabase is the backend for everything.
 
 ## Intentions
 
@@ -172,6 +172,17 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 5. ✅ In-chat corrections, phrasebook, tap-to-translate
 6. ✅ Account deletion (needs a server-side function with the service role), data export
 7. Voice/video sessions, PWA + push, i18n/RTL
+
+## Search, AI and indexing docs
+
+| Doc | What it answers |
+|---|---|
+| `docs/INDEXING_CHECKLIST.md` | Exactly which URLs to submit, in what order, and the Cloudflare settings that can break SEO |
+| `docs/AI_VISIBILITY.md` | How ChatGPT, Gemini, Claude, Perplexity and Google AI Overviews find a site, what matters, what does not |
+| `docs/PUBLIC_CONTENT_SEO.md` | How to make content members publish searchable on the web (not built yet; a plan) |
+| `docs/SEO.md`, `docs/GOOGLE_SEARCH_CONSOLE.md`, `docs/CONTENT_PLAN.md` | On-page rules, Search Console setup, the article plan |
+
+`npm run build && npm run check:seo` tests what a crawler without JavaScript sees on every public page. CI runs it.
 
 ## Tests
 

@@ -254,7 +254,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-brand-soft">
               {post.unsplash_image_url
                 ? <img src={post.unsplash_image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                : <span className="font-mono text-xs font-bold text-brand">{(post.language_id ?? category).toUpperCase().slice(0, 3)}</span>}
+                : <span className="font-mono text-xs font-bold text-ink">{(post.language_id ?? category).toUpperCase().slice(0, 3)}</span>}
             </span>
             <span className="min-w-0 flex-1">
               <span className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{shownPhrase}</span>
@@ -319,13 +319,13 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             </div>
           )}
 
-          <span className="absolute right-2 top-2 rounded-full bg-ink/55 px-2 py-px text-2xs font-semibold text-on-deep backdrop-blur-sm">
+          <span className="absolute right-2 top-2 rounded-sm bg-deep/85 px-2 py-px text-2xs font-bold text-on-deep">
             {category}
           </span>
 
           {post.language_id && (
             <span className="absolute bottom-2 left-2 flex max-w-[70%] items-center gap-1.5 rounded-full bg-surface/85 px-2 py-px text-2xs font-semibold text-ink backdrop-blur-sm">
-              <span className="font-mono font-bold text-accent">{post.language_id.toUpperCase()}</span>
+              <span className="font-mono font-bold text-ink">{post.language_id.toUpperCase()}</span>
               <span className="truncate">{language}</span>
             </span>
           )}

@@ -14,7 +14,7 @@ export default function BlogPost() {
   const { slug } = useParams();
   const post = postBySlug(slug);
   useSeo(post
-    ? { title: post.title, description: post.description, path: `/blog/${post.slug}`, type: 'article' }
+    ? { title: post.seoTitle ?? post.title, description: post.description, path: `/blog/${post.slug}`, type: 'article' }
     : { title: 'Page not found', path: '/404', noIndex: true });
   if (!post) return <NotFound />;
 

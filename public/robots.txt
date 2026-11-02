@@ -1,7 +1,10 @@
 User-agent: *
 Allow: /
 
-# App (logged-in) + auth + onboarding must never be indexed.
+# App (logged-in) and onboarding screens must never be indexed.
+# /login, /signup, /forgot-password and /reset-password are deliberately NOT blocked here: they are kept
+# out of search with a noindex header (see _headers), and Google can only obey a noindex it is allowed to read.
+# Every sign-up button on the site links to /signup, so blocking it can leave a bare URL listed in Google.
 Disallow: /home
 Disallow: /search
 Disallow: /discover
@@ -17,10 +20,6 @@ Disallow: /bounty-queue
 Disallow: /points-history
 Disallow: /onboarding
 Disallow: /admin
-Disallow: /login
-Disallow: /signup
-Disallow: /forgot-password
-Disallow: /reset-password
 
 # AI assistants and AI search crawlers are welcome on the public pages.
 # They follow the same Disallow rules as everyone else (the `*` group above);

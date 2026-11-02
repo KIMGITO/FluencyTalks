@@ -12,10 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npx tsc --noEmit
+      - run: npm run test:auth
+      # The build prerenders the public pages; it needs these two values to exist, not to be real.
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-placeholder
+      # What a crawler that does not run JavaScript sees: titles, descriptions, canonicals, one H1, sitemap, robots.
+      - run: npm run check:seo
 
   database:
     runs-on: ubuntu-latest

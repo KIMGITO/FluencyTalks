@@ -74,7 +74,7 @@ reader is still an English speaker.
 - Say **"no followers or likes"**, not "no feed": signed-in members see a community library of posts.
 - The library is for **signed-in members**, not "public".
 - Bounty: refunded if **no answer is accepted** within 48 hours (not "if nobody helps").
-- Matching: language matches (native speakers of your target language and people learning your language) come before everyone else, in one list. Don't claim "perfect swap" ranking; the feed doesn't do it yet.
+- Matching: language matches (native speakers of your target language and people learning your language) come before everyone else, in one list. A perfect swap (their native is my target and their target is my native) ranks first, but a swap is never required. Never write "people who want the opposite" or imply both sides must want something from each other.
 
 ---
 
