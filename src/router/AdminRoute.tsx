@@ -5,6 +5,7 @@ import { MfaChallenge, MfaEnroll, RecoveryCodes } from '@/components/features/ad
 import { supabase } from '@/lib/supabase';
 import { myStaffStatus, type StaffTier } from '@/services/admin';
 import { useAuthStore } from '@/store/authStore';
+import { useProfileStore } from '@/store/profileStore';
 
 type Step = 'loading' | 'failed' | 'not_staff' | 'needs_password' | 'enroll' | 'challenge' | 'codes' | 'ready';
 
@@ -28,6 +29,7 @@ const GateCard = ({ title, children }: { title: string; children: ReactNode }) =
  */
 export function AdminRoute() {
   const signOut = useAuthStore((s) => s.signOut);
+  const role = useProfileStore((s) => s.me?.role);
   const [step, setStep] = useState<Step>('loading');
   const [tier, setTier] = useState<StaffTier | null>(null);
 
@@ -47,7 +49,12 @@ export function AdminRoute() {
   switch (step) {
     case 'loading': return <div className="flex h-screen items-center justify-center"><Spinner /></div>;
     case 'failed': return <main className="mx-auto max-w-md p-4 pt-16"><ErrorState title="Couldn't check your access" onRetry={() => void check()} /></main>;
-    case 'not_staff': return <Navigate to="/home" replace />;
+    // ProtectedRoute sends a staff role here, so going back would loop if the profile and the database disagree.
+    case 'not_staff': return role === 'user' ? <Navigate to="/home" replace /> : (
+      <GateCard title="No staff access">
+        <p className="text-sm text-muted">This account is marked as staff but has no staff record. Ask the super admin to check it. The steps are in docs/ADMIN_SETUP.md.</p>
+      </GateCard>
+    );
     case 'needs_password': return (
       <GateCard title="Log in with your password">
         <p className="text-sm text-muted">Staff accounts always log in with their email and password, then an authenticator code. Google sign-in and email links can't open the admin area.</p>

@@ -36,6 +36,15 @@ export function sessionClaims(accessToken: string | null | undefined): SessionCl
 /** A staff login counts only if it used the password and an authenticator code. Mirrors staff_session_ok() in the database. */
 export const isFullStaffLogin = ({ aal, methods }: SessionClaims) => aal === 'aal2' && methods.includes('password') && methods.includes('totp');
 
+/** Staff only see the admin area. A link into the learner app opens the admin version of that page, if it has one. */
+export function staffPathFor(pathname: string, search = ''): string {
+  const person = pathname.match(/^\/u\/([^/]+)/);
+  if (person) return `/admin/people/${person[1]}`;
+  const post = pathname.match(/^\/library\/post\/([^/]+)/);
+  if (post) return `/admin/posts/${post[1]}${search}`;
+  return pathname === '/notifications' ? '/admin/notifications' : '/admin';
+}
+
 /** Auth errors come back as English sentences from the server; show something a person can act on. */
 export function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();

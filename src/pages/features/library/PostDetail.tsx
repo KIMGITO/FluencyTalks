@@ -26,6 +26,8 @@ export default function PostDetail() {
   const location = useLocation();
   const targetId = useSearchParams()[0].get('item');
   const myId = useProfileStore((s) => s.me?.id ?? null);
+  // Staff review a post here. They can decide on it as moderators, but don't take part in it.
+  const readOnly = useProfileStore((s) => !!s.me && s.me.role !== 'user');
   const nameOf = useLanguageStore((s) => s.name);
   const loadAccountability = useAccountabilityStore((s) => s.load);
   const [thread, setThread] = useState<PostThread | null | undefined>(undefined);
@@ -109,7 +111,7 @@ export default function PostDetail() {
   const oldest = waiting.reduce<string | null>((o, i) => (!o || i.waiting_since! < o ? i.waiting_since : o), null);
   const anyOverdue = waiting.some((i) => i.due_at && new Date(i.due_at).getTime() <= Date.now());
   const hasCurrent = !!post.accepted_item_id;
-  const threadCtx = { ...ctx, thread, targetId, reload, patchItem, ownerName, myId };
+  const threadCtx = { ...ctx, thread, targetId, reload, patchItem, ownerName, myId, readOnly };
 
   const endorse = async () => {
     if (endorsing.current) return;
@@ -169,7 +171,7 @@ export default function PostDetail() {
         {record.decided > 0 && <p className="text-xs text-muted">{ownerName} has answered {record.on_time} of {record.decided} corrections on time.</p>}
 
         <div className="flex flex-wrap items-center gap-2">
-          {me.can_review && (
+          {me.can_review && !readOnly && (
             <>
               <Button size="sm" variant={me.endorsed ? 'primary' : 'secondary'} aria-pressed={me.endorsed} onClick={endorse}>
                 <ThumbsUp size={14} aria-hidden className={me.endorsed ? 'ft-pop' : undefined} /> {me.endorsed ? 'You confirmed' : 'This is correct'}{(post.endorse_count ?? 0) > 0 && ` · ${post.endorse_count}`}
@@ -179,13 +181,13 @@ export default function PostDetail() {
             </>
           )}
           {!me.can_review && (post.endorse_count ?? 0) > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted"><Check size={14} aria-hidden /> {post.endorse_count} confirmed this is correct</span>}
-          <Button size="sm" variant="ghost" aria-expanded={composer === 'comment'} onClick={() => setComposer(composer === 'comment' ? null : 'comment')}><MessageSquarePlus size={14} aria-hidden /> Reply</Button>
+          {!readOnly && <Button size="sm" variant="ghost" aria-expanded={composer === 'comment'} onClick={() => setComposer(composer === 'comment' ? null : 'comment')}><MessageSquarePlus size={14} aria-hidden /> Reply</Button>}
           {(me.is_owner || me.is_moderator) && hasCurrent && <Button size="sm" variant="ghost" onClick={() => setRevert(true)}>Go back to the original</Button>}
-          <button type="button" aria-pressed={me.muted} aria-label={me.muted ? 'Unmute this discussion' : 'Mute this discussion'} title={me.muted ? 'Unmute' : 'Mute'} onClick={mute} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink">
+          {!readOnly && <button type="button" aria-pressed={me.muted} aria-label={me.muted ? 'Unmute this discussion' : 'Mute this discussion'} title={me.muted ? 'Unmute' : 'Mute'} onClick={mute} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink">
             {me.muted ? <BellOff size={16} aria-hidden /> : <Bell size={16} aria-hidden />}
-          </button>
+          </button>}
         </div>
-        {!me.can_review && !me.is_owner && <p className="text-xs text-muted">Corrections come from native speakers and learners verified at B1 in this language. Anyone can reply.</p>}
+        {!readOnly && !me.can_review && !me.is_owner && <p className="text-xs text-muted">Corrections come from native speakers and learners verified at B1 in this language. Anyone can reply.</p>}
         {composer && (
           <Composer postId={id} parentId={null} kind={composer} currentPhrase={post.current_phrase ?? post.phrase} currentTranslation={post.current_translation ?? post.translation}
             onCancel={() => setComposer(null)} onDone={async () => { setComposer(null); await reload(); }} />

@@ -4,9 +4,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { Spinner } from '@/components/ui';
-import { isFullStaffLogin, sessionClaims } from '@/lib/authHelpers';
+import { staffPathFor } from '@/lib/authHelpers';
 export function ProtectedRoute() {
-  const { user, session, loading, validateSession, sessionCheckedAt, forceLogoutReason } = useAuthStore();
+  const { user, loading, validateSession, sessionCheckedAt, forceLogoutReason } = useAuthStore();
   const { me, status, load, reset } = useProfileStore(); const loadLanguages = useLanguageStore((s) => s.load); const loc = useLocation();
   useEffect(() => { if (user) void validateSession(); }, [loc.pathname]);
   useEffect(() => { if (user) { load(user.id); loadLanguages(); } else reset(); }, [user?.id]);
@@ -24,9 +24,8 @@ export function ProtectedRoute() {
     return <Navigate to="/login" state={{ from: loc, reason }} replace />;
   }
   const staff = !!me && me.role !== 'user'; const onboarded = !!me?.onboarding_done && !!me.native_language_id; const inAdmin = loc.pathname.startsWith('/admin');
-  // Staff finish logging in at the /admin gate before anything else opens, and don't have to set up a learner profile.
-  if (staff && !inAdmin && !isFullStaffLogin(sessionClaims(session?.access_token))) return <Navigate to="/admin" replace />;
-  if (staff && !onboarded && loc.pathname === '/home') return <Navigate to="/admin" replace />;
+  // Staff never get the learner app or its profile setup. The /admin gate decides what they see first.
+  if (staff && !inAdmin) return <Navigate to={staffPathFor(loc.pathname, loc.search)} replace />;
   if (!staff && !onboarded && loc.pathname !== '/onboarding') return <Navigate to="/onboarding" replace />;
   return <Outlet />;
 }

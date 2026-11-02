@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ChevronRight, Clock4Icon, Coins, GraduationCap, Pencil, Settings, Shield } from 'lucide-react';
+import { ChevronRight, Clock4Icon, Coins, GraduationCap, Pencil, Settings } from 'lucide-react';
 import { Avatar, Button, buttonClass, Card, EmptyState, ErrorState, PostListSkeleton, ProfileSkeleton, Spinner } from '@/components/ui';
 import {
   CountryBadge,
@@ -65,7 +65,7 @@ export default function UserProfile() {
         title="Profile unavailable"
         text="This profile doesn't exist or isn't available."
         action={
-          <Link to="/search">
+          <Link to={staff ? '/admin/people' : '/search'}>
             <Button>Search people</Button>
           </Link>
         }
@@ -76,7 +76,6 @@ export default function UserProfile() {
     { to: '/learning', label: 'Learning', hint: 'Your phrasebook and progress', icon: GraduationCap },
     { to: '/points-history', label: 'Points', hint: myPoints !== undefined ? `${myPoints} points · history` : 'History', icon: Coins },
     { to: '/settings', label: 'Settings', hint: 'Account, privacy and appearance', icon: Settings },
-    ...(staff ? [{ to: '/admin', label: 'Admin', hint: 'Reports and review', icon: Shield }] : []),
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -91,7 +90,7 @@ export default function UserProfile() {
             <div className="flex items-center gap-1.5 pt-3">
               {r.is_me
                 ? <Link to="/profile/edit" className={buttonClass('secondary', 'sm')}><Pencil size={15} aria-hidden /> Edit profile</Link>
-                : <><MessageButton userId={profile.id} /><UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} /></>}
+                : !staff && <><MessageButton userId={profile.id} /><UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} /></>}
             </div>
           </div>
 
@@ -111,7 +110,7 @@ export default function UserProfile() {
               <div className="ft-chips"><LanguageChip languages={profile.languages.map((l) => languageEntry(l, labelOf(l, locales)))} /></div>
             </div>
           )}
-          {!r.is_me && <div className="mt-4"><VouchCard userId={profile.id} name={profile.display_name} /></div>}
+          {!r.is_me && !staff && <div className="mt-4"><VouchCard userId={profile.id} name={profile.display_name} /></div>}
         </div>
       </Card>
 

@@ -48,7 +48,7 @@ All app screens are protected by `ProtectedRoute` (`src/router/ProtectedRoute.ts
 
 ## 2. How staff reach the admin area
 
-`/admin` is guarded by `AdminRoute` (`src/router/AdminRoute.tsx`). Staff log in at `/login` like anyone else, then go through the gate: a QR code the first time, an authenticator code after that. Anyone who isn't staff is sent to `/home`.
+`/admin` is guarded by `AdminRoute` (`src/router/AdminRoute.tsx`). Staff log in at `/login` like anyone else, then go through the gate: a QR code the first time, an authenticator code after that. Anyone who isn't staff is sent to `/home`. Staff only get the admin area: learner pages send them to `/admin`, and links to a person or post open `/admin/people/<username>` or `/admin/posts/<id>`.
 
 | URL | Section | Who |
 |---|---|---|

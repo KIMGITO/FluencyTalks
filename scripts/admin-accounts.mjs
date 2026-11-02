@@ -10,7 +10,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { createInterface } from 'node:readline';
 
-const SUPER_EMAIL = 'admin@thefluencytalks.com';
 const MIN_PASSWORD = 12;
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) { console.error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY first.'); process.exit(1); }
@@ -52,7 +51,15 @@ async function removeFactors(userId) {
   }
 }
 
+// The database owns the reserved address. Asking it means this script can't make an account it would then refuse.
+async function superEmail() {
+  const { data, error } = await db.rpc('super_admin_email');
+  if (error) fail(`This database isn't ready for staff accounts. Run supabase db push first.\n${error.message}`);
+  return data;
+}
+
 async function createSuperAdmin(adopt) {
+  const SUPER_EMAIL = await superEmail();
   const { error: openErr } = await db.rpc('svc_open_super_bootstrap');
   if (openErr) fail(openErr.message.includes('super_admin_exists') ? 'The super admin already exists. Use reset-mfa or reset-password.' : openErr.message);
   const existing = await findUser(SUPER_EMAIL);
@@ -71,7 +78,11 @@ async function createSuperAdmin(adopt) {
     userId = data.user.id;
   }
   const { error } = await db.rpc('svc_finish_super_bootstrap', { p_user: userId });
-  if (error) fail(error.message);
+  if (error) {
+    // Left behind, it would be an ordinary learner account on the reserved address.
+    if (!existing) await db.auth.admin.deleteUser(userId);
+    fail(error.message);
+  }
   console.log(`Super admin ready: ${SUPER_EMAIL}. Log in at /login and scan the QR code.`);
 }
 

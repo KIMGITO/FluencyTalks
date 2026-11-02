@@ -13,7 +13,7 @@ const { API_URL, ANON_KEY, SERVICE_ROLE_KEY, MAILPIT_URL = 'http://127.0.0.1:543
 if (!API_URL || !ANON_KEY || !SERVICE_ROLE_KEY) { console.error('Set API_URL, ANON_KEY and SERVICE_ROLE_KEY from `supabase status -o env`.'); process.exit(1); }
 if (!/^https?:\/\/(127\.0\.0\.1|localhost)[:/]/.test(API_URL)) { console.error('This test only runs against a local stack.'); process.exit(1); }
 
-const SUPER = 'admin@thefluencytalks.com'; const SUPER_PW = 'super-local-password-1';
+const SUPER = 'superadmin@thefluencytalks.com'; const SUPER_PW = 'super-local-password-1';
 const NEW_ADMIN = 'e2e-new-admin@test.local'; const NEW_PW = 'new-admin-password-1'; const NEW_PW_2 = 'new-admin-password-2';
 const MEMBER = 'e2e-member@test.local'; const MEMBER_PW = 'member-password-1';
 const options = { auth: { persistSession: false, autoRefreshToken: false } };

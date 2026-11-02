@@ -23,6 +23,7 @@ export const dueLabel = (iso: string) => {
 };
 
 type Ctx = {
+  readOnly: boolean;
   thread: PostThread;
   byId: Map<string, ThreadItem>;
   children: Map<string, ThreadItem[]>;
@@ -67,7 +68,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   const decider = (me.is_owner || me.is_moderator) && !mine;
   const asModerator = me.is_moderator && !me.is_owner;
   const canDecide = isCorrection && item.status === 'pending' && decider;
-  const canCounter = isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
+  const canCounter = !ctx.readOnly && isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
   const authorName = item.hidden ? 'Hidden' : item.author?.display_name ?? 'Deleted account';
   // What this proposal would replace: its parent's proposal, or the post as it stands.
   const fromPhrase = parent?.proposed_phrase ?? post.current_phrase ?? post.phrase;
@@ -176,14 +177,14 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
             {item.kind === 'clarification' && item.status === 'pending' && (decider || mine) && (
               <Button size="sm" variant="secondary" onClick={() => setDialog('resolve')}>Close with an answer</Button>
             )}
-            {isCorrection && !mine && !item.hidden && (
+            {!ctx.readOnly && isCorrection && !mine && !item.hidden && (
               <button type="button" aria-pressed={item.i_agreed} aria-label={`Agree, ${item.agree_count} so far`} onClick={agree}
                 className={clsx('inline-flex min-h-10 items-center gap-1 rounded-full px-2.5 text-xs font-semibold transition', item.i_agreed ? 'bg-brand-soft text-ink' : 'text-muted hover:bg-surface-2 hover:text-ink')}>
                 <ThumbsUp size={14} aria-hidden className={item.i_agreed ? 'ft-pop' : undefined} /> Agree{item.agree_count > 0 && ` · ${item.agree_count}`}
               </button>
             )}
             {isCorrection && mine && item.agree_count > 0 && <span className="px-1 text-xs text-muted">{item.agree_count} agree</span>}
-            {!item.hidden && (
+            {!ctx.readOnly && !item.hidden && (
               <button type="button" aria-expanded={composer === 'comment'} onClick={() => setComposer(composer === 'comment' ? null : 'comment')} className="inline-flex min-h-10 items-center rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">Reply</button>
             )}
             {canCounter && (

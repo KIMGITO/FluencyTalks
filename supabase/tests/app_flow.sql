@@ -1085,10 +1085,10 @@ update public.profiles set username = 'invited' where id = '00000000-0000-0000-0
 update public.profiles set username = 'othermod' where id = '00000000-0000-0000-0000-00000000ee06';
 
 -- The reserved address cannot come in through signup, and only the bootstrap window lets it in.
-select tt.expect_error($q$insert into auth.users (email) values ('ADMIN@thefluencytalks.com')$q$, 'reserved_email');
-select tt.expect_error($q$update auth.users set email = 'admin@thefluencytalks.com' where id = '00000000-0000-0000-0000-0000000000a1'$q$, 'reserved_email');
+select tt.expect_error($q$insert into auth.users (email) values ('SUPERADMIN@thefluencytalks.com')$q$, 'reserved_email');
+select tt.expect_error($q$update auth.users set email = 'superadmin@thefluencytalks.com' where id = '00000000-0000-0000-0000-0000000000a1'$q$, 'reserved_email');
 select public.svc_open_super_bootstrap();
-insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000ee01', 'admin@thefluencytalks.com');
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000ee01', 'superadmin@thefluencytalks.com');
 select tt.expect_error($q$select public.svc_finish_super_bootstrap('00000000-0000-0000-0000-0000000000a1')$q$, 'not_the_reserved_account');
 select public.svc_finish_super_bootstrap('00000000-0000-0000-0000-00000000ee01');
 select tt.expect_error($q$select public.svc_open_super_bootstrap()$q$, 'super_admin_exists');
@@ -1163,7 +1163,7 @@ select tt.expect_error($q$select public.admin_prepare_mfa_reset('00000000-0000-0
 
 -- The super admin invites. The token only works for the invited, confirmed address.
 select tt.as_staff('00000000-0000-0000-0000-00000000ee01');
-select tt.expect_error($q$select public.admin_create_invitation('admin@thefluencytalks.com')$q$, 'reserved_email');
+select tt.expect_error($q$select public.admin_create_invitation('superadmin@thefluencytalks.com')$q$, 'reserved_email');
 select tt.expect_error($q$select public.admin_create_invitation('admin@test.com')$q$, 'already_staff');
 select tt.expect_error($q$select public.admin_remove_staff('00000000-0000-0000-0000-00000000ee01', 'x')$q$, 'forbidden');
 create temp table invite on commit preserve rows as select public.admin_create_invitation('INV@test.com') as v;
@@ -1240,6 +1240,28 @@ select tt.as_staff('00000000-0000-0000-0000-00000000ee01');
 select public.admin_remove_staff('00000000-0000-0000-0000-00000000ee05', 'left the team');
 select tt.as_staff('00000000-0000-0000-0000-00000000ee05');
 do $$ begin assert not public.is_admin(), 'removed admin has no powers'; end $$;
+
+-- Staff run the app, they don't use it.
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
+select tt.expect_error($q$select public.start_conversation('00000000-0000-0000-0000-0000000000a1')$q$, 'staff_account');
+select tt.expect_error($q$select public.follow_user('00000000-0000-0000-0000-0000000000a1')$q$, 'staff_account');
+select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select tt.expect_error($q$select public.start_conversation('00000000-0000-0000-0000-0000000000d4')$q$, 'staff_account');
+do $$ begin
+  assert not exists (select 1 from public.search_people('theadmin') where username = 'theadmin'), 'staff are not listed to learners';
+end $$;
+
+-- A hand edit can't leave the profile and the staff record disagreeing, and someone leaving staff is listed again.
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000ee09', 'handmade@test.com');
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set native_language_id = (select id from public.languages limit 1), onboarding_done = true where id = '00000000-0000-0000-0000-00000000ee09';
+select set_config('app.bypass_protect', 'off', false);
+insert into public.admin_accounts (user_id, tier) values ('00000000-0000-0000-0000-00000000ee09', 'moderator');
+do $$ begin assert (select role = 'moderator' and not onboarding_done from public.profiles where id = '00000000-0000-0000-0000-00000000ee09'), 'staff record sets the role and unlists'; end $$;
+delete from public.admin_accounts where user_id = '00000000-0000-0000-0000-00000000ee09';
+do $$ begin assert (select role = 'user' and onboarding_done from public.profiles where id = '00000000-0000-0000-0000-00000000ee09'), 'leaving staff restores the learner'; end $$;
+set role authenticated;
 
 reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;

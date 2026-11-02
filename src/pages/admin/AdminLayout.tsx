@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useOutletContext } from 'react-router-dom';
+import { NavLink, Outlet, ScrollRestoration, useLocation, useOutletContext } from 'react-router-dom';
 import clsx from 'clsx';
-import { Activity, ArrowLeft, Flag, HeartPulse, LayoutDashboard, ListChecks, LogOut, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { Activity, Flag, HeartPulse, LayoutDashboard, ListChecks, LogOut, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
 import { Logo, Toaster } from '@/components/ui';
 import { NotificationBell } from '@/components/features/NotificationBell';
 import type { StaffTier } from '@/services/admin';
@@ -53,7 +53,6 @@ export function AdminLayout() {
           ))}
         </nav>
         <div className="hidden space-y-1 md:block">
-          <Link to="/home" className={itemClass({ isActive: false })}><ArrowLeft size={18} aria-hidden /> Back to the app</Link>
           <button type="button" className={clsx(itemClass({ isActive: false }), 'w-full')} onClick={() => void signOut()}><LogOut size={18} aria-hidden /> Sign out</button>
         </div>
       </aside>
