@@ -10,12 +10,17 @@ const count = (label: string, have: number, need: number): Row =>
   ({ label, value: `${Math.min(have, need)} / ${need}`, pct: Math.min(100, (have / need) * 100), done: have >= need });
 
 /** What still stands between this person and the next level. Empty requirements are left out. */
-const rowsFor = (e: LevelEvidence, n: LevelNeeds): Row[] => [
+const rowsFor = (e: LevelEvidence, n: LevelNeeds, next: string | null): Row[] => {
+  // A1 and A2 can come from posts; there the chat error rate waits until there is enough chat to judge.
+  const early = next === 'A1' || next === 'A2';
+  const partners = early ? e.partners_any : e.partners;
+  const reviewed = early ? e.reviewed_any : e.reviewed;
+  return [
   n.min_messages > 0 && count('Different messages', e.messages, n.min_messages),
   n.min_active_days > 0 && count('Days active', e.active_days, n.min_active_days),
-  n.min_partners > 0 && count('Native partners who replied', e.partners, n.min_partners),
-  n.min_reviewed > 0 && count('Messages they reviewed', e.reviewed, n.min_reviewed),
-  n.min_reviewed > 0 && n.max_error_pct < 100 && {
+  n.min_partners > 0 && count(early ? 'Native speakers who replied or fixed a post' : 'Native partners who replied', partners, n.min_partners),
+  n.min_reviewed > 0 && count(early ? 'Messages and posts they reviewed' : 'Messages they reviewed', reviewed, n.min_reviewed),
+  n.min_reviewed > 0 && n.max_error_pct < 100 && !(early && e.reviewed < n.min_reviewed) && {
     label: 'Recent messages needing a correction',
     value: e.error_pct == null ? `${n.max_error_pct}% or less` : `${e.error_pct}% (${n.max_error_pct}% or less)`,
     pct: e.error_pct == null ? 0 : Math.min(100, (n.max_error_pct / Math.max(e.error_pct, 1)) * 100),
@@ -30,6 +35,7 @@ const rowsFor = (e: LevelEvidence, n: LevelNeeds): Row[] => [
   },
   n.min_post_saves > 0 && count('Saves of your posts', e.post_saves, n.min_post_saves),
 ].filter((r): r is Row => !!r);
+};
 
 /** The verified level and the road to the next one. Reads and promotes on load. */
 export function LevelProgress({ language }: { language: string }) {
@@ -52,7 +58,7 @@ export function LevelProgress({ language }: { language: string }) {
 
   if (failed) return <p className="text-xs text-muted">Couldn't load your level progress.</p>;
   if (!data) return null;
-  const rows = data.evidence && data.needs ? rowsFor(data.evidence, data.needs) : [];
+  const rows = data.evidence && data.needs ? rowsFor(data.evidence, data.needs, data.next_level) : [];
 
   return (
     <div className="space-y-2 border-t border-border pt-3">
@@ -61,7 +67,7 @@ export function LevelProgress({ language }: { language: string }) {
         {data.verified_level ? `Verified at ${data.verified_level} in ${language}` : `Not verified in ${language} yet`}
       </p>
       {data.next_level
-        ? <p className="text-xs text-muted">Your level rises by itself as you chat with native speakers and make fewer errors. To reach {data.next_level}:</p>
+        ? <p className="text-xs text-muted">Your level rises by itself as you chat with native speakers and make fewer errors{data.next_level === 'A1' || data.next_level === 'A2' ? ', or as they fix your “Correct me” posts' : ''}. To reach {data.next_level}:</p>
         : <p className="text-xs text-muted">You've reached the top level.</p>}
       {rows.length > 0 && (
         <ul className="space-y-2">

@@ -1,12 +1,13 @@
 import clsx from 'clsx';
-import { Check, CornerDownRight, MoreHorizontal, ThumbsUp } from 'lucide-react';
+import { BookmarkPlus, Check, CornerDownRight, MoreHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button, ConfirmDialog } from '@/components/ui';
 import { DiffText } from '@/components/features/chat/DiffText';
 import { timeAgo, waited } from '@/lib/format';
 import { toast } from '@/store/toastStore';
-import { decideCorrection, overrideCorrection, resolveClarification, toggleAgreement, withdrawDiscussion, type PostThread, type ThreadItem } from '@/services/review';
+import { savePhrase } from '@/services/phrasebook';
+import { decideCorrection, overrideCorrection, rateHelpFix, resolveClarification, toggleAgreement, withdrawDiscussion, type PostThread, type ThreadItem } from '@/services/review';
 import { Composer } from './Composer';
 import { StatusPill } from './StatusPill';
 
@@ -38,9 +39,10 @@ type Ctx = {
 const countBelow = (id: string, children: Ctx['children']): number =>
   (children.get(id) ?? []).reduce((n, c) => n + 1 + countBelow(c.id, children), 0);
 
-function kindLabel(item: ThreadItem, parent: ThreadItem | undefined) {
+function kindLabel(item: ThreadItem, parent: ThreadItem | undefined, helpPost = false) {
   if (item.kind === 'clarification') return 'Clarification request';
   if (item.kind === 'comment') return 'Reply';
+  if (helpPost) return 'Fix';
   return parent?.kind === 'correction' ? 'Correction of a correction' : 'Correction';
 }
 
@@ -65,10 +67,11 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   const parent = item.parent_id ? byId.get(item.parent_id) : undefined;
   const mine = !!item.author && item.author.id === ctx.myId;
   const isCorrection = item.kind === 'correction';
+  const helpPost = !!post.post_type && post.post_type !== 'library';
   const decider = (me.is_owner || me.is_moderator) && !mine;
   const asModerator = me.is_moderator && !me.is_owner;
-  const canDecide = isCorrection && item.status === 'pending' && decider;
-  const canCounter = !ctx.readOnly && isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
+  const canDecide = !helpPost && isCorrection && item.status === 'pending' && decider;
+  const canCounter = !helpPost && !ctx.readOnly && isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
   const authorName = item.hidden ? 'Hidden' : item.author?.display_name ?? 'Deleted account';
   // What this proposal would replace: its parent's proposal, or the post as it stands.
   const fromPhrase = parent?.proposed_phrase ?? post.current_phrase ?? post.phrase;
@@ -87,6 +90,24 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
     }
   };
 
+  // Optimistic would hide a failure: this one is final and pays the helper, so wait for the answer.
+  const rate = async (helpful: boolean) => {
+    try {
+      await rateHelpFix(item.id, helpful);
+      toast.success(helpful ? 'Thanks sent.' : 'Noted. Thanks for telling us.');
+      await reload();
+    } catch (e) {
+      toast.error((e as Error).message);
+      await reload();
+    }
+  };
+  const keep = async () => {
+    try {
+      await savePhrase({ phrase: item.proposed_phrase!, languageCode: post.language_id ?? undefined });
+      toast.success('Added to your phrasebook.');
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
   const agree = async () => {
     if (agreeing.current) return;
     agreeing.current = true;
@@ -103,7 +124,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
 
   return (
     <li id={`item-${item.id}`} className={clsx('scroll-mt-20', branch && 'ft-child')}>
-      <article className={clsx('rounded-md px-1 py-2', targetId === item.id && 'ft-target', indent && kids.length > 0 && 'ft-descend')} aria-label={`${kindLabel(item, parent)} by ${authorName}`}>
+      <article className={clsx('rounded-md px-1 py-2', targetId === item.id && 'ft-target', indent && kids.length > 0 && 'ft-descend')} aria-label={`${kindLabel(item, parent, helpPost)} by ${authorName}`}>
         <header className="flex items-start gap-2">
           {item.author && !item.hidden
             ? <Link to={`/u/${item.author.username}`} className="shrink-0"><Avatar name={authorName} src={item.author.avatar_url} size="sm" /></Link>
@@ -117,11 +138,12 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
               <span className="text-xs text-muted">{timeAgo(item.created_at)}</span>
             </p>
             <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-              <span className={clsx('font-semibold', isCorrection && 'text-ink')}>{kindLabel(item, parent)}</span>
-              {item.status && <StatusPill status={item.status} />}
+              <span className={clsx('font-semibold', isCorrection && 'text-ink')}>{kindLabel(item, parent, helpPost)}</span>
+              {item.status && !helpPost && <StatusPill status={item.status} />}
+              {helpPost && item.status === 'accepted' && <span className="font-semibold text-success">Thanked</span>}
             </p>
           </div>
-          {(me.is_moderator && isCorrection) && (
+          {(me.is_moderator && isCorrection && !helpPost) && (
             <div className="relative">
               <button type="button" aria-label="Moderator actions" aria-expanded={menu} onClick={() => setMenu((m) => !m)} className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"><MoreHorizontal size={16} aria-hidden /></button>
               {menu && (
@@ -146,7 +168,9 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
             <>
               {isCorrection && (
                 <div className="space-y-1 rounded-md bg-surface-2 p-2.5">
-                  {item.proposed_phrase && <DiffText original={fromPhrase} corrected={item.proposed_phrase} />}
+                  {item.proposed_phrase && (post.post_type === 'how_do_i_say'
+                    ? <p className="whitespace-pre-line break-words font-semibold text-ink">{item.proposed_phrase}</p>
+                    : <DiffText original={fromPhrase} corrected={item.proposed_phrase} />)}
                   {item.proposed_translation && (
                     <div className="text-xs text-muted"><span className="font-semibold">Translation:</span> <DiffText original={fromTranslation} corrected={item.proposed_translation} /></div>
                   )}
@@ -155,7 +179,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
               <p className="whitespace-pre-line break-words text-ink">{item.body}</p>
             </>
           )}
-          {item.status && item.status !== 'pending' && (
+          {item.status && item.status !== 'pending' && !helpPost && (
             <p className="text-xs text-muted">
               {item.status[0].toUpperCase() + item.status.slice(1)}{item.decided_by_name && ` by ${item.decided_by_name}`}{item.decided_at && ` · ${timeAgo(item.decided_at)}`}
               {item.decision_note && <span className="block italic">“{item.decision_note}”</span>}
@@ -168,6 +192,15 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
           )}
 
           <div className="flex flex-wrap items-center gap-x-1 gap-y-1 pt-0.5">
+            {helpPost && isCorrection && me.is_owner && item.status === 'pending' && !item.hidden && !ctx.readOnly && (
+              <>
+                <Button size="sm" onClick={() => void rate(true)}><Check size={14} aria-hidden /> Thanks</Button>
+                <button type="button" aria-label="Not helpful" title="Not helpful" onClick={() => void rate(false)} className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"><ThumbsDown size={14} aria-hidden /></button>
+              </>
+            )}
+            {helpPost && isCorrection && !mine && !item.hidden && !ctx.readOnly && item.proposed_phrase && item.status !== 'declined' && item.status !== 'withdrawn' && (
+              <Button size="sm" variant="secondary" onClick={() => void keep()}><BookmarkPlus size={14} aria-hidden /> Add to phrasebook</Button>
+            )}
             {canDecide && (
               <>
                 <Button size="sm" onClick={() => setDialog('accept')}><Check size={14} aria-hidden /> Accept</Button>

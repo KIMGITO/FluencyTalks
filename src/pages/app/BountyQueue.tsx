@@ -4,6 +4,8 @@ import clsx from 'clsx';
 import { PageHeader } from '@/components/layout';
 import { Avatar, Button, EmptyState, ErrorState, Input, RowListSkeleton, Tabs, Textarea } from '@/components/ui';
 import { DiffText } from '@/components/features/chat/DiffText';
+import { PostCard } from '@/components/features/library';
+import { listPostsNeedingFix, type ContributionPost } from '@/services/library';
 import { answerBounty, BOUNTY_PAGE, listMyBounties, listMyBountyAnswers, listOpenBounties, type MyBounty, type MyBountyAnswer, type OpenBounty } from '@/services';
 import { qualifiedLanguages } from '@/lib/corrections';
 import { useAuthStore } from '@/store/authStore';
@@ -14,6 +16,7 @@ type Tab = 'open' | 'answers' | 'mine';
 const TABS: { key: Tab; label: string }[] = [{ key: 'open', label: 'I can answer' }, { key: 'answers', label: 'My answers' }, { key: 'mine', label: 'My bounties' }];
 /** Bounties are created and decided in other people's chats: look again when you come back, and every minute. */
 const REFRESH_MS = 60_000;
+const HELP_QUEUE = 5;
 
 const timeLeft = (iso: string) => {
   const ms = new Date(iso).getTime() - Date.now();
@@ -34,6 +37,7 @@ export default function BountyQueue() {
   const [more, setMore] = useState<'idle' | 'loading' | 'done'>('idle');
   const [answers, setAnswers] = useState<MyBountyAnswer[] | null>(null);
   const [mine, setMine] = useState<MyBounty[] | null>(null);
+  const [needFix, setNeedFix] = useState<ContributionPost[]>([]);
   const [error, setError] = useState('');
   const myId = useAuthStore((s) => s.user?.id);
   const me = useProfileStore((s) => s.me);
@@ -45,9 +49,11 @@ export default function BountyQueue() {
     try {
       const [o, a, m] = await Promise.all([listOpenBounties(0), listMyBountyAnswers(), listMyBounties()]);
       setOpen(o); setAnswers(a); setMine(m); setMore(o.length < BOUNTY_PAGE ? 'done' : 'idle');
+      // Fixes pay on a thank-you, not from escrow. A problem here must not hide the bounties.
+      if (myId) void listPostsNeedingFix(qualifiedLanguages(me), myId, HELP_QUEUE).then(setNeedFix).catch(() => undefined);
       if (myId) await loadProfile(myId);   // refunds and rewards change the balance
     } catch (e) { setError((e as Error).message); }
-  }, [myId, loadProfile]);
+  }, [myId, loadProfile, me?.native_language_id, me?.learning_language_id, me?.verified_level]);
   useEffect(() => {
     void refresh();
     const onFocus = () => { if (document.visibilityState === 'visible') void refresh(); };
@@ -76,15 +82,22 @@ export default function BountyQueue() {
       </div>
       {error && open !== null && <p className="ft-inset mb-3 text-sm text-danger">{error}</p>}
       {error && (open === null || mine === null || answers === null) ? <ErrorState title="Couldn't load bounties" onRetry={() => void refresh()} />
-        : tab === 'open' ? (
-          open === null ? <RowListSkeleton label="Loading bounties" />
+        : tab === 'open' ? (<>
+          {needFix.filter((p) => p.review_status === 'needs_fix').length > 0 && (
+            <section aria-label="Learners waiting for a fix" className="mb-4 space-y-3">
+              <h2 className="ft-inset text-sm font-semibold text-ink">Waiting for a fix · +5 points when they thank you</h2>
+              {needFix.filter((p) => p.review_status === 'needs_fix').map((p) => <PostCard key={p.id} post={p} onRemoved={(id) => setNeedFix((l) => l.filter((x) => x.id !== id))} />)}
+              <Link to="/library?tab=practice" className="ft-inset block text-sm font-semibold text-brand hover:underline">See all in Practice</Link>
+            </section>
+          )}
+          {open === null ? <RowListSkeleton label="Loading bounties" />
           : !open.length ? <EmptyState title="No open bounties" text={canAnswerIn
               ? `Bounties written in ${canAnswerIn} show up here. You can answer in languages you speak natively, or are verified at B1 or above in.`
               : 'Set your native language in your profile to answer bounties.'} />
           : <div className="space-y-3">
               {open.map((b) => <OpenCard key={b.message_id} bounty={b} language={nameOf(b.language_id)} onAnswered={() => void refresh()} />)}
               {more !== 'done' && <div className="flex justify-center"><Button variant="secondary" size="sm" loading={more === 'loading'} onClick={loadMore}>Load more</Button></div>}
-            </div>)
+            </div>}</>)
         : tab === 'answers' ? (
           answers === null ? <RowListSkeleton label="Loading your answers" />
           : !answers.length ? <EmptyState title="No answers yet" text="Answers you send to bounties appear here, with the asker's decision." />

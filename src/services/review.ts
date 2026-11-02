@@ -31,6 +31,8 @@ export const resolveClarification = (id: string, note: string) => rpc('resolve_c
 export const withdrawDiscussion = (id: string) => rpc('withdraw_discussion', { p_id: id });
 export const revertAccepted = (post: string, note: string) => rpc('revert_accepted', { p_post: post, p_note: note });
 export const overrideCorrection = (id: string, status: 'pending' | 'accepted' | 'declined', reason: string) => rpc('admin_override_correction', { p_id: id, p_status: status, p_reason: reason });
+/** Help posts only: optional, final. Helpful pays the helper; the text of the post never changes. */
+export const rateHelpFix = (id: string, helpful: boolean) => rpc('rate_help_fix', { p_id: id, p_helpful: helpful });
 export const toggleEndorsement = (post: string) => rpc<boolean>('toggle_post_endorsement', { p_post: post });
 export const toggleAgreement = (id: string) => rpc<boolean>('toggle_correction_agreement', { p_id: id });
 export const setThreadMute = (post: string, muted: boolean) => rpc('set_thread_mute', { p_post: post, p_muted: muted });

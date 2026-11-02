@@ -1,6 +1,6 @@
 import { rpc } from '@/lib/api';
 
-export interface LevelEvidence { messages: number; active_days: number; partners: number; reviewed: number; error_pct: number | null; accepted_given: number; rated: number; helpful_pct: number | null; post_saves: number }
+export interface LevelEvidence { messages: number; active_days: number; partners: number; reviewed: number; partners_any: number; reviewed_any: number; error_pct: number | null; accepted_given: number; rated: number; helpful_pct: number | null; post_saves: number }
 export interface LevelNeeds { min_messages: number; min_active_days: number; min_partners: number; min_reviewed: number; max_error_pct: number; min_accepted_given: number; min_helpful_pct: number; min_post_saves: number }
 export interface LevelProgress {
   verified_level: string | null;

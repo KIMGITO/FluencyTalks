@@ -1,22 +1,40 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Image, X, ChevronLeft, AlignLeft, AlignCenter, AlignRight, Check, Lock } from 'lucide-react';
+import { Image, X, ChevronLeft, AlignLeft, AlignCenter, AlignRight, Check, Lock, Languages, PencilLine, Sparkles, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button, DeniedState, Select, Textarea, ThreadSkeleton, Input } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
 import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
-import { getContribution, isContributionEligible, postContribution, updateContribution, type TextAlign } from '@/services/library';
+import { getContribution, isContributionEligible, postContribution, updateContribution, type ContributionPost, type HelpType, type TextAlign } from '@/services/library';
 import { useFeedCache } from '@/store/feedCache';
 import { useAccountabilityStore } from '@/store/accountabilityStore';
 import { toast } from '@/store/toastStore';
 import { LanguageMark } from '@/components/features/LanguagePicker';
 import { UnsplashPicker } from '@/components/features/library/UnsplashPicker';
+import { HelpComposer } from '@/components/features/library/HelpComposer';
+
+const isHelpType = (t: string | null | undefined): t is HelpType => t === 'correct_me' || t === 'how_do_i_say';
+
+function TypeOption({ icon: Icon, title, text, onClick }: { icon: LucideIcon; title: string; text: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="ft-card flex w-full items-start gap-3 p-4 text-left transition hover:bg-surface-2">
+      <Icon size={20} aria-hidden className="mt-0.5 shrink-0 text-accent" />
+      <span className="min-w-0">
+        <span className="block font-semibold text-ink">{title}</span>
+        <span className="block text-sm text-muted">{text}</span>
+      </span>
+    </button>
+  );
+}
 
 export default function ContributePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const editId = useSearchParams()[0].get('edit');
+  const [params, setParams] = useSearchParams();
+  const editId = params.get('edit');
+  const type = params.get('type');
+  const [helpPost, setHelpPost] = useState<ContributionPost | null>(null);   // the post being edited, when it is a request for help
   const [loadingPost, setLoadingPost] = useState(!!editId);
   // Back to wherever the user came from (Home composer, Library, a profile); Library on a direct load.
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/library'));
@@ -51,6 +69,7 @@ export default function ContributePage() {
     getContribution(editId)
       .then((p) => {
         if (!p || p.user_id !== me?.id) { setError('This post cannot be edited.'); return; }
+        if (isHelpType(p.post_type)) setHelpPost(p);
         setPhrase(p.phrase);
         setTranslation(p.translation ?? '');
         setLanguage(p.language_id ?? '');
@@ -117,6 +136,39 @@ export default function ContributePage() {
         <PageHeader title="Contribute" />
         <DeniedState title="New posts are paused" text={`${restriction.reason}. Answer them, ask for more time, or appeal, and posting comes back.`}
           action={<Link to="/notifications" className="font-semibold underline">See what's waiting</Link>} />
+      </div>
+    );
+  }
+
+  const backButton = (
+    <button type="button" onClick={goBack} className="mb-4 flex items-center gap-1 text-sm text-muted hover:text-ink">
+      <ChevronLeft size={16} /> Back
+    </button>
+  );
+  if (helpPost || isHelpType(type)) {
+    const helpType = helpPost?.post_type ?? type;
+    return (
+      <div className="mx-auto w-full max-w-3xl p-4 pb-24">
+        {backButton}
+        <PageHeader title={helpPost ? 'Edit post' : helpType === 'correct_me' ? 'Correct me' : 'How do I say…?'} />
+        <HelpComposer type={helpType as HelpType} editing={helpPost ?? undefined} onDone={goBack} />
+      </div>
+    );
+  }
+  // Someone learning a language chooses first. A native speaker with nothing to ask goes straight to the form.
+  if (!editId && !type && me?.learning_language_id) {
+    const learning = languageName(me.learning_language_id);
+    const choose = (t: string) => setParams({ type: t }, { replace: true });
+    const shareIn = qualified.map((id) => languageName(id)).join(' or ');
+    return (
+      <div className="mx-auto w-full max-w-3xl p-4 pb-24">
+        {backButton}
+        <PageHeader title="What do you want to post?" />
+        <div className="space-y-2">
+          <TypeOption icon={PencilLine} title="Correct me" text={`Write something in ${learning} and people will fix it. Mistakes are welcome, no level needed.`} onClick={() => choose('correct_me')} />
+          <TypeOption icon={Languages} title="How do I say…?" text={`Ask how to say something in ${learning}.`} onClick={() => choose('how_do_i_say')} />
+          <TypeOption icon={Sparkles} title="Share a phrase" text={`Teach a phrase, idiom or example in ${shareIn}.`} onClick={() => choose('library')} />
+        </div>
       </div>
     );
   }

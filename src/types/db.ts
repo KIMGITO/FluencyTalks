@@ -59,7 +59,8 @@ export interface ContributionPost {
   phrase: string; translation: string | null; category: 'phrase' | 'idiom' | 'usage' | 'grammar'; source_context: string | null;
   unsplash_image_url: string | null; created_at: string; updated_at: string;
   current_phrase?: string | null; current_translation?: string | null; accepted_item_id?: string | null;
-  review_status?: 'unreviewed' | 'confirmed' | 'disputed' | 'corrected'; open_corrections?: number; thread_count?: number; endorse_count?: number;
+  post_type?: 'library' | 'correct_me' | 'how_do_i_say';
+  review_status?: 'unreviewed' | 'confirmed' | 'disputed' | 'corrected' | 'needs_fix' | 'helped'; open_corrections?: number; thread_count?: number; endorse_count?: number;
   text_align: 'left' | 'center' | 'right'; pinned_at: string | null;
   saved?: boolean;   // whether the current user saved it
   author?: Person | null;

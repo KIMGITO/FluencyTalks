@@ -16,11 +16,12 @@ import { useCountries } from '@/store/countryStore';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
-import { listContributionPosts, type ContributionPost } from '@/services/library';
+import { listContributionPosts, listPostsNeedingFix, type ContributionPost } from '@/services/library';
 import { DecisionBanner } from '@/components/features/review/DecisionQueue';
 import { PostCard } from '@/components/features/library';
 import { useFeedCache, useInfiniteScroll, usePagedList } from '@/store/feedCache';
 
+const HELP_PREVIEW = 3;
 const OTHERS_PREVIEW = 5;   // the posts feed scrolls forever below, so "everyone else" is a short preview
 
 
@@ -39,6 +40,9 @@ export default function Home() {
   // Posts: cached and paged — shown instantly when coming back, next page loads on scroll.
   // Posts in my two languages come first; the key changes when those languages do.
   const feed = usePagedList(`posts:home:${me?.native_language_id ?? ''}:${me?.learning_language_id ?? ''}`, async (offset, limit) => (await listContributionPosts(undefined, undefined, { offset, limit }, true)).posts);
+  // A short strip above the feed, so requests for help are seen without filling it.
+  const myLanguages = [me?.native_language_id, me?.learning_language_id].filter((l): l is string => !!l);
+  const needingFix = usePagedList<ContributionPost>(me ? `posts:needfix:${myLanguages.join(',')}` : null, async (offset) => (offset || !me ? [] : listPostsNeedingFix(myLanguages, me.id, HELP_PREVIEW)), HELP_PREVIEW);
   const removePost = useFeedCache((s) => s.removeEverywhere);
   const sentinel = useInfiniteScroll(feed.loadMore, !feed.done && !feed.initialLoading, feed.items.length);
 
@@ -76,7 +80,7 @@ export default function Home() {
       >
         <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="md" />
         <span className="min-w-0 flex-1 truncate rounded-full border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted">
-          Share a phrase, idiom or example…
+          Ask for a correction, or share a phrase…
         </span>
         <ImagePlus size={22} className="shrink-0 text-accent" aria-hidden />
       </Link>
@@ -131,6 +135,16 @@ export default function Home() {
                 Find more people
               </Link>
             )}
+          </>
+        )}
+
+        {needingFix.items.some((p) => p.review_status === 'needs_fix') && (
+          <>
+            <Divider label="Learners asking for help" className="mt-4 mb-1" position="ne" />
+            <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+              {needingFix.items.filter((p) => p.review_status === 'needs_fix').map((p) => <PostCard key={p.id} post={p} onRemoved={removePost} />)}
+              <Link to="/library?tab=practice" className="ft-inset self-center text-sm font-semibold text-brand hover:underline">See all in Practice</Link>
+            </div>
           </>
         )}
 

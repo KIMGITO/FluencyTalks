@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { EmptyState, ErrorState, Input, PostListSkeleton, Select, Spinner, Tabs, buttonClass } from '@/components/ui';
 import { BookOpen, Plus, RefreshCw, Filter, X } from 'lucide-react';
-import { listContributionPosts, listSavedPosts, isContributionEligible, type ContributionPost } from '@/services/library';
+import { listContributionPosts, listPracticePosts, listSavedPosts, isContributionEligible, type ContributionPost } from '@/services/library';
 import { searchPosts } from '@/services/search';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useInfiniteScroll, usePagedList } from '@/store/feedCache';
@@ -21,8 +21,9 @@ const CATEGORIES = [
 
 export default function Library() {
   const [params, setParams] = useSearchParams();
-  // ?tab=saved opens the posts you saved.
-  const view = params.get('tab') === 'saved' ? 'saved' : 'all';
+  // ?tab=saved opens the posts you saved; ?tab=practice the requests for help.
+  const tab = params.get('tab');
+  const view = tab === 'saved' || tab === 'practice' ? tab : 'all';
   const [lang, setLang] = useState('');
   const [cat, setCat] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -47,9 +48,10 @@ export default function Library() {
   const q = useDebouncedValue(searchText, 300).trim();
   const serverSearch = view === 'all' && !!q;
   // Cached, paged lists: one cache entry per tab + filter combination.
-  const key = view === 'saved' ? 'posts:saved' : serverSearch ? `posts:search:${q}:${lang}` : `posts:library:${lang}:${cat}`;
+  const key = view === 'saved' ? 'posts:saved' : view === 'practice' ? `posts:practice:${lang}` : serverSearch ? `posts:search:${q}:${lang}` : `posts:library:${lang}:${cat}`;
   const list = usePagedList<ContributionPost>(key, async (offset, limit) => {
     if (view === 'saved') return listSavedPosts({ offset, limit });
+    if (view === 'practice') return listPracticePosts(lang || undefined, { offset, limit });
     if (serverSearch) return (await searchPosts({ query: q, language: lang || undefined, offset, limit })) as unknown as ContributionPost[];
     return (await listContributionPosts(lang || undefined, cat || undefined, { offset, limit })).posts;
   });
@@ -60,27 +62,27 @@ export default function Library() {
     return list.items.filter((p) =>
       // The server already filtered "all posts" by language/category (and text when searching);
       // the saved list and the search results still need the remaining filters here.
-      (!cat || p.category === cat) &&
-      (view !== 'saved' || ((!lang || p.language_id === lang) && (!needle ||
+      (view === 'practice' || !cat || p.category === cat) &&
+      (view === 'all' || ((!lang || p.language_id === lang) && (!needle ||
         p.phrase.toLowerCase().includes(needle) ||
         (p.translation ?? '').toLowerCase().includes(needle) ||
         (p.source_context ?? '').toLowerCase().includes(needle)))));
   }, [list.items, q, cat, lang, view]);
 
-  const hasFilters = lang || cat;
+  const hasFilters = lang || (view !== 'practice' && cat);
 
   return (
     <div className="mx-auto w-full max-w-3xl py-4 pb-24 md:p-4">
       <PageHeader
         title="Community Library"
-        subtitle="Browse phrases, idioms and examples contributed by the community"
+        subtitle={view === 'practice' ? 'Learners asking for help. Mistakes are welcome here.' : 'Browse phrases, idioms and examples contributed by the community'}
       />
 
       <div className="ft-inset mb-3">
         <Tabs
           value={view}
-          onChange={(key) => setParams(key === 'saved' ? { tab: 'saved' } : {}, { replace: true })}
-          items={[{ key: 'all', label: 'All posts' }, { key: 'saved', label: 'Saved' }]}
+          onChange={(key) => setParams(key === 'all' ? {} : { tab: key }, { replace: true })}
+          items={[{ key: 'all', label: 'All posts' }, { key: 'practice', label: 'Practice' }, { key: 'saved', label: 'Saved' }]}
         />
       </div>
 
@@ -129,11 +131,11 @@ export default function Library() {
 
         {me && (
           <Link
-            to="/library/contribute"
+            to={view === 'practice' ? '/library/contribute?type=correct_me' : '/library/contribute'}
             className={buttonClass('primary', 'sm')}
           >
             <Plus size={15} />
-            Contribute
+            {view === 'practice' ? 'Correct me' : 'Contribute'}
           </Link>
         )}
       </div>
@@ -150,13 +152,15 @@ export default function Library() {
             </Select>
           </div>
 
-          <div className="min-w-[11rem] flex-1">
-            <Select aria-label="Filter by category" value={cat} onChange={(e) => setCat(e.target.value)}>
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </Select>
-          </div>
+          {view !== 'practice' && (
+            <div className="min-w-[11rem] flex-1">
+              <Select aria-label="Filter by category" value={cat} onChange={(e) => setCat(e.target.value)}>
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           {hasFilters && (
             <button
@@ -187,22 +191,24 @@ export default function Library() {
         <ErrorState title="Couldn't load posts" busy={list.loading} onRetry={() => void list.refresh()} />
       ) : !displayed.length ? (
         <EmptyState
-          title={searchText || hasFilters ? 'No matching posts' : view === 'saved' ? 'No saved posts' : 'Nothing here yet'}
+          title={searchText || hasFilters ? 'No matching posts' : view === 'saved' ? 'No saved posts' : view === 'practice' ? 'Nobody has asked yet' : 'Nothing here yet'}
           text={
             searchText || hasFilters
               ? 'Try different filters or search terms.'
               : view === 'saved'
                 ? 'Use “Save post” in a post’s ⋮ menu to keep it here.'
+                : view === 'practice'
+                  ? 'Be the first. Write something in the language you are learning and people will help you fix it.'
                 : 'Be the first to share a phrase, idiom or usage example.'
           }
           action={
-            me && eligible ? (
+            me && eligible && view !== 'saved' ? (
               <Link
-                to="/library/contribute"
+                to={view === 'practice' ? '/library/contribute?type=correct_me' : '/library/contribute'}
                 className={buttonClass('primary', 'lg')}
               >
                 <Plus size={16} />
-                Contribute
+                {view === 'practice' ? 'Correct me' : 'Contribute'}
               </Link>
             ) : null
           }

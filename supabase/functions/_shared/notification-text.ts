@@ -30,6 +30,9 @@ export const notificationVerb = (n: NotificationLike): string => {
     case 'post_resolved': return `closed the clarification on${about}`;
     case 'post_reverted': return `went back to the original of${about}`;
     case 'post_override': return `changed a decision on${about} to ${n.data.status}. ${n.data.note ?? ''}`.trim();
+    case 'help_request': return `is asking for help with${about}. Can you fix it?`;
+    case 'help_fix': return `sent a fix for your post${about}`;
+    case 'help_thanked': return `thanked you for your fix on${about}${n.data.points ? `. You earned ${n.data.points} points` : ''}`;
     case 'action_reminder': return `A correction on${about} is still waiting for your decision`;
     case 'action_overdue': return n.data.waiting ? `Your correction on${about} is past its decision deadline` : `A decision on${about} is overdue`;
     case 'action_escalated': return `A decision on${about} needs a moderator`;

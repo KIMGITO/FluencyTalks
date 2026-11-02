@@ -25,6 +25,7 @@ const friendly: Record<string, string> = {
   no_change: 'Your answer is the same as the original.', bounty_needs_language: 'Choose the language this message is written in.',
   cannot_correct_self: "You can't correct your own message.",
   language_change_cooldown: 'You changed languages recently. You can change them again after 30 days.', forbidden: "You don't have access to that.",
+  learning_language_required: 'Add the language you are learning to your profile first.', help_post_fix_only: 'This post only takes fixes and replies.', invalid_post_type: 'Please try again.',
   not_contribution_eligible: 'You can post in your native language, or in your learning language once verified at B1.',
   invalid_category: 'Choose a category for this post.', invalid_image: 'Choose an image from Unsplash.',
   empty_phrase: 'Phrase cannot be empty.',

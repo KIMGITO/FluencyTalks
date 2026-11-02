@@ -1,6 +1,6 @@
 # Post types and unlocks: what we found and what we propose
 
-**Status:** proposal for discussion, 2026-11-02. Nothing here is built yet.
+**Status:** step 1 of the build order is built (section 12). Steps 2 to 4 are still proposals.
 **Numbers:** every limit and threshold in the proposal is a starting value to tune later.
 **Not checked:** production data. We don't yet know how many people post today (see section 9).
 
@@ -244,3 +244,30 @@ If step 1 doesn't get beginners answered, fix that before starting step 2.
 5. **Launch in all languages or only where helpers exist?** *Recommended: only where helpers exist.* An unanswered first post is worse than no feature. This needs the production numbers first.
 6. **Is an AI fallback acceptable when no human answers?** *Recommended: not in step 1.* Real people correcting each other is the product. Consider it later, clearly labelled, after 24 hours with no fix.
 7. **Can points buy unlocks?** *Recommended: no.* If they can be bought, unlocks stop showing that someone earned them.
+
+## 12. What step 1 built
+
+**Decisions used.** The recommended answers in section 11. Decision 5 is still open: there is no per-language gate, because that needs production numbers. A language with few helpers shows an honest note in the composer instead.
+
+**What's in it:**
+
+- **Migration** `20261102000012_help_posts.sql`: `post_type`, the help post rules, `post_help_request`, `rate_help_fix`, `help_supply`, and the level changes in section 7.
+- **Composer:** learners choose a post type first (`HelpComposer.tsx`, `ContributePage.tsx`).
+- **Practice tab:** in the Library, separate from All posts.
+- **Answers:** a strip on Home, a section in the "I can answer" queue, the Bounties badge, and notifications to up to 5 qualified people.
+- **Notebook look:** in `PostCard.tsx`, with fixes shown as diffs in `PostDetail.tsx`.
+
+**Where it differs from the sections above:**
+
+- **"How do I say…?" doesn't count as writing.** It may be written in any language, so only "Correct me" posts count toward levels.
+- **Topic ideas instead of sentence starters.** Sentence starters would have to exist for every language, and topics read the same for all of them.
+- **Home shows a strip, not a limit per page.** It shows 3 posts waiting for a fix above the feed. The feed itself stays Library posts only.
+- **A confirmation counts as help.** A qualified person tapping "This is correct" marks a "Correct me" post as helped, and counts as a review.
+- **A fix rated not helpful doesn't count.** If it was the only one, the post goes back to "Needs a fix".
+
+**Not built yet:**
+
+- The helper counter ("3 fixes to your next look"), because looks arrive in step 2.
+- The time-to-first-fix measurement in section 9.
+
+**Deploy order:** database, then the `send-push` function (it shares the notification text), then the website.

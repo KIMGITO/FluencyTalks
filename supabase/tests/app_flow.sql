@@ -1263,5 +1263,121 @@ delete from public.admin_accounts where user_id = '00000000-0000-0000-0000-00000
 do $$ begin assert (select role = 'user' and onboarding_done from public.profiles where id = '00000000-0000-0000-0000-00000000ee09'), 'leaving staff restores the learner'; end $$;
 set role authenticated;
 
+-- ============ HELP POSTS ============
+reset role;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000fade0001', 'newbie@test.com'),
+  ('00000000-0000-0000-0000-0000fade0002', 'native@test.com'),
+  ('00000000-0000-0000-0000-0000fade0003', 'other@test.com'),
+  ('00000000-0000-0000-0000-0000fade0004', 'native2@test.com'),
+  ('00000000-0000-0000-0000-0000fade0005', 'nolearn@test.com');
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set onboarding_done = true, native_language_id = 'swh', learning_language_id = 'jpn', learning_level = 'A1' where id = '00000000-0000-0000-0000-0000fade0001';
+update public.profiles set onboarding_done = true, native_language_id = 'jpn', created_at = now() - interval '30 days' where id in ('00000000-0000-0000-0000-0000fade0002', '00000000-0000-0000-0000-0000fade0004');
+update public.profiles set onboarding_done = true, native_language_id = 'swh', learning_language_id = 'jpn', learning_level = 'A1' where id = '00000000-0000-0000-0000-0000fade0003';
+update public.profiles set onboarding_done = true, native_language_id = 'jpn' where id = '00000000-0000-0000-0000-0000fade0005';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+
+-- No level needed, and only in the language you are learning.
+select tt.as_user('00000000-0000-0000-0000-0000fade0005');
+select tt.expect_error($q$select public.post_help_request('correct_me', 'Hello there', null)$q$, 'learning_language_required');
+select tt.as_user('00000000-0000-0000-0000-0000fade0001');
+select tt.expect_error($q$select public.post_help_request('library', 'Hello there', null)$q$, 'invalid_post_type');
+select tt.expect_error($q$select public.post_help_request('correct_me', '   ', null)$q$, 'empty_phrase');
+select tt.expect_error($q$select public.post_help_request('correct_me', repeat('x', 281), null)$q$, 'text_too_long');
+create temp table hp as select public.post_help_request('correct_me', 'Watashi wa gakkou ni iku deshita', 'I went to school') as id;
+do $$ begin
+  assert (select verified_level is null from public.profiles where id = auth.uid()), 'posting did not need a level';
+  assert (select post_type = 'correct_me' and review_status = 'needs_fix' and language_id = 'jpn' from public.contribution_posts where id = (select id from hp)), 'a new help post needs a fix';
+  assert not exists (select 1 from public.search_posts('gakkou')), 'help posts stay out of search';
+end $$;
+reset role;
+do $$ begin
+  assert (select count(*) from public.notifications where type = 'help_request' and user_id = '00000000-0000-0000-0000-0000fade0002') = 1, 'a qualified person hears about it';
+  assert not exists (select 1 from public.notifications where type = 'help_request' and user_id = '00000000-0000-0000-0000-0000fade0003'), 'an unqualified learner does not';
+end $$;
+set role authenticated;
+
+select public.post_help_request('how_do_i_say', 'How do I say good morning?', null);
+do $$ begin assert public.help_supply('jpn') >= 2, 'helpers are counted'; end $$;
+reset role;
+do $$ begin assert (select count(*) from public.notifications where type = 'help_request' and user_id = '00000000-0000-0000-0000-0000fade0002') = 1, 'nobody hears more than once in 6 hours'; end $$;
+set role authenticated;
+select public.post_help_request('correct_me', 'Third post of the day', null);
+select tt.expect_error($q$select public.post_help_request('correct_me', 'Fourth post of the day', null)$q$, 'rate_limited');
+
+-- Only qualified people can fix it, and fixes create no duty for the author.
+select tt.as_user('00000000-0000-0000-0000-0000fade0003');
+select tt.expect_error($q$select public.submit_discussion((select id from hp), null, 'correction', 'Fix', 'Better', null, gen_random_uuid())$q$, 'not_qualified_to_correct');
+select public.submit_discussion((select id from hp), null, 'comment', 'Good luck!', null, null, gen_random_uuid());
+select tt.as_user('00000000-0000-0000-0000-0000fade0002');
+select tt.expect_error($q$select public.submit_discussion((select id from hp), null, 'clarification', 'What?', null, null, gen_random_uuid())$q$, 'help_post_fix_only');
+create temp table fix1 as select public.submit_discussion((select id from hp), null, 'correction', 'Past tense takes ikimashita', 'Watashi wa gakkou ni ikimashita', null, gen_random_uuid()) as id;
+select tt.as_user('00000000-0000-0000-0000-0000fade0004');
+select tt.expect_error($q$select public.submit_discussion((select id from hp), (select id from fix1), 'correction', 'No', 'Other', null, gen_random_uuid())$q$, 'help_post_fix_only');
+create temp table fix2 as select public.submit_discussion((select id from hp), null, 'correction', 'Another way', 'Gakkou ni ikimashita', null, gen_random_uuid()) as id;
+reset role;
+do $$ begin
+  assert not exists (select 1 from public.decision_items where post_id = (select id from hp)), 'a help post creates no decisions';
+  assert (select review_status = 'helped' from public.contribution_posts where id = (select id from hp)), 'a fix makes it helped';
+  assert exists (select 1 from public.notifications where type = 'help_fix' and user_id = '00000000-0000-0000-0000-0000fade0001'), 'the author hears about the fix';
+end $$;
+set role authenticated;
+
+-- Thanking is optional, pays once and never replaces the text.
+select tt.as_user('00000000-0000-0000-0000-0000fade0004');
+select tt.expect_error($q$select public.rate_help_fix((select id from fix2), true)$q$, 'forbidden');
+select tt.as_user('00000000-0000-0000-0000-0000fade0001');
+select public.rate_help_fix((select id from fix1), true);
+select public.rate_help_fix((select id from fix2), false);
+select tt.expect_error($q$select public.rate_help_fix((select id from fix1), true)$q$, 'already_decided');
+select tt.expect_error($q$select public.decide_correction((select id from fix1), true, null)$q$, 'already_decided');
+reset role;
+do $$ begin
+  assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-0000fade0002') = 105, 'a thank-you pays 5';
+  assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-0000fade0004') = 100, 'not helpful pays nothing';
+  assert (select phrase = 'Watashi wa gakkou ni iku deshita' and current_phrase is null and accepted_item_id is null from public.contribution_posts where id = (select id from hp)), 'the original stays';
+  assert (select feedback = 'helpful' from public.post_discussion where id = (select id from fix1)), 'the rating is kept';
+  assert ((public.level_evidence('00000000-0000-0000-0000-0000fade0002', 'jpn')->>'accepted_given')::int) = 1, 'a thanked fix counts for the helper';
+  assert ((public.level_evidence('00000000-0000-0000-0000-0000fade0001', 'jpn')->>'error_pct') is null), 'fixes stay out of the error rate';
+end $$;
+-- The accepted-version route can never touch a help post.
+do $$ begin
+  begin
+    update public.contribution_posts set accepted_item_id = (select id from fix1) where id = (select id from hp);
+    assert false, 'a help post cannot take an accepted version';
+  exception when check_violation then null; end;
+end $$;
+-- Back to needs_fix when the only fix is rated not helpful.
+select tt.as_user('00000000-0000-0000-0000-0000fade0001');
+create temp table hp2 as select (select id from public.contribution_posts where user_id = auth.uid() and phrase = 'Third post of the day') as id;
+select tt.as_user('00000000-0000-0000-0000-0000fade0002');
+create temp table fix3 as select public.submit_discussion((select id from hp2), null, 'correction', 'Try this', 'Better third post', null, gen_random_uuid()) as id;
+select tt.as_user('00000000-0000-0000-0000-0000fade0001');
+select public.rate_help_fix((select id from fix3), false);
+do $$ begin assert (select review_status = 'needs_fix' from public.contribution_posts where id = (select id from hp2)), 'still needs a fix'; end $$;
+
+-- Levels: posts alone reach A2, but B1 still needs real chat.
+reset role;
+insert into public.contribution_posts (user_id, language_id, phrase, post_type, review_status, created_at)
+select '00000000-0000-0000-0000-0000fade0003', 'jpn', 'Practice sentence number ' || g, 'correct_me', 'needs_fix', now() - (g % 8) * interval '1 day' from generate_series(1, 100) g;
+insert into public.post_discussion (post_id, author_id, kind, body, proposed_phrase, status, client_key)
+select c.id, n.id, 'correction', 'Fix', 'Fixed sentence', 'pending', gen_random_uuid()
+from public.contribution_posts c cross join (values ('00000000-0000-0000-0000-0000fade0002'::uuid), ('00000000-0000-0000-0000-0000fade0004'::uuid)) n(id)
+where c.user_id = '00000000-0000-0000-0000-0000fade0003';
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000fade0003');
+do $$ declare p jsonb := public.my_level_progress(); begin
+  assert p->>'verified_level' = 'A2', format('posts reach A2 and stop there, got %s', p->>'verified_level');
+  assert (p->'evidence'->>'reviewed_any')::int = 100 and (p->'evidence'->>'reviewed')::int = 0, 'chat reviews are counted apart';
+end $$;
+reset role;
+do $$ begin
+  assert exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-0000fade0003' and type = 'level_up'), 'the learner hears about the promotion';
+  assert not public.can_correct_language('00000000-0000-0000-0000-0000fade0003', 'jpn'), 'posts alone give no right to correct';
+end $$;
+set role authenticated;
+
 reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;

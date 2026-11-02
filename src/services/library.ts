@@ -22,12 +22,31 @@ export const listContributionPosts = async (p_languageId?: string, p_category?: 
   let q = supabase.from('contribution_posts').select(POST_SELECT);
   // A computed column on the database (matches_my_languages): posts in my two languages, then the rest.
   if (myLanguagesFirst) q = q.order('matches_my_languages', { ascending: false });
-  q = q.order('created_at', { ascending: false }).range(...rangeOf(page));
+  q = q.eq('post_type', 'library').order('created_at', { ascending: false }).range(...rangeOf(page));
   if (p_languageId) q = q.eq('language_id', p_languageId);
   if (p_category) q = q.eq('category', p_category);
   const { data, error } = await q;
   if (error) throw error;
   return { posts: ((data ?? []) as PostRow[]).map(toPost) };
+};
+/** The Practice tab: requests for help, my languages first, then the ones still waiting for a fix. */
+export const listPracticePosts = async (p_languageId?: string, page?: Page) => {
+  let q = supabase.from('contribution_posts').select(POST_SELECT).neq('post_type', 'library')
+    .order('matches_my_languages', { ascending: false }).order('review_status', { ascending: false })
+    .order('created_at', { ascending: false }).range(...rangeOf(page));
+  if (p_languageId) q = q.eq('language_id', p_languageId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return ((data ?? []) as PostRow[]).map(toPost);
+};
+/** Help posts nobody has answered yet in these languages, oldest first so nobody waits forever. */
+export const listPostsNeedingFix = async (languages: string[], notBy: string, limit = 5) => {
+  if (!languages.length) return [];
+  const { data, error } = await supabase.from('contribution_posts').select(POST_SELECT)
+    .neq('post_type', 'library').eq('review_status', 'needs_fix').in('language_id', languages).neq('user_id', notBy)
+    .order('created_at', { ascending: true }).limit(limit);
+  if (error) throw error;
+  return ((data ?? []) as PostRow[]).map(toPost);
 };
 /** A person's posts, their pinned post first. */
 export const listUserContributionPosts = async (userId: string, page?: Page) => {
@@ -63,6 +82,10 @@ export const deletePartner = (partnerId: string) => rpc<string>('delete_partner'
 export type TextAlign = ContributionPost['text_align'];
 export const postContribution = (phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string, unsplashUrl: string, textAlign: TextAlign = 'left') => rpc<string>('post_contribution', { p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl, p_text_align: textAlign });
 export const updateContribution = (id: string, phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string | null, unsplashUrl: string | null, textAlign: TextAlign = 'left') => rpc<void>('update_contribution', { p_id: id, p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl, p_text_align: textAlign });
+export type HelpType = 'correct_me' | 'how_do_i_say';
+/** No level needed. The server picks the language: always the one you are learning. */
+export const postHelpRequest = (type: HelpType, text: string, context: string | null) => rpc<string>('post_help_request', { p_type: type, p_text: text, p_context: context });
+export const helpSupply = (language: string) => rpc<number>('help_supply', { p_language: language });
 export const pinContribution = (id: string, pinned: boolean) => rpc<void>('pin_contribution', { p_id: id, p_pinned: pinned });
 /** Returns the new state: true = saved. */
 export const toggleSavedPost = (id: string) => rpc<boolean>('toggle_saved_post', { p_post: id });

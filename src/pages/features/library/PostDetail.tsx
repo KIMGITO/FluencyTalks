@@ -19,6 +19,7 @@ const HISTORY_LABEL: Record<string, string> = {
   reverted: 'went back to the original', override: 'overrode a decision', endorsed: 'confirmed the post', extended: 'asked for more time', overdue: 'A decision passed its deadline', escalated: 'Passed to moderators',
 };
 const PAGE = 20;
+const HELP_LABEL = { correct_me: 'Correct me', how_do_i_say: 'How do I say…?' } as const;
 
 export default function PostDetail() {
   const { id = '' } = useParams();
@@ -111,6 +112,7 @@ export default function PostDetail() {
   const oldest = waiting.reduce<string | null>((o, i) => (!o || i.waiting_since! < o ? i.waiting_since : o), null);
   const anyOverdue = waiting.some((i) => i.due_at && new Date(i.due_at).getTime() <= Date.now());
   const hasCurrent = !!post.accepted_item_id;
+  const helpType = post.post_type && post.post_type !== 'library' ? post.post_type : undefined;
   const threadCtx = { ...ctx, thread, targetId, reload, patchItem, ownerName, myId, readOnly };
 
   const endorse = async () => {
@@ -142,7 +144,7 @@ export default function PostDetail() {
           <Link to={`/u/${post.author.username}`} className="shrink-0"><Avatar name={ownerName} src={post.author.avatar_url} size="md" /></Link>
           <div className="min-w-0 flex-1">
             <Link to={`/u/${post.author.username}`} className="block truncate font-semibold text-ink hover:underline">{ownerName}</Link>
-            <p className="truncate text-xs text-muted">{timeAgo(post.created_at)}{post.language_id && ` · ${nameOf(post.language_id)}`} · {post.category}</p>
+            <p className="truncate text-xs text-muted">{timeAgo(post.created_at)}{post.language_id && ` · ${nameOf(post.language_id)}`} · {helpType ? HELP_LABEL[helpType] : post.category}</p>
           </div>
           <StatusPill status={post.review_status ?? 'unreviewed'} />
         </header>
@@ -155,10 +157,10 @@ export default function PostDetail() {
           </section>
         )}
         <section aria-label="Original contribution">
-          <p className="ft-kicker">Original contribution</p>
+          <p className="ft-kicker">{helpType ? `${ownerName} wrote` : 'Original contribution'}</p>
           <p className={clsx('mt-1 whitespace-pre-line break-words text-ink', hasCurrent ? 'text-sm' : 'text-lg font-semibold')}>{post.phrase}</p>
           {post.translation && <p className="text-sm text-muted">{post.translation}</p>}
-          {post.source_context && <p className="mt-1 text-sm text-muted">{post.source_context}</p>}
+          {post.source_context && <p className="mt-1 text-sm text-muted">{helpType === 'correct_me' && 'Trying to say: '}{post.source_context}</p>}
           {post.unsplash_image_url && <img src={post.unsplash_image_url} alt="" loading="lazy" className="mt-2 aspect-[4/3] w-full rounded-md object-cover" />}
         </section>
 
@@ -168,10 +170,20 @@ export default function PostDetail() {
             {!hasCurrent && !me.is_owner && ' Until then the original stands.'}
           </p>
         )}
-        {record.decided > 0 && <p className="text-xs text-muted">{ownerName} has answered {record.on_time} of {record.decided} corrections on time.</p>}
+        {!helpType && record.decided > 0 && <p className="text-xs text-muted">{ownerName} has answered {record.on_time} of {record.decided} corrections on time.</p>}
 
         <div className="flex flex-wrap items-center gap-2">
-          {me.can_review && !readOnly && (
+          {helpType && me.can_review && !readOnly && (
+            <>
+              <Button size="sm" aria-expanded={composer === 'correction'} onClick={() => setComposer(composer === 'correction' ? null : 'correction')}><PencilLine size={14} aria-hidden /> {helpType === 'correct_me' ? 'Fix this' : 'Answer'}</Button>
+              {helpType === 'correct_me' && (
+                <Button size="sm" variant={me.endorsed ? 'primary' : 'secondary'} aria-pressed={me.endorsed} onClick={endorse}>
+                  <ThumbsUp size={14} aria-hidden className={me.endorsed ? 'ft-pop' : undefined} /> {me.endorsed ? 'You confirmed' : 'This is correct'}{(post.endorse_count ?? 0) > 0 && ` · ${post.endorse_count}`}
+                </Button>
+              )}
+            </>
+          )}
+          {!helpType && me.can_review && !readOnly && (
             <>
               <Button size="sm" variant={me.endorsed ? 'primary' : 'secondary'} aria-pressed={me.endorsed} onClick={endorse}>
                 <ThumbsUp size={14} aria-hidden className={me.endorsed ? 'ft-pop' : undefined} /> {me.endorsed ? 'You confirmed' : 'This is correct'}{(post.endorse_count ?? 0) > 0 && ` · ${post.endorse_count}`}
@@ -187,26 +199,29 @@ export default function PostDetail() {
             {me.muted ? <BellOff size={16} aria-hidden /> : <Bell size={16} aria-hidden />}
           </button>}
         </div>
-        {!readOnly && !me.can_review && !me.is_owner && <p className="text-xs text-muted">Corrections come from native speakers and learners verified at B1 in this language. Anyone can reply.</p>}
+        {helpType && me.is_owner && <p className="text-xs text-muted">Nothing here needs a decision from you. Thank the fixes that helped, and add them to your phrasebook.</p>}
+        {!readOnly && !me.can_review && !me.is_owner && <p className="text-xs text-muted">{helpType ? 'Fixes' : 'Corrections'} come from native speakers and learners verified at B1 in this language. Anyone can reply.</p>}
         {composer && (
-          <Composer postId={id} parentId={null} kind={composer} currentPhrase={post.current_phrase ?? post.phrase} currentTranslation={post.current_translation ?? post.translation}
+          <Composer postId={id} parentId={null} kind={composer} currentPhrase={post.current_phrase ?? post.phrase} currentTranslation={post.current_translation ?? post.translation} helpType={composer === 'correction' ? helpType : undefined}
             onCancel={() => setComposer(null)} onDone={async () => { setComposer(null); await reload(); }} />
         )}
       </Card>
 
       <section aria-label="Discussion" className="ft-inset">
         <h2 className="mb-1 flex items-baseline gap-2 font-display text-xl font-medium">
-          Discussion <span className="font-sans text-sm text-muted">{items.length}{pending.length > 0 && ` · ${pending.length} open`}</span>
+          {helpType ? 'Fixes and replies' : 'Discussion'} <span className="font-sans text-sm text-muted">{items.length}{!helpType && pending.length > 0 && ` · ${pending.length} open`}</span>
         </h2>
         {roots.length === 0
-          ? <p className="py-6 text-center text-sm text-muted">{me.is_owner ? 'Nobody has reviewed this yet. You will be told when they do.' : 'No corrections yet. Is it right? Confirm it, or propose a correction.'}</p>
+          ? <p className="py-6 text-center text-sm text-muted">{helpType
+              ? (me.is_owner ? 'Nobody has answered yet. You will be told as soon as someone does.' : me.can_review ? 'No fixes yet. You could be the first to help.' : 'No fixes yet.')
+              : me.is_owner ? 'Nobody has reviewed this yet. You will be told when they do.' : 'No corrections yet. Is it right? Confirm it, or propose a correction.'}</p>
           : <ul className="ft-tree space-y-1">{roots.slice(0, shown).map((r) => <ThreadBranch key={r.id} item={r} ctx={threadCtx} />)}</ul>}
         {roots.length > shown && <Button size="sm" variant="secondary" full className="mt-2" onClick={() => setShown((n) => n + PAGE)}>Show more ({roots.length - shown})</Button>}
       </section>
 
       {history.length > 0 && (
         <details className="ft-inset group">
-          <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink"><History size={15} aria-hidden /> Decision history ({history.length})</summary>
+          <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink"><History size={15} aria-hidden /> {helpType ? 'History' : 'Decision history'} ({history.length})</summary>
           <ol className="mt-1 space-y-1.5 border-l-2 border-border pl-3 text-xs text-muted">
             {history.map((e) => (
               <li key={e.id}>

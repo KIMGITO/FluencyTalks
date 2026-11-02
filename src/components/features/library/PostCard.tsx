@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bookmark, BookmarkCheck, Flag, MessagesSquare, MoreVertical, Pencil, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Flag, MessagesSquare, MoreVertical, Pencil, PencilLine, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
-import { Avatar, Button, ConfirmDialog } from '@/components/ui';
+import { Avatar, Button, ConfirmDialog, buttonClass } from '@/components/ui';
+import { canCorrect } from '@/lib/corrections';
 import { StatusPill } from '@/components/features/review/StatusPill';
 import { toast } from '@/store/toastStore';
 import { ReportDialog } from '@/components/features/ReportDialog';
@@ -40,6 +41,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   usage: 'Usage',
   grammar: 'Grammar',
 };
+
+const HELP_LABELS: Record<string, string> = { correct_me: 'Correct me', how_do_i_say: 'How do I say…?' };
 
 const ALIGN = { left: 'text-left', center: 'text-center', right: 'text-right' } as const;
 
@@ -239,6 +242,40 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
       {!isOwner && <ReportDialog open={reporting} onClose={() => setReporting(false)} userId={post.user_id} postId={post.id} />}
     </>
   );
+
+  // ---------- Help post: a page from a learner's notebook, the same in every list. ----------
+  if (post.post_type && post.post_type !== 'library') {
+    const canFix = !isOwner && canCorrect(me, post.language_id);
+    return (
+      <article className="ft-card overflow-hidden p-3 md:p-4">
+        <header className="flex items-center gap-3 px-1">
+          {profileLink(<Avatar name={authorName} src={post.author?.avatar_url} size="md" />, 'flex shrink-0')}
+          <div className="min-w-0 flex-1">
+            {profileLink(authorName, 'block truncate font-semibold text-ink hover:underline')}
+            <p className="truncate text-xs text-muted">{pinned && 'Pinned · '}{timeAgo(post.created_at)}{language && ` · ${language}`}</p>
+          </div>
+          {menu}
+        </header>
+        <Link to={threadLink} aria-label={`Open post: ${post.phrase}`} className="mt-3 block rounded-md border border-border bg-surface-2 px-4 pb-4 pt-3 transition hover:border-ink/40">
+          <span className="block w-fit -rotate-1 rounded-sm border-2 border-accent px-2 py-px text-2xs font-bold uppercase tracking-wide text-ink">{HELP_LABELS[post.post_type]}</span>
+          {/* Ruled lines sit on the same 1.75rem rhythm as the text, so words rest on them. */}
+          <span
+            className="mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink"
+            style={{ backgroundImage: 'linear-gradient(to bottom, transparent calc(1.75rem - 1px), rgba(127, 127, 127, 0.3) calc(1.75rem - 1px))', backgroundSize: '100% 1.75rem' }}
+          >{post.phrase}</span>
+          {post.source_context && <span className="mt-2 block text-sm text-muted">{post.post_type === 'correct_me' && 'Trying to say: '}{post.source_context}</span>}
+        </Link>
+        <div className="flex flex-wrap items-center gap-2 px-1 pt-2">
+          <StatusPill status={post.review_status === 'helped' ? 'helped' : 'needs_fix'} />
+          {threadSize > 0 && <span className="text-xs text-muted">{threadSize} {threadSize === 1 ? 'response' : 'responses'}</span>}
+          <Link to={threadLink} className={clsx('ml-auto', canFix ? buttonClass('primary', 'sm') : buttonClass('ghost', 'sm'))}>
+            {canFix ? <><PencilLine size={14} aria-hidden /> {post.post_type === 'correct_me' ? 'Fix this' : 'Answer'}</> : 'See responses'}
+          </Link>
+        </div>
+        {extras}
+      </article>
+    );
+  }
 
   // ---------- Compact: one row — thumbnail, two lines of text, meta. Tap to expand to the full card. ----------
   if (variant === 'compact' && !expanded) {
