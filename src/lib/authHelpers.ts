@@ -45,6 +45,16 @@ export function staffPathFor(pathname: string, search = ''): string {
   return pathname === '/notifications' ? '/admin/notifications' : '/admin';
 }
 
+/**
+ * The link behind the setup QR code, as short as the authenticator standard allows. A short link makes a QR code
+ * with fewer, larger squares, and phone cameras read those far more easily. Authenticator apps assume SHA1, 6 digits
+ * and 30 seconds, which is what Supabase uses, so those can be left out.
+ */
+export function totpSetupLink(secret: string, email: string | null | undefined): string {
+  const name = (email ?? '').split('@')[0];
+  return `otpauth://totp/FluencyTalks${name ? `:${encodeURIComponent(name)}` : ''}?secret=${secret}&issuer=FluencyTalks`;
+}
+
 /** Auth errors come back as English sentences from the server; show something a person can act on. */
 export function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();

@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import qrcode from 'qrcode-generator';
 import { Button, Card, Input, Spinner } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
-import { friendlyAuthError } from '@/lib/authHelpers';
+import { friendlyAuthError, totpSetupLink } from '@/lib/authHelpers';
 import { adminGenerateRecoveryCodes, redeemRecoveryCode, reportMfaFailure } from '@/services/admin';
+import { useAuthStore } from '@/store/authStore';
 
 const cleanCode = (v: string) => v.replace(/\D/g, '').slice(0, 6);
 const CodeInput = ({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) => (
   <Input id={id} label="6-digit code" inputMode="numeric" autoComplete="one-time-code" autoFocus value={value} onChange={(e) => onChange(cleanCode(e.target.value))} required />
 );
+
+/** Drawn here, not by Supabase: its code carries a longer link at a higher error-correction level, and phones struggle to scan it. */
+function setupQrImage(link: string) {
+  const qr = qrcode(0, 'L');
+  qr.addData(link);
+  qr.make();
+  // A wide white margin is part of the code: scanners use it to find the edges.
+  return `data:image/svg+xml,${encodeURIComponent(qr.createSvgTag({ cellSize: 8, margin: 32, scalable: true }))}`;
+}
 
 /** Shows the QR code. Nothing is switched on until a code from the app proves the scan worked. */
 export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: string; onDone: () => void; onCancel?: () => void }) {
@@ -23,7 +34,7 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
       for (const f of list?.all ?? []) if (f.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: f.id });
       const { data, error: e } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName, issuer: 'The Fluency Talks' });
       if (e || !data) { setError(friendlyAuthError(e?.message ?? 'Could not start the setup. Please try again.')); return; }
-      setFactor({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
+      setFactor({ id: data.id, qr: setupQrImage(totpSetupLink(data.totp.secret, useAuthStore.getState().user?.email)), secret: data.totp.secret });
     })();
   }, [friendlyName]);
 
@@ -43,7 +54,7 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
         <li>Scan this code, then type the 6 digits the app shows.</li>
       </ol>
       {/* White behind the code in dark mode too: scanners need the contrast. */}
-      <div className="flex justify-center"><img src={factor.qr} alt="QR code for your authenticator app" width={200} height={200} className="rounded-md bg-white p-2" /></div>
+      <div className="flex justify-center"><img src={factor.qr} alt="QR code for your authenticator app" width={304} height={304} className="h-auto max-w-full rounded-md bg-white" /></div>
       <details className="text-sm text-muted"><summary className="cursor-pointer font-semibold">Can't scan it?</summary>
         <p className="mt-1">Choose <b className="text-ink">Enter a setup key</b> in the app and type:</p>
         <code className="mt-1 block break-all rounded-md bg-surface-2 p-2 text-xs text-ink">{factor.secret}</code>

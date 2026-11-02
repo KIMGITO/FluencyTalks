@@ -54,7 +54,8 @@ async function removeFactors(userId) {
 // The database owns the reserved address. Asking it means this script can't make an account it would then refuse.
 async function superEmail() {
   const { data, error } = await db.rpc('super_admin_email');
-  if (error) fail(`This database isn't ready for staff accounts. Run supabase db push first.\n${error.message}`);
+  if (error?.code === 'PGRST202') fail('This database isn\'t ready for staff accounts. Run supabase db push first.');
+  if (error) fail(`Couldn't use that key on ${SUPABASE_URL}. Check it's the service_role or secret key.\n${error.message}`);
   return data;
 }
 

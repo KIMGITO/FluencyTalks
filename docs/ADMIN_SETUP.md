@@ -116,14 +116,26 @@ Skip this if step 3 told you to.
 
 Find the key under **Project Settings → API Keys**. Use the `service_role` key or a **secret** key. Treat it like the master password: never put it in `.env`, a `VITE_` variable, or a chat.
 
+Run these from the project folder, one line at a time. You can copy them exactly as they are:
+
 ```bash
-SUPABASE_URL=https://pilgmyaocwebzajemrfq.supabase.co SUPABASE_SERVICE_ROLE_KEY=<key> \
-  node scripts/admin-accounts.mjs create-super-admin
+export SUPABASE_URL=https://pilgmyaocwebzajemrfq.supabase.co
+read -rsp 'Paste the key, then press Enter: ' SUPABASE_SERVICE_ROLE_KEY; echo
+export SUPABASE_SERVICE_ROLE_KEY
+node scripts/admin-accounts.mjs create-super-admin
 ```
 
-If step 3 showed a `superadmin@…` account with no tier, check who made it. To take it over, add `--adopt-existing`, which replaces its password and removes any authenticators.
+The second line waits for you to paste the key. **Nothing appears as you paste, and that's normal.** Press Enter once. This way the key doesn't end up in your shell history.
 
-The script asks for a password of at least 12 characters and doesn't show it as you type. It should end with `Super admin ready`. If it prints an error, nothing was set up: don't log in, see Part 2.
+If step 3 showed a `superadmin@…` account with no tier, check who made it. To take it over, run the last line as `node scripts/admin-accounts.mjs create-super-admin --adopt-existing`, which replaces its password and removes any authenticators.
+
+The script then asks for the new super admin password, at least 12 characters, and doesn't show that as you type either. It should end with `Super admin ready`. If it prints an error, nothing was set up: don't log in, see Part 2.
+
+When you're done, remove the key from this terminal:
+
+```bash
+unset SUPABASE_SERVICE_ROLE_KEY
+```
 
 **Don't create this account any other way.** Not through `/signup`, and not with **Add user** in the dashboard. Either way you'd get an ordinary learner, or a refusal.
 
@@ -133,7 +145,7 @@ Staff do this too, after accepting an invitation.
 
 1. Go to `/login`, enter the email and password, and select **Log in**.
 2. You should land on **Set up your authenticator**, showing a QR code. You should **not** see "Set up your profile". If you do, see Part 2.
-3. In Google Authenticator, tap **+**, then **Scan a QR code**, and scan it. If you can't scan, choose **Can't scan it?** on the page, then **Enter a setup key** in the app.
+3. In Google Authenticator, tap **+**, then **Scan a QR code**, and scan it. It's saved in the app as **FluencyTalks** with the first part of your email. If the camera doesn't pick it up, hold the phone 20–30 cm from the screen, turn the screen brightness up and zoom the page in. If you still can't scan, choose **Can't scan it?** on the page, then **Enter a setup key** in the app and type the key shown.
 4. Type the 6-digit code and select **Turn on**. Nothing is switched on until a valid code is entered. If you leave before this, you get a new QR code next time.
 5. **Save the 10 recovery codes** in your password manager, not on the phone. They're shown once.
 6. You arrive at the admin **Overview**. The sidebar shows Reports, Decisions, People, Activity, Team, Health, Logs and Security.
@@ -157,9 +169,13 @@ Only the super admin can do this.
 | "Set up your profile" after logging in as admin | Either the website is the old version, or this account isn't staff | Do step 6, then run the step 3 query. If the account has no tier, do step 7. |
 | A "Moderation" tab with no access | The old website is running against the new database | Do step 6. Reload, or use a private window. |
 | "Couldn't check your access" | The database doesn't have the migrations yet | Do step 4. |
-| "This database isn't ready for staff accounts" from the script | Same | Do step 4, then run the script again. |
+| `bash: key: No such file or directory` | A command was run with a `<key>` placeholder still in it | Use the commands in step 7, which have nothing to replace. |
+| "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY first." from the script | The key or URL isn't set in this terminal, for example in a new window | Run the `export` and `read` lines in step 7 again. |
+| "Couldn't use that key" from the script | The key is wrong, or it's the public anon key | Copy the `service_role` or secret key again from **Project Settings → API Keys**, and run the `read` and `export` lines in step 7 again. |
+| "This database isn't ready for staff accounts" from the script | The database doesn't have the migrations yet | Do step 4, then run the script again. |
 | "No staff access" | The profile says staff but there's no staff record | Run the step 3 query. Remove and re-invite the person. |
 | An error instead of the QR code | TOTP is turned off | See step 2, first row. |
+| The phone won't detect a very dense QR code | The website is an older version | Do step 6 and reload. Until then, use **Can't scan it?** and enter the setup key by hand. |
 | "This email address can't be used to sign up" | That's the reserved address working as intended | Use step 7. |
 | "Invalid login" for `admin@…` | The account moved to the new address | Log in with `superadmin@…` and the same password. |
 | Invitation fails or never arrives | Built-in email sender, or `admin-staff` isn't deployed | See steps 2 and 5. |
@@ -190,8 +206,14 @@ Always confirm who's asking through a channel other than email, such as a call o
 **Owner script: the last resort.** It needs the service role key, and it's the only thing that can recover a super admin with no codes left:
 
 ```bash
-SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/admin-accounts.mjs reset-mfa superadmin@thefluencytalks.com
-SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/admin-accounts.mjs reset-password superadmin@thefluencytalks.com
+export SUPABASE_URL=https://pilgmyaocwebzajemrfq.supabase.co
+read -rsp 'Paste the key, then press Enter: ' SUPABASE_SERVICE_ROLE_KEY; echo
+export SUPABASE_SERVICE_ROLE_KEY
+
+node scripts/admin-accounts.mjs reset-mfa superadmin@thefluencytalks.com
+node scripts/admin-accounts.mjs reset-password superadmin@thefluencytalks.com
+
+unset SUPABASE_SERVICE_ROLE_KEY
 ```
 
 Each MFA reset cuts off existing sessions at once and is written to the audit trail. Whoever holds the service role key can always get in, so keep it to as few people as possible and rotate it if it may have leaked.

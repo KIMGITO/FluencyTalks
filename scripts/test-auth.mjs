@@ -1,6 +1,6 @@
 // Tests for the password-reset / auth helpers. Run: node --experimental-strip-types scripts/test-auth.mjs
 import assert from 'node:assert/strict';
-import { parseLanding, friendlyAuthError, sessionClaims, isFullStaffLogin, staffPathFor } from '../src/lib/authHelpers.ts';
+import { parseLanding, friendlyAuthError, sessionClaims, isFullStaffLogin, staffPathFor, totpSetupLink } from '../src/lib/authHelpers.ts';
 
 // A working recovery link (implicit flow): tokens and type=recovery in the hash.
 assert.deepEqual(parseLanding('#access_token=abc&refresh_token=x&expires_in=3600&type=recovery', '', '/reset-password'), { recovery: true, linkError: null });
@@ -34,6 +34,10 @@ assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal2', amr: amr('totp'
 assert.equal(isFullStaffLogin(sessionClaims(token({ aal: 'aal2', amr: amr('totp', 'otp') }))), false);
 assert.equal(isFullStaffLogin(sessionClaims('not-a-token')), false);
 assert.equal(isFullStaffLogin(sessionClaims(null)), false);
+
+assert.equal(totpSetupLink('ABC234', 'superadmin@thefluencytalks.com'), 'otpauth://totp/FluencyTalks:superadmin?secret=ABC234&issuer=FluencyTalks');
+assert.equal(totpSetupLink('ABC234', 'a+b@x.com'), 'otpauth://totp/FluencyTalks:a%2Bb?secret=ABC234&issuer=FluencyTalks');
+assert.equal(totpSetupLink('ABC234', null), 'otpauth://totp/FluencyTalks?secret=ABC234&issuer=FluencyTalks');
 
 assert.equal(staffPathFor('/home'), '/admin');
 assert.equal(staffPathFor('/onboarding'), '/admin');
