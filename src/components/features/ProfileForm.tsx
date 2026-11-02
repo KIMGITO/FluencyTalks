@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Avatar, Button, Input, Select, Textarea } from '@/components/ui';
 import { LanguageSelect, type LanguageChoice, type LearnerLevel } from './LanguageSelect';
 import { CountryPicker } from './CountryPicker';
-import { MAX_AVATAR_BYTES } from '@/lib/constants';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
+import { resizeImage } from '@/lib/image';
 import { useAuthStore } from '@/store/authStore';
 import { useCountries } from '@/store/countryStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -25,14 +25,21 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
   const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
   const [langs, setLangs] = useState<LanguageChoice>({ native: me?.native_language_id ?? '', learning: me?.learning_language_id ?? '', level: (me?.learning_level as LearnerLevel | null) ?? 'A1' }); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
-  
-  
+  const providerAvatar = useProviderAvatar();
+  const [useProvider, setUseProvider] = useState(false);   // switch back from an uploaded photo to the Google one
+  const fileUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
+
   if (!user) return <Navigate to="/login" replace />;
 
-  const pick = (f?: File) => { if (f && f.size > MAX_AVATAR_BYTES) return setError('Photo must be under 2 MB.'); setError(null); setFile(f ?? null); };
-  
-  const providerAvatar = useProviderAvatar();
-  const preview = file ? URL.createObjectURL(file) : resolveAvatar(me?.avatar_url, providerAvatar);
+  // Any size or camera photo: it's shrunk on the device before upload.
+  const pick = async (f?: File) => {
+    setError(null); setUseProvider(false);
+    if (!f) return setFile(null);
+    try { setFile(await resizeImage(f)); } catch (err) { setError((err as Error).message); }
+  };
+  const preview = fileUrl ?? (useProvider ? providerAvatar : resolveAvatar(me?.avatar_url, providerAvatar));
+  const hasOwnPhoto = !!me?.avatar_url && me.avatar_url !== providerAvatar;
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setError(null); onError?.('');
     if (!USERNAME_RE.test(username)) return setError('Username: 3 to 20 letters, numbers or underscores.');
@@ -40,7 +47,7 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
     if (!adult) return setError('You must be 16 or older to join.');
     setBusy(true);
     try {
-      const avatarUrl = file ? await uploadAvatar(user.id, file) : undefined;
+      const avatarUrl = file ? await uploadAvatar(user.id, file) : useProvider && providerAvatar ? providerAvatar : undefined;
       await save({ username, displayName: displayName.trim() || username, bio, timezone: tz, isPrivate, avatarUrl, countryCode: country }, langs);
       if (mode === 'onboarding') await Promise.all([recordConsent('age_18', '1'), recordConsent('terms', '1'), recordConsent('privacy', '1')]);
       onDone();
@@ -54,9 +61,10 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
       <div className="flex items-center gap-4">
         <Avatar name={displayName || username || 'U'} src={preview} size="xl" ring />
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-brand"><input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} /><span className="cursor-pointer font-medium">Choose photo</span></label>
-          {file && <button type="button" className="text-left text-xs text-muted hover:text-danger" onClick={() => pick(undefined)}>Remove (use {providerAvatar ? 'Google photo' : 'initials'} instead)</button>}
-          {!file && !me?.avatar_url && providerAvatar && <p className="text-xs text-muted">Showing your Google photo. Choose one to replace it.</p>}
+          <label className="text-sm text-brand"><input type="file" accept="image/*" className="sr-only" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} /><span className="cursor-pointer font-medium">{preview ? 'Change photo' : 'Choose photo'}</span></label>
+          {file && <button type="button" className="text-left text-xs text-muted hover:text-danger" onClick={() => void pick(undefined)}>Cancel new photo</button>}
+          {!file && !useProvider && hasOwnPhoto && providerAvatar && <button type="button" className="text-left text-xs text-muted hover:text-ink" onClick={() => setUseProvider(true)}>Use my Google photo instead</button>}
+          {!file && (useProvider || !hasOwnPhoto) && providerAvatar && <p className="text-xs text-muted">Showing your Google photo. Choose one to replace it.</p>}
         </div>
       </div>
       <Input id="username" label="Username" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} required />

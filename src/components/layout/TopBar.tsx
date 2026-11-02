@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Search, Settings } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Logo, buttonClass } from '@/components/ui';
 import { NotificationBell } from '@/components/features/NotificationBell';
 
@@ -9,11 +9,10 @@ export function TopBar() {
       {/* Phones: just the mark; the full name from sm up */}
       <span className="sm:hidden"><Logo to="/home" compact /></span>
       <span className="hidden sm:block"><Logo to="/home" /></span>
-      <div className="ml-auto flex items-center gap-1 sm:gap-2">
+      <div className="ml-auto flex items-center">
         {/* Phones: search lives here; from md up it's in the sidebar */}
         <Link to="/search" aria-label="Search" className={`${buttonClass('ghost', 'sm')} h-10 w-10 px-0 md:hidden`}><Search size={20} aria-hidden /></Link>
         <NotificationBell />
-        <Link to="/settings" aria-label="Settings" className={`${buttonClass('ghost', 'sm')} h-10 w-10 px-0`}><Settings size={20} aria-hidden /></Link>
       </div>
     </header>
   );
