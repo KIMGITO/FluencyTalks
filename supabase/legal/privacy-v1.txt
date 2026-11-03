@@ -1,0 +1,32 @@
+Last updated 24 October 2026
+Information we collect
+Transparent data collection
+We collect what you give us when you create an account, practise a language or chat with a partner.
+Account and profile: email, username, avatar, native and target languages.
+Messages and content: the messages you send, corrections, translated phrases and saved vocabulary.
+Contributions: your posts, the corrections and replies you write, and the decisions you make on them, which stay in the discussion history. If you delete your account your name is removed from what you wrote elsewhere.
+Activity: when you were last active, unless you turn this off in Settings, and the level your activity has earned.
+Technical data: IP address, device type, browser settings and usage analytics.
+How we use your data
+Empowering your fluency
+Every piece of data has a purpose.
+Core service: partner matching, real-time chat and conversation practice.
+Safety: preventing spam and abuse, and enforcing our terms.
+Notifications: practice reminders, partner messages and security updates.
+Third parties
+Trusted infrastructure partners
+We never sell your personal information. We share data only with the providers that run the service.
+Supabase: encrypted database and sign-in.
+Translation: the text you ask to translate is sent to a translation service (MyMemory).
+Image search: when you search for a picture for a phrase, your search words are sent to Unsplash through our server. Your name and account are not.
+Privacy first
+Your conversations are built on trust
+Your chats are yours. We collect only what we need, protect it carefully and never use it to sell advertising.
+Retention and rights
+Complete control in your hands
+You own your data at all times. We follow GDPR and CCPA principles.
+Export: download a copy of your data from Settings.
+Deletion: deleting your account removes your profile, messages, saved phrases and points straight away. See Delete my data.
+Reports: if someone reported you, the report is kept for safety, without your account attached.
+Questions about this page?
+Write to privacy@thefluencytalks.com

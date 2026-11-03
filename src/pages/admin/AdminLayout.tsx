@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet, ScrollRestoration, useLocation, useOutletContext } from 'react-router-dom';
 import clsx from 'clsx';
-import { LogOut, WifiOff } from 'lucide-react';
+import { CirclePause, LogOut, WifiOff } from 'lucide-react';
 import { Avatar, CountBadge, Logo, ThemeToggle, Toaster } from '@/components/ui';
 import { NotificationBell } from '@/components/features/NotificationBell';
 import { Chip } from '@/components/features/admin/AdminKit';
@@ -10,6 +10,7 @@ import { useAction } from '@/hooks/useAction';
 import { useOnline } from '@/hooks/useOnline';
 import type { StaffTier } from '@/services/admin';
 import { useAdminStore } from '@/store/adminStore';
+import { useAppStatusStore } from '@/store/appStatusStore';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -26,6 +27,7 @@ export function AdminLayout() {
   const { overview, refresh, reset } = useAdminStore();
   const { pathname } = useLocation();
   const online = useOnline();
+  const paused = useAppStatusStore((s) => s.status?.paused);
   const leave = useAction(signOut, { error: "Couldn't sign you out. Please try again." });
   useEffect(() => { if (!user?.id) return; startNotifications(user.id); return stopNotifications; }, [user?.id]);
   useEffect(() => { void refresh(); }, [pathname]);
@@ -75,9 +77,10 @@ export function AdminLayout() {
           <div className="flex min-w-0 items-center gap-1">
             <span className="mr-1"><Chip tone={tier === 'super' ? 'accent' : tier === 'admin' ? 'brand' : 'aqua'}>{TIER_LABEL[tier]}</Chip></span>
             <span className="hidden md:block"><ThemeToggle /></span>
-            <NotificationBell />
+            <NotificationBell allTo="/admin/notifications" />
           </div>
         </header>
+        {paused && <p role="status" className="flex items-center justify-center gap-2 bg-danger px-3 py-1.5 text-xs font-semibold text-surface"><CirclePause size={14} aria-hidden /> The app is paused for users. Only staff can use it.</p>}
         {!online && <p role="status" className="flex items-center justify-center gap-2 bg-deep px-3 py-1.5 text-xs font-semibold text-on-deep"><WifiOff size={14} aria-hidden /> You're offline. Decisions and changes need a connection.</p>}
         <main className="mx-auto w-full max-w-5xl py-4 pb-[calc(var(--layout-bottomNavH)+2.5rem+env(safe-area-inset-bottom,0px))] md:px-6 md:py-6 md:pb-8">
           <div key={pathname} className="ft-page">

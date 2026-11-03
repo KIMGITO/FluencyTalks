@@ -56,7 +56,7 @@ Open your project at [supabase.com/dashboard](https://supabase.com/dashboard). M
 | **Authentication → URL Configuration** | **Site URL:** `https://thefluencytalks.com`. **Redirect URLs:** add `https://thefluencytalks.com/**`. | Invitation links land on the home page and lose their token. |
 | **Authentication → Emails → SMTP Settings** | Turn on custom SMTP with a real provider such as Resend, Brevo or Postmark. | The built-in sender only mails your project's team members, about 2 emails an hour, so invitations fail. |
 | **Authentication → Emails → Templates** | Leave **Invite user** and **Magic Link** using `{{ .ConfirmationURL }}`, as they are by default. | The invitation has no working link. |
-| **Database → Extensions** | Enable `pg_cron`. | The uptime history on the Health page stays empty. |
+| **Database → Extensions** | Enable `pg_cron` and `pg_net`. Then finish the setup in [DATA_RETENTION.md](DATA_RETENTION.md). | The uptime history on the Health page stays empty, and logs and records are never archived. |
 
 ### Step 3. Check what's on the database now
 

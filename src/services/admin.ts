@@ -19,6 +19,7 @@ export interface SystemHealth {
   jobs: { job: string; schedule: string; active: boolean; last_status: string | null; last_run: string | null }[] | null;
   security: { staff_total: number; staff_without_mfa: number; staff_low_on_codes: number; open_invitations: number; failed_mfa_24h: number; failed_recovery_24h: number; accounts_locked: number };
 }
+export interface ArchiveStatus { configured: boolean; files: number; rows: number; bytes: number; destroyed: number; last_released_at: string | null; oldest_waiting: string | null; failed: number; active_holds: number; overdue_destruction: number; last_checkpoint_at: string | null; integrity_ok: boolean | null; consent_records: number }
 export interface ServiceProbe { name: string; ok: boolean; status: number; ms: number }
 export interface HealthProbe { services: ServiceProbe[]; secrets: { web_push: boolean; unsplash: boolean } }
 export interface AppLog { id: number; level: 'info' | 'warn' | 'error'; source: string; message: string; context: Record<string, unknown>; created_at: string; username: string | null }
@@ -32,6 +33,7 @@ export const adminListTeam = () => rpc<Team>('admin_list_team');
 export const adminRevokeInvitation = (id: string) => rpc('admin_revoke_invitation', { p_id: id });
 export const adminGenerateRecoveryCodes = () => rpc<string[]>('admin_generate_recovery_codes');
 export const adminSystemHealth = () => rpc<SystemHealth>('admin_system_health');
+export const adminArchiveStatus = () => rpc<ArchiveStatus>('admin_archive_status');
 export const adminLogs = (level?: AppLog['level']) => rpc<AppLog[]>('admin_logs', { p_level: level ?? null, p_limit: 100, p_before: null });
 export const adminAuditFeed = () => rpc<AuditEntry[]>('admin_audit_feed', { p_limit: 100 });
 export const adminAuthEvents = () => rpc<AuthEvent[]>('admin_auth_events', { p_limit: 100 });

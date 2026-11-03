@@ -25,13 +25,26 @@ export const saveProfile = (p: { username: string; displayName: string; bio: str
   rpc('save_profile', { p_username: p.username, p_display_name: p.displayName, p_bio: p.bio, p_timezone: p.timezone, p_is_private: p.isPrivate, p_avatar_url: p.avatarUrl ?? null, p_country: p.countryCode ?? null });
 
 export async function uploadAvatar(userId: string, file: File) {
-  const path = `${userId}/avatar-${Date.now()}.${file.name.split('.').pop()}`;
-  const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+  // One file per person, replaced in place. The version only makes browsers fetch the new photo.
+  const bucket = supabase.storage.from('avatars');
+  const path = `${userId}/avatar.jpg`;
+  const clearOld = async () => {
+    const old = ((await bucket.list(userId)).data ?? []).filter((f) => f.name !== 'avatar.jpg').map((f) => `${userId}/${f.name}`);
+    if (old.length) await bucket.remove(old);
+  };
+  let { error } = await bucket.upload(path, file, { upsert: true });
+  // Older accounts have a photo per change, which can reach the bucket's cap.
+  if (error) { await clearOld(); ({ error } = await bucket.upload(path, file, { upsert: true })); }
   if (error) throw error;
-  return supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+  void clearOld();
+  return `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
 }
 
-export const getMyProfile = async (id: string) => (await supabase.from('profiles').select('*').eq('id', id).single()).data as MyProfile | null;
+// Other people's rows only expose a few columns, so your own comes from a function. An empty row means no profile yet.
+export const getMyProfile = async (_id: string) => {
+  const { data } = await supabase.rpc('get_my_profile');
+  return (data?.id ? data : null) as MyProfile | null;
+};
 export const getMyLanguages = async (id: string): Promise<UserLanguage[]> => {
   const { data } = await supabase.from('user_languages').select('language_id,role,level,languages!inner(native_name,english_name)').eq('user_id', id);
   type Row = { language_id: string; role: UserLanguage['role']; level: UserLanguage['level']; languages: { native_name: string | null; english_name: string | null } | { native_name: string | null; english_name: string | null }[] | null };

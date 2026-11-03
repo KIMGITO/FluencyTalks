@@ -24,8 +24,9 @@ for f in $(ls supabase/migrations/*.sql | sort); do
   psql "$URL" -q -v ON_ERROR_STOP=1 -f "$f" >/dev/null
 done
 psql "$URL" -q -v ON_ERROR_STOP=1 -f supabase/seed.sql >/dev/null
-# Hosted Supabase gives these to the API roles automatically; a plain Postgres does not.
-psql "$URL" -q -c "grant select,insert,update,delete on all tables in schema public to authenticated; grant select on all tables in schema public to anon; grant usage on all sequences in schema public to authenticated" >/dev/null
+# The tests read columns no client can see, so they get those back. The client's own privileges are checked first.
+psql "$URL" -q -v ON_ERROR_STOP=1 -f supabase/tests/privileges.sql >/dev/null
+psql "$URL" -q -c "grant select on all tables in schema public to authenticated" >/dev/null
 
 # Hosted Supabase refuses an UPDATE or DELETE with no WHERE (safeupdate, on the API's login role). Plain
 # Postgres does not, so a bug like that passes here and breaks every API call in production. Switch it on

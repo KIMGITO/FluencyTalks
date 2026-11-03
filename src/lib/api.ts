@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 const friendly: Record<string, string> = {
   not_authenticated: 'Please log in again.', account_restricted: 'Your account is restricted.',
   user_unavailable: 'This person is unavailable.',
-  rate_limited: 'Slow down a little and try again soon.', awaiting_acceptance: 'Wait for them to accept your message request.',
+  app_paused: 'The app is paused right now. Please try again soon.', rate_limited: 'Slow down a little and try again soon.', awaiting_acceptance: 'Wait for them to accept your message request.',
   conversation_unavailable: 'This conversation is unavailable.', empty_message: 'Write something first.',
   username_taken: 'That username is taken.',
   language_required: 'Choose the language you speak natively.', language_same: 'Your native and learning languages must be different.',
@@ -34,6 +34,8 @@ const friendly: Record<string, string> = {
   invalid_alignment: 'Choose left, center or right alignment.',
   invite_invalid: 'This invitation has expired or was already used. Ask for a new one.', invite_email_mismatch: 'This invitation was sent to a different email address. Log in with that one.',
 };
+/** Set by the app status store: this file can't import it, the store's services import this. */
+export const apiHooks = { onPaused: () => {} };
 export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
 
 
@@ -42,6 +44,7 @@ export async function rpc<T = void>(fn: string, args?: Record<string, unknown>):
   if (error) {
     if (import.meta.env.DEV) console.warn('API error', fn, error.message, error.hint ?? '');   
     const code = error.code === '23505' ? 'username_taken' : Object.keys(friendly).find((c) => error.message.includes(c)) ?? 'unknown';
+    if (code === 'app_paused') apiHooks.onPaused();
     throw new ApiError(code, friendly[code] ?? 'Something went wrong. Please try again.');
   }
   return data as T;

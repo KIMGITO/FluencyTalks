@@ -5,12 +5,18 @@ import { useProfileStore } from '@/store/profileStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { Spinner } from '@/components/ui';
 import { staffPathFor } from '@/lib/authHelpers';
+import Maintenance from '@/pages/public/Maintenance';
+import { useAppStatus, useAppStatusStore } from '@/store/appStatusStore';
 export function ProtectedRoute() {
   const { user, loading, validateSession, sessionCheckedAt, forceLogoutReason } = useAuthStore();
   const { me, status, load, reset } = useProfileStore(); const loadLanguages = useLanguageStore((s) => s.load); const loc = useLocation();
+  const app = useAppStatus();
   useEffect(() => { if (user) void validateSession(); }, [loc.pathname]);
+  // Whether a pause applies depends on who is asking.
+  useEffect(() => { if (user) void useAppStatusStore.getState().refresh(); }, [user?.id]);
   useEffect(() => { if (user) { load(user.id); loadLanguages(); } else reset(); }, [user?.id]);
-  if (loading || (user && status !== 'ready')) return <div className="flex h-screen items-center justify-center"><Spinner /></div>;
+  if (user && app?.paused && !app.exempt) return <Maintenance />;
+  if (loading || (user && (!app || status !== 'ready'))) return <div className="flex h-screen items-center justify-center"><Spinner /></div>;
   if (!user) {
     const reason =
       forceLogoutReason === 'idle'

@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCountries } from '@/store/countryStore';
 import { useProfileStore } from '@/store/profileStore';
 import { recordConsent, uploadAvatar } from '@/services';
+import { LEGAL_VERSIONS } from '@/lib/legalVersions';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 const zones = (): string[] => (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? [];
@@ -49,7 +50,7 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
     try {
       const avatarUrl = file ? await uploadAvatar(user.id, file) : useProvider && providerAvatar ? providerAvatar : undefined;
       await save({ username, displayName: displayName.trim() || username, bio, timezone: tz, isPrivate, avatarUrl, countryCode: country }, langs);
-      if (mode === 'onboarding') await Promise.all([recordConsent('age_18', '1'), recordConsent('terms', '1'), recordConsent('privacy', '1')]);
+      if (mode === 'onboarding') await Promise.all([recordConsent('age_18', LEGAL_VERSIONS.age_18), recordConsent('terms', LEGAL_VERSIONS.terms), recordConsent('privacy', LEGAL_VERSIONS.privacy)]);
       onDone();
     } catch (err) {
       const message = (err as Error).message || 'Something went wrong. Please try again.';

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { CalendarClock, CircleCheck, CircleX, Database, Lock, Server, Table2, TriangleAlert, Timer, type LucideIcon } from 'lucide-react';
+import { Archive, CalendarClock, CircleCheck, CircleX, Database, Lock, Server, Table2, TriangleAlert, Timer, type LucideIcon } from 'lucide-react';
 import { Chip, IconTile, Meter, Panel, RefreshButton, StatTile, type Tone } from './AdminKit';
 import { ErrorState, RowListSkeleton } from '@/components/ui';
 import { formatTime } from '@/lib/format';
-import { adminSystemHealth, probeHealth, type HealthProbe, type SystemHealth } from '@/services/admin';
+import { adminArchiveStatus, adminSystemHealth, probeHealth, type ArchiveStatus, type HealthProbe, type SystemHealth } from '@/services/admin';
 import { toast } from '@/store/toastStore';
 
 type Level = 'ok' | 'warn' | 'bad';
@@ -31,7 +31,27 @@ const since = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()
 const uptimeLevel = (p: number | null): Level | undefined => (p === null ? undefined : p >= 99.5 ? 'ok' : p >= 95 ? 'warn' : 'bad');
 const pct = (p: number | null) => (p === null ? 'No data' : `${p}%`);
 
-function sectionsFor(data: SystemHealth, probe: HealthProbe | null, probeFailed: boolean): SectionData[] {
+const archiveRows = (a: ArchiveStatus | null): RowData[] => {
+  if (!a) return [];
+  // A day past its hot window is normal until the next run. Two days means the runs have stopped.
+  const waitingDays = a.oldest_waiting ? (Date.now() - new Date(a.oldest_waiting).getTime()) / 864e5 : 0;
+  const checkpointDays = a.last_checkpoint_at ? (Date.now() - new Date(a.last_checkpoint_at).getTime()) / 864e5 : 0;
+  return [
+    { label: 'Archive set up', value: a.configured ? 'Yes' : 'No: logs are kept but not archived', level: a.configured ? 'ok' : 'warn' },
+    { label: 'Tamper-proof copy', value: !a.last_checkpoint_at ? 'Not connected: nothing is being archived' : `Last written ${formatTime(a.last_checkpoint_at)}`, level: !a.last_checkpoint_at || checkpointDays > 2 ? 'bad' : 'ok' },
+    { label: 'Integrity check', value: a.integrity_ok === null ? 'Not run yet' : a.integrity_ok ? 'Records match' : 'RECORDS HAVE BEEN CHANGED', level: a.integrity_ok === false ? 'bad' : a.integrity_ok ? 'ok' : undefined },
+    { label: 'Consent records', value: String(a.consent_records) },
+    { label: 'Failed archive files', value: String(a.failed), level: a.failed ? 'bad' : 'ok' },
+    { label: 'Oldest rows waiting to archive', value: a.oldest_waiting ? formatTime(a.oldest_waiting) : 'None', level: a.oldest_waiting && a.configured && waitingDays > 2 ? 'warn' : undefined },
+    { label: 'Files past their destroy date', value: String(a.overdue_destruction), level: a.overdue_destruction ? 'warn' : 'ok' },
+    { label: 'Legal holds', value: String(a.active_holds) },
+    { label: 'Archived', value: `${a.files} files · ${a.rows} rows · ${bytes(a.bytes)}` },
+    { label: 'Last archived', value: a.last_released_at ? formatTime(a.last_released_at) : 'Not yet' },
+    { label: 'Files destroyed on schedule', value: String(a.destroyed) },
+  ];
+};
+
+function sectionsFor(data: SystemHealth, probe: HealthProbe | null, probeFailed: boolean, archive: ArchiveStatus | null): SectionData[] {
   const { database: db, uptime, security: sec } = data;
   const connPct = Math.round((100 * db.connections) / db.max_connections);
   const beatAge = uptime.last_beat ? (Date.now() - new Date(uptime.last_beat).getTime()) / 60000 : null;
@@ -66,18 +86,20 @@ function sectionsFor(data: SystemHealth, probe: HealthProbe | null, probeFailed:
       { label: 'Accounts locked from recovery', value: String(sec.accounts_locked), level: sec.accounts_locked ? 'bad' : 'ok' },
     ] },
     { title: 'Scheduled jobs', icon: CalendarClock, tone: 'aqua', empty: 'pg_cron is not running here, so there is no uptime history.', rows: (data.jobs ?? []).map((j): RowData => ({ label: j.job, value: j.last_run ? `${j.last_status ?? 'unknown'} · ${formatTime(j.last_run)}` : 'Has not run yet', level: j.last_status === 'failed' || !j.active ? 'bad' : j.last_run ? 'ok' : undefined })) },
+    { title: 'Data archive', icon: Archive, tone: 'sun', note: 'Old logs and records move to private and write-once storage, then get destroyed on schedule (docs/DATA_RETENTION.md).', empty: "Couldn't read the archive status.", rows: archiveRows(archive) },
     { title: 'Largest tables', icon: Table2, tone: 'muted', rows: data.tables.map((t): RowData => ({ label: t.name, value: bytes(t.bytes) })) },
   ];
 }
 
 export function AdminHealth() {
-  const [data, setData] = useState<SystemHealth | null>(null); const [probe, setProbe] = useState<HealthProbe | null>(null);
+  const [data, setData] = useState<SystemHealth | null>(null); const [probe, setProbe] = useState<HealthProbe | null>(null); const [archive, setArchive] = useState<ArchiveStatus | null>(null);
   const [probeFailed, setProbeFailed] = useState(false); const [failed, setFailed] = useState(false); const [busy, setBusy] = useState(false);
   const load = async (announce = false) => {
     setBusy(true);
     const [dbOk, probeOk] = await Promise.all([
       adminSystemHealth().then((d) => { setData(d); setFailed(false); return true; }).catch(() => { setFailed(true); return false; }),
       probeHealth().then((p) => { setProbe(p); setProbeFailed(false); return true; }).catch(() => { setProbeFailed(true); return false; }),
+      adminArchiveStatus().then(setArchive).catch(() => setArchive(null)),
     ]);
     setBusy(false);
     if (announce) { if (dbOk && probeOk) toast.success('Checked just now.'); else toast.error("Some checks didn't answer.", () => void load(true)); }
@@ -85,7 +107,7 @@ export function AdminHealth() {
   useEffect(() => { void load(); }, []);
   if (failed && !data) return <ErrorState title="Couldn't load system health" onRetry={() => void load()} busy={busy} />;
   if (!data) return <RowListSkeleton label="Loading system health" />;
-  const sections = sectionsFor(data, probe, probeFailed);
+  const sections = sectionsFor(data, probe, probeFailed, archive);
   const { uptime } = data;
   const uptimeRows: RowData[] = [
     { label: 'Uptime, 24 hours', value: pct(uptime.d1), level: uptimeLevel(uptime.d1) },

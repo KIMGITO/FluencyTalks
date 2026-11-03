@@ -2,6 +2,7 @@
 // Deploy: supabase functions deploy delete-account
 // Portable alternative: a small authenticated endpoint on your own backend that calls the same admin API.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { edgeGate } from '../_shared/edge-gate.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -15,6 +16,9 @@ Deno.serve(async (req) => {
   const asUser = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
   const { data, error } = await asUser.auth.getUser();
   if (error || !data.user) return reply(401, { error: 'not_authenticated' });
+
+  const refused = await edgeGate(url, Deno.env.get('SUPABASE_ANON_KEY')!, auth);
+  if (refused) return reply(refused, { error: refused === 429 ? 'rate_limited' : 'app_paused' });
 
   const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const uid = data.user.id;

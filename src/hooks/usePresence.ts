@@ -91,7 +91,7 @@ export function usePresenceOf(ids: (string | null | undefined)[]): Record<string
   }, [seen, key]);
 }
 
-/** Typing in one chat. Goes straight between the two browsers; nothing is stored. */
+/** Typing in one chat. Goes straight between the two browsers; nothing is stored. Private: the database checks you're in the chat. */
 export function useTyping(convId: string | null, myId: string | null) {
   const [peerTyping, setPeerTyping] = useState(false);
   const sendRef = useRef<(typing: boolean) => void>(() => undefined);
@@ -102,7 +102,7 @@ export function useTyping(convId: string | null, myId: string | null) {
     sendRef.current = () => undefined;
     clearRef.current = () => undefined;
     if (!convId || !myId) return;
-    const ch = supabase.channel(`ft-chat:${convId}`);
+    const ch = supabase.channel(`ft-chat:${convId}`, { config: { private: true } });
     let hide: ReturnType<typeof setTimeout> | undefined;
     const clear = () => { clearTimeout(hide); setPeerTyping(false); };
     ch.on('broadcast', { event: 'typing' }, (p) => {

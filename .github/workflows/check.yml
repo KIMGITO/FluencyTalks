@@ -23,6 +23,8 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ci-placeholder
       # What a crawler that does not run JavaScript sees: titles, descriptions, canonicals, one H1, sitemap, robots.
       - run: npm run check:seo
+      # A changed privacy policy or terms needs a new version, so consent stays provable down to the wording.
+      - run: npm run check:legal
 
   database:
     runs-on: ubuntu-latest

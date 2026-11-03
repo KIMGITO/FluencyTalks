@@ -8,13 +8,13 @@ import { formatTime } from '@/lib/format';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { AppNotification } from '@/types/db';
 
-export function NotificationBell() {
+export function NotificationBell({ allTo = '/notifications' }: { allTo?: string }) {
   const { items, unread, loaded, markRead, markAllRead, remove } = useNotificationStore(); const nav = useNavigate(); const [open, setOpen] = useState(false);
   const go = (n: AppNotification) => { setOpen(false); if (!n.read_at) markRead([n.id]).catch(() => {}); nav(notificationLink(n)); };
   const del = (e: React.MouseEvent, n: AppNotification) => { e.stopPropagation(); remove(n.id).catch(() => {}); };
   return (
     <div className="relative">
-      <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open} onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) nav('/notifications'); else setOpen(!open); }}>
+      <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open} onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) nav(allTo); else setOpen(!open); }}>
         <span className="relative"><Bell size={20} /><CountBadge count={unread} label="unread notifications" ring="ring-bg" className="-right-2.5 -top-2" /></span>
       </Button>
       {open && (<>
@@ -34,7 +34,7 @@ export function NotificationBell() {
                 </button>
                 <button aria-label="Delete notification" title="Delete" onClick={(e) => del(e, n)} className="shrink-0 rounded-full p-1.5 text-muted hover:bg-surface hover:text-danger"><Trash2 size={15} /></button>
               </li>))}</ul>)}
-          <Link to="/notifications" onClick={() => setOpen(false)} className="block border-t border-border px-4 py-3 text-center text-sm font-semibold text-ink hover:bg-surface-2">See all notifications</Link>
+          <Link to={allTo} onClick={() => setOpen(false)} className="block border-t border-border px-4 py-3 text-center text-sm font-semibold text-ink hover:bg-surface-2">See all notifications</Link>
         </div></>)}
     </div>
   );

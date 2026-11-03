@@ -37,8 +37,9 @@ export interface Reaction { message_id: string; user_id: string; emoji: string }
 export type NotificationType = 'message_request' | 'correction' | 'correction_accepted' | 'bounty_paid' | 'level_up' | 'level_vouch'
   | 'post_correction' | 'post_challenged' | 'post_clarification' | 'post_reply' | 'post_endorsed'
   | 'post_accepted' | 'post_declined' | 'post_withdrawn' | 'post_superseded' | 'post_resolved' | 'post_reverted' | 'post_override'
-  | 'action_reminder' | 'action_overdue' | 'action_escalated' | 'restriction_applied' | 'restriction_lifted' | 'appeal_decided';
-export type NotificationCategory = 'corrections' | 'decisions' | 'reminders' | 'system';
+  | 'action_reminder' | 'action_overdue' | 'action_escalated' | 'restriction_applied' | 'restriction_lifted' | 'appeal_decided'
+  | 'admin_report' | 'admin_appeal' | 'admin_security' | 'admin_site';
+export type NotificationCategory = 'corrections' | 'decisions' | 'reminders' | 'system' | 'reports' | 'escalations' | 'security';
 export interface AppNotification {
   id: string; type: NotificationType; data: { conversation_id?: string; message_id?: string; points?: number; level?: string; language?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; waiting?: boolean; overdue?: number; due_at?: string };
   category?: NotificationCategory; read_at: string | null; created_at: string;

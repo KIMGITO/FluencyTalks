@@ -8,6 +8,7 @@ import type { StaffTier } from '@/services/admin';
 import { useAdminStore } from '@/store/adminStore';
 import { useProfileStore } from '@/store/profileStore';
 import { IconTile, StatTile, type Tone } from './AdminKit';
+import { SiteStatusPanel } from './SiteStatusPanel';
 
 interface Todo { to: string; count: number; text: string; note?: string; icon: LucideIcon; tone: Tone }
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
@@ -53,6 +54,7 @@ export function AdminOverviewPage() {
   return (
     <div className="space-y-6">
       <Hero name={me?.display_name} todo={todo} />
+      {tier !== 'moderator' && <SiteStatusPanel />}
       <section aria-labelledby="needs-you" className="space-y-2">
         <Heading id="needs-you">Needs you</Heading>
         {!todo.length ? (

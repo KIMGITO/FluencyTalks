@@ -12,8 +12,11 @@
     "test:db": "bash scripts/test-db.sh",
     "test:unit": "node --experimental-strip-types --test tests/unit/*.test.ts",
     "check:seo": "node scripts/check-seo.mjs",
+    "check:legal": "node scripts/legal-text.mjs check",
     "test:auth": "node --experimental-strip-types scripts/test-auth.mjs",
-    "test:admin": "node scripts/test-admin-mfa.mjs"
+    "test:admin": "node scripts/test-admin-mfa.mjs",
+    "test:security": "node scripts/test-security.mjs",
+    "test:security": "node scripts/test-security.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

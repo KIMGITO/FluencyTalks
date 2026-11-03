@@ -80,11 +80,12 @@ supabase/functions/    delete-account (Edge Function)
 - A bounty shows the message text to other speakers of that language. The composer says so before you send.
 
 Design rules:
-- **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables.
+- **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables. Rate limits, the pause switch and who can read what: [docs/SECURITY.md](docs/SECURITY.md).
 - **Blocking is enforced in every read** via `is_blocked_between()` (both directions, silent).
 - `profiles.role`, `status` and counters cannot be edited from the client (trigger-protected).
 - **After adding any new function**, re-run the grants block at the end of `20261024000001_message_language_and_bounties.sql` (functions are callable by signed-in users only). Keep its last lines: `award_points` and `refund_expired_bounties` must stay internal-only.
 - Create the super admin and invite staff: see [docs/ADMIN_SETUP.md](docs/ADMIN_SETUP.md). Roles can't be set by hand.
+- Logs and records that keep growing are archived and destroyed on a schedule: see [docs/DATA_RETENTION.md](docs/DATA_RETENTION.md).
 - Deploy account deletion: `supabase functions deploy delete-account`. It is the only Edge Function, so exit cost is one small endpoint.
 - Realtime is used in exactly two places (`services/messaging.ts` for messages, corrections and reactions; `services/notifications.ts` for the bell), so it can be swapped for your own WebSocket layer later.
 

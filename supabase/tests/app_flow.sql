@@ -96,8 +96,8 @@ select tt.expect_error($q$select public.set_language_profile('swh','swh','A1')$q
 select tt.expect_error($q$select public.set_language_profile('ceb','vie','A1')$q$, 'language_unsupported');
 select tt.expect_error($q$select public.set_language_profile(null,'vie','A1')$q$, 'language_required');
 select tt.expect_error($q$select public.set_language_profile('vie','swh','Z9')$q$, 'invalid_level');
-select tt.expect_error($q$update public.profiles set native_language_id = 'eng' where id = auth.uid()$q$, 'protected_profile_column');
-select tt.expect_error($q$insert into public.user_languages (user_id, language_id, role, level) values (auth.uid(), 'eng', 'native', 'Native')$q$, 'row-level security');
+select tt.expect_error($q$update public.profiles set native_language_id = 'eng' where id = auth.uid()$q$, 'permission denied');
+select tt.expect_error($q$insert into public.user_languages (user_id, language_id, role, level) values (auth.uid(), 'eng', 'native', 'Native')$q$, 'permission denied');
 select tt.expect_error($q$select public.set_language_profile('vie','swh','B1')$q$, 'level_must_be_earned');   -- a level is never raised by hand
 select public.set_language_profile('vie', 'swh', 'A1');                 -- lowering is free
 select public.set_language_profile('vie', 'fra', 'A1');                 -- first real change is free
@@ -182,7 +182,7 @@ do $$ begin
   assert (select count(*) from public.points_ledger where user_id = auth.uid() and delta = 5 and reason = 'correction_accepted') = 1, 'ledger has the +5 entry';
   assert (select count(*) from public.points_ledger) = 1, 'RLS: a user sees only their own ledger rows';
 end $$;
-select tt.expect_error($q$insert into public.points_ledger (user_id, delta, reason, ref_type, ref_id) values (auth.uid(), 999, 'correction_accepted', 'x', gen_random_uuid())$q$, 'row-level security');
+select tt.expect_error($q$insert into public.points_ledger (user_id, delta, reason, ref_type, ref_id) values (auth.uid(), 999, 'correction_accepted', 'x', gen_random_uuid())$q$, 'permission denied');
 -- farming limit: only 3 rewarded corrections per corrector for the same author per day
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 create temp table m2 as select (public.send_message((select conv from ctx), 'Habari yako rafiki', null)).id as id; grant select on m2 to public;
@@ -428,11 +428,11 @@ select tt.expect_error($q$select public.post_contribution('Goedemorgen', 'Good m
 select public.post_contribution('Goedemorgen', 'Good morning', 'nld', 'phrase', null, 'https://images.unsplash.com/photo-1?w=800');
 select tt.expect_error($q$select public.set_contribution_eligibility('00000000-0000-0000-0000-0000000000a1', 'native')$q$, 'does not exist');
 do $$ begin assert (select count(*) from public.contribution_posts where user_id = auth.uid()) = 1, 'the valid post is stored'; end $$;
-select tt.expect_error($q$insert into public.contribution_posts (user_id, phrase, category) values (auth.uid(), 'direct', 'phrase')$q$, 'row-level security');
+select tt.expect_error($q$insert into public.contribution_posts (user_id, phrase, category) values (auth.uid(), 'direct', 'phrase')$q$, 'permission denied');
 
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 select tt.expect_error($q$select public.save_partner(auth.uid())$q$, 'cannot_save_self');
-select tt.expect_error($q$insert into public.saved_partners (user_id, partner_id) values (auth.uid(), '00000000-0000-0000-0000-0000000000c3')$q$, 'row-level security');
+select tt.expect_error($q$insert into public.saved_partners (user_id, partner_id) values (auth.uid(), '00000000-0000-0000-0000-0000000000c3')$q$, 'permission denied');
 select public.save_partner('00000000-0000-0000-0000-0000000000b2');
 do $$ begin assert (select count(*) from public.saved_partners where user_id = auth.uid()) = 1, 'partner saved'; end $$;
 
@@ -536,7 +536,7 @@ select public.set_language_profile('fra', null, null); select public.save_profil
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
 select public.set_language_profile('eng', 'fra', 'C1'); select public.save_profile('lena', 'Lena', '', 'Europe/London', false, null, null);
 select tt.expect_error($q$select public.post_contribution('Bonjour à tous', null, 'fra', 'phrase', null, null)$q$, 'not_contribution_eligible');
-select tt.expect_error($q$update public.profiles set verified_level = 'C2' where id = auth.uid()$q$, 'protected_profile_column');
+select tt.expect_error($q$update public.profiles set verified_level = 'C2' where id = auth.uid()$q$, 'permission denied');
 select tt.expect_error($q$select public.evaluate_level(auth.uid())$q$, 'permission denied');
 select tt.expect_error($q$select public.level_evidence('00000000-0000-0000-0000-0000000000a1', 'vie')$q$, 'permission denied');
 select public.set_language_profile('eng', 'fra', 'B2');
@@ -602,7 +602,7 @@ select public.accept_correction((select id from lena_fix));
 select public.rate_correction((select id from lena_fix), true);
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
 select tt.expect_error($q$select public.rate_correction((select id from lena_fix), false)$q$, 'correction_unavailable');   -- not the author
-update public.message_corrections set feedback = 'not_helpful' where id = (select id from lena_fix);   -- no update policy: changes nothing
+select tt.expect_error($q$update public.message_corrections set feedback = 'not_helpful' where id = (select id from lena_fix)$q$, 'permission denied');   -- clients don't write here
 do $$ begin
   assert (select feedback from public.message_corrections where id = (select id from lena_fix)) = 'helpful', 'a corrector cannot rewrite their rating';
   assert (select points_balance from public.profiles where id = auth.uid()) = 105, 'a verified B1 learner earns +5';
@@ -675,7 +675,7 @@ do $$ begin assert (public.vouch_status('00000000-0000-0000-0000-00000000f001')-
 select tt.as_user('00000000-0000-0000-0000-00000000f003');
 select tt.expect_error($q$select public.vouch_for('00000000-0000-0000-0000-00000000f001')$q$, 'vouch_not_native');
 do $$ begin assert public.vouch_status('00000000-0000-0000-0000-00000000f001') is null, 'nothing offered outside my language'; end $$;
-select tt.expect_error($q$insert into public.level_vouches (voucher_id, learner_id, language_id) values (auth.uid(), '00000000-0000-0000-0000-00000000f001', 'fra')$q$, 'row-level security');
+select tt.expect_error($q$insert into public.level_vouches (voucher_id, learner_id, language_id) values (auth.uid(), '00000000-0000-0000-0000-00000000f001', 'fra')$q$, 'permission denied');
 
 reset role;
 insert into public.messages (conversation_id, sender_id, body, language_id, created_at)
@@ -778,7 +778,7 @@ select tt.expect_error($q$select public.toggle_post_endorsement((select id from 
 select tt.as_user('00000000-0000-0000-0000-00000000d003');
 select tt.expect_error($q$select public.submit_discussion((select id from dpost), null, 'correction', 'Wrong', 'Habari yako', null, gen_random_uuid())$q$, 'not_qualified_to_correct');
 select tt.expect_error($q$select public.toggle_post_endorsement((select id from dpost))$q$, 'not_qualified_to_correct');
-select tt.expect_error($q$insert into public.post_discussion (post_id, author_id, kind, body, client_key) values ((select id from dpost), auth.uid(), 'comment', 'direct', gen_random_uuid())$q$, 'row-level security');
+select tt.expect_error($q$insert into public.post_discussion (post_id, author_id, kind, body, client_key) values ((select id from dpost), auth.uid(), 'comment', 'direct', gen_random_uuid())$q$, 'permission denied');
 
 -- Mary corrects Dennis. A correction needs a real change and an explanation.
 select tt.as_user('00000000-0000-0000-0000-00000000d002');
@@ -1044,7 +1044,7 @@ do $$ begin
   assert (select p256dh from public.push_subscriptions) = 'keyB';
 end $$;
 select tt.expect_error($q$select public.save_push_subscription('http://insecure.example', 'k', 'a')$q$, 'check');
-select tt.expect_error($q$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://direct', 'k', 'a')$q$, 'row-level security');
+select tt.expect_error($q$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://direct', 'k', 'a')$q$, 'permission denied');
 select tt.as_user('00000000-0000-0000-0000-00000000d004');
 do $$ begin assert (select count(*) from public.push_subscriptions) = 0, 'another person sees no one else''s devices'; end $$;
 select public.delete_push_subscription('https://push.example/one');   -- not theirs: nothing happens
@@ -1120,8 +1120,8 @@ select tt.expect_error($q$delete from public.admin_audit_log where id > 0$q$, 'a
 set role authenticated;
 -- An ordinary person: no way in, by any door.
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
-select tt.expect_error($q$update public.profiles set role = 'admin' where id = auth.uid()$q$, 'only through an invitation');
-select tt.expect_error($q$insert into public.admin_accounts (user_id, tier) values (auth.uid(), 'admin')$q$, 'row-level security');
+select tt.expect_error($q$update public.profiles set role = 'admin' where id = auth.uid()$q$, 'permission denied');
+select tt.expect_error($q$insert into public.admin_accounts (user_id, tier) values (auth.uid(), 'admin')$q$, 'permission denied');
 do $$ begin assert (select count(*) from public.admin_recovery_codes) = 0 and (select count(*) from public.admin_accounts) = 0, 'staff tables are closed'; end $$;
 select tt.expect_error($q$select public.admin_create_invitation('x@test.com')$q$, 'forbidden');
 select tt.expect_error($q$select public.admin_list_team()$q$, 'forbidden');
@@ -1378,6 +1378,232 @@ do $$ begin
   assert not public.can_correct_language('00000000-0000-0000-0000-0000fade0003', 'jpn'), 'posts alone give no right to correct';
 end $$;
 set role authenticated;
+
+-- Retention and archiving (docs/DATA_RETENTION.md). The file work is in archive-run; everything that decides what may be deleted is checked here.
+reset role;
+do $$ begin
+  assert not has_function_privilege('authenticated', 'public.svc_archive_next_batch()', 'execute'), 'members cannot drive the archive';
+  assert not has_function_privilege('authenticated', 'public.svc_archive_seal(uuid, bigint, bigint, text, text, text, date)', 'execute'), 'members cannot delete rows through the archive';
+  assert not has_function_privilege('authenticated', 'public.archive_purge()', 'execute'), 'members cannot run the purge';
+  assert not has_function_privilege('authenticated', 'public.archive_pseudonym(uuid)', 'execute'), 'members cannot look up a pseudonym';
+  assert has_function_privilege('service_role', 'public.svc_archive_next_batch()', 'execute'), 'the edge function can';
+  assert (select not public from storage.buckets where id = 'archives'), 'the archive bucket is private';
+  assert pg_get_functiondef('public.system_heartbeat()'::regprocedure) not like '%app_logs%', 'the heartbeat no longer deletes logs';
+end $$;
+-- Anything older in the flows above would get in the way of counting exact batches.
+delete from public.app_logs where created_at < now() - interval '29 days';
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000a2c41001', 'archive-subject@example.test');
+
+-- Logs: a whole day past the hot window moves, a recent row stays. Ids become pseudonyms, context never leaves.
+insert into public.app_logs (level, source, message, context, user_id, created_at) values
+  ('error', 'browser', 'old with account', '{"stack": "secret stack"}', '00000000-0000-0000-0000-0000a2c41001', now() - interval '40 days'),
+  ('error', 'browser', 'old, account gone', '{}', '00000000-0000-0000-0000-00000000dead', now() - interval '40 days'),
+  ('error', 'browser', 'still hot', '{}', '00000000-0000-0000-0000-0000a2c41001', now() - interval '5 days');
+create temp table b1 as select public.svc_archive_next_batch() as b;
+create temp table p1 as select public.svc_archive_export_page(((select b from b1)->>'id')::uuid, 0, 1000) as rows;
+do $$
+declare v_rows jsonb := (select rows from p1); v_batch uuid := ((select b from b1)->>'id')::uuid; v_pseudonym uuid;
+begin
+  assert (select b->>'table_name' from b1) = 'app_logs', 'the old logs are next';
+  assert (select b->>'object_path' from b1) like 'app_logs/____/__/____-__-__.p1.ndjson.gz', 'file path';
+  assert jsonb_array_length(v_rows) = 2, format('two rows in the day, got %s', v_rows);
+  assert v_rows::text not like '%secret stack%' and v_rows::text not like '%a2c41001%', 'no context and no raw user id in a file';
+  assert (select pseudonym from public.archive_subjects where user_id = '00000000-0000-0000-0000-0000a2c41001')::text = (select r->>'user_id' from jsonb_array_elements(v_rows) r where r->>'message' = 'old with account'), 'written as a pseudonym';
+  assert (select (r->'user_id') = 'null'::jsonb from jsonb_array_elements(v_rows) r where r->>'message' = 'old, account gone'), 'an account already gone stays unlinked';
+  perform public.svc_archive_export_page(v_batch, 0, 1000);
+end $$;
+-- A file that doesn't match the table deletes nothing.
+select tt.expect_error(format('select public.svc_archive_seal(%L, 1, 10, %L, %L, %L, %L)', (select b->>'id' from b1), 'abc', 'archives/w', 'v1', '2099-01-01'), 'row_count_changed');
+do $$ begin
+  assert (select count(*) from public.app_logs where message like 'old%') = 2, 'a mismatch deletes nothing';
+  assert public.svc_archive_seal(((select b->>'id' from b1))::uuid, 2, 10, 'abc', 'archives/w', 'v1', (now() + interval '50 years')::date) = 2, 'seal returns the rows it removed';
+  assert (select count(*) from public.app_logs where message like 'old%') = 0, 'sealed rows left Postgres';
+  assert (select count(*) from public.app_logs where message = 'still hot') = 1, 'recent rows stay';
+  assert (select status = 'released' and row_count = 2 and retain_until = day + 395 from public.archive_batches where id = ((select b->>'id' from b1))::uuid), 'the file is on record';
+end $$;
+select tt.expect_error(format('select public.svc_archive_seal(%L, 0, 0, %L, null, null, null)', (select b->>'id' from b1), ''), 'batch_not_open');
+
+-- A row turning up late for a finished day gets its own file: the sealed one is never overwritten.
+insert into public.app_logs (level, source, message, created_at) select 'info', 'test', 'late', (day::timestamp at time zone 'UTC') + interval '1 hour' from public.archive_batches where id = ((select b->>'id' from b1))::uuid;
+create temp table b1b as select public.svc_archive_next_batch() as b;
+do $$ declare v jsonb := (select b from b1b); begin
+  assert (v->>'part')::int = 2 and v->>'object_path' like '%.p2.ndjson.gz', format('a new part, got %s', v);
+  assert public.svc_archive_seal((v->>'id')::uuid, 1, 10, 'abc', 'archives/w', 'v1', (now() + interval '50 years')::date) = 1, 'late row sealed';
+end $$;
+
+-- Rows gone before the seal: no empty file on record.
+insert into public.app_logs (level, source, message, created_at) values ('info', 'test', 'vanishes', now() - interval '60 days');
+create temp table b1c as select public.svc_archive_next_batch() as b;
+delete from public.app_logs where message = 'vanishes';
+do $$ declare v_id uuid := ((select b from b1c)->>'id')::uuid; begin
+  assert public.svc_archive_seal(v_id, 0, 0, '', null, null, null) = 0, 'nothing to seal';
+  assert not exists (select 1 from public.archive_batches where id = v_id), 'no record of an empty file';
+end $$;
+
+-- Reports: an open one never moves however old. A resolved one moves, with the sender inside the evidence pseudonymised too.
+insert into public.reports (reporter_id, target_user_id, reason, status, created_at) values
+  ('00000000-0000-0000-0000-0000fade0001', '00000000-0000-0000-0000-0000fade0002', 'spam', 'open', now() - interval '900 days');
+insert into public.reports (reporter_id, target_user_id, reason, status, created_at, resolved_at, evidence) values
+  ('00000000-0000-0000-0000-0000fade0001', '00000000-0000-0000-0000-0000fade0002', 'spam', 'dismissed', now() - interval '500 days', now() - interval '400 days',
+   '[{"id": "00000000-0000-0000-0000-0000000000e1", "sender_id": "00000000-0000-0000-0000-0000a2c41001", "body": "the words", "created_at": "2025-01-01"}]');
+create temp table b2 as select public.svc_archive_next_batch() as b;
+create temp table p2 as select public.svc_archive_export_page(((select b from b2)->>'id')::uuid, 0, 1000) as rows;
+do $$ declare v_rows jsonb := (select rows from p2); begin
+  assert (select b->>'table_name' from b2) = 'reports' and jsonb_array_length(v_rows) = 1, format('only the resolved report, got %s', v_rows);
+  assert v_rows::text not like '%a2c41001%' and v_rows::text not like '%fade000%', 'no raw ids, evidence included';
+  assert v_rows->0->'evidence'->0->>'body' = 'the words', 'the evidence itself is kept';
+  assert v_rows->0->'evidence'->0->>'sender_id' = (select pseudonym::text from public.archive_subjects where user_id = '00000000-0000-0000-0000-0000a2c41001'), 'same person, same pseudonym';
+  assert public.svc_archive_seal(((select b->>'id' from b2))::uuid, 1, 10, 'abc', 'archives/w', 'v1', (now() + interval '50 years')::date) = 1, 'report sealed';
+  assert exists (select 1 from public.reports where status = 'open' and created_at < now() - interval '800 days'), 'the open report stays';
+end $$;
+
+-- The audit log stays append-only, except for rows in a batch being sealed.
+insert into public.admin_audit_log (actor_email, action, target_id, target_email, detail, created_at) values
+  ('staff@example.test', 'staff_invited', '00000000-0000-0000-0000-0000a2c41001', 'someone@example.test', '{"email": "someone@example.test", "tier": "admin"}', now() - interval '400 days');
+select tt.expect_error($q$delete from public.admin_audit_log where action = 'staff_invited' and created_at < now() - interval '399 days'$q$, 'append-only');
+create temp table b3 as select public.svc_archive_next_batch() as b;
+create temp table p3 as select public.svc_archive_export_page(((select b from b3)->>'id')::uuid, 0, 1000) as rows;
+do $$ declare v_rows jsonb := (select rows from p3); begin
+  assert (select b->>'table_name' from b3) = 'admin_audit_log', 'the audit row is next';
+  assert v_rows::text not like '%someone@example.test%' and v_rows::text not like '%a2c41001%', 'the target is not named';
+  assert v_rows->0->>'actor_email' = 'staff@example.test', 'staff stay named';
+  assert v_rows->0->'detail'->>'tier' = 'admin', 'the rest of the detail is kept';
+end $$;
+select tt.expect_error(format('update public.admin_audit_log set action = %L where created_at < now() - interval %L', 'x', '399 days'), 'append-only');
+select public.svc_archive_seal(((select b->>'id' from b3))::uuid, 1, 10, 'abc', 'archives/w', 'v1', (now() + interval '50 years')::date);
+do $$ begin assert not exists (select 1 from public.admin_audit_log where action = 'staff_invited' and created_at < now() - interval '399 days'), 'sealed audit rows left Postgres'; end $$;
+insert into public.admin_audit_log (actor_email, action, created_at) values ('staff@example.test', 'later', now() - interval '401 days');
+select tt.expect_error($q$delete from public.admin_audit_log where action = 'later'$q$, 'append-only');
+-- That row can't be removed, so the audit log sits out the rest of these checks.
+update public.retention_policies set enabled = false where table_name = 'admin_audit_log';
+
+-- Erasure: deleting the account breaks the link, and later files can't re-create it.
+delete from auth.users where id = '00000000-0000-0000-0000-0000a2c41001';
+do $$ begin
+  assert not exists (select 1 from public.archive_subjects where user_id = '00000000-0000-0000-0000-0000a2c41001'), 'the link is gone with the account';
+  assert public.archive_pseudonym('00000000-0000-0000-0000-0000a2c41001') is null, 'no new link for an account that is gone';
+end $$;
+
+-- A batch that keeps failing stops its table, keeps its rows, and shows up on the health page.
+insert into public.app_logs (level, source, message, created_at) values ('info', 'test', 'cannot upload', now() - interval '50 days');
+create temp table b4 as select public.svc_archive_next_batch() as b;
+update public.archive_batches set attempts = 5 where id = ((select b->>'id' from b4))::uuid;
+select public.svc_archive_fail(((select b->>'id' from b4))::uuid, 'upload: storage is down');
+insert into public.app_logs (level, source, message, created_at) values ('info', 'test', 'next day', now() - interval '49 days');
+do $$ declare v jsonb; begin
+  assert (select status = 'failed' and last_error like 'upload:%' from public.archive_batches where id = ((select b->>'id' from b4))::uuid), 'marked failed';
+  v := public.svc_archive_next_batch();
+  assert v is null or v->>'table_name' <> 'app_logs', format('the table waits for someone to look, got %s', v);
+  assert (select count(*) from public.app_logs where message in ('cannot upload', 'next day')) = 2, 'nothing lost while it waits';
+end $$;
+
+-- Destruction runs on the date unless a hold covers the file. The record of it stays.
+update public.archive_batches set retain_until = (now() at time zone 'UTC')::date - 1 where id = ((select b->>'id' from b2))::uuid;
+insert into public.archive_legal_holds (table_name, from_day, to_day, reason, placed_by)
+select 'reports', day - 1, day + 1, 'Claim 123', 'owner' from public.archive_batches where id = ((select b->>'id' from b2))::uuid;
+do $$ declare v_id uuid := ((select b from b2)->>'id')::uuid; begin
+  assert public.svc_archive_due_for_destruction() = '[]', 'a held file is not due';
+  perform public.svc_archive_mark_destroyed(v_id);
+  assert (select status from public.archive_batches where id = v_id) = 'released', 'a held file cannot be marked destroyed';
+  update public.archive_legal_holds set released_at = now(), released_by = 'owner' where reason = 'Claim 123';
+  assert public.svc_archive_due_for_destruction()->0->>'id' = v_id::text, 'due once released';
+  perform public.svc_archive_mark_destroyed(v_id);
+  assert (select status = 'destroyed' and destroyed_at is not null and sha256 = 'abc' from public.archive_batches where id = v_id), 'the record stays';
+end $$;
+
+-- Purge: old heartbeats and read notifications go. Unread ones stay however old.
+insert into public.system_heartbeats (minute) values (date_trunc('minute', now()) - interval '100 days'), (date_trunc('minute', now()) - interval '1 day');
+insert into public.notifications (user_id, type, created_at, read_at) values
+  ('00000000-0000-0000-0000-0000fade0001', 'follow', now() - interval '300 days', now() - interval '200 days'),
+  ('00000000-0000-0000-0000-0000fade0001', 'follow', now() - interval '300 days', null);
+select public.archive_purge();
+do $$ begin
+  assert not exists (select 1 from public.system_heartbeats where minute < now() - interval '91 days'), 'old heartbeats go';
+  assert exists (select 1 from public.system_heartbeats where minute > now() - interval '2 days'), 'recent heartbeats stay';
+  assert not exists (select 1 from public.notifications where read_at < now() - interval '181 days'), 'old read notifications go';
+  assert exists (select 1 from public.notifications where read_at is null and created_at < now() - interval '299 days'), 'unread ones stay';
+end $$;
+
+-- The health page: staff only.
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000fade0001');
+select tt.expect_error('select public.admin_archive_status()', 'forbidden');
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
+do $$ declare v jsonb := public.admin_archive_status(); begin
+  assert (v->>'failed')::int = 1 and (v->>'destroyed')::int = 1 and not (v->>'configured')::boolean, format('status, got %s', v);
+  assert v->>'oldest_waiting' is not null, 'the stuck logs count as waiting';
+end $$;
+
+-- Proof of consent outlives the account, says what was agreed to, and can't be changed. Decree 356/2025 Art. 6.
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000c0a5e001', 'Consent.Person@example.test');
+insert into public.consents (user_id, kind, version) values ('00000000-0000-0000-0000-0000c0a5e001', 'privacy', '2');
+do $$ declare l public.consent_ledger; begin
+  select * into l from public.consent_ledger where user_id = '00000000-0000-0000-0000-0000c0a5e001';
+  assert l.event = 'given' and l.email_hash = public.email_hash('consent.person@example.test'), 'who agreed';
+  assert l.document_sha256 = (select sha256 from public.consent_documents where kind = 'privacy' and version = '2'), 'what they agreed to';
+  assert (select document_text like '%13 months%' from public.consent_documents where kind = 'privacy' and version = '2'), 'the words themselves are kept';
+  assert l::text not like '%Consent.Person%' and l::text not like '%consent.person%', 'no plain email';
+end $$;
+delete from auth.users where id = '00000000-0000-0000-0000-0000c0a5e001';
+do $$ begin
+  assert (select count(*) from public.consents where user_id = '00000000-0000-0000-0000-0000c0a5e001') = 0, 'the live row went with the account';
+  assert (select array_agg(event order by seq) from public.consent_ledger where user_id = '00000000-0000-0000-0000-0000c0a5e001') = array['given', 'ended'], 'the proof stays, and shows when it ended';
+  assert (select email_hash from public.consent_ledger where user_id = '00000000-0000-0000-0000-0000c0a5e001' and event = 'ended') = public.email_hash('consent.person@example.test'), 'still matches the address';
+end $$;
+select tt.expect_error($q$update public.consent_ledger set version = '9' where user_id = '00000000-0000-0000-0000-0000c0a5e001'$q$, 'append-only');
+select tt.expect_error($q$delete from public.consent_ledger where user_id = '00000000-0000-0000-0000-0000c0a5e001'$q$, 'append-only');
+select tt.expect_error('truncate public.consent_ledger', 'append-only');
+select tt.expect_error($q$update public.consent_documents set wording = 'x' where kind = 'privacy'$q$, 'append-only');
+select tt.expect_error('truncate public.admin_audit_log', 'append-only');
+do $$ begin
+  assert not has_function_privilege('authenticated', 'public.consent_ledger_append(text, uuid, text, text, text, timestamptz)', 'execute'), 'members cannot write proof';
+  assert not has_function_privilege('authenticated', 'public.svc_archive_seal(uuid, bigint, bigint, text, text, text, date)', 'execute'), 'members cannot seal';
+  assert (public.svc_integrity_check()->>'ok')::boolean, format('chains are whole: %s', public.svc_integrity_check());
+end $$;
+
+-- No write-once copy, no delete: the rows stay.
+insert into public.app_logs (level, source, message, created_at) values ('info', 'test', 'needs worm', now() - interval '70 days');
+update public.archive_batches set status = 'destroyed', destroyed_at = now() where status = 'failed' and table_name = 'app_logs';
+create temp table b5 as select public.svc_archive_next_batch() as b;
+select tt.expect_error(format('select public.svc_archive_seal(%L, 1, 10, %L, null, null, null)', (select b->>'id' from b5), 'abc'), 'worm_copy_required');
+select tt.expect_error(format('select public.svc_archive_seal(%L, 1, 10, %L, %L, %L, %L)', (select b->>'id' from b5), 'abc', 'k', 'v', '2000-01-01'), 'worm_lock_too_short');
+do $$ begin
+  assert exists (select 1 from public.app_logs where message = 'needs worm'), 'rows stay without the copy';
+  assert (select worm_retain_until is null from public.archive_batches where id = ((select b->>'id' from b5))::uuid), 'nothing recorded';
+  assert public.svc_archive_seal(((select b->>'id' from b5))::uuid, 1, 10, 'abc', 'archives/x', 'v5', public.svc_archive_retain_until(((select b->>'id' from b5))::uuid)) = 1, 'sealed with the copy';
+end $$;
+
+-- A sealed register entry can't be altered, and tampering past the triggers is caught by the chain.
+select tt.expect_error(format('update public.archive_batches set sha256 = %L where id = %L', 'forged', (select b->>'id' from b5)), 'cannot be changed');
+select tt.expect_error(format('delete from public.archive_batches where id = %L', (select b->>'id' from b5)), 'cannot be deleted');
+select tt.expect_error('truncate public.archive_batches cascade', 'append-only');
+create temp table head as select (select max(seq) from public.consent_ledger) as seq, (select entry_hash from public.consent_ledger order by seq desc limit 1) as hash;
+do $$ declare v jsonb; begin
+  v := public.svc_integrity_check((select seq from head), (select hash from head));
+  assert (v->>'ok')::boolean and (v->>'matches_checkpoint')::boolean, format('matches the checkpoint: %s', v);
+  v := public.svc_integrity_check((select seq from head), repeat('f', 64));
+  assert not (v->>'ok')::boolean and not (v->>'matches_checkpoint')::boolean, 'a rewritten history does not match write-once storage';
+end $$;
+-- As someone with full database access would do it: triggers off, one entry changed.
+alter table public.consent_ledger disable trigger consent_ledger_no_change;
+update public.consent_ledger set version = 'forged' where seq = (select seq from head);
+alter table public.consent_ledger enable trigger consent_ledger_no_change;
+do $$ declare v jsonb := public.svc_integrity_check(); begin
+  assert (v->>'consent_bad_seq')::bigint = (select seq from head) and not (v->>'ok')::boolean, format('forgery found: %s', v);
+end $$;
+alter table public.consent_ledger disable trigger consent_ledger_no_change;
+update public.consent_ledger set version = '2' where seq = (select seq from head);
+alter table public.consent_ledger enable trigger consent_ledger_no_change;
+
+-- Checkpoints: due when there's something new, not otherwise.
+do $$ declare p jsonb := public.svc_checkpoint_plan(); begin
+  assert (p->>'due')::boolean and (p->>'consent_through')::bigint = (select seq from head), format('due, got %s', p);
+  assert jsonb_array_length(public.svc_consent_export_page(0, (p->>'consent_through')::bigint, 1000)) > 0, 'ledger exports';
+  perform public.svc_checkpoint_record((p->>'consent_through')::bigint, p->>'consent_head', (p->>'register_through')::bigint, p->>'register_head', 'checkpoints/a.json', 'v1', null, null, '{"ok": true}');
+  assert not (public.svc_checkpoint_plan()->>'due')::boolean, 'nothing new';
+end $$;
+select tt.expect_error($q$delete from public.archive_checkpoints where checkpoint_key = 'checkpoints/a.json'$q$, 'append-only');
 
 reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;

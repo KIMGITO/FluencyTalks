@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AdminRoute } from './AdminRoute';
+import { PausedGate } from './PausedGate';
 
 import Landing from '@/pages/public/Landing';
 import NotFound from '@/pages/public/NotFound';
@@ -28,7 +29,7 @@ import Settings from '@/pages/app/Settings';
 import Learning from '@/pages/app/Learning';
 import AcceptInvite from '@/pages/auth/AcceptInvite';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
-import { AdminActivity, AdminAudit, AdminHealth, AdminOverviewPage, AdminReports, AdminSecurity, AdminTeam, AdminUsers } from '@/components/features/admin';
+import { AdminActivity, AdminAudit, AdminHealth, AdminNotifications, AdminOverviewPage, AdminReports, AdminSecurity, AdminTeam, AdminUsers } from '@/components/features/admin';
 import { AdminDecisions } from '@/components/features/admin/AdminDecisions';
 import Library from '@/pages/features/library/Library';
 import ContributePage from '@/pages/features/library/contribute/ContributePage';
@@ -41,7 +42,7 @@ import PointsHistory from '@/pages/app/PointsHistory';
 export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
-  { path: '/signup', element: <Signup /> },
+  { path: '/signup', element: <PausedGate><Signup /></PausedGate> },
   { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/reset-password', element: <ResetPassword /> },
   { path: '/admin/accept-invite', element: <AcceptInvite /> },
@@ -103,7 +104,7 @@ export const router = createBrowserRouter([
               { path: '/admin/people', element: <AdminUsers /> },
               { path: '/admin/people/:username', element: <UserProfile /> },
               { path: '/admin/posts/:id', element: <PostDetail /> },
-              { path: '/admin/notifications', element: <Notifications /> },
+              { path: '/admin/notifications', element: <AdminNotifications /> },
               { path: '/admin/activity', element: <AdminActivity /> },
               { path: '/admin/team', element: <AdminTeam /> },
               { path: '/admin/health', element: <AdminHealth /> },

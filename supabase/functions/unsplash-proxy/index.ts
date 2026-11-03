@@ -4,6 +4,8 @@
 // Called from the app with: supabase.functions.invoke('unsplash-proxy', { body: { search, page, perPage } })
 // JWT verification stays ON (default), so only signed-in users can spend the Unsplash quota.
 
+import { edgeGate } from '../_shared/edge-gate.ts';
+
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,6 +17,9 @@ const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405);
+
+  const refused = await edgeGate(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, req.headers.get('Authorization') ?? '');
+  if (refused) return json({ error: refused === 429 ? 'Too many searches. Wait a minute and try again.' : 'Image search is paused right now' }, refused);
 
   const key = Deno.env.get('UNSPLASH_ACCESS_KEY');
   if (!key) return json({ error: 'Image search is not configured' }, 503);

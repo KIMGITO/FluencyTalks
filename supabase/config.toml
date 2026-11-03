@@ -380,6 +380,10 @@ allow_dynamic_registration = false
 [functions.send-push]
 verify_jwt = false
 
+# Called by the database on a clock with its own secret (x-archive-secret), not by a signed-in user.
+[functions.archive-run]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
@@ -421,3 +425,24 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Production's values. `supabase config push` applies this file straight away, even with its prompts answered no
+# or piped, so without this block a push sets production's site_url to localhost and turns email confirmation off.
+[remotes.production]
+project_id = "pilgmyaocwebzajemrfq"
+
+[remotes.production.auth]
+site_url = "https://thefluencytalks.com/"
+additional_redirect_urls = ["https://thefluencytalks.com/home", "https://thefluencytalks.com/reset-password"]
+minimum_password_length = 6
+
+[remotes.production.auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[remotes.production.auth.sms]
+template = "Your code is {{ .Code }}"
+
+[remotes.production.auth.mfa.phone]
+template = "Your code is {{ .Code }}"

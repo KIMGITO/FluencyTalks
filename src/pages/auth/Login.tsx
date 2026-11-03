@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
+import { useAppStatus } from '@/store/appStatusStore';
 import { Button, Input } from '@/components/ui';
 import { SocialButtons } from '@/components/features';
 import { useAuthStore } from '@/store/authStore';
@@ -9,6 +10,7 @@ import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
 
 export default function Login() {
+  const appPaused = useAppStatus()?.paused;
   useSeo({ title: 'Log in', description: `Log in to ${BRAND} to pick up your conversations where you left off.`, path: '/login', noIndex: true });
   const { signIn, error, clearError } = useAuthStore();
   useEffect(() => { clearError(); }, [clearError]);
@@ -28,6 +30,7 @@ export default function Login() {
 
   return (
     <AuthLayout title="Welcome back">
+      {appPaused && <p role="status" className="mb-3 text-sm">The Fluency Talks is paused for a short while. Staff can still log in.</p>}
       <div className="space-y-6">
         <p className="-mt-2 text-center text-sm text-muted">
           Log in to pick up your conversations where you left off.

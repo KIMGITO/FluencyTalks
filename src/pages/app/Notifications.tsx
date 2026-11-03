@@ -1,128 +1,39 @@
 import clsx from 'clsx';
 import { CheckCheck, Settings2, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
 import { Avatar, Button, EmptyState, ErrorState, NotificationSkeleton, PartialError, Spinner, Tabs } from '@/components/ui';
 import { PushToggle } from '@/components/features/review/PushToggle';
 import { DecisionQueue } from '@/components/features/review/DecisionQueue';
+import { useNotificationFeed } from '@/hooks/useNotificationFeed';
 import { formatTime } from '@/lib/format';
-import { CATEGORY_LABEL, hasActor, notificationLink, notificationVerb } from '@/lib/notificationText';
-import { deleteNotifications, listNotifications } from '@/services';
+import { CATEGORY_LABEL, hasActor, notificationVerb } from '@/lib/notificationText';
 import { setNotificationPrefs } from '@/services/review';
-import { useInfiniteScroll } from '@/store/feedCache';
-import { useNotificationStore } from '@/store/notificationStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
-import type { AppNotification, NotificationCategory } from '@/types/db';
 
-type Filter = 'all' | NotificationCategory;
+type Filter = 'all' | 'corrections' | 'decisions' | 'reminders' | 'system';
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' }, { key: 'corrections', label: 'Corrections' }, { key: 'decisions', label: 'Decisions' }, { key: 'reminders', label: 'Reminders' }, { key: 'system', label: 'System' },
 ];
-const PAGE = 25;
 const OPTIONAL: { key: string; label: string; hint: string }[] = [
   { key: 'corrections', label: 'Corrections and replies', hint: 'Someone challenges your correction, replies, or confirms your post.' },
   { key: 'decisions', label: 'Decisions', hint: 'Someone accepts or declines your correction.' },
   { key: 'system', label: 'Notices', hint: 'Levels, vouches and points.' },
 ];
 
-const dayLabel = (iso: string) => {
-  const d = new Date(iso); const now = new Date();
-  const days = Math.floor((new Date(now.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86_400_000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  return d.toLocaleDateString([], { month: 'long', day: 'numeric', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
-};
-
 export default function Notifications() {
-  const navigate = useNavigate();
-  const { unread, markRead, markAllRead, items: live } = useNotificationStore();
   const me = useProfileStore((s) => s.me);
   const reloadMe = useProfileStore((s) => s.load);
   const [filter, setFilter] = useState<Filter>('all');
-  const [items, setItems] = useState<AppNotification[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [moreFailed, setMoreFailed] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [done, setDone] = useState(false);
   const [showPrefs, setShowPrefs] = useState(false);
-  const [markingAll, setMarkingAll] = useState(false);
-  const request = useRef(0);
+  const { items, groups, unread, failed, moreFailed, loadingMore, markingAll, sentinel, retry, more, open, toggleRead, remove, allRead } = useNotificationFeed(filter === 'all' ? null : filter);
 
-  const first = useCallback(async (quiet = false) => {
-    const mine = ++request.current;
-    if (!quiet) { setItems(null); setFailed(false); }
-    try {
-      const rows = await listNotifications(PAGE, null, filter === 'all' ? null : filter);
-      if (mine !== request.current) return;   // a newer filter took over
-      setItems((old) => {
-        // A background refresh keeps the older pages already loaded.
-        const tail = quiet && old ? old.filter((o) => !rows.some((r) => r.id === o.id) && rows.length && o.created_at < rows[rows.length - 1].created_at) : [];
-        return [...rows, ...tail];
-      });
-      if (!quiet) setDone(rows.length < PAGE);
-    } catch {
-      if (mine === request.current && !quiet) setFailed(true);
-    }
-  }, [filter]);
-  useEffect(() => { void first(); }, [first]);
-  // New ones arrived (the store listens): bring them in without a flash.
-  const newest = live[0]?.id;
-  useEffect(() => { if (newest) void first(true); }, [newest, first]);
-
-  const more = async () => {
-    if (!items?.length || done || loadingMore) return;
-    setLoadingMore(true); setMoreFailed(false);
-    try {
-      const rows = await listNotifications(PAGE, items[items.length - 1].created_at, filter === 'all' ? null : filter);
-      setItems((old) => [...(old ?? []), ...rows.filter((r) => !(old ?? []).some((o) => o.id === r.id))]);
-      setDone(rows.length < PAGE);
-    } catch { setMoreFailed(true); } finally { setLoadingMore(false); }
-  };
-  const sentinel = useInfiniteScroll(more, !!items && !done && !moreFailed, items?.length ?? 0);
-
-  const open = (n: AppNotification) => {
-    if (!n.read_at) {
-      setItems((old) => old?.map((o) => (o.id === n.id ? { ...o, read_at: new Date().toISOString() } : o)) ?? old);
-      markRead([n.id]).catch(() => undefined);
-    }
-    navigate(notificationLink(n));
-  };
-  const toggleRead = async (n: AppNotification) => {
-    if (n.read_at) return;
-    const stamp = new Date().toISOString();
-    setItems((old) => old?.map((o) => (o.id === n.id ? { ...o, read_at: stamp } : o)) ?? old);
-    try { await markRead([n.id]); }
-    catch (e) { setItems((old) => old?.map((o) => (o.id === n.id ? { ...o, read_at: null } : o)) ?? old); toast.error((e as Error).message); }
-  };
-  const remove = async (n: AppNotification) => {
-    const before = items;
-    setItems((old) => old?.filter((o) => o.id !== n.id) ?? old);
-    try { await deleteNotifications([n.id]); void useNotificationStore.getState().load(); }
-    catch (e) { setItems(before); toast.error((e as Error).message); }
-  };
-  const allRead = async () => {
-    setMarkingAll(true);
-    const before = items;
-    const stamp = new Date().toISOString();
-    setItems((old) => old?.map((o) => (o.read_at ? o : { ...o, read_at: stamp })) ?? old);
-    try { await markAllRead(); toast.success('All marked as read.'); }
-    catch (e) { setItems(before); toast.error((e as Error).message); }
-    finally { setMarkingAll(false); }
-  };
   const setPref = async (key: string, on: boolean) => {
     if (!me) return;
     try { await setNotificationPrefs({ ...(me.notification_prefs ?? {}), [key]: on }); await reloadMe(me.id); toast.success('Saved.'); }
     catch (e) { toast.error((e as Error).message); }
   };
-
-  const groups: { label: string; rows: AppNotification[] }[] = [];
-  (items ?? []).forEach((n) => {
-    const label = dayLabel(n.created_at);
-    const g = groups[groups.length - 1];
-    if (g?.label === label) g.rows.push(n); else groups.push({ label, rows: [n] });
-  });
 
   return (
     <div className="mx-auto w-full max-w-3xl pb-24 md:pb-8">
@@ -146,7 +57,7 @@ export default function Notifications() {
       )}
       <div className="ft-inset mb-3 overflow-x-auto"><Tabs value={filter} onChange={setFilter} items={FILTERS} /></div>
 
-      {failed ? <ErrorState title="Couldn't load your notifications" onRetry={() => void first()} />
+      {failed ? <ErrorState title="Couldn't load your notifications" onRetry={retry} />
         : items === null ? <NotificationSkeleton />
         : !items.length ? (
           <EmptyState title={filter === 'all' ? 'Nothing yet' : 'Nothing here'} text={filter === 'all' ? 'Corrections, decisions and replies about your posts will show up here.' : 'Try another filter, or look at All.'}

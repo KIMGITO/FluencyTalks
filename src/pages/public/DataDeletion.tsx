@@ -48,13 +48,14 @@ function DeleteAction() {
 
 const sections = [
   { id: 'what', short: 'What is deleted', tagline: 'Before you go', heading: 'What deleting your account does', body: (<><P>It happens straight away, and it is permanent.</P>
-      <Bullets items={[['Removed:', 'your profile and photo, the messages you sent (they disappear from your partners’ chats too), your corrections, saved phrases, translation history, points and saved partners.'], ['Kept:', 'reports other people made about you, so safety work is not undone. They are kept without your account attached.'], ['Want a copy first?', 'Download your data from Settings before you delete.']]} /></>) },
+      <Bullets items={[['Removed:', 'your profile and photo, the messages you sent (they disappear from your partners’ chats too), your corrections, saved phrases, translation history, points and saved partners.'], ['Kept for a set time:', 'reports other people made about you, moderation decisions and logs, for the periods in our Privacy Policy, from 13 months to 3 years. They are kept without your account attached, then destroyed.'],
+        ['Kept permanently:', 'proof that you gave consent: your account number, a hashed copy of your email address, what you agreed to and when. The law makes us responsible for proving consent.'], ['Want a copy first?', 'Download your data from Settings before you delete.']]} /></>) },
   { id: 'delete', short: 'Delete it yourself', tagline: 'The quick way', heading: 'Delete your account', body: <DeleteAction /> },
-  { id: 'email', short: 'Cannot log in?', tagline: 'By email', heading: 'Ask us to do it', body: (<><P>If you cannot log in, write to <a href={mailto(EMAILS.privacy, { subject: 'Delete my account' })}>{EMAILS.privacy}</a> from the email address on the account. We check the request is yours and delete the account. We aim to reply within 72 hours.</P>
+  { id: 'email', short: 'Cannot log in?', tagline: 'By email', heading: 'Ask us to do it', body: (<><P>If you cannot log in, write to <a href={mailto(EMAILS.privacy, { subject: 'Delete my account' })}>{EMAILS.privacy}</a> from the email address on the account. We check the request is yours and delete the account. We reply within 2 working days and finish deleting within 20 days, or 30 days if another provider has to act too. If we need longer, we can extend this once, by no more than 20 days, and we will tell you why.</P>
       <P>Worried about harassment or safety? Say so in the email and we will look at that first.</P></>) },
 ];
 
 export default function DataDeletion() {
   useSeo({ title: 'Delete Your Account and Data', description: 'How to permanently delete your The Fluency Talks account, messages and phrasebook, and what happens to your data afterwards.', path: '/data-deletion' });
-  return <LegalLayout title="Delete your account and data" active="/data-deletion" updated="24 October 2026" contact={EMAILS.privacy} sections={sections} />;
+  return <LegalLayout title="Delete your account and data" active="/data-deletion" updated="3 November 2026" contact={EMAILS.privacy} sections={sections} />;
 }
