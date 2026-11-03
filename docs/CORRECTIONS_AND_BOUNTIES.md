@@ -13,7 +13,7 @@ There are two correction systems. They serve different things and are deliberate
 ## Audit (2026-11-02)
 
 ### Library contributions: already consistent
-`20261102000003_correction_workflow.sql` implements the full workflow: posting never implies
+`20261103100900_corrections.sql` and `20261103100800_community_posts.sql` implement the full workflow: posting never implies
 correctness; corrections link to the post and its author; threaded discussion; immutable history;
 states `pending → accepted | declined | superseded | withdrawn` with `decided_by`, `decided_at` and
 a note; owner notifications; deadline, reminders and escalation from a configurable policy; with
@@ -43,7 +43,7 @@ No changes were needed here.
 
 Eligibility itself was checked end to end and is correct. The asker's chat partner sees the bounty when
 they are a native speaker of the message's language, or verified at B1+. Self-reported levels do not
-count; that is the earned-levels rule (`20261102000001`) and is kept. A message is tagged with the
+count; that is the earned-levels rule (`20261103101100_points_and_levels`) and is kept. A message is tagged with the
 language chosen in the composer (default: the language you are learning), and only people qualified
 in *that* language see the bounty. The new composer shows the tag as a tab, so it is visible.
 

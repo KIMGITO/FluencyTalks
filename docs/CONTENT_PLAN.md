@@ -40,7 +40,7 @@ the code on 2026-11-01.
 | **Safety** | Message requests, block, report (9 reasons), admin review, auto-suspend after 5 reports in 7 days | `services/safety.ts` |
 | **Saved partners** | Private bookmarks, no follower counts | `Partners.tsx` |
 | **Data control** | Export your data, delete your account | `/data-deletion` |
-| **40 launch languages** | English, Vietnamese, Swahili, Spanish, French, German, Portuguese, Italian, Dutch, Polish, Ukrainian, Russian, Greek, Swedish, Czech, Romanian, Turkish, Arabic, Hebrew, Persian, Hindi, Bengali, Urdu, Tamil, Punjabi, Chinese, Cantonese, Japanese, Korean, Thai, Indonesian, Malay, Tagalog, Amharic, Somali, Yoruba, Igbo, Hausa, Zulu, Kinyarwanda. Always say **"40 languages"**, never "40+" or "100" | `migrations/20261101000003_launch_languages.sql`, `seed.sql`, `src/content/languages.ts` |
+| **40 launch languages** | English, Vietnamese, Swahili, Spanish, French, German, Portuguese, Italian, Dutch, Polish, Ukrainian, Russian, Greek, Swedish, Czech, Romanian, Turkish, Arabic, Hebrew, Persian, Hindi, Bengali, Urdu, Tamil, Punjabi, Chinese, Cantonese, Japanese, Korean, Thai, Indonesian, Malay, Tagalog, Amharic, Somali, Yoruba, Igbo, Hausa, Zulu, Kinyarwanda. Always say **"40 languages"**, never "40+" or "100" | `migrations/20261103101500_reference_data.sql`, `src/content/languages.ts` |
 
 ### ❌ Not in the product: don't target these searches
 

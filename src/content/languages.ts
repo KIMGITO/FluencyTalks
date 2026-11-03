@@ -1,6 +1,6 @@
 /**
  * The 40 launch languages, for the public /languages pages. Keep in step with the launch list in
- * supabase/seed.sql (is_supported_learning). `id` is the ISO 639-3 id the app uses; `lang` is the BCP 47
+ * supabase/migrations/20261103101500_reference_data.sql (is_supported_learning). `id` is the ISO 639-3 id the app uses; `lang` is the BCP 47
  * tag for the greeting text (so screen readers pronounce it). Greetings are only given where we are sure of them.
  */
 export type Region = 'African languages' | 'European languages' | 'Middle Eastern languages' | 'Asian languages';

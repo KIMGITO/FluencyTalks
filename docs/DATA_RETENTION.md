@@ -311,7 +311,7 @@ The order matters. The migration stops the old 30-day log delete straight away, 
    ```
    The answer should have `"checkpoint":true` and no `"worm":"not configured"`, and the last query should show `"ok": true`. **Then try to delete the `checkpoint_key` object's version in the bucket: it must be refused.** If it isn't, the bucket isn't locking.
 
-If `cron.job` shows no rows, enable pg_cron and run the two `cron.schedule` lines from `supabase/migrations/20261103000003_data_archive.sql`.
+If `cron.job` shows no rows, enable pg_cron and run the two `cron.schedule` lines from `supabase/migrations/20261103101300_data_archive.sql`.
 
 ## Keeping an eye on it
 

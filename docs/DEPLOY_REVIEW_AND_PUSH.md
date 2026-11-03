@@ -10,7 +10,7 @@ supabase db push
 ```
 
 Then confirm the sweep is scheduled. If `cron.job` doesn't exist, enable pg_cron in the dashboard and run the
-`cron.schedule` line from `20261102000003_correction_workflow.sql`. Without it the sweep still runs from app
+`cron.schedule` line from `20261103100700_moderation.sql`. Without it the sweep still runs from app
 activity, but only when people use the app.
 
 ```sql

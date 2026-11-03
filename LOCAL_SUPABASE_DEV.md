@@ -171,7 +171,7 @@ No application source files needed changes.
 - `.env` points at production. To run the app against the local stack, pass the values for that run:
   `VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_ANON_KEY=<local anon key> npx vite`
 - After `supabase start`, give storage up to a minute before `supabase migration up --local`:
-  its tables must exist before the baseline migration runs.
+  its tables must exist before the migrations run.
 - Real Supabase refuses an UPDATE or DELETE with no WHERE. `scripts/test-db.sh` turns the same rule on when
   run against the Supabase image, so use `ADMIN_URL=postgresql://postgres:postgres@localhost:54322/postgres`.
 

@@ -70,7 +70,7 @@ They also declare consent to the privacy policy, terms, and age requirement.
   learning_level, onboarding_done, and consents columns.
 - The languages reference table (100 curated languages; 40 of them are on
   the launch list, is_supported_learning, set by migration
-  20261101000003_launch_languages). Users can only pick launch-list
+  20261103101500_reference_data). Users can only pick launch-list
   languages; a profile that already holds another language keeps it.
 - The set_language_profile and record_consent database functions.
 
@@ -714,7 +714,7 @@ project, and production on Cloudflare Pages.
 - .env (gitignored) holds VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
   for local development. .env.example shows the expected variables.
 - supabase/migrations is a set of numbered SQL files that define the
-  whole schema. supabase/seed.sql populates reference data after a reset.
+  whole schema. supabase/seed.sql adds the extra languages after a local reset.
 - The npm run build command creates dist, which is deployed to Cloudflare
   Pages with npm run deploy.
 - wrangler.toml and vercel.json both exist. The app uses the Cloudflare

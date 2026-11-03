@@ -251,7 +251,7 @@ If step 1 doesn't get beginners answered, fix that before starting step 2.
 
 **What's in it:**
 
-- **Migration** `20261102000012_help_posts.sql`: `post_type`, the help post rules, `post_help_request`, `rate_help_fix`, `help_supply`, and the level changes in section 7.
+- **Migrations** `20261103100800_community_posts.sql` and `20261103101100_points_and_levels.sql`: `post_type`, the help post rules, `post_help_request`, `rate_help_fix`, `help_supply`, and the level changes in section 7.
 - **Composer:** learners choose a post type first (`HelpComposer.tsx`, `ContributePage.tsx`).
 - **Practice tab:** in the Library, separate from All posts.
 - **Answers:** a strip on Home, a section in the "I can answer" queue, the Bounties badge, and notifications to up to 5 qualified people.

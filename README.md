@@ -21,7 +21,7 @@ cp .env.example .env        # add your Supabase URL + anon key
 npm run dev
 ```
 
-Supabase setup: create a project, run `supabase/migrations/0001_init.sql` in the SQL editor, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://thefluencytalks.com` and allow-list **both** `http://localhost:5173/**` and `https://thefluencytalks.com/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`. Custom domain + Cloudflare Pages: add `thefluencytalks.com` (apex) and `www.thefluencytalks.com` in Cloudflare → Pages → Domains. `wrangler.toml` + `public/_redirects` 301-redirect every legacy/`www` host (`fluencytalks.com`, `www.fluencytalks.com`, `www.thefluencytalks.com`) to the apex `https://thefluencytalks.com`, and `/* → /index.html` handles React Router client-side routes.
+Supabase setup: create a project, link it and run `supabase db push`, then enable **Email, Google, Apple, Facebook** under Authentication → Providers. Under Authentication → URL Configuration set the **Site URL** to `https://thefluencytalks.com` and allow-list **both** `http://localhost:5173/**` and `https://thefluencytalks.com/**` under **Redirect URLs** — if the hosted whitelist still points at `localhost:3000`, production logins bounce back there instead of the app. In Google Cloud Console → Credentials, the OAuth client's **Authorized redirect URIs** must include `https://<project-ref>.supabase.co/auth/v1/callback`. Custom domain + Cloudflare Pages: add `thefluencytalks.com` (apex) and `www.thefluencytalks.com` in Cloudflare → Pages → Domains. `wrangler.toml` + `public/_redirects` 301-redirect every legacy/`www` host (`fluencytalks.com`, `www.fluencytalks.com`, `www.thefluencytalks.com`) to the apex `https://thefluencytalks.com`, and `/* → /index.html` handles React Router client-side routes.
 
 ## Folder map
 
@@ -52,22 +52,37 @@ supabase/functions/    delete-account (Edge Function)
 
 ## Backend (Supabase)
 
-> **Important: reset your database after pulling this.** Two earlier rewrites of the migrations (git tags
-> `backup-team-squash-2026-10-21` and the files in `supabase/migrations_archive/team_squash_v2/`) dropped
-> columns and more than 30 functions the app calls, so onboarding failed (`column "status" does not exist`,
-> then `set_language_profile` and `record_consent` missing). A database built from those files cannot be
-> patched in place: run `supabase db reset` (local) or `supabase db reset --linked` (hosted dev project).
-> **This deletes all data in that database.** Do not use it on a database with real users.
-
 ### Migrations
+
+One file per area, holding the final definition of everything in it. Content is kept apart from schema.
 
 | File | What it is |
 |---|---|
-| `20261024000000_baseline.sql` | The complete, tested schema in one file: tables, security rules, messaging, safety, storage, phrasebook, corrections, notifications, search, ISO 639-3 languages, one-native-plus-one-learning language profile, points ledger and reward limits. It is the original chain 0001–0031 (kept in `supabase/migrations_archive/`) joined in order. |
-| `20261024000001_message_language_and_bounties.sql` | Message language tag; who may correct (native speaker, or learner at B1+); the bounty system (`send_message(... p_bounty)`, `answer_bounty`, `list_open_bounties`, `list_my_bounties`, automatic refunds). |
+| `20261103100000_foundation.sql` | Default privileges, language and country tables, shared helpers |
+| `20261103100100_accounts.sql` | Profiles, language profile, sign-up guards, avatars bucket |
+| `20261103100200_staff_access.sql` | Staff accounts and MFA, audit trail, logs, health |
+| `20261103100300_app_controls.sql` | Pause switch, rate limits, `check_request` |
+| `20261103100400_social_graph.sql` | Follows, blocks, saved partners, matching, `home_feed`, `search_people` |
+| `20261103100500_notifications.sql` | Notification feed, web push, nav badges |
+| `20261103100600_messaging.sql` | Conversations, messages, reactions, read receipts |
+| `20261103100700_moderation.sql` | Reports, restrictions, appeals, accountability sweep |
+| `20261103100800_community_posts.sql` | Contribution and help posts, discussions, endorsements |
+| `20261103100900_corrections.sql` | Corrections workflow and bounties |
+| `20261103101000_phrasebook.sql` | Saved phrases, translation history |
+| `20261103101100_points_and_levels.sql` | Points ledger, earned levels, vouches |
+| `20261103101200_consent_ledger.sql` | Consents, legal document versions, hash-chained ledger |
+| `20261103101300_data_archive.sql` | Retention, archive batches, legal holds, checkpoints |
+| `20261103101400_blog.sql` | Blog table, staff editor, images bucket |
+| `20261103101500_reference_data.sql` | Settings rows, the launch languages, countries, level rules, rate limits, retention periods |
+| `20261103101600_legal_documents.sql` | Wording and text of each consent version |
+| `20261103101700_blog_posts.sql` | The published posts |
+| `20261103101800_faq.sql` | FAQ table and staff editor |
+| `20261103101900_faq_questions.sql` | The FAQ questions |
+
+`supabase/seed.sql` adds the languages beyond the launch list, for local development only. `db push` never runs it, so anything production needs belongs in a migration.
 
 **Rules for changing the database**
-1. **Never edit, merge, squash or rewrite an existing migration by hand.** Add a new file with a later version number.
+1. **Once a migration has been pushed, change the database with a new file.** `db push` skips files it has already applied. Name it for what it does, and fold it into its area file the next time the chain is consolidated.
 2. Run `npm run test:db` (needs a throwaway Postgres 15+; see `scripts/test-db.sh`) before you push. CI runs the same check on every push.
 3. It builds the database from scratch, checks that **every `rpc()` call in `src/` matches a database function and its parameter names**, and replays onboarding, messaging, corrections, points, bounties, reports, blocking and admin access.
 4. Hosted Supabase rejects direct `DELETE`s on `storage.*` tables; remove buckets with the Storage API or dashboard.
@@ -83,7 +98,7 @@ Design rules:
 - **Clients read through RLS, write through functions.** Follow, block, message, report and profile-completion are all `security definer` functions that check blocks, account status and rate limits. There are no direct insert policies on those tables. Rate limits, the pause switch and who can read what: [docs/SECURITY.md](docs/SECURITY.md).
 - **Blocking is enforced in every read** via `is_blocked_between()` (both directions, silent).
 - `profiles.role`, `status` and counters cannot be edited from the client (trigger-protected).
-- **After adding any new function**, re-run the grants block at the end of `20261024000001_message_language_and_bounties.sql` (functions are callable by signed-in users only). Keep its last lines: `award_points` and `refund_expired_bounties` must stay internal-only.
+- **After adding a function**, give it its own `revoke` and `grant` at the end of its migration, as the area files do. Signed-in users only unless it needs otherwise; internal helpers such as `award_points` get no client grant. `supabase/tests/privileges.sql` fails otherwise.
 - Create the super admin and invite staff: see [docs/ADMIN_SETUP.md](docs/ADMIN_SETUP.md). Roles can't be set by hand.
 - Logs and records that keep growing are archived and destroyed on a schedule: see [docs/DATA_RETENTION.md](docs/DATA_RETENTION.md).
 - Deploy account deletion: `supabase functions deploy delete-account`. It is the only Edge Function, so exit cost is one small endpoint.
@@ -199,7 +214,6 @@ It prints `ALL APP-FLOW CHECKS PASSED` and `OK: database matches the app`, or st
 ## Known gaps
 
 - Direction and plan: see **[docs/PRODUCT_ANALYSIS.md](docs/PRODUCT_ANALYSIS.md)** (features, what is built, what to add, bottlenecks).
-- Migrations have not been verified against a live database since 0027. Apply them to a throwaway Supabase project first.
 - `user_languages` is now a derived copy of the two language columns on `profiles` (kept in sync by `set_language_profile`) so the old search and feed functions keep working until they are rewritten.
 - **Community library**: phrases have an `is_public` column and a read policy, but no screen publishes or browses them yet.
 - **Unsplash**: search runs through the `unsplash-proxy` Edge Function, so the key stays on the server. Deploy it and set the secret: `supabase secrets set UNSPLASH_ACCESS_KEY=...` then `supabase functions deploy unsplash-proxy`. The Learning page shows a result with its photographer credit; attaching an image to a saved phrase is not built yet.
