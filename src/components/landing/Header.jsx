@@ -83,7 +83,7 @@ export default function Header() {
         <div className="lp-header__actions">
           {/* {user && <ThemeToggle />} */}
           {authLoading ? null : user ? (
-            <></>
+            <Link to="/home" className="lp-btn lp-btn--accent lp-btn--sm">Go to your account</Link>
           ) : (
             <>
               <Link to="/login" className="lp-textlink">Log in</Link>

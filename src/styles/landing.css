@@ -22,6 +22,8 @@
   --ink: 23 22 58;
   --muted: 91 90 126;
   --rule: rgb(var(--ink) / .16);
+  /* Text colours a blog post can use. tests/unit/blogHtml.test.ts checks they stay readable on every background. */
+  --post-red: #b3261e; --post-orange: #a84a00; --post-green: #18703a; --post-blue: #1f54c4; --post-purple: #6b2fc0; --post-grey: #5f5e78;
   --gutter: clamp(1.25rem, 5vw, 3rem);
   --hdr: 4rem;
   --ease: cubic-bezier(.2, .7, .2, 1);
@@ -35,6 +37,7 @@
 :root[data-theme="dark"] .lp {
   --paper: var(--c-bg); --paper-2: var(--c-surface); --deep: 36 35 94; --on-deep: 240 240 255; --accent: 255 129 102;
   --ink: 240 240 255; --muted: 160 160 205;
+  --post-red: #ff9d94; --post-orange: #ffb570; --post-green: #6fdc9e; --post-blue: #9dbcff; --post-purple: #cdb0ff; --post-grey: #b5b5d2;
   --lift: 0 18px 34px -18px rgb(0 0 0 / .7), 0 4px 10px -4px rgb(0 0 0 / .4);
 }
 
@@ -467,9 +470,28 @@ html { scroll-behavior: smooth; }
 .lp-post__cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; }
 .lp-post__col { padding-top: clamp(1.5rem, 4vw, 2.5rem); }
 .lp-post__more { max-width: 60rem; margin-inline: auto; padding-top: clamp(1rem, 3vw, 2rem); border-top: 1px solid var(--rule); }
-.lp-post__more > h2 { font-size: 1.75rem; margin-bottom: 1.25rem; }
-.lp-post__more .lp-postgrid { margin-bottom: clamp(2.5rem, 6vw, 4rem); }
-.lp-post__more h3 { font-size: 1.3rem; }
+.lp-post__more > h2 { font-size: 1.35rem; margin-bottom: .9rem; }
+.lp-morelist { list-style: none; padding: 0; margin: 0 0 clamp(2.5rem, 6vw, 4rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem clamp(1.25rem, 2.5vw, 2rem); }
+.lp-morelink { display: flex; align-items: center; gap: .85rem; min-height: 2.75rem; text-decoration: none; }
+.lp-morelink__thumb { flex: 0 0 5rem; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 4px; background: rgb(var(--paper-2)); border: 1px solid var(--rule); }
+.lp-morelink__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lp-morelink__thumb .lp-postcard__blank { font-size: 1.5rem; }
+.lp-morelink__text { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.lp-morelink__title { font: 500 1.05rem/1.25 var(--font-display); overflow-wrap: anywhere; }
+.lp-morelink:hover .lp-morelink__title { text-decoration: underline; text-decoration-color: rgb(var(--accent)); text-decoration-thickness: 2px; text-underline-offset: .18em; }
+.lp-morelink__meta { font-size: .8125rem; color: rgb(var(--muted)); }
+@media (min-width: 68rem) {
+  /* The page takes the full width, but the text keeps a readable line: title beside the cover, then text beside the call to action. */
+  .lp-post { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); column-gap: clamp(2.5rem, 4vw, 4rem); align-items: center; }
+  .lp-post__head { grid-column: 1 / -1; max-width: none; margin-inline: 0; }
+  .lp-post__head:has(+ .lp-post__cover) { grid-column: 1; }
+  .lp-post__head:has(+ .lp-post__cover) h1 { font-size: clamp(2.25rem, 3.2vw, 2.75rem); line-height: 1.08; }
+  .lp-post__cover { grid-column: 2; max-width: none; margin: 0; }
+  .lp-post__col { grid-column: 1 / -1; max-width: none; margin-inline: 0; display: grid; grid-template-columns: minmax(0, 1fr) 20rem; column-gap: clamp(2.5rem, 5vw, 5rem); align-items: start; }
+  .lp-post__col > :not(.lp-doc__contact) { grid-column: 1; }
+  .lp-post__col > .lp-doc__contact { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: calc(var(--hdr) + 1.5rem); }
+  .lp-post__more { max-width: none; }
+}
 .lp-article__body { overflow-wrap: break-word; }
 .lp-article__body h4 { font: 700 1.05rem/1.35 var(--font-sans); letter-spacing: 0; margin: 1.35rem 0 .35rem; }
 .lp-article__body :where(p, ul, ol, blockquote, figure) + :where(p, ul, ol, blockquote, figure) { margin-top: 1rem; }

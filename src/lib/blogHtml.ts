@@ -27,7 +27,24 @@ export const BLOG_FONTS: { label: string; value: string }[] = [
   { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
   { label: 'Courier', value: '"Courier New", Courier, monospace' },
 ];
+export const BLOG_SIZES: { label: string; value: string }[] = [
+  { label: 'Small', value: '0.875rem' },
+  { label: 'Large', value: '1.25rem' },
+  { label: 'Larger', value: '1.5rem' },
+  { label: 'Huge', value: '2rem' },
+];
+/** Theme variables from landing.css, not fixed colours: each has a shade for light mode and one for dark, so text stays readable in both. */
+export const BLOG_COLORS: { label: string; value: string }[] = [
+  { label: 'Red', value: 'var(--post-red)' },
+  { label: 'Orange', value: 'var(--post-orange)' },
+  { label: 'Green', value: 'var(--post-green)' },
+  { label: 'Blue', value: 'var(--post-blue)' },
+  { label: 'Purple', value: 'var(--post-purple)' },
+  { label: 'Grey', value: 'var(--post-grey)' },
+];
 const FONT_VALUES = new Set(BLOG_FONTS.map((f) => f.value));
+const SIZE_VALUES = new Set(BLOG_SIZES.map((f) => f.value));
+const COLOR_VALUES = new Set(BLOG_COLORS.map((f) => f.value));
 const ALIGN = new Set(['center', 'right', 'justify']);
 
 export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -47,7 +64,11 @@ function withMarks(text: string, marks: DocNode[] = []) {
       case 'underline': return `<u>${inner}</u>`;
       case 'strike': return `<s>${inner}</s>`;
       case 'lang': { const l = String(m.attrs?.lang ?? ''); return /^[a-zA-Z-]{2,12}$/.test(l) ? `<span lang="${l}">${inner}</span>` : inner; }
-      case 'textStyle': { const f = String(m.attrs?.fontFamily ?? ''); return FONT_VALUES.has(f) ? `<span style="font-family:${esc(f)}">${inner}</span>` : inner; }
+      case 'textStyle': {
+        const allowed = (name: string, value: unknown, list: Set<string>) => (list.has(String(value)) ? [`${name}:${esc(value)}`] : []);
+        const style = [...allowed('font-family', m.attrs?.fontFamily, FONT_VALUES), ...allowed('font-size', m.attrs?.fontSize, SIZE_VALUES), ...allowed('color', m.attrs?.color, COLOR_VALUES)];
+        return style.length ? `<span style="${style.join(';')}">${inner}</span>` : inner;
+      }
       case 'link': {
         const href = safeUrl(m.attrs?.href);
         if (!href) return inner;
@@ -100,8 +121,8 @@ export const formatPostDate = (iso: string) =>
 const dateTag = (iso: string) => `<time datetime="${esc(iso.slice(0, 10))}">${esc(formatPostDate(iso))}</time>`;
 const coverOf = (p: PostCard) => safeImage(p.cover_url);
 
-/** The cards on /blog and under a post. A post with no image gets a plain panel, so the grid stays even. */
-export function postCardsHtml(posts: PostCard[], headingTag: 'h2' | 'h3' = 'h2') {
+/** The cards on /blog. A post with no image gets a plain panel, so the grid stays even. */
+export function postCardsHtml(posts: PostCard[]) {
   return posts.map((p) => {
     const cover = coverOf(p);
     const href = `/blog/${esc(p.slug)}`;
@@ -110,8 +131,20 @@ export function postCardsHtml(posts: PostCard[], headingTag: 'h2' | 'h3' = 'h2')
       : `<span class="lp-postcard__blank" aria-hidden="true">${esc(p.title.trim().charAt(0))}</span>`;
     return `<li class="lp-postcard"><article><a class="lp-postcard__media" href="${href}" tabindex="-1" aria-hidden="true">${media}</a><div class="lp-postcard__text">`
       + (p.kicker ? `<p class="lp-kicker">${esc(p.kicker)}</p>` : '')
-      + `<${headingTag}><a href="${href}">${esc(p.title)}</a></${headingTag}><p class="lp-postcard__desc">${esc(p.description)}</p>`
+      + `<h2><a href="${href}">${esc(p.title)}</a></h2><p class="lp-postcard__desc">${esc(p.description)}</p>`
       + `<p class="lp-doc__meta">${dateTag(p.published_at)} · ${esc(p.read_minutes ?? 1)} min read</p></div></article></li>`;
+  }).join('');
+}
+
+/** The short list under a post: a thumbnail, the title, the date and the reading time. The row is one link and the title names it, so the image has no alt text. */
+function moreLinksHtml(posts: PostCard[]) {
+  return posts.map((p) => {
+    const cover = coverOf(p);
+    const media = cover
+      ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">`
+      : `<span class="lp-postcard__blank" aria-hidden="true">${esc(p.title.trim().charAt(0))}</span>`;
+    return `<li><a class="lp-morelink" href="/blog/${esc(p.slug)}"><span class="lp-morelink__thumb">${media}</span><span class="lp-morelink__text">`
+      + `<span class="lp-morelink__title">${esc(p.title)}</span><span class="lp-morelink__meta">${dateTag(p.published_at)} · ${esc(p.read_minutes ?? 1)} min read</span></span></a></li>`;
   }).join('');
 }
 
@@ -147,5 +180,5 @@ export function postHtml(post: Post, more: PostCard[] = [], preview = false) {
     + (cover ? `<figure class="lp-post__cover"><img src="${esc(cover)}" alt="${esc(post.cover_alt)}" width="1200" height="675" fetchpriority="high" decoding="async"></figure>` : '')
     + `<div class="lp-post__col">${post.summary ? `<p class="lp-article__summary">${esc(post.summary)}</p>` : ''}<div class="lp-article__body">${renderDoc(post.body)}</div>`
     + `<aside class="lp-doc__contact"><p>Practise this with a native speaker. It's free.</p><a class="lp-btn lp-btn--accent" href="/signup">Find a language partner</a></aside></div></article>`
-    + (more.length ? `<nav class="lp-post__more" aria-labelledby="more-title"><h2 id="more-title">Keep reading</h2><ul class="lp-postgrid lp-postgrid--small">${postCardsHtml(more, 'h3')}</ul></nav>` : '');
+    + (more.length ? `<nav class="lp-post__more" aria-labelledby="more-title"><h2 id="more-title">Keep reading</h2><ul class="lp-morelist">${moreLinksHtml(more)}</ul></nav>` : '');
 }

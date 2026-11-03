@@ -26,7 +26,7 @@ export function BlogPreview({ post, isLive, publishing, onPublish, onClose }: { 
     <div role="dialog" aria-modal="true" aria-label="Preview" className="fixed inset-0 z-50 flex flex-col bg-bg">
       <header className="flex flex-wrap items-center gap-2 border-b border-border bg-surface p-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] md:px-4">
         <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label="Close the preview" onClick={onClose}><X size={20} aria-hidden /></Button>
-        <p className="min-w-0 flex-1 text-sm"><b>Preview.</b> <span className="text-muted">{isLive ? 'The site still shows the published version.' : 'Nobody else can see this.'}</span></p>
+        <p className="min-w-0 flex-1 text-sm"><b>Preview.</b> </p>
         <div className="flex items-center gap-1">
           <Button size="sm" variant={view === 'post' ? 'secondary' : 'ghost'} aria-pressed={view === 'post'} onClick={() => setView('post')}>Post</Button>
           <Button size="sm" variant={view === 'card' ? 'secondary' : 'ghost'} aria-pressed={view === 'card'} onClick={() => setView('card')}>In the list</Button>
