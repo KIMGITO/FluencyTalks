@@ -34,6 +34,10 @@ begin
     and a.attname in ('draft', 'draft_saved_at', 'is_live', 'created_at') and (has_column_privilege('anon', a.attrelid, a.attnum, 'select') or has_column_privilege('authenticated', a.attrelid, a.attnum, 'select'));
   assert v is null, 'blog columns readable by the public: ' || coalesce(v, '');
 
+  -- Whether a question is hidden stays with staff, and nobody but staff writes to the FAQ.
+  assert not (has_column_privilege('anon', 'public.faq_items', 'is_live', 'select') or has_column_privilege('authenticated', 'public.faq_items', 'is_live', 'select')), 'faq is_live is public';
+  assert not (has_table_privilege('authenticated', 'public.faq_items', 'insert') or has_table_privilege('authenticated', 'public.faq_items', 'update') or has_table_privilege('authenticated', 'public.faq_items', 'delete')), 'faq writable by members';
+
   select string_agg(p.proname, ', ') into v from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')

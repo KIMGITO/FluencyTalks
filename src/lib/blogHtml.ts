@@ -182,3 +182,44 @@ export function postHtml(post: Post, more: PostCard[] = [], preview = false) {
     + `<aside class="lp-doc__contact"><p>Practise this with a native speaker. It's free.</p><a class="lp-btn lp-btn--accent" href="/signup">Find a language partner</a></aside></div></article>`
     + (more.length ? `<nav class="lp-post__more" aria-labelledby="more-title"><h2 id="more-title">Keep reading</h2><ul class="lp-morelist">${moreLinksHtml(more)}</ul></nav>` : '');
 }
+
+// ---------- The FAQ, served the same way as the blog: answers are plain text, so everything here is escaped. ----------
+
+/** Their order is the order on the page. The database only allows these ids (admin_faq_save in the faq migration). */
+export const FAQ_SECTIONS: { id: string; title: string }[] = [
+  { id: 'getting-started', title: 'Getting started' },
+  { id: 'partners', title: 'Partners and languages' },
+  { id: 'corrections', title: 'Corrections and your phrasebook' },
+  { id: 'points', title: 'Points and bounties' },
+  { id: 'safety', title: 'Safety and your data' },
+];
+export interface FaqItem { id: string; section: string; question: string; answer: string; on_home: boolean; position: number; updated_at: string }
+export const FAQ_COLUMNS = 'id,section,question,answer,on_home,position,updated_at';
+
+const faqsBySection = (items: FaqItem[]) => FAQ_SECTIONS
+  .map((s) => ({ ...s, items: items.filter((f) => f.section === s.id).sort((a, b) => a.position - b.position) }))
+  .filter((s) => s.items.length);
+
+/** The questions on the home page. */
+export const faqHomeHtml = (items: FaqItem[]) => faqsBySection(items).flatMap((s) => s.items)
+  .map((f) => `<details><summary>${esc(f.question)}</summary><p>${esc(f.answer)}</p></details>`).join('');
+
+/** The questions on /faq and their structured data. Every answer is open in the HTML: nothing is hidden behind a click or a login. */
+export function faqPageHtml(items: FaqItem[]) {
+  const groups = faqsBySection(items);
+  const ld = [
+    {
+      '@context': 'https://schema.org', '@type': 'FAQPage', url: `${SITE}/faq`,
+      mainEntity: groups.flatMap((g) => g.items).map((f) => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })),
+    },
+    {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: 'FAQ', item: `${SITE}/faq` },
+      ],
+    },
+  ];
+  return `<script type="application/ld+json">${jsonForScript(ld)}</script>` + groups.map((g) => `<section id="${esc(g.id)}" aria-labelledby="${esc(g.id)}-title"><h2 id="${esc(g.id)}-title">${esc(g.title)}</h2>`
+    + g.items.map((f) => `<div><h3>${esc(f.question)}</h3><p>${esc(f.answer)}</p></div>`).join('') + '</section>').join('');
+}

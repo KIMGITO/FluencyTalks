@@ -37,6 +37,10 @@ const friendly: Record<string, string> = {
   blog_changed: 'Someone else saved this post while you were editing. Reload the page to see their version.', blog_too_long: 'This post is too long to save.',
   blog_not_found: 'That post no longer exists.', blog_title_required: 'Add a title before publishing.', blog_description_required: 'Add a search description before publishing.',
   blog_summary_required: 'Add a summary before publishing.', blog_body_required: 'Write the post before publishing.',
+  faq_invalid_section: 'Choose a section for this question.', faq_question_required: 'Write the question.', faq_answer_required: 'Write the answer.',
+  faq_question_too_long: 'That question is too long. The limit is 200 characters.', faq_answer_too_long: 'That answer is too long. The limit is 2000 characters.',
+  faq_question_taken: 'That question is already in the FAQ.', faq_not_found: 'That question no longer exists.',
+  faq_changed: 'Someone else changed this question while you were editing. Close this and open it again to see their version.',
   invite_invalid: 'This invitation has expired or was already used. Ask for a new one.', invite_email_mismatch: 'This invitation was sent to a different email address. Log in with that one.',
 };
 /** Set by the app status store: this file can't import it, the store's services import this. */

@@ -1,35 +1,24 @@
 import { Link } from 'react-router-dom';
 import { PublicShell } from '@/components/landing';
+import { useFaqs } from '@/hooks/useFaqs';
 import { useSeo } from '@/hooks/useSeo';
-import { FAQ_GROUPS } from '@/content/faq';
+import { BLOG_MARK, faqPageHtml } from '@/lib/blogHtml';
 import { EMAILS, mailto } from '@/lib/emails';
-import { BRAND, SITE_URL, SITE_URL_WITH_SLASH, SUPPORT_SUBJECT } from '@/lib/site';
+import { BRAND, SUPPORT_SUBJECT } from '@/lib/site';
 import '@/styles/landing.css';
 
-/** How it works, as questions and answers. Every answer is open in the HTML: nothing is hidden behind a click or a login. */
+/** How it works, as questions and answers. Staff edit them in /admin/faq, and worker/index.ts puts them in the page on the server. */
 export default function FaqPage() {
   useSeo({
     title: `How ${BRAND} Works: FAQ`,
     description: 'How one-to-one language practice, chat corrections, points and bounties work on our free language exchange, in short and direct answers.',
     path: '/faq',
   });
-  const jsonLd = [
-    {
-      '@context': 'https://schema.org', '@type': 'FAQPage', url: `${SITE_URL}/faq`,
-      mainEntity: FAQ_GROUPS.flatMap((g) => g.items).map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
-    },
-    {
-      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL_WITH_SLASH },
-        { '@type': 'ListItem', position: 2, name: 'FAQ', item: `${SITE_URL}/faq` },
-      ],
-    },
-  ];
+  const { faqs, failed } = useFaqs('/faq');
+  const ssr = typeof document === 'undefined';
 
   return (
     <PublicShell>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="lp-wrap">
         <article className="lp-article">
           <header className="lp-doc__head">
@@ -40,17 +29,8 @@ export default function FaqPage() {
           <p className="lp-article__summary">{BRAND} is a free language exchange. You chat one to one with people who speak the language you are learning, and they correct your messages inside the conversation.</p>
 
           <div className="lp-article__body">
-            {FAQ_GROUPS.map((g) => (
-              <section key={g.id} id={g.id} aria-labelledby={`${g.id}-title`}>
-                <h2 id={`${g.id}-title`}>{g.title}</h2>
-                {g.items.map(({ q, a }) => (
-                  <div key={q}>
-                    <h3>{q}</h3>
-                    <p>{a}</p>
-                  </div>
-                ))}
-              </section>
-            ))}
+            {!ssr && !faqs && <p className="lp-blog__note" role={failed ? 'alert' : 'status'}>{failed ? "We couldn't load the questions. Please refresh the page to try again." : 'Loading the questions…'}</p>}
+            {(ssr || faqs) && <div dangerouslySetInnerHTML={{ __html: ssr ? BLOG_MARK : faqPageHtml(faqs ?? []) }} />}
             <h2>Still have a question?</h2>
             <p>Read <Link to="/blog/what-is-a-language-exchange">what a language exchange is</Link>, browse <Link to="/languages">all the languages you can practise</Link>, or write to <a href={mailto(EMAILS.support, { subject: SUPPORT_SUBJECT })}>{EMAILS.support}</a>.</p>
           </div>

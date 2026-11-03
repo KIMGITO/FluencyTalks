@@ -1,6 +1,6 @@
-// Serves the blog from the database as real HTML, so a post is on the site, in the sitemap and in llms.txt as soon as
-// it is published, with no deploy. wrangler.toml sends only these paths here; everything else is a static file.
-import { BLOG_MARK, POST_CARD_COLUMNS, POST_COLUMNS, SITE, esc, jsonForScript, postCardsHtml, postHtml, type Post, type PostCard } from '../src/lib/blogHtml';
+// Serves the blog and the FAQ from the database as real HTML, so a post is on the site, in the sitemap and in llms.txt as
+// soon as it is published, and a question as soon as it is saved, with no deploy. wrangler.toml sends only these paths here; everything else is a static file.
+import { BLOG_MARK, FAQ_COLUMNS, POST_CARD_COLUMNS, POST_COLUMNS, SITE, esc, faqHomeHtml, faqPageHtml, jsonForScript, postCardsHtml, postHtml, type FaqItem, type Post, type PostCard } from '../src/lib/blogHtml';
 
 interface Env { ASSETS: { fetch: (req: Request | string) => Promise<Response> } }
 interface Ctx { waitUntil: (p: Promise<unknown>) => void }
@@ -11,10 +11,10 @@ const SHELL_PATH = '/blog/__post__';
 
 const asset = (env: Env, req: Request, path: string) => env.ASSETS.fetch(new Request(new URL(path, req.url), { method: 'GET' }));
 
-async function query<T>(env: Env, req: Request, params: string): Promise<T[]> {
+async function query<T>(env: Env, req: Request, params: string, table = 'blog_posts'): Promise<T[]> {
   // The public URL and key, written by scripts/prerender.mjs: both are in the site's JavaScript already.
   const { url, key } = await (await asset(env, req, '/blog-config.json')).json() as { url: string; key: string };
-  const res = await fetch(`${url}/rest/v1/blog_posts?${params}`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+  const res = await fetch(`${url}/rest/v1/${table}?${params}`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
   if (!res.ok) throw new Error(`database answered ${res.status}`);
   return res.json() as Promise<T[]>;
 }
@@ -32,6 +32,13 @@ async function indexPage(env: Env, req: Request) {
   const path = '/blog';
   const posts = await listPosts(env, req);
   return html(shell.replace(BLOG_MARK, postCardsHtml(posts)).replace('</head>', `${dataScript({ path, posts })}\n  </head>`));
+}
+
+/** The home page and /faq: the same files as ever, with the live questions put in. A function as the replacement, because an answer can contain `$&`. */
+async function faqPage(env: Env, req: Request, path: '/' | '/faq') {
+  const faqs = await query<FaqItem>(env, req, `select=${FAQ_COLUMNS}${path === '/' ? '&on_home=is.true' : ''}&order=position.asc`, 'faq_items');
+  const shell = await (await asset(env, req, path)).text();
+  return html(shell.replace(BLOG_MARK, () => (path === '/' ? faqHomeHtml(faqs) : faqPageHtml(faqs))).replace('</head>', () => `${dataScript({ path, faqs })}\n  </head>`));
 }
 
 async function postPage(env: Env, req: Request, slug: string) {
@@ -59,11 +66,12 @@ async function postPage(env: Env, req: Request, slug: string) {
 /** The static sitemap, plus the posts. */
 async function sitemap(env: Env, req: Request) {
   const res = await asset(env, req, '/sitemap.xml');
-  const posts = await listPosts(env, req, 1000);
+  const [posts, [newestFaq]] = await Promise.all([listPosts(env, req, 1000), query<{ updated_at: string }>(env, req, 'select=updated_at&order=updated_at.desc&limit=1', 'faq_items')]);
   const entries = posts.map((p) => `  <url><loc>${SITE}/blog/${esc(p.slug)}</loc><lastmod>${p.updated_at.slice(0, 10)}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`).join('\n');
   const newest = posts.map((p) => p.updated_at.slice(0, 10)).sort().pop();
   const body = (await res.text())
     .replace(`<loc>${SITE}/blog</loc>`, `<loc>${SITE}/blog</loc>${newest ? `<lastmod>${newest}</lastmod>` : ''}`)
+    .replace(`<loc>${SITE}/faq</loc>`, `<loc>${SITE}/faq</loc>${newestFaq ? `<lastmod>${newestFaq.updated_at.slice(0, 10)}</lastmod>` : ''}`)
     .replace('</urlset>', `${entries}\n</urlset>`);
   return new Response(body, { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=0, must-revalidate' } });
 }
@@ -77,6 +85,7 @@ async function llms(env: Env, req: Request) {
 }
 
 async function route(env: Env, req: Request, pathname: string): Promise<Response> {
+  if (pathname === '/' || pathname === '/faq') return faqPage(env, req, pathname);
   if (pathname === '/blog') return indexPage(env, req);
   if (pathname === '/sitemap.xml') return sitemap(env, req);
   if (pathname === '/llms.txt') return llms(env, req);
@@ -103,9 +112,9 @@ export default {
       }
       return req.method === 'HEAD' ? new Response(null, res) : res;
     } catch (e) {
-      // Not a 404: a database hiccup must not tell search engines the post is gone. The list page can still load its posts in the browser.
+      // Not a 404: a database hiccup must not tell search engines the post is gone. These three pages can still load their content in the browser.
       console.error('blog', pathname, e);
-      if (pathname === '/blog') return asset(env, req, '/blog');
+      if (pathname === '/' || pathname === '/faq' || pathname === '/blog') return asset(env, req, pathname);
       return new Response('Temporarily unavailable. Please try again in a moment.', { status: 503, headers: { 'retry-after': '120', 'content-type': 'text/plain; charset=utf-8' } });
     }
   },

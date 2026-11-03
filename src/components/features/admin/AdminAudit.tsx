@@ -8,6 +8,7 @@ import { Chip, IconTile, RefreshButton, Toolbar, type Tone } from './AdminKit';
 
 type Tab = 'app' | 'audit' | 'auth';
 const ACTIONS: Record<string, string> = {
+  faq_create: 'added an FAQ question', faq_update: 'changed an FAQ question', faq_move: 'moved an FAQ question', faq_delete: 'deleted an FAQ question',
   blog_publish: 'published a blog post', blog_unpublish: 'took a blog post off the site', blog_delete: 'deleted a blog post',
   super_admin_created: 'super admin account created', staff_invited: 'invited a staff member', invitation_revoked: 'cancelled an invitation', invitation_accepted: 'accepted an invitation',
   staff_removed: 'removed from the team', mfa_reset: 'reset MFA', mfa_break_glass: 'reset MFA from the owner script', mfa_factor_verified: 'turned on an authenticator', mfa_factor_removed: 'removed an authenticator',

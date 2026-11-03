@@ -1,4 +1,4 @@
-import { Activity, Flag, HeartPulse, LayoutDashboard, ListChecks, Newspaper, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { Activity, CircleHelp, Flag, HeartPulse, LayoutDashboard, ListChecks, Newspaper, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
 import type { Tone } from '@/components/features/admin/AdminKit';
 import type { AdminOverview, StaffTier } from '@/services/admin';
 
@@ -14,6 +14,7 @@ export const ADMIN_GROUPS: { label: string; sections: AdminSection[] }[] = [
   ] },
   { label: 'Content', sections: [
     { to: '/admin/blog', label: 'Blog', subtitle: 'Write, preview and publish posts for the public blog', icon: Newspaper, tone: 'accent' },
+    { to: '/admin/faq', label: 'FAQ', subtitle: 'The questions on the FAQ page and the home page', icon: CircleHelp, tone: 'aqua' },
   ] },
   { label: 'System', sections: [
     { to: '/admin/team', label: 'Team', subtitle: 'Staff accounts and invitations', icon: UserCog, tone: 'aqua', fullAdmin: true },

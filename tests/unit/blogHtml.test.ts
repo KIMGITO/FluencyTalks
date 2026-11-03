@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BLOG_COLORS, docWords, jsonForScript, postCardsHtml, postHtml, renderDoc, safeUrl, type Post } from '../../src/lib/blogHtml.ts';
+import { BLOG_COLORS, docWords, faqHomeHtml, faqPageHtml, type FaqItem, jsonForScript, postCardsHtml, postHtml, renderDoc, safeUrl, type Post } from '../../src/lib/blogHtml.ts';
 
 const para = (...content: object[]) => ({ type: 'paragraph', content });
 const text = (t: string, marks?: object[]) => ({ type: 'text', text: t, marks });
@@ -97,4 +97,21 @@ test('keep reading shows a thumbnail, title, date and reading time, and nothing 
   // No cover, or an unsafe one: the letter panel, not the URL.
   const blank = postHtml(post, [post]).split('lp-post__more')[1];
   assert.ok(blank.includes('lp-postcard__blank')); assert.ok(!blank.includes('javascript:x'));
+});
+
+const faq = (over: Partial<FaqItem>): FaqItem => ({ id: 'x', section: 'points', question: 'Q', answer: 'A', on_home: false, position: 1, updated_at: '2026-11-03T10:00:00Z', ...over });
+test('FAQ text is escaped everywhere, so a saved answer cannot put a script on a page', () => {
+  const bad = faq({ question: '<img src=x onerror=alert(1)>', answer: '</script><script>alert(1)</script>' });
+  for (const html of [faqHomeHtml([bad]), faqPageHtml([bad])]) {
+    assert.ok(!html.includes('<img')); assert.ok(!html.includes('<script>alert'));
+  }
+  assert.equal(faqPageHtml([bad]).match(/<\/script>/g)?.length, 1);
+});
+
+test('FAQ sections keep their fixed order, questions their position, and an unknown or empty section shows nothing', () => {
+  const html = faqPageHtml([faq({ question: 'late', position: 2 }), faq({ question: 'first', section: 'safety' }), faq({ question: 'early', position: 1 }), faq({ question: 'lost', section: 'nope' })]);
+  assert.ok(html.indexOf('early') < html.indexOf('late')); assert.ok(html.indexOf('late') < html.indexOf('first'));
+  assert.ok(!html.includes('lost')); assert.ok(!html.includes('getting-started'));
+  assert.ok(html.includes('"@type":"FAQPage"'));
+  assert.equal(faqHomeHtml([faq({ question: 'a', answer: 'b' })]), '<details><summary>a</summary><p>b</p></details>');
 });

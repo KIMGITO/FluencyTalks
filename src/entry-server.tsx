@@ -13,7 +13,6 @@ import About from '@/pages/public/About';
 import FaqPage from '@/pages/public/FaqPage';
 import NotFound from '@/pages/public/NotFound';
 import { LANGUAGES } from '@/content/languages';
-import { FAQ_UPDATED } from '@/content/faq';
 import { takeSsrSeo } from '@/hooks/useSeo';
 import { tokenCss } from '@/theme/inject';
 
@@ -29,7 +28,8 @@ export const PUBLIC_PAGES: PublicPage[] = [
   { path: '/blog', priority: 0.8, changefreq: 'weekly' },
   { path: '/languages', priority: 0.8, changefreq: 'monthly' },
   ...LANGUAGES.map((l) => ({ path: `/languages/${l.slug}`, priority: 0.6, changefreq: 'monthly' as const })),
-  { path: '/faq', priority: 0.8, changefreq: 'monthly', lastmod: FAQ_UPDATED },
+  // Its <lastmod> comes from the database: worker/index.ts adds it to the sitemap.
+  { path: '/faq', priority: 0.8, changefreq: 'monthly' },
   { path: '/about', priority: 0.5, changefreq: 'monthly' },
   { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
   { path: '/terms', priority: 0.3, changefreq: 'monthly' },

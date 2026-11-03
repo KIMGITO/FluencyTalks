@@ -30,7 +30,7 @@ import Settings from '@/pages/app/Settings';
 import Learning from '@/pages/app/Learning';
 import AcceptInvite from '@/pages/auth/AcceptInvite';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
-import { AdminActivity, AdminAudit, AdminBlog, AdminHealth, AdminNotifications, AdminOverviewPage, AdminReports, AdminSecurity, AdminTeam, AdminUsers } from '@/components/features/admin';
+import { AdminActivity, AdminAudit, AdminBlog, AdminFaq, AdminHealth, AdminNotifications, AdminOverviewPage, AdminReports, AdminSecurity, AdminTeam, AdminUsers } from '@/components/features/admin';
 import { AdminDecisions } from '@/components/features/admin/AdminDecisions';
 import Library from '@/pages/features/library/Library';
 import ContributePage from '@/pages/features/library/contribute/ContributePage';
@@ -109,6 +109,7 @@ export const router = createBrowserRouter([
               { path: '/admin/blog', element: <AdminBlog /> },
               // Loaded on its own, so the editor's code never reaches the public pages.
               { path: '/admin/blog/:id', lazy: async () => ({ Component: (await import('@/components/features/admin/blog/BlogEditor')).BlogEditor }) },
+              { path: '/admin/faq', element: <AdminFaq /> },
               { path: '/admin/notifications', element: <AdminNotifications /> },
               { path: '/admin/activity', element: <AdminActivity /> },
               { path: '/admin/team', element: <AdminTeam /> },

@@ -1650,4 +1650,70 @@ reset role;
 do $$ begin assert (select count(*) from public.admin_audit_log where action in ('blog_publish', 'blog_unpublish', 'blog_delete') and detail->>'slug' = 'flow-post') = 3, 'on the record'; end $$;
 
 reset role;
+
+-- The FAQ: admins and moderators manage it from the same screen, members can't, and the public only sees what isn't hidden.
+select set_config('app.staff_change', 'on', false);
+insert into public.admin_accounts (user_id, tier) values ('00000000-0000-0000-0000-00000000ee09', 'moderator');
+select set_config('app.staff_change', 'off', false);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-00000000d003');
+select tt.expect_error($q$select public.admin_faq_list()$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_faq_save(null, 'points', 'Mine?', 'Yes', false, true)$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_faq_move((select id from public.faq_items limit 1), 1)$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_faq_delete((select id from public.faq_items limit 1))$q$, 'forbidden');
+select tt.expect_error($q$update public.faq_items set answer = 'x' where section = 'points'$q$, 'permission denied');
+select tt.expect_error($q$insert into public.faq_items (section, question, answer, position) values ('points', 'q', 'a', 1)$q$, 'permission denied');
+select tt.as_staff('00000000-0000-0000-0000-00000000ee09');   -- a moderator
+select tt.expect_error($q$select public.admin_faq_save(null, 'nope', 'Q flow?', 'A', false, true)$q$, 'faq_invalid_section');
+select tt.expect_error($q$select public.admin_faq_save(null, 'points', '   ', 'A', false, true)$q$, 'faq_question_required');
+select tt.expect_error($q$select public.admin_faq_save(null, 'points', 'Q flow?', '  ', false, true)$q$, 'faq_answer_required');
+select tt.expect_error($q$select public.admin_faq_save(null, 'points', repeat('q', 201), 'A', false, true)$q$, 'faq_question_too_long');
+select tt.expect_error($q$select public.admin_faq_save(null, 'points', 'Q flow?', repeat('a', 2001), false, true)$q$, 'faq_answer_too_long');
+select tt.expect_error($q$select public.admin_faq_save(null, 'points', 'WHAT IS A BOUNTY?', 'A', false, true)$q$, 'faq_question_taken');
+do $$ declare v jsonb; v2 jsonb; last_id uuid; n int;
+begin
+  v := public.admin_faq_save(null, 'points', '  Q flow?  ', ' Answer. ', true, true);
+  assert v->>'question' = 'Q flow?' and v->>'answer' = 'Answer.', 'trimmed';
+  assert (v->>'position')::int = (select max(position) from public.faq_items where section = 'points'), 'new questions go last';
+  -- Up one, then down again. Past either end nothing happens.
+  select id into last_id from public.faq_items where section = 'points' and position = (v->>'position')::int - 1;
+  perform public.admin_faq_move((v->>'id')::uuid, -1);
+  assert (select position from public.faq_items where id = (v->>'id')::uuid) = (v->>'position')::int - 1, 'moved up';
+  assert (select position from public.faq_items where id = last_id) = (v->>'position')::int, 'the other one swapped';
+  perform public.admin_faq_move((v->>'id')::uuid, 1);
+  perform public.admin_faq_move((v->>'id')::uuid, 1);
+  assert (select position from public.faq_items where id = (v->>'id')::uuid) = (v->>'position')::int, 'stays at the end';
+  -- Someone else saved since this was loaded.
+  begin
+    perform public.admin_faq_save((v->>'id')::uuid, 'points', 'Q flow?', 'Stale', true, true, '2020-01-01');
+    assert false, 'a stale save was accepted';
+  exception when raise_exception then assert sqlerrm = 'faq_changed', sqlerrm; end;
+  -- To another section: goes to its end.
+  select max(position) into n from public.faq_items where section = 'safety';
+  v2 := public.admin_faq_save((v->>'id')::uuid, 'safety', 'Q flow?', 'Answer.', true, false);
+  assert (v2->>'position')::int = n + 1, 'end of the new section';
+  assert not (v2->>'is_live')::boolean, 'hidden';
+  select count(*) into n from jsonb_array_elements(public.admin_faq_list()) e where e->>'question' = 'Q flow?';
+  assert n = 1, 'staff still see a hidden question';
+end $$;
+reset role; set role anon;
+do $$ begin
+  assert (select count(*) from public.faq_items where question = 'Q flow?') = 0, 'a hidden question is not public';
+  assert (select count(*) from public.faq_items where on_home) > 0, 'the home page has questions';
+  assert (select count(*) from public.faq_items) = 21, 'the seeded questions are public';
+end $$;
+reset role; set role authenticated;
+select tt.as_staff('00000000-0000-0000-0000-00000000ee09');
+do $$ begin perform public.admin_faq_delete((select (e->>'id')::uuid from jsonb_array_elements(public.admin_faq_list()) e where e->>'question' = 'Q flow?')); end $$;
+select tt.expect_error($q$select public.admin_faq_delete('00000000-0000-0000-0000-00000000b110')$q$, 'faq_not_found');
+reset role;
+do $$ begin
+  assert (select count(*) from public.faq_items where question = 'Q flow?') = 0, 'deleted';
+  assert (select count(*) from public.admin_audit_log where action in ('faq_create', 'faq_update', 'faq_move', 'faq_delete') and detail->>'question' = 'Q flow?') = 5, 'on the record';
+end $$;
+select set_config('app.staff_change', 'on', false);
+delete from public.admin_accounts where user_id = '00000000-0000-0000-0000-00000000ee09';
+select set_config('app.staff_change', 'off', false);
+
+reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;
