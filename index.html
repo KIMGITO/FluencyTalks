@@ -14,9 +14,9 @@
     <link rel="canonical" href="https://thefluencytalks.com/" />
 
     <!-- Favicon & App Icons -->
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#faf6ee" />
 
@@ -49,48 +49,73 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "The Fluency Talks",
-        "alternateName": ["Fluency Talks", "FluencyTalks"],
-        "url": "https://thefluencytalks.com/"
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "The Fluency Talks",
-        "alternateName": ["Fluency Talks", "FluencyTalks"],
-        "url": "https://thefluencytalks.com/",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "All",
-        "browserRequirements": "Requires JavaScript and a modern web browser",
-        "inLanguage": "en",
-        "description": "The Fluency Talks is a free language exchange app: chat with native speakers in 40 languages who correct your messages inside the conversation, and save the corrections to your phrasebook.",
-        "featureList": [
-          "Language partners matched by native and target language",
-          "Corrections inside the chat",
-          "Personal phrasebook of accepted corrections",
-          "Tap-to-translate with a saved translation history",
-          "Community library of phrases, idioms and grammar tips from native speakers",
-          "Points for helping and bounties for hard questions",
-          "Message requests, blocking and reporting"
-        ],
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "The Fluency Talks",
-        "url": "https://thefluencytalks.com/",
-        "logo": "https://thefluencytalks.com/favicon.png",
-        "email": "support@thefluencytalks.com"
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://thefluencytalks.com/#organization",
+            "name": "The Fluency Talks",
+            "alternateName": [
+              "Fluency Talks",
+              "FluencyTalks"
+            ],
+            "url": "https://thefluencytalks.com/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://thefluencytalks.com/icon-512.png",
+              "width": 512,
+              "height": 512
+            },
+            "email": "support@thefluencytalks.com"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://thefluencytalks.com/#website",
+            "name": "The Fluency Talks",
+            "alternateName": [
+              "Fluency Talks",
+              "FluencyTalks"
+            ],
+            "url": "https://thefluencytalks.com/",
+            "inLanguage": "en",
+            "publisher": {
+              "@id": "https://thefluencytalks.com/#organization"
+            }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://thefluencytalks.com/#app",
+            "name": "The Fluency Talks",
+            "alternateName": [
+              "Fluency Talks",
+              "FluencyTalks"
+            ],
+            "url": "https://thefluencytalks.com/",
+            "applicationCategory": "EducationalApplication",
+            "applicationSubCategory": "Language exchange",
+            "operatingSystem": "All",
+            "browserRequirements": "Requires JavaScript and a modern web browser",
+            "inLanguage": "en",
+            "isAccessibleForFree": true,
+            "publisher": {
+              "@id": "https://thefluencytalks.com/#organization"
+            },
+            "description": "The Fluency Talks is a free language exchange app: chat with native speakers in 40 languages who correct your messages inside the conversation, and save the corrections to your phrasebook.",
+            "featureList": [
+              "Language partners matched by native and target language",
+              "Corrections inside the chat",
+              "Personal phrasebook of accepted corrections",
+              "Tap-to-translate with a saved translation history",
+              "Community library of phrases, idioms and grammar tips from native speakers",
+              "Points for helping and bounties for hard questions",
+              "Message requests, blocking and reporting"
+            ],
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          }
+        ]
       }
     </script>
   </head>
@@ -120,7 +145,7 @@
         </ol>
         <h2>Why The Fluency Talks</h2>
         <p>Corrections happen inside the chat, there are no followers or likes, new contacts arrive as requests you can decline, and it is completely free with no paid plans.</p>
-        <p><a href="/signup">Create your free account</a> · <a href="/#faq">FAQ</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+        <p><a href="/signup">Create your free account</a> · <a href="/faq">FAQ</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
       </main>
     </noscript>
 

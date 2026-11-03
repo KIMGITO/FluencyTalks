@@ -16,6 +16,10 @@
   X-Robots-Tag: noindex, nofollow
 /onboarding
   X-Robots-Tag: noindex, nofollow
+/app
+  X-Robots-Tag: noindex, nofollow
+/app.html
+  X-Robots-Tag: noindex, nofollow
 
 # Fingerprinted build files can be cached for a year; the HTML is revalidated every time.
 /assets/*

@@ -1,7 +1,37 @@
-# ---------------------------------------------------------------------------
-# Custom Redirects & Rules
-# (SPA routing is handled automatically by wrangler.toml)
-# ---------------------------------------------------------------------------
+# Unknown URLs now return a real 404 (dist/404.html, see wrangler.toml), so each app route has to be listed here to
+# get the app shell (dist/app.html) with a 200. The target must be /app: Cloudflare answers /app.html with a redirect.
+# A route missing from this list still works in the browser, because 404.html boots the same app, but it answers with
+# a 404 status. `npm run check:seo` fails if src/router/index.tsx and this list drift apart.
 
-# Example custom redirect if needed:
-# /old-route  /new-route  301
+# The old name for the /faq content.
+/how-it-works  /faq  301
+
+# Sign-in pages
+/login  /app  200
+/signup  /app  200
+/forgot-password  /app  200
+/reset-password  /app  200
+/onboarding  /app  200
+
+# Logged-in app
+/home  /app  200
+/search  /app  200
+/discover  /app  200
+/messages  /app  200
+/messages/*  /app  200
+/profile  /app  200
+/profile/*  /app  200
+/u/*  /app  200
+/settings  /app  200
+/learning  /app  200
+/phrasebook  /app  200
+/bounty-queue  /app  200
+/points-history  /app  200
+/library  /app  200
+/library/*  /app  200
+/notifications  /app  200
+/partners  /app  200
+
+# Staff
+/admin  /app  200
+/admin/*  /app  200

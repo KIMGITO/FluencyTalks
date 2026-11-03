@@ -62,7 +62,7 @@ for (const [p, from] of linked) {
 }
 // Pages that exist but are missing from the sitemap
 for (const f of fs.readdirSync(DIST, { recursive: true })) {
-  if (!String(f).endsWith('.html') || f === 'index.html') continue;
+  if (!String(f).endsWith('.html') || ['index.html', '404.html', 'app.html'].includes(f)) continue;
   const p = '/' + String(f).replace(/\.html$/, '');
   if (!known.has(p)) soft('(build)', `${f} is built but not in the sitemap`);
 }
@@ -70,8 +70,22 @@ for (const f of fs.readdirSync(DIST, { recursive: true })) {
 const robots = read('robots.txt');
 if (!robots.includes(`Sitemap: ${SITE}/sitemap.xml`)) bad('robots.txt', 'does not declare the sitemap');
 for (const p of ['/login', '/signup', '/forgot-password', '/reset-password']) if (new RegExp(`^Disallow:\\s*${p}\\s*$`, 'm').test(robots)) bad('robots.txt', `blocks ${p}; it must stay crawlable so Google can read its noindex`);
-for (const p of ['/home', '/messages', '/settings', '/admin']) if (!new RegExp(`^Disallow:\\s*${p}\\s*$`, 'm').test(robots)) bad('robots.txt', `does not block ${p}`);
+for (const p of ['/home', '/messages', '/notifications', '/settings', '/admin']) if (!new RegExp(`^Disallow:\\s*${p}\\s*$`, 'm').test(robots)) bad('robots.txt', `does not block ${p}`);
 if (!fs.existsSync(path.join(DIST, 'llms.txt'))) bad('llms.txt', 'missing');
+
+// Unknown URLs must get a real 404 from a noindexed page, not the home page with a 200 (a "soft 404").
+if (!/not_found_handling\s*=\s*"404-page"/.test(fs.readFileSync('wrangler.toml', 'utf8'))) bad('wrangler.toml', 'unknown URLs must use not_found_handling = "404-page"');
+for (const f of ['404.html', 'app.html']) {
+  if (!fs.existsSync(path.join(DIST, f))) bad(f, 'missing');
+  else if (!/noindex/.test(meta(read(f), 'name', 'robots') || '')) bad(f, 'must have noindex');
+}
+// Every route in the router is a prerendered page or gets the app shell. Otherwise it answers with a 404 status.
+const rewrites = [...read('_redirects').matchAll(/^(\/\S*)\s+\/app\s+200\s*$/gm)].map((m) => m[1]);
+const hasRewrite = (p) => rewrites.some((r) => (r.endsWith('/*') ? p.startsWith(r.slice(0, -1)) : r === p));
+for (const m of fs.readFileSync('src/router/index.tsx', 'utf8').matchAll(/path: '(\/[^']*)'/g)) {
+  const p = m[1];
+  if (!known.has(p) && !/\/:(slug)$/.test(p) && !hasRewrite(p)) bad('_redirects', `route ${p} has no rewrite to /app`);
+}
 
 console.log(`checked ${urls.length} pages from sitemap.xml`);
 if (warn.length) { console.log(`\n${warn.length} warning(s):`); warn.forEach((w) => console.log('  - ' + w)); }

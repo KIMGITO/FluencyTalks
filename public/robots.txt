@@ -18,6 +18,8 @@ Disallow: /library
 Disallow: /partners
 Disallow: /bounty-queue
 Disallow: /points-history
+Disallow: /notifications
+Disallow: /app
 Disallow: /onboarding
 Disallow: /admin
 

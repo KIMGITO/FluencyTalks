@@ -10,8 +10,11 @@ import BlogPost from '@/pages/public/BlogPost';
 import LanguagesIndex from '@/pages/public/LanguagesIndex';
 import LanguagePage from '@/pages/public/LanguagePage';
 import About from '@/pages/public/About';
+import FaqPage from '@/pages/public/FaqPage';
+import NotFound from '@/pages/public/NotFound';
 import { LANGUAGES } from '@/content/languages';
 import { POSTS } from '@/content/blog';
+import { FAQ_UPDATED } from '@/content/faq';
 import { takeSsrSeo } from '@/hooks/useSeo';
 import { tokenCss } from '@/theme/inject';
 
@@ -29,6 +32,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
   ...POSTS.map((p) => ({ path: `/blog/${p.slug}`, priority: 0.7, changefreq: 'monthly' as const, lastmod: p.updated })),
   { path: '/languages', priority: 0.8, changefreq: 'monthly' },
   ...LANGUAGES.map((l) => ({ path: `/languages/${l.slug}`, priority: 0.6, changefreq: 'monthly' as const })),
+  { path: '/faq', priority: 0.8, changefreq: 'monthly', lastmod: FAQ_UPDATED },
   { path: '/about', priority: 0.5, changefreq: 'monthly' },
   { path: '/privacy', priority: 0.3, changefreq: 'monthly' },
   { path: '/terms', priority: 0.3, changefreq: 'monthly' },
@@ -48,6 +52,8 @@ export function render(path: string) {
         <Route path="/languages" element={<LanguagesIndex />} />
         <Route path="/languages/:slug" element={<LanguagePage />} />
         <Route path="/about" element={<About />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </StaticRouter>,
   );

@@ -28,7 +28,7 @@ Per-page titles and descriptions are set with `useSeo()` from
 | `https://thefluencytalks.com/blog/<slug>` | ✅ live (3 articles) | One URL per article (see §5) | 0.7 |
 | `https://thefluencytalks.com/languages` | ✅ live | All 40 languages you can practise, each linking to its page | 0.8 |
 | `https://thefluencytalks.com/languages/<language>` | ✅ live (40 pages, from `src/content/languages.ts`) | e.g. `/languages/vietnamese`: "Practise Vietnamese with native speakers" | 0.7 |
-| `https://thefluencytalks.com/how-it-works` | 🟡 optional | Longer version of the 3 steps, corrections, points & bounties | 0.6 |
+| `https://thefluencytalks.com/faq` | ✅ live (`src/content/faq.ts`) | How it works as direct questions and answers, with FAQPage data. `/how-it-works` redirects here | 0.8 |
 | `https://thefluencytalks.com/about` | ✅ live | Who built it, why, contact. Strong trust signal for Google and AI answers | 0.5 |
 
 > **Rule:** a URL only goes into `public/sitemap.xml` once the page exists and
@@ -39,7 +39,7 @@ Per-page titles and descriptions are set with `useSeo()` from
 | Routes | How they are kept out |
 |---|---|
 | `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/onboarding` | `X-Robots-Tag: noindex, nofollow` (`public/_headers`, works without JavaScript) **and** `useSeo({ noIndex: true })` → `<meta name="robots" content="noindex, nofollow">`. Not blocked in `robots.txt` |
-| `/404` / unknown URLs | `noIndex: true` |
+| `/404` / unknown URLs | Real 404 status from `dist/404.html` (`not_found_handling = "404-page"` in `wrangler.toml`), plus `noindex` |
 | `/onboarding`, `/home`, `/search`, `/discover`, `/messages/*`, `/profile/*`, `/u/*`, `/settings`, `/learning`, `/phrasebook`, `/library/*`, `/partners`, `/bounty-queue`, `/points-history`, `/admin` | `Disallow` in `public/robots.txt` + behind login |
 
 Private user content (profiles, chats, phrasebooks) must never be public. It
@@ -144,6 +144,8 @@ mention. What to do:
 2. **Be in Bing.** ChatGPT search and Copilot use Bing's index. Set up
    **Bing Webmaster Tools** (it can import your Google Search Console property
    in one click) and submit the sitemap there too.
+   After each deploy that adds or changes pages, run `npm run indexnow`. It tells Bing and other IndexNow
+   engines to recrawl (the key file is `public/<key>.txt`). Google does not use IndexNow.
 3. **`/llms.txt` exists (`public/llms.txt`), but do not expect it to do much.** Google says its Search
    ignores the file, and there is little evidence the main AI crawlers read it. It costs nothing; keep it
    accurate, and spend the time on indexing and on getting mentioned elsewhere. See `AI_VISIBILITY.md`.
@@ -191,9 +193,13 @@ until JavaScript runs. Google *can* render JS, but slowly and not always, and
 - The same script generates **`dist/sitemap.xml`** from `PUBLIC_PAGES` (with `<lastmod>` for articles).
   `public/sitemap.xml` was removed. **Never edit the sitemap by hand.** Add a page to `PUBLIC_PAGES`.
 - Each article renders `BlogPosting` + `BreadcrumbList` JSON-LD in its body.
-- The browser app replaces the prerendered HTML when it starts. Cloudflare serves `index.html`
-  for unknown URLs (e.g. `/home`), so a tiny inline script clears the prerendered home page
-  on any other path before it paints.
+- The browser app replaces the prerendered HTML when it starts.
+- **Status codes:** unknown URLs get `dist/404.html` with a real 404, so they are not "soft 404s" that look like copies of
+  the home page. App and sign-in routes get `dist/app.html` (the bare shell, `noindex`) with a 200 through `public/_redirects`.
+  **A new app route needs a line in `public/_redirects`**; `npm run check:seo` fails if one is missing. Rewrite to `/app`, not
+  `/app.html`, because Cloudflare answers `/app.html` with a redirect, which would lose the URL.
+
+**Changing a FAQ answer:** edit `src/content/faq.ts` and bump `FAQ_UPDATED`.
 
 **Publishing an article:** add `src/content/blog/<slug>.tsx` (copy an existing one), import it
 in `src/content/blog/index.ts` at the top of `POSTS`, add it to `public/llms.txt`, build, deploy,
@@ -248,7 +254,7 @@ Publish 2 a month, update older ones, and link new articles to older ones.
 | **H1 headings** | Exactly one per page, describes the purpose | ✅ one per page (Hero, LegalLayout, NotFound, blog, each article). Home H1 kept for its voice; the keyword kicker ("Free language exchange · 40 languages") and the definition sentence opening the lead carry the search terms |
 | **Internal links** | Descriptive anchors between home, languages, blog, sign-up | ✅ Blog in header, drawer and footer; FAQ links to the language-exchange article; articles link to each other, home and sign-up. ✅ Languages index + 40 language pages, linked from the home Languages section, footer and each other |
 | **Image alt text** | Meaningful images described; decorative images `alt=""` | ✅ Hero photos are decorative (`alt=""`, `aria-hidden`), logo has `alt`. 🔧 Blog/language page images need real descriptions, e.g. `alt="Two students chatting over coffee while practising French"`, not keyword lists |
-| **Structured data** | Accurate Organization, WebSite, SoftwareApplication, FAQPage | ✅ `index.html` has WebSite, WebApplication, Organization. ✅ FAQPage (rendered by React). ✅ `BlogPosting` + `BreadcrumbList` per article. Validate at search.google.com/test/rich-results |
+| **Structured data** | Accurate Organization, WebSite, SoftwareApplication, FAQPage | ✅ `index.html` has one linked `@graph`: Organization, WebSite, WebApplication. ✅ FAQPage on `/faq` only (Google asks for one instance of repeated FAQ content; the home page shows a subset without the markup). Never add `aggregateRating` until there are real, visible reviews. ✅ `BlogPosting` + `BreadcrumbList` per article. Validate at search.google.com/test/rich-results |
 | **Mobile performance** | LCP < 2.5 s, CLS < 0.1, INP < 200 ms on mobile | ✅ Hero image has `fetchpriority`, `srcset`, sizes; logo is 5–9 KB. 🔧 `favicon.png` (100 KB) and `favicon-dark.png` (164 KB): shrink to 32/180/512 px versions. Check PageSpeed Insights + Search Console Core Web Vitals after launch |
 | **Public HTML content** | Crawler sees real text without running JS | ✅ Public routes are prerendered to static HTML (§5a). The bare SPA shell keeps a `<noscript>` summary |
 | **Canonical URLs** | One version per page, apex domain, https | ✅ `useSeo` sets canonical. 🔧 `www` and old-domain 301s are in `vercel.json`, which **Cloudflare ignores**. Add Cloudflare *Rules → Redirect Rules* (`www.thefluencytalks.com/*` → `https://thefluencytalks.com/$1`, 301) |

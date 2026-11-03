@@ -33,6 +33,6 @@ const sections = [
 ];
 
 export default function Privacy() {
-  useSeo({ title: 'Privacy Policy', description: 'How The Fluency Talks collects, uses, and protects your data. What we keep and for how long, your rights and time limits under Vietnamese law, data export and account deletion.', path: '/privacy' });
+  useSeo({ title: 'Privacy Policy', description: 'How The Fluency Talks collects and protects your data: what we keep and for how long, your rights under Vietnamese law, data export and account deletion.', path: '/privacy' });
   return <LegalLayout title="Privacy Policy" active="/privacy" updated="3 November 2026" contact={EMAILS.privacy} sections={sections} />;
 }

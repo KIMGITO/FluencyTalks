@@ -191,11 +191,13 @@ language sql stable security definer set search_path = public as $$ select worm_
 
 -- ---------- 6. Checkpoints and checking ----------
 -- What the next checkpoint would hold. Due when there's something new, or daily so a silent stop shows.
+-- Measured from the last good checkpoint: one written after a failed check holds forged heads, and must never become
+-- the thing later checks compare against. So a failure stays a failure until a person deals with it.
 create function public.svc_checkpoint_plan() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare c archive_checkpoints; v_seq bigint; v_head text; r_seq bigint; r_head text;
 begin
-  select * into c from archive_checkpoints order by id desc limit 1;
+  select * into c from archive_checkpoints where (integrity->>'ok')::boolean order by id desc limit 1;
   select seq, entry_hash into v_seq, v_head from consent_ledger order by seq desc limit 1;
   select chain_seq, entry_hash into r_seq, r_head from archive_batches where chain_seq is not null order by chain_seq desc limit 1;
   return jsonb_build_object(

@@ -2,13 +2,16 @@
 
 For whoever owns the Supabase project, and for whoever gives legal advice on it. It covers what we keep, for how long, where it goes, how it is destroyed, and what to do when something goes wrong.
 
-> **The retention periods below are engineering defaults, not legal advice.** They need confirming by someone qualified for the countries we operate in, before we rely on them or publish them. See [Decisions still needed](#decisions-still-needed).
+**We follow Vietnamese law.** This was checked on 3 November 2026 against English translations of Law 91/2025/QH15 and Decree 356/2025/ND-CP, and a law firm's summary of Decree 333/2026/ND-CP. It's not legal advice: see [Before you rely on this](#before-you-rely-on-this).
 
 ## In short
 
-Logs and records that keep growing move out of the database once they are old enough to be rarely needed. They go into compressed files in a private storage bucket, where they stay until their retention date and are then destroyed. A permanent register records every file, including proof that it was destroyed on time.
+Logs and records that keep growing move out of the database once they are old enough to be rarely needed. They go into compressed files in private storage, with a second copy in write-once storage that nobody can alter or delete before its date. When the date comes, both copies are destroyed. A permanent register records every file, including when it was destroyed.
 
-- **Nothing is deleted from the database until its file has been uploaded, read back and checked.** If any step fails, the rows stay where they are.
+- **Nothing is deleted from the database until both copies have been read back and checked.** If any step fails, the rows stay where they are.
+- **No write-once store, no archive.** Until one is connected, rows stay in the database and the Health page says so.
+- **Proof of consent is kept permanently,** including after the account is deleted, and says who agreed, when and to what wording.
+- **Tampering shows.** The consent ledger and archive register are hash chains, checked against write-once checkpoints on every run.
 - **Archive files don't identify members directly.** User ids are replaced with pseudonyms, and deleting an account deletes the link back to that person.
 - **A legal hold stops a file from being destroyed** for as long as the hold is active.
 
@@ -20,13 +23,43 @@ Logs and records that keep growing move out of the database once they are old en
 
 | Data | Table | Hot | Total | Counted from | Removed from the file |
 |---|---|---|---|---|---|
-| Application logs | `app_logs` | 30 days | 1 year | Created | `context` (page path, stack trace) |
+| Application logs | `app_logs` | 30 days | 13 months | Created | `context` (page path, stack trace) |
 | Staff audit log | `admin_audit_log` | 1 year | 5 years | Created | `target_email`, and the `email` inside `detail` |
 | Restrictions, appeals, exemptions | `accountability_audit` | 1 year | 3 years | Created | Nothing |
 | Bans and suspensions | `moderation_actions` | 1 year | 3 years | Created | Nothing |
 | Safety reports and their evidence | `reports` | 1 year | 3 years | **Resolved** | Nothing |
 
 An open report has no resolved date, so it never moves, however old it is.
+
+### Why these periods
+
+| Period | Legal basis |
+|---|---|
+| Any period at all | Data is kept for a period appropriate to its purpose unless the law says otherwise (Law 91/2025 Art. 3.3), and deleted when the purpose is fulfilled or the period ends (Art. 14.1). Most of these records have no fixed period in law, so the periods below are our judgment. |
+| Logs: 13 months | System logs for investigating violations must be kept at least 12 months (Decree 333/2026 Art. 20.3). The extra month is a margin. |
+| Reports, decisions: 3 years | Matches the limitation period for civil claims (Civil Code 2015 Art. 429 and 588). Keeping these after someone objects or deletes an account relies on the exception for protecting rights and interests (Law 91/2025 Art. 19.1(a)), and we have to be able to justify that. |
+| Staff audit log: 5 years | No period is set for this log. Decree 356/2025 Art. 29 sets at least 5 years for records of incidents involving location or biometric data, used here as a benchmark. |
+| Proof of consent: permanent | The law requires us to store consent, and we carry the burden of proof in a dispute (Decree 356/2025 Art. 6.2). No end date is set. Your decision is to keep it always. |
+
+### Proof of consent
+
+Kept permanently in `consent_ledger`, separately from the `consents` table, and copied to write-once storage. It's added automatically whenever consent is recorded or ends.
+
+| Consent must show (Decree 356/2025 Art. 6.1) | Held as |
+|---|---|
+| Who | `user_id`, and `email_hash` (SHA-256 of the lower-case address) so the person can be matched after their account is gone |
+| When | `occurred_at`, with an `ended` entry when the account is deleted |
+| What | `document_sha256`, pointing at the exact wording and page text in `consent_documents` |
+
+No name and no plain email are kept. Consents given before this existed were copied in when the migration ran, using the v1 wording.
+
+**Changing the privacy policy or terms:** CI fails until you do all of this.
+
+1. Bump the version in [legalVersions.ts](../src/lib/legalVersions.ts).
+2. Run `npm run build`, then `node scripts/legal-text.mjs write`.
+3. Add the new file's text to `consent_documents` in a migration. Without that row, new consents have no `document_sha256`.
+
+Existing members stay on the version they accepted, so you may also need to ask them to accept the new one.
 
 ### Deleted with no archive
 
@@ -55,13 +88,15 @@ flowchart TD
     C --> D[Read rows, replacing ids with pseudonyms]
     D --> E[Compress and upload to the private bucket]
     E --> F[Download it again, check hash and row count]
-    F -->|Matches| G[One transaction: record the file and delete the rows]
+    F -->|Matches| W[Copy to write-once storage, check the lock and bytes]
     F -->|Doesn't match| H[Rows stay. Retry next run]
+    W -->|Good| G[One transaction: record the file and delete the rows]
+    W -->|Bad| H
     H -->|After 5 attempts| I[Batch marked failed. Table waits for a person]
     G --> J[File kept until its retention date]
     J --> K{Active legal hold?}
     K -->|Yes| J
-    K -->|No| L[Delete the file, keep the register entry]
+    K -->|No| L[Delete both copies, keep the register entry]
 ```
 
 | Piece | Where | Job |
@@ -72,7 +107,10 @@ flowchart TD
 | `archive_subjects` | Database | Links a user id to its pseudonym. Deleted with the account. |
 | `archive_settings` | Database | The function's URL and secret. Filled in by hand once. |
 | `archive-run` | Edge function | Does the file work. All decisions about deleting are made in the database. |
-| `archives` | Storage bucket | The files. Private, with no access policies, so only the service role can reach it. |
+| `archives` | Storage bucket | The working copy. Private, with no access policies, so only the service role can reach it. |
+| Write-once bucket | S3 with Object Lock, outside Supabase | The tamper-proof copy of each file, the consent ledger, and checkpoints |
+| `consent_ledger`, `consent_documents` | Database | Proof of consent, and the wording it refers to |
+| `archive_checkpoints` | Database | Each checkpoint written to the write-once bucket |
 | `ft-archive-run` | pg_cron, every 6 hours | Starts `archive-run` |
 | `ft-archive-purge` | pg_cron, hourly | Runs the deletes that have no archive, up to 5,000 rows per table each hour |
 
@@ -86,12 +124,41 @@ A sealed file is never changed. If a row later turns up for a day that is alread
 
 | Risk | What stops it |
 |---|---|
-| Rows deleted but the file is bad | Rows are only deleted after the stored file is downloaded again and its SHA-256 and row count match |
+| Rows deleted but a copy is bad | Rows are only deleted after the stored file is downloaded again and its SHA-256 and row count match, and the write-once copy is confirmed locked and byte-identical. The database refuses to seal a batch without it. |
 | File recorded but rows not deleted, or the reverse | Both happen in one database transaction |
 | Rows changed between reading and deleting | The row count is checked again before and after the delete. Any difference undoes the transaction and the batch retries. |
 | Audit log deleted through this route | `admin_audit_log` stays append-only. Deleting is allowed only for rows in a batch being sealed, and that state exists only inside the sealing transaction. Updates are always refused. |
 | A failure that keeps repeating | After 5 attempts the batch is marked failed and that table stops. Nothing is lost, and it shows in red on the Health page. |
 | Someone calling the steps directly | The `svc_archive_*` functions are only for the service role, and the function requires its own secret |
+
+## Tamper protection
+
+There are three layers, because no single one covers everything:
+
+| Layer | Stops or catches | Limit |
+|---|---|---|
+| Append-only triggers on the ledger, audit log, register and checkpoints | Mistakes, bugs, and anyone without table-owner rights | Someone with full database access can switch them off |
+| Hash chains: each entry includes the hash of the one before | Any changed or removed entry | Someone who rewrites an entry and every later hash passes this check |
+| Write-once storage, S3 Object Lock in COMPLIANCE mode | Everything above: the checkpoint it holds can't be changed, so a rewrite no longer matches it | Only covers what has been copied: anything newer than the last run (up to 6 hours) |
+
+Every run walks both chains and compares them with the last good checkpoint. If they differ, the run writes an alert to write-once storage, and the Health page shows **RECORDS HAVE BEEN CHANGED**. It keeps failing until someone deals with it, so a forgery never becomes the new baseline.
+
+**In COMPLIANCE mode nobody can remove a locked copy before its date:** not us, not the storage account's root user, and not the provider's support.
+
+- A lock can be extended but never shortened. A mistake with a date can't be undone.
+- That includes a deletion ordered by an authority (Law 91/2025 Art. 14.1) or a change in the law.
+- A lock needs a date, so "permanent" records use 100 years.
+
+**This doesn't stop** someone with the function's secrets from adding new, false entries going forward. Older copies still can't be changed, and comparing them with the database shows when it started. To limit this, use a separate account for the bucket, give the key only the permissions in [Setup](#setup), and turn on MFA for that account's root user.
+
+### If the check fails
+
+Treat it as a security incident: see [SECURITY.md](SECURITY.md). If personal data was affected in a way that could cause harm, the authority must be notified within 72 hours of discovery (Law 91/2025 Art. 23.1). To compare what was recorded:
+
+```sql
+select id, taken_at, checkpoint_key, integrity from public.archive_checkpoints order by id desc limit 10;
+select public.svc_integrity_check();
+```
 
 ## Deleted accounts
 
@@ -103,6 +170,7 @@ This covers `user_id`, `actor_id`, `target_user`, `target_user_id`, `target_id`,
 
 - **Free text is not scrubbed.** Report details, message text in evidence, log messages and moderation reasons can contain a name someone typed. This is why deleting an account may reduce these files to pseudonymous rather than fully anonymous data, and legal should look at it.
 - **Staff stay named** in `admin_audit_log` (`actor_id`, `actor_email`), and by id in `moderation_actions` (`admin_id`) and `reports` (`resolved_by`). They acted on behalf of the service, and this record is what makes the log useful as evidence. Those ids are only linked to a person while the account exists, except the audit log's `actor_email`, which stays in the file.
+- **Proof of consent is the exception to all of this.** It keeps the real `user_id` and `email_hash` on purpose, because it has to show who agreed.
 - **Hot rows follow their existing rules until they move.** `app_logs.user_id`, `admin_audit_log.target_email` and the `sender_id` in report evidence are not cleared when an account is deleted, so they can sit in the database for the rest of the hot period.
 - **Database backups** still contain deleted rows until those backups age out, on whatever schedule your Supabase plan uses.
 
@@ -136,7 +204,7 @@ select user_id, pseudonym from public.archive_subjects where user_id = '<user id
    select object_path, row_count, sha256, retain_until from public.archive_batches
    where table_name = 'reports' and status = 'released' and day between '2026-01-01' and '2026-01-31' order by day, part;
    ```
-2. Download it from **Storage → archives** in the dashboard.
+2. Download it from **Storage → archives** in the dashboard. If that copy is missing or doesn't match, use the write-once copy at `worm_key`, version `worm_version`.
 3. Confirm it hasn't changed, then read it. The hash must match the register.
    ```bash
    sha256sum 2026-01-15.p1.ndjson.gz
@@ -150,6 +218,29 @@ select user_id, pseudonym from public.archive_subjects where user_id = '<user id
 **Keep your own note of each retrieval: who, when, which file and why.** Dashboard downloads aren't written to our audit log.
 
 Requests from members for their own data are still answered by the export in Settings, which reads live data only. If a request needs archived records too, follow these steps for that person's pseudonym.
+
+### Prove someone consented
+
+```sql
+select l.seq, l.event, l.kind, l.version, l.occurred_at, l.document_sha256, d.wording, d.document_text
+from public.consent_ledger l left join public.consent_documents d on (d.kind, d.version) = (l.kind, l.version)
+where l.email_hash = public.email_hash('person@example.com') order by l.seq;
+```
+
+Check `select public.svc_integrity_check();` at the same time. For a dispute, also take the matching `consents/` file from write-once storage: its entries carry the same `entry_hash`, which is what shows the record wasn't made up later.
+
+### Answer a request from a member
+
+The law sets these limits (Decree 356/2025 Art. 5). They're also published on the privacy page. Each one starts with a reply within **2 working days**.
+
+| Request | Finish within | If a provider has to act | One extension, at most |
+|---|---|---|---|
+| See, correct or get a copy | 10 days | 15 days | 10 days |
+| Withdraw consent, limit or object | 15 days | 20 days | 15 days |
+| Delete | 20 days | 30 days | 20 days |
+| Protection measures | 15 days | | 15 days |
+
+An extension needs a reason given to the person, and we have to be able to justify it. Nothing tracks these deadlines yet, so keep a dated note of each request.
 
 ### Retry a failed batch
 
@@ -171,11 +262,7 @@ update public.archive_batches set status = 'exporting', attempts = 0, last_error
 update public.retention_policies set retain_days = 730, basis = 'Why it changed, and who approved it' where table_name = 'app_logs';
 ```
 
-This applies to files written from now on. Files that already exist keep their date, so nothing is destroyed early by accident. To change those too, do it deliberately:
-
-```sql
-update public.archive_batches set retain_until = day + 730 where table_name = 'app_logs' and status = 'released';
-```
+This applies to files written from now on. Files already written keep their date. You can move an existing file's date later, but the write-once lock can't be shortened: until it runs out, an earlier destroy date just fails and shows on the Health page.
 
 ### Add a table
 
@@ -193,28 +280,36 @@ Stopping `ft-archive-run` also stops destruction, which is a retention problem o
 
 ## Setup
 
-The order matters. The migration stops the old 30-day log delete straight away, so **until step 3 is finished, `app_logs` keeps growing and nothing gets archived**. No data is lost in that gap, and the Health page shows "Archive set up: No".
+The order matters. The migration stops the old 30-day log delete straight away, so **until this is finished, `app_logs` keeps growing and nothing gets archived**. No data is lost in that gap, and the Health page says so.
 
-1. **Database.** Run `supabase db push`. It pushes every migration not yet applied, not only this one. In the dashboard, check that **pg_cron** and **pg_net** are enabled under Database → Extensions.
-2. **Function.**
+1. **Database.** Run `supabase db push`. It pushes every migration not yet applied, not only these. In the dashboard, check that **pg_cron** and **pg_net** are enabled under Database → Extensions.
+2. **Write-once bucket.** Create it in a separate account from everything else, and set this up **when creating the bucket**, because Object Lock can't always be added later:
+   - Object Lock: on. Versioning turns on with it. **Don't set a default retention or a lifecycle rule:** each file sets its own date, and only `archive-run` destroys things, because it checks for legal holds first.
+   - Region: see [Before you rely on this](#before-you-rely-on-this), since this is another cross-border transfer unless the bucket is in Vietnam.
+   - A key limited to this bucket, with only `s3:PutObject`, `s3:PutObjectRetention`, `s3:GetObject`, `s3:GetObjectVersion`, `s3:GetObjectRetention`, `s3:ListBucketVersions`, `s3:DeleteObjectVersion`.
+   - Any store that enforces COMPLIANCE-mode Object Lock through the S3 API will work. `archive-run` checks the lock on every write and refuses one that doesn't hold. It was tested against RustFS, not AWS, so watch the first real run.
+3. **Function.**
    ```bash
-   openssl rand -hex 32    # the secret: use the same value in both places
-   supabase secrets set ARCHIVE_WEBHOOK_SECRET=<secret>
+   openssl rand -hex 32    # the secret: use the same value in step 4
+   supabase secrets set ARCHIVE_WEBHOOK_SECRET=<secret> \
+     ARCHIVE_WORM_ENDPOINT=https://s3.<region>.amazonaws.com ARCHIVE_WORM_REGION=<region> ARCHIVE_WORM_BUCKET=<bucket> \
+     ARCHIVE_WORM_ACCESS_KEY_ID=<key> ARCHIVE_WORM_SECRET_ACCESS_KEY=<secret key>
    supabase functions deploy archive-run --no-verify-jwt
    ```
-3. **Connect them** in the SQL editor:
+4. **Connect them** in the SQL editor:
    ```sql
    insert into public.archive_settings (function_url, webhook_secret)
    values ('https://<project-ref>.supabase.co/functions/v1/archive-run', '<secret>');
    ```
-4. **Website.** Deploy as usual to get the Data archive panel on the Health page.
-5. **Check it.**
+5. **Website.** Deploy as usual. This publishes the new privacy and deletion pages, the new consent version and the Health panel.
+6. **Check it.**
    ```sql
    select jobname, schedule, active from cron.job where jobname like 'ft-archive%';   -- two rows
    select public.archive_kick();                                                      -- start a run now
-   select table_name, day, status, row_count, last_error from public.archive_batches order by created_at desc limit 10;
+   select status_code, content from net._http_response order by created desc limit 1; -- wait a few seconds first
+   select taken_at, checkpoint_key, consent_key, integrity from public.archive_checkpoints order by id desc limit 1;
    ```
-   An empty register after a run is normal if nothing is past its hot window yet. `app_logs` will be first, 30 days after the migration. Check `select status_code, content from net._http_response order by created desc limit 1;` for the run's own answer, such as `{"files":0,"rows":0,"destroyed":0,"failed":[]}`.
+   The answer should have `"checkpoint":true` and no `"worm":"not configured"`, and the last query should show `"ok": true`. **Then try to delete the `checkpoint_key` object's version in the bucket: it must be refused.** If it isn't, the bucket isn't locking.
 
 If `cron.job` shows no rows, enable pg_cron and run the two `cron.schedule` lines from `supabase/migrations/20261103000003_data_archive.sql`.
 
@@ -224,7 +319,9 @@ If `cron.job` shows no rows, enable pg_cron and run the two `cron.schedule` line
 
 | It shows | Meaning | Do this |
 |---|---|---|
-| Archive set up: No | `archive_settings` is empty | Setup, step 3 |
+| Archive set up: No | `archive_settings` is empty | [Setup](#setup), step 4 |
+| Tamper-proof copy: Not connected, or more than 2 days old | Nothing has been written to write-once storage lately | Check the `ARCHIVE_WORM_*` secrets, then the function's logs |
+| Integrity check: RECORDS HAVE BEEN CHANGED | The database no longer matches its write-once checkpoint | [If the check fails](#if-the-check-fails) |
 | Failed archive files above 0 | A table has stopped archiving. Its rows are safe in the database. | [Retry a failed batch](#retry-a-failed-batch) |
 | Oldest rows waiting, flagged | More than 2 days past the hot window: runs aren't happening | Check `ft-archive-run` under Scheduled jobs, then the function's logs. The usual cause is a mismatch between the secret and `archive_settings`. |
 | Files past their destroy date above 0 | Files should have been destroyed and weren't. This is a retention breach if it lasts. | Same checks, then look for `destroy` errors in the logs |
@@ -233,31 +330,49 @@ Review this page at least once a month. Nothing alerts anyone by email yet.
 
 ## Limits worth knowing
 
-- **Files can be altered by anyone with full project access.** The service role and dashboard owners can delete a file. The hash in the register shows a file has been changed, but the register sits in the same project, so someone with full access could change both. If legal needs tamper-proof evidence, add a second copy in write-once storage (S3 or R2 with object lock) under a different account. Not built.
-- **Archives are in one place.** They have Supabase Storage's durability and no copy of our own. Database backups don't cover Storage file contents, so losing the project would lose the archive too. A copy elsewhere fixes both this and the point above.
 - **Each file must fit in one function run:** under 50 MB compressed (the Free plan's maximum object size, and the bucket's limit) and within the platform's time limit. If a very busy day goes over, the batch fails safely and that table stops. The fix is a higher limit on a paid plan, or splitting days into smaller files.
-- **Storage is counted in the plan's quota.** Old data costs less here than in the database, but it isn't free. The Health panel shows the running total.
+- **Storage costs money, and locked copies can't be cleared early.** The Health panel shows the running total for the working copy.
+- **Retried uploads leave extra locked versions** until their date. They're identical or nearly so, and are destroyed with the file.
 - **Admin screens only show hot data.** After a year, a ban or report no longer appears in the admin area, and someone has to go to the archive for it.
+- **A database backup can bring old rows back.** Restoring one undoes deletions made since it was taken, and leaves the database out of step with the register, so the integrity check will fail. That's correct: treat a restore as something to reconcile by hand.
+- **Database backups keep deleted data** until they age out, on your Supabase plan's schedule.
 
-## Decisions still needed
+## Before you rely on this
 
-**For legal advice:**
+### Legal gaps that code can't fix
 
-1. **Which countries' rules apply?** Everything else depends on this. The privacy policy names GDPR and CCPA principles.
-2. **Are the periods right?** Storage limitation (GDPR Art. 5(1)(e)) means keeping data too long is a breach as well, so longer isn't automatically safer. Please check the 5 years for the staff audit log and the 3 years for reports in particular, since reports contain message text.
-3. **Is keeping reports and logs after account deletion justified?** The current assumption is that they're needed for safety and legal claims (GDPR Art. 17(3)(e)), and that the pseudonym approach is enough. Free text is the weak point.
-4. **Proof of consent.** The `consents` table is deleted with the account, so we can't later show someone agreed to the terms. You may want a pseudonymised copy kept for a period.
-5. **Tamper-proof storage:** is it required? See [Limits](#limits-worth-knowing).
+1. **Cross-border transfer filing.** Our database is in Ireland (`eu-west-1`), and using a platform abroad to process data collected in Vietnam counts as a transfer (Law 91/2025 Art. 20.1(c)). An impact assessment dossier must go to the authority **within 60 days of the first transfer** (Art. 20.2, Decree 356/2025 Art. 18). Translation, image search and the write-once bucket may need to be covered too.
+2. **Storing data in Vietnam.** A company registered in Vietnam that provides these services has to store regulated data, including personal information and account data, in Vietnam (Decree 333/2026 Art. 19.2). A foreign company only has to after an order from the Ministry of Public Security (Art. 19.3, 19.6). **Which one are we?** If registered in Vietnam, the current hosting may not comply, and that decides where the write-once bucket should be.
+3. **Who the data controller is.** Consent is only valid if people are told who the controller is (Law 91/2025 Art. 9.2(b)), and the policy only says "The Fluency Talks". It needs the legal name and address of whoever runs it.
+4. **Impact assessment and DPO.** Processing personal data needs its own impact assessment dossier, sent to the authority **within 60 days of first processing** (Law 91/2025 Art. 21.1), and Decree 356/2025 has rules on data protection personnel (Art. 13–14). Whether exemptions apply needs checking.
 
-**For the policy pages (not changed yet, and this should happen before relying on this system):**
+### Product changes the law may require
 
-Privacy law generally expects retention periods to be disclosed (GDPR Art. 13(2)(a)), and the current pages don't state them. [Privacy.tsx](../src/pages/public/Privacy.tsx) and [DataDeletion.tsx](../src/pages/public/DataDeletion.tsx) only mention reports as being kept after deletion. Once the periods are confirmed, wording along these lines would close the gap:
+5. **One checkbox covers everything.** Consent must be given for each purpose (Law 91/2025 Art. 9.4(a)), and ours bundles age, terms and privacy in one tick. The ledger records exactly that, so splitting it needs a product decision.
+6. **Existing members** accepted privacy v1, which didn't state these periods. They probably need telling, and may need to accept v2. Nothing asks them to yet.
+7. **Cookies and tracking.** Social and communication services must offer opting out of cookies and a "do not track" option (Law 91/2025 Art. 29.3–4). Not reviewed here.
+8. **Vietnamese-language policy.** The pages are English only, and people must be properly informed for consent to count.
+9. **Social network rules.** Decree 147/2024 can require account verification by phone or ID number, and applies to foreign providers above 100,000 monthly Vietnamese visits. Not reviewed here.
 
-> **How long we keep things.** Your profile, messages and saved content stay until you delete them or your account. Technical logs are kept for up to 1 year, and safety reports and records of moderation decisions for up to 3 years. Records of what our staff do are kept for up to 5 years. Older records are moved to private storage and then permanently destroyed. If you delete your account, what remains is no longer linked to your account, though it may include words someone wrote. We may keep specific records longer if the law requires it or for a legal claim.
+### For your lawyer to confirm
+
+10. **Permanent consent proof.** Storing data only as long as its purpose needs is a principle of the law (Art. 3.3), and it can't be deleted if someone asks (see the lock above). The defence is that we must be able to prove consent. A long fixed period, such as the 3-year claim limit plus a margin, is the alternative if they prefer.
+11. **Whether 100-year locks are acceptable**, given they can't honour a deletion order. A shorter lock, renewed as it nears its end, is the alternative.
+12. **Whether Decree 333's 12-month log rule covers Supabase's own auth logs.** Sign-in records with IP addresses (`auth.audit_log_entries`) are outside this system, and their retention depends on Supabase.
+13. **The periods themselves.** Decree 333 is based on a law firm's summary here, not the decree's text. Translations may also differ from the Vietnamese originals, which are what count.
 
 ## Testing
 
 | What | How |
 |---|---|
-| The rules: pseudonyms, row checks, append-only, holds, purges, permissions | `npm run test:db`, in `supabase/tests/app_flow.sql` |
-| The file format | `npm run test:unit`, in `tests/unit/archiveFile.test.ts` |
+| The rules: pseudonyms, row checks, append-only, chains, forgery detection, holds, purges, permissions | `npm run test:db`, in `supabase/tests/app_flow.sql` |
+| The file format, and refusing a store that isn't locking | `npm run test:unit`, in `tests/unit/` |
+| Published policy text matches its recorded version | `npm run check:legal`, in CI |
+
+## Sources
+
+- [Law 91/2025/QH15, English translation](https://www.dpo-india.com/Resources/Privacy_Regulations_in_Asia_Pacific_Countries/Vietnam-Personal-Data-Protection-Law(PDPL)26.06.25-Law-No.91-2025-QH15.pdf)
+- [Decree 356/2025/ND-CP, English translation](https://www.qtsc.com.vn/uploads/files/2026/02/02/356_2025_ND-CP_689146.pdf)
+- [EY: Decree 333/2026/ND-CP](https://www.ey.com/en_vn/technical/tax/tax-and-law-updates/legal-alert-decree-no-333-2026-nd-cp-providing-detailed-guidance-on-a-number-of-articles-of-the-law-on-cybersecurity) and [Duane Morris](https://blogs.duanemorris.com/vietnam/2026/08/27/vietnams-cybersecurity-reset-three-new-decrees-redefine-compliance-for-foreign-investors-and-fies/)
+- [Civil Code 2015 limitation periods: DB Legal](https://dblegal.vn/news/litigation-in-vietnam/legal-grounds-and-statute-of-limitations-for-filing-a-lawsuit-in-vietnam-a-detailed-guide-1275.html)
+- [Decree 147/2024: Tilleke & Gibbins](https://www.tilleke.com/insights/a-closer-look-at-vietnams-decree-147-on-internet-services-and-online-information/)

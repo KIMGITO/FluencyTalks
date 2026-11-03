@@ -25,6 +25,7 @@ grep -o '<loc>[^<]*</loc>' dist/sitemap.xml
 | `https://thefluencytalks.com/languages` |
 | `https://thefluencytalks.com/blog` |
 | `https://thefluencytalks.com/about` |
+| `https://thefluencytalks.com/faq` |
 | `https://thefluencytalks.com/privacy` |
 | `https://thefluencytalks.com/terms` |
 | `https://thefluencytalks.com/data-deletion` |

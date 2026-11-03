@@ -399,6 +399,7 @@
 .lp-article__summary { font-size: clamp(1.15rem, 1.6vw, 1.3rem); line-height: 1.6; padding-left: 1.1rem; border-left: 3px solid rgb(var(--c-brand)); }
 .lp-article__body { padding-block: 1rem clamp(2rem, 5vw, 3rem); line-height: 1.75; }
 .lp-article__body h2 { font-size: clamp(1.6rem, 4.5vw, 2.1rem); margin: 2.25rem 0 .9rem; }
+.lp-article__body h3 { font: 500 1.3rem/1.3 var(--font-display); margin: 1.5rem 0 .4rem; }
 .lp-article__body :where(p, ul, ol, blockquote) + :where(p, ul, ol, blockquote) { margin-top: 1rem; }
 .lp-article__body :where(ul, ol) { padding-left: 1.3rem; display: grid; gap: .5rem; }
 .lp-article__body ul { list-style: disc; } .lp-article__body ol { list-style: decimal; }

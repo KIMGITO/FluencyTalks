@@ -1,6 +1,7 @@
 // Runs after `vite build` and `vite build --ssr src/entry-server.tsx --outDir dist-ssr` (see package.json "build").
 // Writes each public page as static HTML (dist/index.html, dist/blog.html, dist/blog/<slug>.html, ...) with its own
 // <title>, description, canonical and social tags, and generates dist/sitemap.xml from the same list.
+// Also writes dist/404.html and dist/app.html, the shell for logged-in routes.
 // Cloudflare serves /blog from blog.html without a redirect, so canonical URLs have no trailing slash.
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -48,6 +49,15 @@ for (const { path: p } of PUBLIC_PAGES) {
   await fs.writeFile(file, page(p, html, seo));
   console.log(`prerendered ${p} -> ${path.relative(root, file)}`);
 }
+
+// Unknown URLs get this with a real 404 status (wrangler.toml). The app still boots on it and shows its own 404 page.
+{
+  const { html, seo } = render('/404');
+  await fs.writeFile(path.join(dist, '404.html'), page('/404', html, seo));
+}
+// App and sign-in URLs get this bare shell (public/_redirects): the unrendered template, kept out of search.
+await fs.writeFile(path.join(dist, 'app.html'), setMeta(template, 'name', 'robots', 'noindex, nofollow')
+  .replace('</head>', `<style id="ft-tokens">${tokenCss()}</style>\n  </head>`));
 
 const urls = PUBLIC_PAGES.map(({ path: p, priority, changefreq, lastmod }) =>
   `  <url><loc>${SITE}${p === '/' ? '/' : p}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}<changefreq>${changefreq}</changefreq><priority>${priority.toFixed(1)}</priority></url>`);

@@ -13,7 +13,7 @@ export default function Footer() {
           <nav aria-label="Explore"><h4>Explore</h4><ul>
             <li><Link to={{ pathname: '/', hash: '#services' }}>What you get</Link></li>
             <li><Link to="/languages">Languages</Link></li>
-            <li><Link to={{ pathname: '/', hash: '#faq' }}>FAQ</Link></li>
+            <li><Link to="/faq">How it works: FAQ</Link></li>
             <li><Link to="/blog">Language learning guides</Link></li>
             <li><Link to="/about">About us</Link></li>
           </ul></nav>

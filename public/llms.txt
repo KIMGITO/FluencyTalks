@@ -8,7 +8,8 @@
 - Price: free. There are no paid plans.
 - Languages: 40 at launch: English, Swahili, Vietnamese, French, Spanish, German, Portuguese, Italian, Chinese, Cantonese, Japanese, Korean, Hindi, Arabic, Russian, Turkish, Indonesian, Thai, Dutch, Polish, Ukrainian, Greek, Hebrew, Persian, Bengali, Urdu, Tagalog, Malay, Tamil, Punjabi, Swedish, Czech, Romanian, Amharic, Somali, Yoruba, Igbo, Hausa, Zulu and Kinyarwanda. Full list: https://thefluencytalks.com/languages
 - Who it is for: language learners at any CEFR level from A1 to C2, and native or fluent speakers (B1 and above) who want to help others.
-- Practice format: one-to-one text chat with matched partners.
+- Practice format: one-to-one text chat with matched partners. There are no voice or video calls.
+- Platform: a web app that runs in the browser; there is nothing to download. You must be 16 or older.
 - Corrections: a native speaker, or a learner at B1 or above, edits your sentence where you wrote it; you see exactly what changed and accept it or not. Example: an English speaker learning Vietnamese writes "Tôi là đói" and a native speaker corrects it to "Tôi đói" ("I am hungry").
 - Phrasebook and translation: accepted corrections are saved to your phrasebook automatically, you can save any other message, and you can translate any message; every translation is kept on your Learning page.
 - Matching: by language pair (your native language and the one you are learning), not by popularity. There are no followers or likes.
@@ -26,6 +27,7 @@
 ## Pages
 
 - [Home: what it is, how it works, FAQ](https://thefluencytalks.com/)
+- [How it works: FAQ on practice, corrections, points, bounties and safety](https://thefluencytalks.com/faq)
 - [All 40 languages, each with its own page](https://thefluencytalks.com/languages)
 - [About The Fluency Talks](https://thefluencytalks.com/about)
 - [Blog: language learning guides](https://thefluencytalks.com/blog)

@@ -74,10 +74,21 @@ async function checkpoint(db: Db, worm: Worm, logFailure: (where: string, err: u
   const integrity = await call<{ ok: boolean }>(db, 'svc_integrity_check', {
     p_consent_seq: last.consent_through, p_consent_head: last.consent_head, p_register_seq: last.register_through, p_register_head: last.register_head,
   });
-  if (!integrity.ok) await logFailure('integrity', JSON.stringify(integrity));
-  if (!plan.due && integrity.ok) return false;
-
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  if (!integrity.ok) {
+    // Evidence, not a new baseline: what's in the database now can't be trusted, so no ledger copy from it either.
+    await logFailure('integrity', JSON.stringify(integrity));
+    const alert = new TextEncoder().encode(JSON.stringify({ taken_at: new Date().toISOString(), database_heads: plan, integrity }));
+    const alertKey = `alerts/${stamp}.json`;
+    const alertVersion = await worm.put(alertKey, alert, await sha256Hex(alert), yearsFromNow(PERMANENT_YEARS), 'application/json');
+    await call(db, 'svc_checkpoint_record', {
+      p_consent_through: plan.consent_through, p_consent_head: plan.consent_head, p_register_through: plan.register_through, p_register_head: plan.register_head,
+      p_checkpoint_key: alertKey, p_checkpoint_version: alertVersion, p_consent_key: null, p_consent_version: null, p_integrity: integrity,
+    });
+    return true;
+  }
+  if (!plan.due) return false;
+
   let consentKey: string | null = null, consentVersion: string | null = null;
   if (plan.consent_through > plan.consent_from) {
     const rows: unknown[] = [];
