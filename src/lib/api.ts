@@ -32,6 +32,11 @@ const friendly: Record<string, string> = {
   post_not_found: 'That post is no longer available.', already_reported: 'You already reported this post. Our team is on it.',
   cannot_report_self: "You can't report your own post.", saved_limit: 'You can save up to 500 posts. Remove some first.',
   invalid_alignment: 'Choose left, center or right alignment.',
+  blog_invalid_slug: 'The web address can only use lowercase letters, numbers and hyphens.', blog_slug_taken: 'Another post already uses that web address.',
+  blog_slug_locked: "This post has been public, so its web address can't change.", blog_slug_required: 'Give the post a title or a web address first.',
+  blog_changed: 'Someone else saved this post while you were editing. Reload the page to see their version.', blog_too_long: 'This post is too long to save.',
+  blog_not_found: 'That post no longer exists.', blog_title_required: 'Add a title before publishing.', blog_description_required: 'Add a search description before publishing.',
+  blog_summary_required: 'Add a summary before publishing.', blog_body_required: 'Write the post before publishing.',
   invite_invalid: 'This invitation has expired or was already used. Ask for a new one.', invite_email_mismatch: 'This invitation was sent to a different email address. Log in with that one.',
 };
 /** Set by the app status store: this file can't import it, the store's services import this. */

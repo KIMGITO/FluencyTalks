@@ -58,11 +58,13 @@ for (const url of urls) {
 const allowed = new Set([...known, '/login', '/signup', '/forgot-password', '/home', '/search', '/messages', '/profile', '/learning', '/library']);
 for (const [p, from] of linked) {
   if (/^\/(assets|favicon|logo|og-image|manifest|robots|sitemap|llms)/.test(p) || /\.[a-z0-9]{2,4}$/.test(p)) continue;
+  // Posts live in the database, so they aren't in the built sitemap. worker/index.ts serves them.
+  if (p.startsWith('/blog/')) continue;
   if (!allowed.has(p)) bad(from, `links to ${p}, which is not a public page or a known route`);
 }
 // Pages that exist but are missing from the sitemap
 for (const f of fs.readdirSync(DIST, { recursive: true })) {
-  if (!String(f).endsWith('.html') || ['index.html', '404.html', 'app.html'].includes(f)) continue;
+  if (!String(f).endsWith('.html') || ['index.html', '404.html', 'app.html', 'blog-post-shell.html'].includes(f)) continue;
   const p = '/' + String(f).replace(/\.html$/, '');
   if (!known.has(p)) soft('(build)', `${f} is built but not in the sitemap`);
 }

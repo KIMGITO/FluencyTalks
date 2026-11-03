@@ -259,23 +259,6 @@
   .lp-role--speak { grid-column: 8 / span 5; margin: 4rem 0 0; border-radius: 4px; padding: 2.25rem 2rem 2.5rem; }
 }
 
-/* ---- the project ---------------------------------------------------------- */
-.lp-project { padding-block: clamp(3.5rem, 9vw, 7rem) clamp(2.5rem, 6vw, 5rem); }
-.lp-project__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }
-.lp-project__text h2 { font-size: clamp(2.1rem, 7vw, 3.4rem); margin: 1rem 0 1.25rem; }
-.lp-project__text p + p { margin-top: 1rem; }
-.lp-facts { display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1.5px solid rgb(var(--ink)); }
-.lp-facts div { padding: .9rem .75rem .9rem 0; }
-.lp-facts div + div { padding-left: .9rem; border-left: 1px solid var(--rule); }
-.lp-facts dt { font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; color: rgb(var(--muted)); font-weight: 700; }
-.lp-facts dd { margin-top: .2rem; font: 500 1.15rem/1.2 var(--font-display); }
-@media (min-width: 56rem) {
-  .lp-project__grid { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 1.5rem; align-items: start; }
-  .lp-project__text { grid-column: 2 / span 6; } .lp-facts { grid-column: 9 / span 4; grid-template-columns: 1fr; margin-top: 3.25rem; border-block: 0; }
-  .lp-facts div, .lp-facts div + div { padding: .95rem 0; border-left: 0; border-top: 1px solid var(--rule); } .lp-facts div:last-child { border-bottom: 1px solid var(--rule); }
-  .lp-facts dd { font-size: 1.3rem; }
-}
-
 /* ---- FAQ ------------------------------------------------------------------ */
 .lp-faq { padding-block: clamp(2.5rem, 6vw, 5rem); }
 .lp-faq__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
@@ -386,12 +369,6 @@
 
 /* ---- blog ------------------------------------------------------------------ */
 .lp-blog__lead { margin-top: 1rem; }
-.lp-posts { list-style: none; padding: 0; margin: 0 0 clamp(2.5rem, 6vw, 4rem); border-top: 1px solid var(--rule); }
-.lp-posts article { padding-block: 1.75rem; border-bottom: 1px solid var(--rule); max-width: 46rem; }
-.lp-posts h2 { font-size: clamp(1.6rem, 4.5vw, 2.2rem); margin: .7rem 0 .6rem; }
-.lp-posts h2 a { text-decoration: none; }
-.lp-posts h2 a:hover { text-decoration: underline; text-decoration-color: rgb(var(--accent)); text-decoration-thickness: 2px; text-underline-offset: .18em; }
-.lp-posts p:not(.lp-kicker):not(.lp-doc__meta) { color: rgb(var(--muted)); }
 .lp-article { max-width: 44rem; }
 .lp-article .lp-doc__head h1 { font-size: clamp(2.2rem, 7vw, 3.6rem); letter-spacing: -.03em; line-height: 1.05; }
 .lp-crumbs { font-size: .875rem; color: rgb(var(--muted)); margin-bottom: 1.25rem; }
@@ -445,3 +422,67 @@
 }
 html { scroll-behavior: smooth; }
 .lp section[id] { scroll-margin-top: calc(var(--hdr) + .75rem); }
+
+/* ---- blog: list, post, and the same type in the admin editor ------------------- */
+.lp-blog__head { max-width: 50rem; }
+.lp-blog__note { padding-block: 1rem clamp(3rem, 8vw, 5rem); color: rgb(var(--muted)); }
+.lp-postgrid { list-style: none; padding: 0; margin: 0 0 clamp(3rem, 7vw, 5rem); display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1.75rem, 3vw, 2.5rem) clamp(1.25rem, 2.5vw, 2rem); }
+.lp-postcard, .lp-postcard article { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.lp-postcard__media { display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 4px; background: rgb(var(--paper-2)); border: 1px solid var(--rule); }
+.lp-postcard__media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .4s var(--ease); }
+.lp-postcard:hover .lp-postcard__media img { transform: scale(1.03); }
+.lp-postcard__blank { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgb(var(--deep)); color: rgb(var(--on-deep) / .9); font: italic 500 clamp(3.5rem, 9vw, 5rem)/1 var(--font-display); }
+.lp-postcard__text { display: flex; flex-direction: column; flex: 1; min-width: 0; padding-top: 1rem; }
+.lp-postcard h2, .lp-postcard h3 { font-size: clamp(1.4rem, 3.5vw, 1.6rem); line-height: 1.18; margin: .55rem 0 .5rem; overflow-wrap: anywhere; }
+.lp-postcard :is(h2, h3) a { text-decoration: none; }
+.lp-postcard :is(h2, h3) a:hover { text-decoration: underline; text-decoration-color: rgb(var(--accent)); text-decoration-thickness: 2px; text-underline-offset: .18em; }
+.lp-postcard__desc { color: rgb(var(--muted)); }
+.lp-postcard .lp-doc__meta { margin-top: auto; padding-top: .75rem; font-size: .875rem; }
+@media (min-width: 40rem) {
+  /* Cards share the row between them, so a short row never leaves an empty column. */
+  .lp-postgrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+  .lp-postgrid:not(.lp-postgrid--small) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:first-child { grid-column: 1 / -1; }
+}
+@media (min-width: 40rem) and (max-width: 61.99rem) { .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:last-child:nth-child(2n) { grid-column: 1 / -1; } }
+@media (min-width: 62rem) {
+  /* Six tracks: the newest post leads, the rest go three to a row, and a last row of two or one fills the width. */
+  .lp-postgrid:not(.lp-postgrid--small) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard { grid-column: span 2; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:last-child:nth-child(3n),
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:nth-last-child(2):nth-child(3n+2) { grid-column: span 3; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:first-child,
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:last-child:nth-child(3n+2) { grid-column: 1 / -1; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:is(:first-child, :last-child:nth-child(3n+2)) article { flex-direction: row; gap: 2.5rem; align-items: center; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:is(:first-child, :last-child:nth-child(3n+2)) .lp-postcard__media { flex: 0 0 56%; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:is(:first-child, :last-child:nth-child(3n+2)) .lp-postcard__text { padding-top: 0; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:is(:first-child, :last-child:nth-child(3n+2)) h2 { font-size: clamp(2rem, 3.2vw, 2.75rem); line-height: 1.08; }
+  .lp-postgrid:not(.lp-postgrid--small) .lp-postcard:is(:first-child, :last-child:nth-child(3n+2)) .lp-doc__meta { margin-top: .25rem; }
+}
+
+.lp-post { --post-col: 44rem; padding-top: clamp(2rem, 5vw, 3.5rem); }
+.lp-post__head, .lp-post__col { max-width: var(--post-col); margin-inline: auto; }
+.lp-post__head h1 { font-size: clamp(2.1rem, 7vw, 3.6rem); letter-spacing: -.03em; line-height: 1.06; margin-top: .9rem; overflow-wrap: anywhere; }
+.lp-post__cover { max-width: 60rem; margin: clamp(1.5rem, 4vw, 2.5rem) auto 0; }
+.lp-post__cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; }
+.lp-post__col { padding-top: clamp(1.5rem, 4vw, 2.5rem); }
+.lp-post__more { max-width: 60rem; margin-inline: auto; padding-top: clamp(1rem, 3vw, 2rem); border-top: 1px solid var(--rule); }
+.lp-post__more > h2 { font-size: 1.75rem; margin-bottom: 1.25rem; }
+.lp-post__more .lp-postgrid { margin-bottom: clamp(2.5rem, 6vw, 4rem); }
+.lp-post__more h3 { font-size: 1.3rem; }
+.lp-article__body { overflow-wrap: break-word; }
+.lp-article__body h4 { font: 700 1.05rem/1.35 var(--font-sans); letter-spacing: 0; margin: 1.35rem 0 .35rem; }
+.lp-article__body :where(p, ul, ol, blockquote, figure) + :where(p, ul, ol, blockquote, figure) { margin-top: 1rem; }
+.lp-article__body hr { border: 0; border-top: 1px solid var(--rule); margin-block: 2rem; }
+.lp-article__body u { text-underline-offset: .15em; }
+.lp-article__body li > p + p { margin-top: .5rem; }
+.lp-article__body blockquote p { margin: 0; }
+.lp-article__body img { display: block; max-width: 100%; height: auto; margin-inline: auto; border-radius: 4px; }
+.lp-post__img { margin-block: 1.5rem; }
+
+/* The editor sits inside the admin: the blog's type and colours, without the public page's height. */
+.lp.ft-blog-frame { min-height: 0; display: block; overflow-x: visible; background: rgb(var(--c-surface)); }
+.ft-blog-editor { min-height: 22rem; padding: 1.25rem 1rem 2rem; outline: none; }
+@media (min-width: 48rem) { .ft-blog-editor { padding: 1.75rem 2rem 2.5rem; } }
+.ft-blog-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; height: 0; color: rgb(var(--muted)); pointer-events: none; }
+.ft-blog-editor img.ProseMirror-selectednode { outline: 3px solid rgb(var(--accent)); }

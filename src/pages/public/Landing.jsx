@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { PublicShell, Hero, Marquee, Intro, Services, Languages, Roles, Project, Compare, Faq, Cta, StickyCta } from '@/components/landing';
+import { PublicShell, Hero, Marquee, Intro, Services, Languages, Roles, Compare, Faq, Cta, StickyCta } from '@/components/landing';
 import { useSeo } from '@/hooks/useSeo';
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from '@/lib/site';
 import '@/styles/landing.css';
@@ -21,7 +21,6 @@ export default function Landing() {
       <Services />
       <Languages />
       <Roles />
-      {/* <Project /> */}
       <Compare />
       <Faq />
       <Cta />

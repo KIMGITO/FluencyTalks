@@ -13,7 +13,6 @@ import About from '@/pages/public/About';
 import FaqPage from '@/pages/public/FaqPage';
 import NotFound from '@/pages/public/NotFound';
 import { LANGUAGES } from '@/content/languages';
-import { POSTS } from '@/content/blog';
 import { FAQ_UPDATED } from '@/content/faq';
 import { takeSsrSeo } from '@/hooks/useSeo';
 import { tokenCss } from '@/theme/inject';
@@ -24,12 +23,10 @@ import { tokenCss } from '@/theme/inject';
  */
 export interface PublicPage { path: string; priority: number; changefreq: 'weekly' | 'monthly'; lastmod?: string }
 
-const newest = POSTS.map((p) => p.updated).sort().pop();
-
 export const PUBLIC_PAGES: PublicPage[] = [
   { path: '/', priority: 1.0, changefreq: 'weekly' },
-  { path: '/blog', priority: 0.8, changefreq: 'weekly', lastmod: newest },
-  ...POSTS.map((p) => ({ path: `/blog/${p.slug}`, priority: 0.7, changefreq: 'monthly' as const, lastmod: p.updated })),
+  // The posts themselves come from the database: worker/index.ts adds them to the sitemap.
+  { path: '/blog', priority: 0.8, changefreq: 'weekly' },
   { path: '/languages', priority: 0.8, changefreq: 'monthly' },
   ...LANGUAGES.map((l) => ({ path: `/languages/${l.slug}`, priority: 0.6, changefreq: 'monthly' as const })),
   { path: '/faq', priority: 0.8, changefreq: 'monthly', lastmod: FAQ_UPDATED },
@@ -61,3 +58,5 @@ export function render(path: string) {
 }
 
 export { tokenCss };
+/** Public values, already in the site's JavaScript. The Worker reads them from dist/blog-config.json. */
+export const blogConfig = { url: import.meta.env.VITE_SUPABASE_URL, key: import.meta.env.VITE_SUPABASE_ANON_KEY };

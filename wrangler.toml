@@ -1,9 +1,13 @@
 name = "thefluencytalks"
 compatibility_date = "2026-10-20"
+main = "worker/index.ts"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 not_found_handling = "404-page"
+# Only the blog runs code; every other path is a plain file.
+run_worker_first = ["/blog", "/blog/*", "/sitemap.xml", "/llms.txt"]
 
 [build]
 command = "npm run build"

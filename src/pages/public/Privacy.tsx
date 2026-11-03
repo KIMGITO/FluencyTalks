@@ -8,7 +8,7 @@ const sections = [
   { id: 'use', short: 'How we use it', tagline: 'How we use your data', heading: 'Empowering your fluency', body: (<><P>Every piece of data has a purpose.</P>
       <Bullets items={[['Core service:', 'partner matching, real-time chat and conversation practice.'], ['Safety:', 'preventing spam and abuse, and enforcing our terms.'], ['Notifications:', 'practice reminders, partner messages and security updates.']]} /></>) },
   { id: 'sharing', short: 'Sharing', tagline: 'Third parties', heading: 'Trusted infrastructure partners', body: (<><P>We never sell your personal information. We share data only with the providers that run the service.</P>
-      <Bullets items={[['Supabase:', 'encrypted database and sign-in.'], ['Translation:', 'the text you ask to translate is sent to a translation service (MyMemory).'],
+      <Bullets items={[['Hosting provider:', 'encrypted database and sign-in.'], ['Translation:', 'the text you ask to translate is sent to a translation service (MyMemory).'],
         ['Image search:', 'when you search for a picture for a phrase, your search words are sent to Unsplash through our server. Your name and account are not.'],
         ['Archive storage:', 'an independent provider holds the write-once copy of our archived records.']]} />
       <P>Our database is hosted outside Vietnam, in the European Union (Ireland).</P></>) },

@@ -29,6 +29,11 @@ begin
     and a.attname not in ('id', 'username', 'display_name', 'avatar_url') and has_column_privilege('authenticated', a.attrelid, a.attnum, 'select');
   assert v is null, 'profile columns readable by any member: ' || coalesce(v, '');
 
+  -- Drafts stay with staff, even on a live post: only the published columns are public.
+  select string_agg(a.attname, ', ') into v from pg_attribute a where a.attrelid = 'public.blog_posts'::regclass and a.attnum > 0 and not a.attisdropped
+    and a.attname in ('draft', 'draft_saved_at', 'is_live', 'created_at') and (has_column_privilege('anon', a.attrelid, a.attnum, 'select') or has_column_privilege('authenticated', a.attrelid, a.attnum, 'select'));
+  assert v is null, 'blog columns readable by the public: ' || coalesce(v, '');
+
   select string_agg(p.proname, ', ') into v from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')

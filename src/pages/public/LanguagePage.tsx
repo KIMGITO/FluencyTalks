@@ -2,7 +2,6 @@ import { Link, useParams } from 'react-router-dom';
 import { PublicShell } from '@/components/landing';
 import { useSeo } from '@/hooks/useSeo';
 import { LANGUAGES, languageBySlug } from '@/content/languages';
-import { POSTS } from '@/content/blog';
 import { BRAND, SITE_URL, SITE_URL_WITH_SLASH } from '@/lib/site';
 import NotFound from './NotFound';
 import '@/styles/landing.css';
@@ -86,7 +85,7 @@ export default function LanguagePage() {
             {near.map((o) => <li key={o.id}><Link className="lp-link" to={`/languages/${o.slug}`}>{o.name}</Link></li>)}
             <li><Link className="lp-link" to="/languages">All {LANGUAGES.length} languages</Link></li>
           </ul>
-          {POSTS.length > 0 && <p className="lp-doc__meta">Guides: {POSTS.map((p, i) => <span key={p.slug}>{i > 0 && ' · '}<Link to={`/blog/${p.slug}`}>{p.title}</Link></span>)}</p>}
+          <p className="lp-doc__meta"><Link to="/blog">Language learning guides</Link></p>
         </nav>
       </div>
     </PublicShell>

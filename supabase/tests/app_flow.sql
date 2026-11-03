@@ -1605,5 +1605,49 @@ do $$ declare p jsonb := public.svc_checkpoint_plan(); begin
 end $$;
 select tt.expect_error($q$delete from public.archive_checkpoints where checkpoint_key = 'checkpoints/a.json'$q$, 'append-only');
 
+-- The blog: staff write and publish, drafts stay private, and the public only ever sees what was published.
+select tt.as_user('00000000-0000-0000-0000-00000000d003');
+select tt.expect_error($q$select public.admin_blog_list()$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'mine', '{}')$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_blog_publish((select id from public.blog_posts limit 1))$q$, 'forbidden');
+select tt.expect_error($q$select public.admin_blog_delete((select id from public.blog_posts limit 1))$q$, 'forbidden');
+select tt.as_staff('00000000-0000-0000-0000-0000000000d4');
+select tt.expect_error($q$select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'Not A Slug', '{}')$q$, 'blog_invalid_slug');
+select tt.expect_error($q$select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'what-is-a-language-exchange', '{}')$q$, 'blog_slug_taken');
+select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'flow-post', '{"title":"First","extra":"dropped","body":{"type":"doc","content":[]}}');
+select tt.expect_error($q$select public.admin_blog_publish('00000000-0000-0000-0000-00000000b109')$q$, 'blog_description_required');
+select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'flow-post', '{"title":"First","description":"D","summary":"S","kicker":null,"seo_title":null,"cover_url":null,"cover_alt":null,"body":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"one two three"}]}]}}');
+do $$ begin
+  assert (select draft ? 'extra' from public.blog_posts where slug = 'flow-post') is false, 'only known fields are kept';
+  assert (select title is null from public.blog_posts where slug = 'flow-post'), 'saving publishes nothing';
+end $$;
+reset role; set role anon;
+do $$ begin
+  assert (select count(*) from public.blog_posts where slug = 'flow-post') = 0, 'a draft is not public';
+  assert (select count(*) from public.blog_posts where slug = 'what-is-a-language-exchange') = 1, 'a live post is public';
+end $$;
+reset role; set role authenticated;
+do $$ declare v jsonb; begin
+  v := public.admin_blog_publish('00000000-0000-0000-0000-00000000b109');
+  assert (v->>'is_live')::boolean and not (v->>'has_changes')::boolean, 'published with nothing left to publish';
+  assert (select read_minutes from public.blog_posts where slug = 'flow-post') = 1, 'reading time';
+end $$;
+-- Editing a live post leaves the public copy alone until it is published again.
+select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'flow-post', '{"title":"Second","description":"D","summary":"S","body":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"new"}]}]}}');
+do $$ begin
+  assert (select title from public.blog_posts where slug = 'flow-post') = 'First', 'the site still has the old version';
+  assert (public.admin_blog_get('00000000-0000-0000-0000-00000000b109')->>'has_changes')::boolean, 'staff see there are changes';
+end $$;
+select tt.expect_error($q$select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'new-address', '{"title":"x"}')$q$, 'blog_slug_locked');
+select tt.expect_error($q$select public.admin_blog_save('00000000-0000-0000-0000-00000000b109', 'flow-post', '{"title":"x"}', '2020-01-01')$q$, 'blog_changed');
+select public.admin_blog_unpublish('00000000-0000-0000-0000-00000000b109');
+reset role; set role anon;
+do $$ begin assert (select count(*) from public.blog_posts where slug = 'flow-post') = 0, 'off the site'; end $$;
+reset role; set role authenticated;
+select public.admin_blog_delete('00000000-0000-0000-0000-00000000b109');
+do $$ begin assert (public.admin_blog_get('00000000-0000-0000-0000-00000000b109')) is null, 'deleted'; end $$;
+reset role;
+do $$ begin assert (select count(*) from public.admin_audit_log where action in ('blog_publish', 'blog_unpublish', 'blog_delete') and detail->>'slug' = 'flow-post') = 3, 'on the record'; end $$;
+
 reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;

@@ -1,7 +1,7 @@
 // Runs after `vite build` and `vite build --ssr src/entry-server.tsx --outDir dist-ssr` (see package.json "build").
 // Writes each public page as static HTML (dist/index.html, dist/blog.html, dist/blog/<slug>.html, ...) with its own
 // <title>, description, canonical and social tags, and generates dist/sitemap.xml from the same list.
-// Also writes dist/404.html and dist/app.html, the shell for logged-in routes.
+// Also writes dist/404.html, dist/app.html (the shell for logged-in routes) and the blog post shell.
 // Cloudflare serves /blog from blog.html without a redirect, so canonical URLs have no trailing slash.
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 
 const root = process.cwd();
 const dist = path.join(root, 'dist');
-const { render, PUBLIC_PAGES, tokenCss } = await import(pathToFileURL(path.join(root, 'dist-ssr', 'entry-server.js')).href);
+const { render, PUBLIC_PAGES, tokenCss, blogConfig } = await import(pathToFileURL(path.join(root, 'dist-ssr', 'entry-server.js')).href);
 const SITE = 'https://thefluencytalks.com';
 
 const template = await fs.readFile(path.join(dist, 'index.html'), 'utf8');
@@ -54,6 +54,12 @@ for (const { path: p } of PUBLIC_PAGES) {
 {
   const { html, seo } = render('/404');
   await fs.writeFile(path.join(dist, '404.html'), page('/404', html, seo));
+}
+// worker/index.ts fills this in for each blog post, and reads the database address from the config file.
+{
+  const { html, seo } = render('/blog/__post__');
+  await fs.writeFile(path.join(dist, 'blog-post-shell.html'), page('/blog/__post__', html, seo));
+  await fs.writeFile(path.join(dist, 'blog-config.json'), JSON.stringify(blogConfig));
 }
 // App and sign-in URLs get this bare shell (public/_redirects): the unrendered template, kept out of search.
 await fs.writeFile(path.join(dist, 'app.html'), setMeta(template, 'name', 'robots', 'noindex, nofollow')

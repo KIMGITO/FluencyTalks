@@ -16,7 +16,6 @@
 - Points: every user starts with 100 points. An accepted correction earns the corrector 5 points. A bounty costs 50 points and puts a question in front of people qualified in that language; the helper gets the 50 points when the asker accepts the answer, and if no answer is accepted within 48 hours the points are refunded. Up to 3 open bounties at a time.
 - Community library: native speakers and learners at B1 or above can post phrases, idioms, usage notes and grammar tips, with an optional photo, for other members to read and save.
 - Safety: new contacts arrive as message requests you can decline; you can block or report anyone; reports are reviewed by admins.
-- Origin: started as a university computer science project; it is a working app.
 
 ## How to start
 
@@ -31,9 +30,6 @@
 - [All 40 languages, each with its own page](https://thefluencytalks.com/languages)
 - [About The Fluency Talks](https://thefluencytalks.com/about)
 - [Blog: language learning guides](https://thefluencytalks.com/blog)
-- [What is a language exchange and how does it work?](https://thefluencytalks.com/blog/what-is-a-language-exchange)
-- [How to find a language exchange partner online (free)](https://thefluencytalks.com/blog/find-a-language-exchange-partner)
-- [How to get corrections from native speakers](https://thefluencytalks.com/blog/corrections-from-native-speakers)
 - [Privacy policy](https://thefluencytalks.com/privacy)
 - [Terms of service](https://thefluencytalks.com/terms)
 - [Delete your account and data](https://thefluencytalks.com/data-deletion)

@@ -25,7 +25,7 @@ Per-page titles and descriptions are set with `useSeo()` from
 | `https://thefluencytalks.com/terms` | ✅ live | Terms of service (trust signal) | 0.3 |
 | `https://thefluencytalks.com/data-deletion` | ✅ live | Account / data deletion (required by Google & Facebook login reviews) | 0.2 |
 | `https://thefluencytalks.com/blog` | ✅ live | Blog index: learning guides | 0.8 |
-| `https://thefluencytalks.com/blog/<slug>` | ✅ live (3 articles) | One URL per article (see §5) | 0.7 |
+| `https://thefluencytalks.com/blog/<slug>` | ✅ live, from the database | One URL per article (see §5) | 0.7 |
 | `https://thefluencytalks.com/languages` | ✅ live | All 40 languages you can practise, each linking to its page | 0.8 |
 | `https://thefluencytalks.com/languages/<language>` | ✅ live (40 pages, from `src/content/languages.ts`) | e.g. `/languages/vietnamese`: "Practise Vietnamese with native speakers" | 0.7 |
 | `https://thefluencytalks.com/faq` | ✅ live (`src/content/faq.ts`) | How it works as direct questions and answers, with FAQPage data. `/how-it-works` redirects here | 0.8 |
@@ -120,7 +120,7 @@ gets and invites the click); exactly one `<h1>` describing the page's purpose.
 | `/languages/vietnamese` *(pattern)* | `Practise Vietnamese with Native Speakers, Free \| The Fluency Talks` | `Find a Vietnamese language exchange partner. Chat with native Vietnamese speakers, get your sentences corrected in the conversation, and save phrases. Free.` | `Practise Spanish with native speakers` |
 | `/blog` | `Language Learning Guides and Tips \| The Fluency Talks Blog` | `Practical guides on language exchange, speaking confidence and learning with native speakers, written for real learners from A1 to C2.` | `Language learning guides` |
 | `/blog/<slug>` | `<Article title> \| The Fluency Talks` | Article summary, 150 chars, answers the question in the title | Article title |
-| `/about` | `About The Fluency Talks: Who We Are` | `The Fluency Talks started as a university project and is now a free language exchange used by learners in 40 languages. Meet the people behind it.` | `About The Fluency Talks` |
+| `/about` | `About The Fluency Talks: Who We Are` | `The Fluency Talks is a free language exchange in 40 languages, with corrections inside the chat. Why we built it and how to reach us.` | `About The Fluency Talks` |
 
 To apply the home-page title/description: update `TAGLINE`,
 `DEFAULT_TITLE`, `DEFAULT_DESCRIPTION` in `src/lib/site.ts` **and** the
@@ -186,7 +186,7 @@ until JavaScript runs. Google *can* render JS, but slowly and not always, and
 - `npm run build` = `vite build` → `vite build --ssr src/entry-server.tsx --outDir dist-ssr` → `node scripts/prerender.mjs`.
 - `src/entry-server.tsx` lists the public pages (`PUBLIC_PAGES`) and renders each with `renderToString`.
   `useSeo()` records the page's title/description/canonical during that render.
-- `scripts/prerender.mjs` writes `dist/index.html`, `dist/blog.html`, `dist/blog/<slug>.html`,
+- `scripts/prerender.mjs` writes `dist/index.html`, `dist/blog.html`, `dist/blog-post-shell.html`,
   `dist/privacy.html`, … each with its own `<title>`, description, canonical, `og:*`/`twitter:*`,
   the design tokens inlined, and the full page HTML inside `#root`. Cloudflare serves
   `/blog` from `blog.html` without a redirect, so canonicals have no trailing slash.
@@ -201,9 +201,9 @@ until JavaScript runs. Google *can* render JS, but slowly and not always, and
 
 **Changing a FAQ answer:** edit `src/content/faq.ts` and bump `FAQ_UPDATED`.
 
-**Publishing an article:** add `src/content/blog/<slug>.tsx` (copy an existing one), import it
-in `src/content/blog/index.ts` at the top of `POSTS`, add it to `public/llms.txt`, build, deploy,
-then request indexing in Search Console.
+**Publishing an article:** staff write posts at `/admin/blog`, preview them and press Publish. No deploy is needed. `worker/index.ts`
+serves `/blog`, `/blog/<slug>`, `/sitemap.xml` and `/llms.txt` from the database as finished HTML with a real 404 for an
+unknown post. Pages are cached at the edge for 60 seconds. `npm run indexnow -- /blog/<slug>` asks Bing to recrawl a new post.
 
 **Adding another public page** (e.g. `/about`, `/languages/vietnamese`): add the route to
 `src/router/index.tsx`, to the `<Routes>` and `PUBLIC_PAGES` in `src/entry-server.tsx`, and
@@ -218,7 +218,7 @@ make sure the page calls `useSeo()` and does not touch `window`/`document` while
 - **2–4 internal links** with descriptive anchor text, e.g. *"find a
   [Vietnamese language exchange partner](/languages/vietnamese)"*, never *"click here"*.
 - One CTA box at the end: *"Practise this with a native speaker, free →"* linking to `/signup`.
-- Author name + short bio (a real person, e.g. the student team), and the date published/updated.
+- Author (the brand team, no personal names or background) and the date published/updated.
 - Every meaningful image has alt text describing it (see §6).
 
 ### 5c. First 12 articles (titles match real searches)

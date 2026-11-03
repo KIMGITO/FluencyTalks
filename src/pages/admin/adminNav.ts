@@ -1,4 +1,4 @@
-import { Activity, Flag, HeartPulse, LayoutDashboard, ListChecks, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { Activity, Flag, HeartPulse, LayoutDashboard, ListChecks, Newspaper, ScrollText, ShieldCheck, UserCog, Users, type LucideIcon } from 'lucide-react';
 import type { Tone } from '@/components/features/admin/AdminKit';
 import type { AdminOverview, StaffTier } from '@/services/admin';
 
@@ -11,6 +11,9 @@ export const ADMIN_GROUPS: { label: string; sections: AdminSection[] }[] = [
     { to: '/admin/decisions', label: 'Decisions', subtitle: 'Appeals, escalations, restrictions and the accountability policy', icon: ListChecks, tone: 'sun', tab: true },
     { to: '/admin/people', label: 'People', subtitle: 'Find anyone, and suspend, ban or reinstate them', icon: Users, tone: 'aqua', tab: true },
     { to: '/admin/activity', label: 'Activity', subtitle: 'What the moderation team has done', icon: Activity, tone: 'brand' },
+  ] },
+  { label: 'Content', sections: [
+    { to: '/admin/blog', label: 'Blog', subtitle: 'Write, preview and publish posts for the public blog', icon: Newspaper, tone: 'accent' },
   ] },
   { label: 'System', sections: [
     { to: '/admin/team', label: 'Team', subtitle: 'Staff accounts and invitations', icon: UserCog, tone: 'aqua', fullAdmin: true },

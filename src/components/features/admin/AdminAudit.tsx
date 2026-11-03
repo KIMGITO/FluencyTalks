@@ -8,6 +8,7 @@ import { Chip, IconTile, RefreshButton, Toolbar, type Tone } from './AdminKit';
 
 type Tab = 'app' | 'audit' | 'auth';
 const ACTIONS: Record<string, string> = {
+  blog_publish: 'published a blog post', blog_unpublish: 'took a blog post off the site', blog_delete: 'deleted a blog post',
   super_admin_created: 'super admin account created', staff_invited: 'invited a staff member', invitation_revoked: 'cancelled an invitation', invitation_accepted: 'accepted an invitation',
   staff_removed: 'removed from the team', mfa_reset: 'reset MFA', mfa_break_glass: 'reset MFA from the owner script', mfa_factor_verified: 'turned on an authenticator', mfa_factor_removed: 'removed an authenticator',
   mfa_failed: 'entered a wrong authenticator code', recovery_codes_generated: 'made new recovery codes', recovery_code_used: 'used a recovery code', recovery_code_failed: 'entered a wrong recovery code',

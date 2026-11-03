@@ -10,7 +10,7 @@ import '@/styles/landing.css';
 export default function About() {
   useSeo({
     title: `About ${BRAND}: Who We Are`,
-    description: `${BRAND} started as a university computer science project and is now a free language exchange in ${LANGUAGES.length} languages. Why we built it and how to reach us.`,
+    description: `${BRAND} is a free language exchange in ${LANGUAGES.length} languages, with corrections inside the chat. Why we built it and how to reach us.`,
     path: '/about',
   });
   const jsonLd = {
@@ -32,7 +32,6 @@ export default function About() {
             <div><dt>Languages</dt><dd>{LANGUAGES.length} at launch</dd></div>
             <div><dt>Cost</dt><dd>Free, no paid plans</dd></div>
             <div><dt>Levels</dt><dd>A1 to C2</dd></div>
-            <div><dt>Built with</dt><dd>React, TypeScript and Supabase</dd></div>
           </dl>
 
           <div className="lp-article__body">
@@ -41,7 +40,7 @@ export default function About() {
             <p>We also wanted the moment of correction to be useful. On most chat apps a correction is a message that scrolls away. Here, your partner edits your sentence where you wrote it, you see exactly what changed, and the phrase is saved for you to review.</p>
 
             <h2>Who we are</h2>
-            <p>{BRAND} started as a university computer science project. It is a working app, not a mock-up: sign-up, matching, chat, corrections, points and moderation all run for real. It is still young, so expect rough edges, and tell us when you find one.</p>
+            <p>We build and run {BRAND} for people who want to practise a language with other people. If something breaks or you have an idea, tell us.</p>
 
             <h2>What we care about</h2>
             <ul>

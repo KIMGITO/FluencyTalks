@@ -123,7 +123,7 @@ Add each URL to `public/sitemap.xml` only once it's live.
 | 5 | `/languages/japanese`, `/languages/korean`, `/languages/chinese` | L | same pattern | Template in §4 |
 | 6 | `/blog` + first articles | all | per SEO.md §3 | — |
 | 7 | `/safety` | I | `Safety on The Fluency Talks: Requests, Blocking, Reports` | Explains each safety feature in plain words; linked from the FAQ and footer |
-| 8 | `/about` | K | per SEO.md §3 | Real people, the university origin, contact |
+| 8 | `/about` | K | per SEO.md §3 | What it is, why it exists, contact. No tech stack or project origin |
 | 9 | More `/languages/<x>` | L, G | — | Only when the supply rule below is met |
 
 ### Supply rule for language pages

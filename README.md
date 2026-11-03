@@ -153,13 +153,13 @@ Zustand stores hold cross-page state (`authStore`, `themeStore`). Components cal
 - Keep Supabase calls inside `lib/` and stores so swapping the backend touches few files.
 - Avoid Edge Functions and Supabase-only features where a plain Postgres approach works.
 
-## Deployment (Cloudflare Pages)
+## Deployment (Cloudflare Worker)
+
+The site is the Worker `thefluencytalks` with static assets. Only the blog, the sitemap and `llms.txt` run code (`worker/index.ts`); everything else is a plain file.
 
 1. Install deps and create `.env` from `.env.example` with your Supabase URL + anon key.
-2. `npm run build` → outputs to `dist/` (Vite). `public/_redirects` and `public/_headers` are copied into `dist/` automatically.
-3. Publish: `npm run deploy` (runs `npx wrangler pages deploy dist --project-name fluencytalks`)
-   - First time: run `npx wrangler pages project create fluencytalks` or create the project in the Cloudflare dashboard, then `npm run deploy` again.
-   - Or connect the repo in the Cloudflare dashboard: build command `npm run build`, build output `dist`.
+2. Push database changes first: `supabase db push`.
+3. Publish: `npm run deploy` (runs `npx wrangler deploy`, which runs `npm run build` itself). `public/_redirects` and `public/_headers` are copied into `dist/` automatically.
 4. In the dashboard, add domains `thefluencytalks.com` (apex) and `www.thefluencytalks.com`. Also add legacy hosts `fluencytalks.com`, `www.fluencytalks.com` so `_redirects` can forward them.
 5. Add `VITE_*` environment variables at Settings → Environment variables → Production (all client-side vars already use the `VITE_` prefix).
 6. In Supabase → Authentication → URL Configuration, set Site URL to `https://thefluencytalks.com` and allow-list `https://thefluencytalks.com/**` under Redirect URLs. Add the OAuth callback `https://<project-ref>.supabase.co/auth/v1/callback` to your Google/GitHub/etc. provider credentials.
@@ -208,4 +208,4 @@ It prints `ALL APP-FLOW CHECKS PASSED` and `OK: database matches the app`, or st
 - The emoji reaction bar is commented out in `MessageBubble`; reactions can be sent from the message menu but are not displayed yet.
 - Notifications are never pruned. Add a scheduled `delete from notifications where created_at < now() - interval '90 days'` when volume grows.
 - No i18n yet. Strings are inline and should move to translation files before launch.
-- Two deploy configs exist (`wrangler.toml` for Cloudflare Pages and `vercel.json`); pick one.
+- `vercel.json` is left over from before the move to Cloudflare; `wrangler.toml` is what production uses.
