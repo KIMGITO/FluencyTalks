@@ -29,8 +29,8 @@ personal one, so access survives team changes).
 1. Left menu → **Sitemaps**.
 2. Under *Add a new sitemap* type `sitemap.xml` → **Submit**.
 3. Status should become **Success** with the number of discovered URLs
-   (currently 8: `/`, `/blog`, the 3 articles, `/privacy`, `/terms`, `/data-deletion`).
-   The sitemap is generated on every build, so new articles appear in it automatically.
+   (61 on 3 November 2026: 8 core pages, 13 articles and 40 language pages).
+   The Worker builds it from the database, so new articles appear in it automatically.
    If it says *Couldn't fetch*, open `https://thefluencytalks.com/sitemap.xml`
    in a browser. It must show XML, not the app.
 
@@ -44,7 +44,7 @@ the sitemap by itself after that.
 1. Paste `https://thefluencytalks.com/` into the **search bar at the top** (URL Inspection).
 2. Click **Test live URL** → then **View tested page → Screenshot / HTML**.
    Check the screenshot shows the real home page and the HTML contains the
-   headline text. Public pages are prerendered (SEO.md §5a), so the text should be
+   headline text. Public pages are prerendered ([SEO §5a](SEO.md#5a-how-it-is-built-crawlable-html-)), so the text should be
    in the HTML even before JavaScript runs.
 3. Click **Request indexing**.
 4. Repeat for `/blog`, each article under `/blog/…`, `/privacy` and `/terms`.
@@ -59,7 +59,7 @@ the sitemap by itself after that.
 - **Settings → robots.txt** report: should show the file fetched successfully
   with the `Disallow` lines from `public/robots.txt`.
 - Inspect `https://www.thefluencytalks.com/`. It should redirect (301) to the
-  apex. If not, add the Cloudflare redirect rule (SEO.md §7).
+  apex. If not, add the DNS record and Cloudflare redirect rule ([Deployment](DEPLOYMENT.md#domains)).
 
 ---
 
@@ -90,7 +90,7 @@ the sitemap by itself after that.
 - Ask AI assistants the test questions in SEO.md §4.7 and compare.
 
 ### Every time you publish an article
-1. Add it to the sitemap (automatic once the build generates it).
+1. It joins the sitemap automatically when staff press Publish.
 2. URL Inspection → **Request indexing**.
 3. Link to it from at least one older article and from `/blog`.
 

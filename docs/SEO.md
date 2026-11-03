@@ -28,11 +28,11 @@ Per-page titles and descriptions are set with `useSeo()` from
 | `https://thefluencytalks.com/blog/<slug>` | ✅ live, from the database | One URL per article (see §5) | 0.7 |
 | `https://thefluencytalks.com/languages` | ✅ live | All 40 languages you can practise, each linking to its page | 0.8 |
 | `https://thefluencytalks.com/languages/<language>` | ✅ live (40 pages, from `src/content/languages.ts`) | e.g. `/languages/vietnamese`: "Practise Vietnamese with native speakers" | 0.7 |
-| `https://thefluencytalks.com/faq` | ✅ live (`src/content/faq.ts`) | How it works as direct questions and answers, with FAQPage data. `/how-it-works` redirects here | 0.8 |
+| `https://thefluencytalks.com/faq` | ✅ live, from the database | How it works as direct questions and answers, with FAQPage data. `/how-it-works` redirects here | 0.8 |
 | `https://thefluencytalks.com/about` | ✅ live | Who built it, why, contact. Strong trust signal for Google and AI answers | 0.5 |
 
-> **Rule:** a URL only goes into `public/sitemap.xml` once the page exists and
-> returns real HTML content. Never list a page that 404s or is a login wall.
+> **Rule:** a URL only goes into the sitemap once the page exists and
+> returns real HTML content. The sitemap is generated, so add pages to `PUBLIC_PAGES`. Never list a page that 404s or is a login wall.
 
 ### 1b. Never index these
 
@@ -93,7 +93,7 @@ and add the keywords:
 
 ### FAQ additions (each becomes FAQPage structured data automatically)
 
-Add to `faqs` in `src/components/landing/Faq.jsx`. These match real search
+Add at `/admin/faq` (they are stored in the database). These match real search
 and AI-assistant questions:
 
 - *What is a language exchange?* "A language exchange is when two people who speak different languages help each other practise. On The Fluency Talks you chat in writing and correct each other's messages."
@@ -138,7 +138,7 @@ mention. What to do:
 1. **Let the AI crawlers in.** `public/robots.txt` allows everyone (`User-agent: *`),
    which includes `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`, `ClaudeBot`,
    `Claude-SearchBot`, `PerplexityBot`, `Google-Extended`, `Applebot-Extended`, `Bingbot`.
-   They are also listed explicitly so the intent is clear. If you use
+   Do not give them their own groups ([why](AI_VISIBILITY.md#1-how-each-assistant-finds-a-site-like-ours)). If you use
    **Cloudflare**, check *Security → Bots → "Block AI bots"* is **off**, or
    Cloudflare will block them before robots.txt is even read.
 2. **Be in Bing.** ChatGPT search and Copilot use Bing's index. Set up
@@ -191,7 +191,7 @@ until JavaScript runs. Google *can* render JS, but slowly and not always, and
   the design tokens inlined, and the full page HTML inside `#root`. Cloudflare serves
   `/blog` from `blog.html` without a redirect, so canonicals have no trailing slash.
 - The same script generates **`dist/sitemap.xml`** from `PUBLIC_PAGES` (with `<lastmod>` for articles).
-  `public/sitemap.xml` was removed. **Never edit the sitemap by hand.** Add a page to `PUBLIC_PAGES`.
+  `public/sitemap.xml` was removed. **Never edit the sitemap by hand.** Add a page to `PUBLIC_PAGES`. In production the Worker adds the published posts to it.
 - Each article renders `BlogPosting` + `BreadcrumbList` JSON-LD in its body.
 - The browser app replaces the prerendered HTML when it starts.
 - **Status codes:** unknown URLs get `dist/404.html` with a real 404, so they are not "soft 404s" that look like copies of
@@ -199,11 +199,11 @@ until JavaScript runs. Google *can* render JS, but slowly and not always, and
   **A new app route needs a line in `public/_redirects`**; `npm run check:seo` fails if one is missing. Rewrite to `/app`, not
   `/app.html`, because Cloudflare answers `/app.html` with a redirect, which would lose the URL.
 
-**Changing a FAQ answer:** edit `src/content/faq.ts` and bump `FAQ_UPDATED`.
+**Changing a FAQ answer:** staff edit it at `/admin/faq`, with no deploy. `faq_items` is the only copy. Answers are plain text, and section ids are fixed in both `FAQ_SECTIONS` and the migration, so a new section needs a developer. If the database fails, `/` and `/faq` fall back to the static file plus a browser fetch.
 
 **Publishing an article:** staff write posts at `/admin/blog`, preview them and press Publish. No deploy is needed. `worker/index.ts`
-serves `/blog`, `/blog/<slug>`, `/sitemap.xml` and `/llms.txt` from the database as finished HTML with a real 404 for an
-unknown post. Pages are cached at the edge for 60 seconds. `npm run indexnow -- /blog/<slug>` asks Bing to recrawl a new post.
+serves `/`, `/faq`, `/blog`, `/blog/<slug>`, `/sitemap.xml` and `/llms.txt` from the database as finished HTML with a real 404 for an
+unknown post. Pages are cached at the edge for 60 seconds. `npm run indexnow -- /blog/<slug>` asks Bing to recrawl a new post. FAQ, About and language pages link to the three original article slugs by hand, so those links break if one of those posts is deleted.
 
 **Adding another public page** (e.g. `/about`, `/languages/vietnamese`): add the route to
 `src/router/index.tsx`, to the `<Routes>` and `PUBLIC_PAGES` in `src/entry-server.tsx`, and
@@ -257,8 +257,8 @@ Publish 2 a month, update older ones, and link new articles to older ones.
 | **Structured data** | Accurate Organization, WebSite, SoftwareApplication, FAQPage | ✅ `index.html` has one linked `@graph`: Organization, WebSite, WebApplication. ✅ FAQPage on `/faq` only (Google asks for one instance of repeated FAQ content; the home page shows a subset without the markup). Never add `aggregateRating` until there are real, visible reviews. ✅ `BlogPosting` + `BreadcrumbList` per article. Validate at search.google.com/test/rich-results |
 | **Mobile performance** | LCP < 2.5 s, CLS < 0.1, INP < 200 ms on mobile | ✅ Hero image has `fetchpriority`, `srcset`, sizes; logo is 5–9 KB. 🔧 `favicon.png` (100 KB) and `favicon-dark.png` (164 KB): shrink to 32/180/512 px versions. Check PageSpeed Insights + Search Console Core Web Vitals after launch |
 | **Public HTML content** | Crawler sees real text without running JS | ✅ Public routes are prerendered to static HTML (§5a). The bare SPA shell keeps a `<noscript>` summary |
-| **Canonical URLs** | One version per page, apex domain, https | ✅ `useSeo` sets canonical. 🔧 `www` and old-domain 301s are in `vercel.json`, which **Cloudflare ignores**. Add Cloudflare *Rules → Redirect Rules* (`www.thefluencytalks.com/*` → `https://thefluencytalks.com/$1`, 301) |
-| **robots.txt / sitemap** | App routes blocked, public pages listed | ✅ Updated: now also blocks `/library`, `/partners`, `/bounty-queue`, `/points-history` and names AI crawlers |
+| **Canonical URLs** | One version per page, apex domain, https | ✅ `useSeo` sets canonical. 🔧 `www` and old-domain 301s are only in `vercel.json`, which **Cloudflare ignores**, and `www.thefluencytalks.com` had no DNS record on 3 November 2026. Add the record and a Cloudflare *Rules → Redirect Rules* rule (`www.thefluencytalks.com/*` → `https://thefluencytalks.com/$1`, 301). See [Deployment](DEPLOYMENT.md#domains) |
+| **robots.txt / sitemap** | App routes blocked, public pages listed | ✅ Updated: now also blocks `/library`, `/partners`, `/bounty-queue`, `/points-history`. One `User-agent: *` group, which AI crawlers obey |
 | **Social card** | 1200×630 designed image | ✅ Designed card (`public/og-image.png`); source in `scripts/og-image.html` |
 | **`llms.txt`** | Plain summary for AI models | ✅ `public/llms.txt` |
 
@@ -268,7 +268,7 @@ Publish 2 a month, update older ones, and link new articles to older ones.
 
 1. **Google Search Console:** follow [`GOOGLE_SEARCH_CONSOLE.md`](./GOOGLE_SEARCH_CONSOLE.md).
 2. **Bing Webmaster Tools:** import from Search Console, submit sitemap (feeds ChatGPT search & Copilot).
-3. **Cloudflare:** add www → apex redirect rule; make sure "Block AI bots" / "AI Labyrinth" are off; confirm `robots.txt` isn't replaced by Cloudflare's managed robots.txt.
+3. **Cloudflare:** add the `www` DNS record and www → apex redirect rule; make sure "Block AI bots" / "AI Labyrinth" are off; confirm `robots.txt` isn't replaced by Cloudflare's managed robots.txt.
 4. ✅ **Social card** designed (`public/og-image.png`, source `scripts/og-image.html`).
 5. **Supabase Auth URL config / Google & Facebook OAuth:** apex domain only (unchanged from the rebrand notes).
 6. **Email sender domain (DKIM/SPF)** for `@thefluencytalks.com`.

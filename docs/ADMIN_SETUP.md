@@ -9,8 +9,8 @@ For whoever owns the Supabase project and the website deploy. Follow Part 1 from
 | Account | How it's created | Can do | Who can manage it |
 |---|---|---|---|
 | **Super admin**: always `superadmin@thefluencytalks.com` | The owner script in step 7. Normal signup refuses this address. | Everything, including inviting and removing staff and resetting their MFA | Nobody |
-| **Admin** | Invited by the super admin | Reports, decisions, people, health, logs. Manages moderators and learners. | Super admin |
-| **Moderator** | Invited by the super admin | Reports, decisions and people. Manages learners. | Super admin and admins |
+| **Admin** | Invited by the super admin | Reports, decisions, people, blog, FAQ, health, logs. Manages moderators and learners. | Super admin |
+| **Moderator** | Invited by the super admin | Reports, decisions, people, blog and FAQ. Manages learners. | Super admin and admins |
 | **Learner** | Normal signup | The learning app only. Login is unchanged, with no MFA. | All staff |
 
 All staff log in the same way, every time: **email + password, then a Google Authenticator code**. Google sign-in and email links can't open the admin area.
@@ -148,7 +148,7 @@ Staff do this too, after accepting an invitation.
 3. In Google Authenticator, tap **+**, then **Scan a QR code**, and scan it. It's saved in the app as **FluencyTalks** with the first part of your email. If the camera doesn't pick it up, hold the phone 20–30 cm from the screen, turn the screen brightness up and zoom the page in. If you still can't scan, choose **Can't scan it?** on the page, then **Enter a setup key** in the app and type the key shown.
 4. Type the 6-digit code and select **Turn on**. Nothing is switched on until a valid code is entered. If you leave before this, you get a new QR code next time.
 5. **Save the 10 recovery codes** in your password manager, not on the phone. They're shown once.
-6. You arrive at the admin **Overview**. The sidebar shows Reports, Decisions, People, Activity, Team, Health, Logs and Security.
+6. You arrive at the admin **Overview**. The sidebar shows Reports, Decisions, People, Activity, Blog, FAQ, Team, Health, Logs and Security.
 7. Open **Security** and choose **Add a backup authenticator**. Scan it on your second device.
 8. Sign out and log in again. It should ask for a code. That's how every login works from now on.
 

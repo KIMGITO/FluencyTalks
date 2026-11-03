@@ -1,4 +1,43 @@
-# Public pages: design notes
+# Design system
+
+Everything visual comes from one file, `src/theme/tokens.ts`, so restyling the whole app means editing that one file. This document covers the token rules, the public pages and the signed-in screens.
+
+## Theming rules
+
+Tailwind, CSS variables and custom CSS work together, all fed by `src/theme/tokens.ts`:
+
+| Need | Where it comes from |
+|---|---|
+| Colours (light and dark) | `themes` in tokens.ts, to `--c-*` variables, to Tailwind `bg-surface`, `text-muted`, `bg-brand/20` |
+| Fonts, sizes, spacing, radii | tokens.ts, to the Tailwind theme and `--font-*`, `--space-*`, `--radius-*` |
+| Gradients | `gradients` in tokens.ts, to `--grad-*`, to `bg-grad-brand`, `.ft-gradient-text` |
+| Layout widths | `layout` in tokens.ts, to `--layout-*` |
+| Light and dark | `data-theme` on `<html>`, set by `themeStore` |
+
+**Never** write `#hex`, `px` font sizes or `linear-gradient(...)` in a component. Add a token instead. Custom CSS in `index.css` may only reference `var(--...)`.
+
+## Responsive behaviour
+
+| Width | Layout |
+|---|---|
+| Under 768px | One column, top bar, **bottom tab bar** |
+| 768 to 1099px | Icon-only sidebar and content |
+| 1100px and up | Sidebar with labels, content and right rail |
+
+Breakpoints are defined once in tokens.ts.
+
+## Tailwind traps
+
+These look correct in code review and only show up as a layout bug on screen.
+
+- **Colours:** see the trap under [Inside the app](#inside-the-app-signed-in-screens).
+- **Spacing:** `spacing` in tokens.ts replaces Tailwind's scale, with only 0, px, 0.5 to 5 in steps, 6 to 10, 12, 14, 16, 20 and 24. Any other class (`min-h-11`, `h-11`, `basis-48`) generates no CSS and gives no error. Use arbitrary values such as `basis-[12rem]`, and check the screen.
+- **Still live:** `Button` size md and `Select` use `min-h-11`, so they are shorter than the intended 44px. Adding 11 to the scale would fix that everywhere, but it also resizes learner screens.
+- **Fonts:** `font-mono` doesn't exist, because `fontFamily` only defines sans and display.
+
+---
+
+# Public pages
 
 Every public page (home, privacy, terms, delete my data, log in, sign up, forgot and reset password, 404) uses one shell:
 `PublicShell` in `src/components/landing/` gives the same header, footer and look. All styles live in `src/styles/landing.css`,
@@ -35,8 +74,7 @@ With `prefers-reduced-motion`, all transitions and animation are off and the tic
 ## Legal pages
 Privacy, terms and data deletion are long documents with a contents list (a sticky column on a laptop, a strip of chips on a phone), not slides.
 Their text was corrected to match the app: no "audio clips" or "recordings" (there are none), deletion is immediate (not a 30-day purge),
-and the age matches the sign-up checkbox (16). **Please have the wording reviewed before launch:** the "GDPR and CCPA principles" sentence in
-`Privacy.tsx` is a legal claim only you can confirm, and the consent kind stored in the database is still named `age_18`.
+and the age matches the sign-up checkbox (16). The privacy page now follows Vietnamese law. **Please have the wording reviewed before relying on it** ([Legal compliance](LEGAL_COMPLIANCE.md)): the consent kind stored in the database is still named `age_18`.
 The old "delete my data" form was fake (it only pretended to send an email); the page now deletes the account for real when you are logged in.
 
 ## Content rules

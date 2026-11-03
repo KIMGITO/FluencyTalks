@@ -1,12 +1,12 @@
 # Indexing checklist: what to submit, where, and in what order
 
 Everything here is for `https://thefluencytalks.com` (the apex domain; `www` should redirect to it).
-The list below is **generated from the real sitemap** (`dist/sitemap.xml`, built by `scripts/prerender.mjs`); 50 URLs at the time of writing.
+The list below comes from the **live sitemap** on 3 November 2026: 61 URLs. The build writes the pages that don't depend on the database (`dist/sitemap.xml`, from `scripts/prerender.mjs`), and the Worker adds the published articles.
 If this file and the sitemap ever disagree, the sitemap is right. Re-check with:
 
 ```bash
 npm run build && npm run check:seo      # fails if a page lacks a title, description, canonical, a single H1, or is blocked
-grep -o '<loc>[^<]*</loc>' dist/sitemap.xml
+curl -s https://thefluencytalks.com/sitemap.xml | grep -o '<loc>[^<]*</loc>'
 ```
 
 ## The short version
@@ -15,9 +15,9 @@ grep -o '<loc>[^<]*</loc>' dist/sitemap.xml
 2. **Then use "Request indexing" on about ten pages** (the *Day 1* list below). It speeds up the first crawl. It is not required for the other pages, and Google limits how many you can request per day.
 3. **Do not submit anything else.** Not login, sign-up, app screens, or profiles (see "Never submit").
 
-## Every URL that should be indexed (50)
+## Every URL that should be indexed (61)
 
-### Core pages (7)
+### Core pages (8)
 
 | URL |
 |---|
@@ -30,13 +30,23 @@ grep -o '<loc>[^<]*</loc>' dist/sitemap.xml
 | `https://thefluencytalks.com/terms` |
 | `https://thefluencytalks.com/data-deletion` |
 
-### Blog articles (3)
+### Blog articles (13)
 
 | URL |
 |---|
 | `https://thefluencytalks.com/blog/corrections-from-native-speakers` |
 | `https://thefluencytalks.com/blog/find-a-language-exchange-partner` |
 | `https://thefluencytalks.com/blog/what-is-a-language-exchange` |
+| `https://thefluencytalks.com/blog/studying-at-university-in-vietnam` |
+| `https://thefluencytalks.com/blog/vietnamese-pronouns-explained` |
+| `https://thefluencytalks.com/blog/common-vietnamese-mistakes` |
+| `https://thefluencytalks.com/blog/how-to-learn-swahili-online` |
+| `https://thefluencytalks.com/blog/help-someone-learn-your-language` |
+| `https://thefluencytalks.com/blog/how-to-correct-grammar-politely` |
+| `https://thefluencytalks.com/blog/cefr-levels-explained` |
+| `https://thefluencytalks.com/blog/first-message-to-language-partner` |
+| `https://thefluencytalks.com/blog/is-language-exchange-safe` |
+| `https://thefluencytalks.com/blog/text-or-video-language-exchange` |
 
 ### Language pages (40)
 
@@ -89,9 +99,9 @@ Open Search Console, paste the URL into the bar at the top (URL Inspection), cli
 
 | Day | Request indexing for |
 |---|---|
-| **Day 1** (10) | `/`, `/languages`, `/languages/vietnamese`, `/languages/swahili`, `/languages/english`, `/blog`, the three `/blog/...` articles, `/about` |
+| **Day 1** (10) | `/`, `/languages`, `/languages/vietnamese`, `/languages/swahili`, `/languages/english`, `/blog`, the first three `/blog/...` articles above, `/about` |
 | **Day 2** | `/languages/french`, `/languages/spanish`, `/languages/japanese`, `/languages/arabic`, `/languages/chinese`, `/languages/korean`, `/languages/german`, `/languages/portuguese`, `/privacy`, `/terms` |
-| **After that** | Nothing. The sitemap covers the rest. Only request a page again after you change it a lot, or when you publish a new article. |
+| **After that** | Nothing. The sitemap covers the rest, including the other articles. Only request a page again after you change it a lot, or when you publish a new article. |
 
 Start with Vietnamese, Swahili and English because they are the languages your project names first; start with the blog because it is where search traffic actually comes from.
 
@@ -121,7 +131,7 @@ Bing, Yandex and a few other engines support IndexNow, a one-line ping that says
 ### Cloudflare settings that quietly break SEO
 | Check | Where | Why |
 |---|---|---|
-| `www.thefluencytalks.com` redirects (301) to `thefluencytalks.com` | *Rules → Redirect Rules*. `vercel.json` is ignored by Cloudflare | Two versions of every page split your ranking |
+| `www.thefluencytalks.com` redirects (301) to `thefluencytalks.com` | *DNS* and *Rules → Redirect Rules*. `vercel.json` is ignored by Cloudflare. **On 3 November 2026 `www` had no DNS record:** see [Deployment](DEPLOYMENT.md#domains) | People who type `www` get nothing, and two versions of every page would split your ranking |
 | "Block AI bots" / "AI Labyrinth" are **off** | *Security → Bots* | Cloudflare blocks AI crawlers before they read `robots.txt` |
 | The live `https://thefluencytalks.com/robots.txt` equals `public/robots.txt` | open it in a browser | Cloudflare's *managed robots.txt* can add rules in front of yours |
 | `https://thefluencytalks.com/sitemap.xml` shows XML, not the app | open it in a browser | If it shows the app, the file is not being served |
@@ -141,6 +151,6 @@ The third command matters: it shows the title *without running JavaScript*, whic
 | Days 2 to 14 | *Indexing → Pages*: the Day 1 URLs should move to **Indexed** |
 | Weekly | *Performance*: queries with impressions but no clicks mean the title or description needs work |
 | Monthly | *Enhancements*: FAQ and Breadcrumbs errors; *Experience → Core Web Vitals* |
-| Every new article | Add it to `src/content/blog/`, build, deploy, then request indexing once |
+| Every new article | Staff publish it at `/admin/blog`, with no deploy. Then request indexing once |
 
 New domains are slow. Indexing in days and ranking in months is normal. "Discovered, currently not indexed" in the first weeks is expected and is solved by internal links and time, not by re-submitting.

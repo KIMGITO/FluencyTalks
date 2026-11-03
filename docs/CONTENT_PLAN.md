@@ -11,6 +11,11 @@ How this fits with the other docs:
 - This file: **what to write, for which searches, in what order.** It
   replaces the article list in SEO.md §5c.
 
+> **Status on 3 November 2026:** 13 articles are published, listed in
+> [`INDEXING_CHECKLIST.md`](./INDEXING_CHECKLIST.md). `/languages`, all 40 language
+> pages, `/blog` and `/about` are live. `/how-it-works` redirects to `/faq`, so until
+> that page exists, read the `/how-it-works` links below as `/faq`. `/safety` isn't built.
+
 > **About demand and competition:** the *High / Medium / Low* ratings below are
 > estimates, not measured search volumes. Check them in Google Keyword Planner
 > (free with a Google Ads account) or Search Console → Performance before
@@ -36,7 +41,8 @@ the code on 2026-11-01.
 | **Tap to translate** | Translate a message; history is saved | `lib/translate.ts` (MyMemory) |
 | **Points** | Start with 100; +5 when your correction is accepted (rewarded up to 10 times a day, 3 from the same learner); full ledger | `PointsHistory.tsx` |
 | **Bounties** | 50 points to put a question in front of qualified speakers; the helper gets the 50 when the asker accepts; refunded if no answer is accepted within 48 h; max 3 open | `BountyQueue.tsx` |
-| **Community library** | Eligible speakers post phrases, idioms, usage and grammar notes with an image; others save them | `pages/features/library` |
+| **Community library** | Eligible speakers post phrases, idioms, usage and grammar notes with an image; others save them. Beginners can ask for help with practice posts | `pages/features/library` |
+| **Earned levels** | The level you pick is an estimate; a verified level rises from real activity and unlocks correcting others | `level_rules`, `LevelProgress` |
 | **Safety** | Message requests, block, report (9 reasons), admin review, auto-suspend after 5 reports in 7 days | `services/safety.ts` |
 | **Saved partners** | Private bookmarks, no follower counts | `Partners.tsx` |
 | **Data control** | Export your data, delete your account | `/data-deletion` |
@@ -48,7 +54,7 @@ the code on 2026-11-01.
 |---|---|---|
 | voice chat, video call, speaking practice, pronunciation | Chat is text only | Say plainly: "Practice is in writing. That's where corrections are easiest to see." |
 | tutors, lessons, courses, teachers for hire | Peer exchange, no paid tutors | — |
-| certificates, exams, "get certified" | None issued | CEFR level is self-reported |
+| certificates, exams, "get certified" | None issued | A level is earned from activity on the app, and is not a certificate |
 | iOS / Android app, "download" | Web app only (installable PWA via `manifest.webmanifest`) | "Works in your phone's browser; add it to your home screen" |
 | AI tutor, AI chatbot, speech recognition | Not built | — |
 | "learn X in 30 days", "fluent fast" | Can't be promised | — |

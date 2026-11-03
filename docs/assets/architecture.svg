@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 590" role="img" aria-label="Browsers talk to a Cloudflare Worker for pages and directly to Supabase for data. Supabase Edge Functions reach Unsplash, web push and write-once storage. The browser reaches MyMemory only when someone taps Translate.">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#1b1a55"/></marker>
+    <style>
+      text{font-family:'Source Sans 3','Segoe UI',Roboto,Helvetica,Arial,sans-serif;fill:#1b1a55}
+      .t{font-size:17px;font-weight:700}
+      .s{font-size:13px;fill:#55536f}
+      .g{font-size:13px;font-weight:700;letter-spacing:.06em;fill:#55536f}
+      .l{font-size:12.5px;fill:#55536f}
+      .b{fill:#fff;stroke-width:1.2;stroke:#d8d3c6}
+      .d{fill:#1b1a55}
+      .d+text,.w{fill:#faf6ee}
+      .p{fill:#f1eadc;stroke:#d8d3c6;stroke-width:1.2}
+      .f{stroke:#1b1a55;stroke-width:1.6;fill:none;marker-end:url(#a)}
+      .o{stroke:#1b1a55;stroke-width:1.4;fill:none;stroke-dasharray:5 4;marker-end:url(#a)}
+    </style>
+  </defs>
+  <rect width="960" height="590" fill="#fff"/>
+
+  <text x="30" y="34" class="g">PEOPLE</text>
+  <rect class="b" x="30" y="46" width="280" height="62" rx="4"/>
+  <text x="48" y="72" class="t">Browser or installed web app</text>
+  <text x="48" y="93" class="s">Visitors, members and staff</text>
+
+  <text x="30" y="166" class="g">HOSTING</text>
+  <rect class="d" x="30" y="178" width="280" height="110" rx="4"/>
+  <text x="48" y="206" class="t w">Cloudflare Worker</text>
+  <text x="48" y="228" class="s w">Static files: app, public pages</text>
+  <text x="48" y="248" class="s w">Live HTML: home, FAQ, blog,</text>
+  <text x="48" y="268" class="s w">sitemap and llms.txt</text>
+
+  <text x="380" y="34" class="g">SUPABASE</text>
+  <rect class="p" x="380" y="46" width="550" height="330" rx="4"/>
+  <rect class="b" x="400" y="64" width="160" height="62" rx="4"/>
+  <text x="414" y="90" class="t">Auth</text>
+  <text x="414" y="110" class="s">Passwords, Google, MFA</text>
+  <rect class="b" x="575" y="64" width="160" height="62" rx="4"/>
+  <text x="589" y="90" class="t">Realtime</text>
+  <text x="589" y="110" class="s">Chat, bell, typing</text>
+  <rect class="b" x="750" y="64" width="160" height="62" rx="4"/>
+  <text x="764" y="90" class="t">Storage</text>
+  <text x="764" y="110" class="s">Avatars, images, archive</text>
+
+  <rect class="b" x="400" y="146" width="240" height="62" rx="4"/>
+  <text x="414" y="172" class="t">REST API</text>
+  <text x="414" y="192" class="s">check_request: pause, rate limits</text>
+  <rect class="b" x="660" y="146" width="250" height="62" rx="4"/>
+  <text x="674" y="172" class="t">5 Edge Functions</text>
+  <text x="674" y="192" class="s">Delete, staff, Unsplash, push, archive</text>
+
+  <rect class="d" x="400" y="240" width="510" height="116" rx="4"/>
+  <text x="418" y="268" class="t w">Postgres</text>
+  <text x="418" y="292" class="s w">58 tables with row-level security. Clients read through policies and write through</text>
+  <text x="418" y="312" class="s w">functions. Scheduled jobs: heartbeat, accountability sweep, archive and purge.</text>
+  <text x="418" y="332" class="s w">Proof of consent and the archive register are hash chains.</text>
+
+  <path class="f" d="M170 108V174"/>
+  <text x="178" y="146" class="l">Pages</text>
+  <path class="f" d="M310 70H396"/>
+  <text x="322" y="60" class="l">Sign-in</text>
+  <path class="f" d="M310 96Q352 96 352 136T396 168"/>
+  <text x="318" y="122" class="l">Data</text>
+  <path class="f" d="M310 240Q352 240 362 215T396 190"/>
+  <text x="318" y="262" class="l">Public reads</text>
+  <path class="f" d="M520 208V236"/>
+  <path class="f" d="M785 208V236"/>
+
+  <text x="30" y="430" class="g">OUTSIDE SERVICES</text>
+  <rect class="b" x="30" y="442" width="205" height="86" rx="4"/>
+  <text x="46" y="470" class="t">MyMemory</text>
+  <text x="46" y="491" class="s">Translation, called only</text>
+  <text x="46" y="510" class="s">when someone taps Translate</text>
+  <rect class="b" x="380" y="442" width="160" height="86" rx="4"/>
+  <text x="396" y="470" class="t">Unsplash</text>
+  <text x="396" y="491" class="s">Post images, key kept</text>
+  <text x="396" y="510" class="s">on the server</text>
+  <rect class="b" x="575" y="442" width="160" height="86" rx="4"/>
+  <text x="591" y="470" class="t">Web push</text>
+  <text x="591" y="491" class="s">Browser push services,</text>
+  <text x="591" y="510" class="s">then the service worker</text>
+  <rect class="b" x="750" y="442" width="180" height="86" rx="4"/>
+  <text x="766" y="470" class="t">Write-once storage</text>
+  <text x="766" y="491" class="s">S3 Object Lock: archive</text>
+  <text x="766" y="510" class="s">and consent proof</text>
+
+  <path class="o" d="M30 77H12V485H26"/>
+  <path class="o" d="M910 177H946V408H460V438"/>
+  <path class="o" d="M655 408V438"/>
+  <path class="o" d="M840 408V438"/>
+  <text x="30" y="566" class="l">Solid lines: main traffic. Dashed lines: calls to outside services. Staff invitations and password emails go through the mail provider set in Supabase.</text>
+</svg>

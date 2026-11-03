@@ -33,7 +33,7 @@ We propose three changes, and they only work together:
 | 11 | **Text never sits on the image.** The photo is on top with the caption below it. | "Image as background" is new work, not a setting we can switch on. | `PostCard.tsx` |
 | 12 | Every category **looks almost the same**: only the small label's text changes. | Nothing you can see makes one post more desirable than another. | `CATEGORY_COLORS` in `PostCard.tsx` |
 | 13 | Anyone with an eligible language can already add an Unsplash image. | Images aren't a reward today. Making them one means deciding who keeps them (decision 3). | `ContributePage.tsx` |
-| 14 | Home's composer says "Share a phrase, idiom or example…". | It tells beginners this isn't for them. | `Home.tsx` |
+| 14 | Home's composer said "Share a phrase, idiom or example…". | It told beginners this wasn't for them. | `Home.tsx` |
 
 **Already there to build on:**
 
@@ -197,7 +197,7 @@ Starter: Correct me           B1: Full image            B2: Mini lesson
 | **Pasted translations** | Harmless below B1, and B1 stays anchored in chat |
 | **Two accounts farming levels** | Partner must be 7+ days old (existing rule), daily caps per author |
 | **Personal details in stories** | Posts are visible to all signed-in users, so prompts should avoid private details; report is available |
-| **Errors reach search engines** | The planned public `public_posts` view (`docs/PUBLIC_CONTENT_SEO.md`) must exclude help posts and games |
+| **Errors reach search engines** | The planned public `public_posts` view ([Public content plan](PUBLIC_CONTENT_SEO.md)) must exclude help posts and games |
 | **Text on images can't be read** | Enforced overlay, length limit, contrast check in both themes |
 | **Levels feel slower than the rewards promise** | Show progress bars, and use the helper counter between levels |
 | **Language change resets the level** | Old posts keep their look; only new posts follow the new level |
@@ -254,14 +254,14 @@ If step 1 doesn't get beginners answered, fix that before starting step 2.
 - **Migrations** `20261103100800_community_posts.sql` and `20261103101100_points_and_levels.sql`: `post_type`, the help post rules, `post_help_request`, `rate_help_fix`, `help_supply`, and the level changes in section 7.
 - **Composer:** learners choose a post type first (`HelpComposer.tsx`, `ContributePage.tsx`).
 - **Practice tab:** in the Library, separate from All posts.
-- **Answers:** a strip on Home, a section in the "I can answer" queue, the Bounties badge, and notifications to up to 5 qualified people.
+- **Answers:** help posts mixed into the Home feed, a section in the "I can answer" queue, the Bounties badge, and notifications to up to 5 qualified people.
 - **Notebook look:** in `PostCard.tsx`, with fixes shown as diffs in `PostDetail.tsx`.
 
 **Where it differs from the sections above:**
 
 - **"How do I say…?" doesn't count as writing.** It may be written in any language, so only "Correct me" posts count toward levels.
 - **Topic ideas instead of sentence starters.** Sentence starters would have to exist for every language, and topics read the same for all of them.
-- **Home shows a strip, not a limit per page.** It shows 3 posts waiting for a fix above the feed. The feed itself stays Library posts only.
+- **Home mixes help posts into the feed, not a limit per page.** A request for help takes every third post slot (`src/lib/feedMix.ts`). This replaced the original strip above the feed on 3 November 2026.
 - **A confirmation counts as help.** A qualified person tapping "This is correct" marks a "Correct me" post as helped, and counts as a review.
 - **A fix rated not helpful doesn't count.** If it was the only one, the post goes back to "Needs a fix".
 

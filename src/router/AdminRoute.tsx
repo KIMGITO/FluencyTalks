@@ -18,7 +18,7 @@ const GateCard = ({ title, icon, tone, step, children }: { title: string; icon: 
     <main className="flex min-h-screen flex-col items-center justify-center gap-5 bg-deep px-4 py-8">
       <Logo light />
       <Card className="ft-page w-full max-w-md space-y-4 !rounded-lg !border p-5 shadow-pop sm:p-6">
-        {step && <p className="ft-kicker">Setup · step {step} of 2</p>}
+    
         <div className="flex items-center gap-3"><IconTile icon={icon} tone={tone} /><h1 className="font-display text-2xl font-medium leading-tight">{title}</h1></div>
         {children}
       </Card>

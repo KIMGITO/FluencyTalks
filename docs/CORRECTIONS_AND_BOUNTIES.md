@@ -1,5 +1,7 @@
 # Corrections and bounties: how they work
 
+The summary of each feature is in [Features](FEATURES.md#9-inline-corrections).
+
 There are two correction systems. They serve different things and are deliberately not merged.
 
 | | Library contributions | Chat messages |

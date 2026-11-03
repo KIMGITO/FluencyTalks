@@ -1,4 +1,6 @@
-# FluencyTalks: Analysis and Refactor Plan
+# The Fluency Talks: original analysis and refactor plan
+
+> **This is a historical record, not the current state.** It's the original analysis and plan, written while the app was being built. Most of it has since been built or decided differently, and it refers to old migration numbers that were later consolidated. For the current product, see [Features](FEATURES.md) and [Roadmap and known gaps](ROADMAP.md).
 
 > A peer-to-peer language exchange platform. One native language, one target language, real people who correct each other, and a small points economy that rewards helping.
 
@@ -17,7 +19,7 @@ FluencyTalks is a **study-partner platform, not a social network**. A user decla
 ## 2. What Already Exists
 
 ### 2.1 Stack
-React + Vite + TypeScript, Tailwind driven by a single token file, Zustand stores, Supabase (Postgres, Auth, Realtime, Storage, one Edge Function), deployed on Cloudflare Pages (a Vercel URL also appears on the repo).
+React + Vite + TypeScript, Tailwind driven by a single token file, Zustand stores, Supabase (Postgres, Auth, Realtime, Storage, one Edge Function), deployed on Cloudflare (production is now a Worker, not Pages; a Vercel URL also appears on the repo).
 
 ### 2.2 Features that are built
 

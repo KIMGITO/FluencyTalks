@@ -16,8 +16,8 @@ import { HelpComposer } from '@/components/features/library/HelpComposer';
 import { userMessage } from '@/lib/errors';
 import { checkText, cleanText, firstProblem } from '@/lib/validate';
 
-const MAX_PHRASE = 5000;
-const MAX_NOTE = 1000;
+const MAX_PHRASE = 500;
+const MAX_NOTE = 500;
 const isHelpType = (t: string | null | undefined): t is HelpType => t === 'correct_me' || t === 'how_do_i_say';
 
 function TypeOption({ icon: Icon, title, text, onClick }: { icon: LucideIcon; title: string; text: string; onClick: () => void }) {
