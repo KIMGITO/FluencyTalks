@@ -5,6 +5,7 @@ import { useSeo } from '@/hooks/useSeo';
 import { deleteAccount } from '@/services/account';
 import { useAuthStore } from '@/store/authStore';
 import { EMAILS, mailto } from '@/lib/emails';
+import { userMessage } from '@/lib/errors';
 
 /**
  * Real deletion. Signed-in people delete their own account here (the same call as their profile page);
@@ -31,7 +32,7 @@ function DeleteAction() {
   const remove = async () => {
     setBusy(true); setError('');
     try { await deleteAccount(); await signOut(); nav('/', { replace: true }); }
-    catch (e) { setError((e as Error).message || 'We could not delete your account. Please try again, or write to us.'); setBusy(false); }
+    catch (e) { setError(userMessage(e, 'We could not delete your account. Please try again, or write to us.')); setBusy(false); }
   };
   return (
     <div>

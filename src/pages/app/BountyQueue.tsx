@@ -11,6 +11,8 @@ import { qualifiedLanguages } from '@/lib/corrections';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
+import { userMessage } from '@/lib/errors';
+import { cleanText } from '@/lib/validate';
 
 type Tab = 'open' | 'answers' | 'mine';
 const TABS: { key: Tab; label: string }[] = [{ key: 'open', label: 'I can answer' }, { key: 'answers', label: 'My answers' }, { key: 'mine', label: 'My bounties' }];
@@ -52,7 +54,7 @@ export default function BountyQueue() {
       // Fixes pay on a thank-you, not from escrow. A problem here must not hide the bounties.
       if (myId) void listPostsNeedingFix(qualifiedLanguages(me), myId, HELP_QUEUE).then(setNeedFix).catch(() => undefined);
       if (myId) await loadProfile(myId);   // refunds and rewards change the balance
-    } catch (e) { setError((e as Error).message); }
+    } catch (e) { setError(userMessage(e)); }
   }, [myId, loadProfile, me?.native_language_id, me?.learning_language_id, me?.verified_level]);
   useEffect(() => {
     void refresh();
@@ -68,7 +70,7 @@ export default function BountyQueue() {
       const next = await listOpenBounties(open.length);
       setOpen((cur) => [...(cur ?? []), ...next.filter((n) => !cur?.some((c) => c.message_id === n.message_id))]);
       setMore(next.length < BOUNTY_PAGE ? 'done' : 'idle');
-    } catch (e) { setError((e as Error).message); setMore('idle'); }
+    } catch (e) { setError(userMessage(e)); setMore('idle'); }
   };
   const canAnswerIn = qualifiedLanguages(me).map(nameOf).join(' or ');
   const pendingAnswers = answers?.filter((a) => a.status === 'pending').length ?? 0;
@@ -119,8 +121,8 @@ function OpenCard({ bounty, language, onAnswered }: { bounty: OpenBounty; langua
 
   const send = async () => {
     setBusy(true); setError('');
-    try { await answerBounty(bounty.message_id, text, note); setSent(true); setTimeout(onAnswered, 2500); }   // confirmation first, then it moves to My answers
-    catch (e) { setError((e as Error).message); }
+    try { await answerBounty(bounty.message_id, cleanText(text), cleanText(note)); setSent(true); setTimeout(onAnswered, 2500); }   // confirmation first, then it moves to My answers
+    catch (e) { setError(userMessage(e)); }
     finally { setBusy(false); }
   };
   const name = bounty.asker_display_name ?? bounty.asker_username ?? 'Someone';

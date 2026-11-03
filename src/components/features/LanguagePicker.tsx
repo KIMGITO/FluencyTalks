@@ -48,7 +48,7 @@ export function LanguagePicker({ title, value, options, clearLabel, onPick, onCl
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-deep/60 sm:items-center sm:p-4" onMouseDown={onClose}>
+    <div className="ft-overlay fixed inset-0 z-50 flex items-end justify-center bg-deep/60 sm:items-center sm:p-4" onMouseDown={onClose}>
       <div
         role="dialog"
         aria-modal="true"

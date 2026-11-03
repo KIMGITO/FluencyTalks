@@ -7,6 +7,8 @@ import { useProfileStore } from '@/store/profileStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { composerLanguages, languageTabLabel, pickComposerLanguage } from '@/lib/composerLanguages';
 import type { SendOptions } from '@/services';
+import { userMessage } from '@/lib/errors';
+import { cleanText, limitLength } from '@/lib/validate';
 
 const BOUNTY_COST = 50;
 
@@ -31,8 +33,9 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
   }, [text]);
 
   const submit = async () => {
-    if (!text.trim() || busy) return; setBusy(true); setError('');
-    try { await onSend(text, { language: language || undefined, bounty: isBounty }); setText(''); setIsBounty(false); onType?.(false); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    const body = cleanText(text);
+    if (!body || busy) return; setBusy(true); setError('');
+    try { await onSend(body, { language: language || undefined, bounty: isBounty }); setText(''); setIsBounty(false); onType?.(false); } catch (e) { setError(userMessage(e)); } finally { setBusy(false); }
   };
   return (
     <div className="border-t border-border bg-surface px-2 py-1.5 md:px-3 md:py-2">
@@ -73,7 +76,7 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
               </div>
             </>)}
           </div>)}
-        <textarea ref={inputRef} rows={1} value={text} maxLength={4000} placeholder="Write a message…" aria-label="Message" onChange={(e) => { setText(e.target.value); onType?.(!!e.target.value.trim()); }}
+        <textarea ref={inputRef} rows={1} value={text} placeholder="Write a message…" aria-label="Message" onChange={(e) => { setText(limitLength(e.target.value, 4000)); onType?.(!!e.target.value.trim()); }}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submit(); } }}
           className="max-h-[8rem] min-h-[44px] min-w-0 flex-1 resize-none rounded-md border border-border bg-bg px-3 py-[9px] text-base leading-6 text-ink transition-colors duration-200 placeholder:text-muted hover:border-ink/40 focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
         <Button aria-label="Send" className="w-[44px] shrink-0 self-stretch px-0" onClick={submit} disabled={!text.trim() || busy}><Send size={18} /></Button>

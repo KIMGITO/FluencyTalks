@@ -8,11 +8,13 @@ import { adminGenerateRecoveryCodes, redeemRecoveryCode, reportMfaFailure } from
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { Switch, copyText } from './AdminKit';
+import { userMessage } from '@/lib/errors';
+import { cleanText } from '@/lib/validate';
 
 const cleanCode = (v: string) => v.replace(/\D/g, '').slice(0, 6);
 const copy = (text: string, done: string) => copyText(text).then(() => toast.success(done)).catch(() => toast.error("Couldn't copy. Select the text and copy it yourself."));
 const CodeInput = ({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) => (
-  <Input id={id} label="6-digit code" size="lg" className="text-center font-semibold tracking-[0.4em] tabular-nums" inputMode="numeric" autoComplete="one-time-code" autoFocus value={value} onChange={(e) => onChange(cleanCode(e.target.value))} required />
+  <Input id={id} label="6-digit code" size="lg" className="text-center font-semibold tracking-[0.4em] tabular-nums" inputMode="numeric" autoComplete="one-time-code" autoFocus value={value} onChange={(e) => onChange(cleanCode(e.target.value))} />
 );
 
 /** Drawn here, not by Supabase: its code carries a longer link at a higher error-correction level, and phones struggle to scan it. */
@@ -37,7 +39,7 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
       const { data: list } = await supabase.auth.mfa.listFactors();
       for (const f of list?.all ?? []) if (f.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: f.id });
       const { data, error: e } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName, issuer: 'The Fluency Talks' });
-      if (e || !data) { setError(friendlyAuthError(e?.message ?? 'Could not start the setup. Please try again.')); return; }
+      if (e || !data) { setError(e ? friendlyAuthError(e.message) : 'Could not start the setup. Please try again.'); return; }
       setFactor({ id: data.id, qr: setupQrImage(totpSetupLink(data.totp.secret, useAuthStore.getState().user?.email)), secret: data.totp.secret });
     })();
   }, [friendlyName]);
@@ -52,7 +54,7 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
 
   if (!factor) return error ? <p role="alert" className="text-sm text-danger">{error}</p> : <div className="flex justify-center py-8"><Spinner /></div>;
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form noValidate onSubmit={submit} className="space-y-4">
       <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
         <li>Open Google Authenticator and tap <b className="text-ink">+</b>, then <b className="text-ink">Scan a QR code</b>.</li>
         <li>Scan this code, then type the 6 digits the app shows.</li>
@@ -97,23 +99,23 @@ export function MfaChallenge({ onDone, onRecovered }: { onDone: () => void; onRe
   };
   const recover = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError('');
-    try { await redeemRecoveryCode(recovery); onRecovered(); }
-    catch (err) { setError((err as Error).message); }
+    try { await redeemRecoveryCode(cleanText(recovery, { singleLine: true })); onRecovered(); }
+    catch (err) { setError(userMessage(err)); }
     finally { setBusy(false); }
   };
 
   if (!factors) return <div className="flex justify-center py-8"><Spinner /></div>;
   if (useRecovery) return (
-    <form onSubmit={recover} className="space-y-4">
+    <form noValidate onSubmit={recover} className="space-y-4">
       <p className="text-sm text-muted">A recovery code removes your authenticators, signs out your other sessions, and takes you to a new QR code. Each code works once.</p>
-      <Input id="recovery-code" label="Recovery code" autoComplete="off" autoFocus value={recovery} onChange={(e) => setRecovery(e.target.value)} required />
+      <Input id="recovery-code" label="Recovery code" autoComplete="off" autoFocus value={recovery} onChange={(e) => setRecovery(e.target.value)} />
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <Button type="submit" full loading={busy} disabled={!recovery.trim()}>Use recovery code</Button>
       <button type="button" className="w-full text-sm font-semibold text-brand" onClick={() => { setUseRecovery(false); setError(''); }}>Back to the 6-digit code</button>
     </form>
   );
   return (
-    <form onSubmit={verify} className="space-y-4">
+    <form noValidate onSubmit={verify} className="space-y-4">
       <p className="text-sm text-muted">Open Google Authenticator and type the code for The Fluency Talks.</p>
       {factors.length > 1 && (
         <Select className="border-border" label="Which authenticator" value={factorId} onChange={(e) => setFactorId(e.target.value)}>
@@ -135,7 +137,7 @@ export function RecoveryCodes({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     if (started.current) return;   // a second run would cancel the set on screen
     started.current = true;
-    adminGenerateRecoveryCodes().then(setCodes).catch((e) => setError((e as Error).message));
+    adminGenerateRecoveryCodes().then(setCodes).catch((e) => setError(userMessage(e)));
   }, []);
   if (error) return <p role="alert" className="text-sm text-danger">{error}</p>;
   if (!codes) return <div className="flex justify-center py-8"><Spinner /></div>;

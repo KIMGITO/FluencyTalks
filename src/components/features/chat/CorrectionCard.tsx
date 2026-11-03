@@ -5,6 +5,8 @@ import { DiffText } from './DiffText';
 import { useChatStore } from '@/store/chatStore';
 import { toast } from '@/store/toastStore';
 import type { Correction } from '@/types/db';
+import { userMessage } from '@/lib/errors';
+import { cleanText, limitLength } from '@/lib/validate';
 
 /** Older declined suggestions stay out of the chat: the question is only asked while it is fresh. */
 const RATE_DISMISSED_DAYS = 7;
@@ -13,7 +15,7 @@ const REASONS = ['Already correct', 'Changes the meaning', "Doesn't sound natura
 /** The author says whether a suggestion helped. Decides whether the corrector keeps earning. */
 function RateCorrection({ correction }: { correction: Correction }) {
   const rate = useChatStore((s) => s.rate);
-  const send = (helpful: boolean) => { rate(correction, helpful).catch((e) => toast.error((e as Error).message)); };
+  const send = (helpful: boolean) => { rate(correction, helpful).catch((e) => toast.error(userMessage(e))); };
   const button = (helpful: boolean, Icon: typeof ThumbsUp, label: string) => {
     const on = correction.feedback === (helpful ? 'helpful' : 'not_helpful');
     return (
@@ -56,7 +58,7 @@ export function CorrectionCard({ correction, original, isOwner, myId, bounty, on
     if (!fresh || (!isOwner && !mineToo)) return null;
   }
 
-  const run = async (fn: () => Promise<void>) => { setBusy(true); setError(''); setDeclining(false); try { await fn(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } };
+  const run = async (fn: () => Promise<void>) => { setBusy(true); setError(''); setDeclining(false); try { await fn(); } catch (e) { setError(userMessage(e)); } finally { setBusy(false); } };
   const pending = status === 'pending';
   const label = {
     pending: isOwner ? `${who} suggests` : mineToo ? 'Your suggestion · waiting' : `${who} suggested`,
@@ -99,14 +101,14 @@ export function CorrectionCard({ correction, original, isOwner, myId, bounty, on
         </div>)}
 
       {declining && (
-        <form className="mt-1 flex flex-col gap-1" onSubmit={(e) => { e.preventDefault(); if (reason.trim()) void run(() => onDecline(correction, reason.trim())); }}>
+        <form noValidate className="mt-1 flex flex-col gap-1" onSubmit={(e) => { e.preventDefault(); if (cleanText(reason)) void run(() => onDecline(correction, cleanText(reason))); }}>
           <div className="flex flex-wrap gap-1">
             {REASONS.map((r) => (
               <button key={r} type="button" onClick={() => setReason(r)}
                 className={clsx('rounded-full border px-2 py-0.5 text-xs', reason === r ? 'border-brand bg-brand-soft text-ink' : 'border-border text-muted hover:text-ink')}>{r}</button>))}
           </div>
           <div className="flex items-center gap-1">
-            <input aria-label="Why are you declining?" placeholder="Why? (they'll see this)" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus
+            <input aria-label="Why are you declining?" placeholder="Why? (they'll see this)" value={reason} onChange={(e) => setReason(limitLength(e.target.value, 300))} autoFocus
               className="h-8 min-w-0 flex-1 rounded-md border border-border bg-surface px-2 text-sm text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
             <button type="submit" disabled={busy || !reason.trim()} className={clsx(iconBtn, 'bg-surface-2 text-ink')}>Send</button>
             <button type="button" aria-label="Cancel" onClick={() => { setDeclining(false); setReason(''); }} className={clsx(iconBtn, 'px-1.5 text-muted hover:text-ink')}><X size={14} aria-hidden /></button>

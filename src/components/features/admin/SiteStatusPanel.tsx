@@ -5,6 +5,7 @@ import { formatTime } from '@/lib/format';
 import { useAppStatusStore } from '@/store/appStatusStore';
 import { toast } from '@/store/toastStore';
 import { Chip, IconTile } from './AdminKit';
+import { cleanText } from '@/lib/validate';
 
 /** The emergency switch. The database refuses this from anyone below admin, or without an authenticator code. */
 export function SiteStatusPanel() {
@@ -38,7 +39,7 @@ export function SiteStatusPanel() {
         confirmLabel={paused ? 'Bring it back' : 'Pause the app'}
         reasonLabel={paused ? 'Why is it safe now? (kept in the audit log)' : 'What is happening? (kept in the audit log, users never see it)'} reasonRequired
         onConfirm={async (reason) => {
-          await setPaused(!paused, reason, message.trim());
+          await setPaused(!paused, reason, cleanText(message, { singleLine: true }));
           toast.success(paused ? 'The app is back on for everyone.' : 'The app is paused. Only staff can use it now.');
         }}>
         {paused ? <p>Everyone can use the app again, and open tabs reload by themselves. Decision deadlines move forward by the time it was down.</p> : (

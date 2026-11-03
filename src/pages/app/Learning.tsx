@@ -9,6 +9,7 @@ import { deletePhrase, deleteTranslation, listMyCorrections, listPhrases, listTr
 import { useLanguageStore } from '@/store/languageStore';
 import { searchUnsplash, type UnsplashPhoto } from '@/lib/unsplash';
 import type { CorrectionHistory, SavedPhrase, TranslationRecord } from '@/types/db';
+import { userMessage } from '@/lib/errors';
 
 type Tab = 'phrases' | 'corrections' | 'translations';
 type TextSize = 'tiny' | 'small';
@@ -52,7 +53,7 @@ export default function Learning() {
       const photo = await searchUnsplash(unsplashQuery);
       setUnsplashResult(photo);
       if (!photo) setUnsplashError('No image found. Try another word.');
-    } catch (e) { setUnsplashResult(null); setUnsplashError((e as Error).message); }
+    } catch (e) { setUnsplashResult(null); setUnsplashError(userMessage(e)); }
   };
 
   const withConv = (id: string | null) => id && (

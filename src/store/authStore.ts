@@ -183,7 +183,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       provider,
       options: { redirectTo: `${origin()}/home` },
     });
-    if (error) set({ error: error.message });
+    if (error) set({ error: friendlyAuthError(error.message) });
   },
   signOut: async () => {
     await disablePush().catch(() => undefined);   // a shared phone must not keep buzzing for the last person, and this needs the session

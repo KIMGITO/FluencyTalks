@@ -12,6 +12,7 @@ import { searchMessages, searchPeople, searchPhrases, searchPosts, type PhraseHi
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { MessageHit, Person } from '@/types/db';
+import { userMessage } from '@/lib/errors';
 
 type Tab = 'all' | 'people' | 'posts' | 'messages' | 'phrases';
 const tabs: { key: Tab; label: string }[] = [
@@ -30,7 +31,7 @@ function useResults<T>(enabled: boolean, preview: boolean, fetch: (limit: number
     setBusy(true); setErr('');
     fetch(limit, 0)
       .then((r) => { if (live) { setRows(r); setMore(preview ? r.length > PREVIEW : r.length === SEARCH_PAGE_SIZE); } })
-      .catch((e) => { if (live) { setRows([]); setErr((e as Error).message); } })
+      .catch((e) => { if (live) { setRows([]); setErr(userMessage(e)); } })
       .finally(() => { if (live) setBusy(false); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -38,7 +39,7 @@ function useResults<T>(enabled: boolean, preview: boolean, fetch: (limit: number
   const loadMore = async () => {
     setBusy(true);
     try { const r = await fetch(SEARCH_PAGE_SIZE, rows.length); setRows((x) => [...x, ...r]); setMore(r.length === SEARCH_PAGE_SIZE); }
-    catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+    catch (e) { setErr(userMessage(e)); } finally { setBusy(false); }
   };
   return { rows: preview ? rows.slice(0, PREVIEW) : rows, all: rows, busy, more, err, loadMore, setRows };
 }

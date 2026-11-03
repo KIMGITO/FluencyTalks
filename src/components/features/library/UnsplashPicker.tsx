@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Search, X, ImageOff } from 'lucide-react';
 import { Spinner } from '@/components/ui';
 import { searchUnsplashPhotos, type UnsplashPhoto } from '@/lib/unsplash';
+import { userMessage } from '@/lib/errors';
 
 export type { UnsplashPhoto } from '@/lib/unsplash';
 
@@ -25,7 +26,7 @@ export function UnsplashPicker({ onSelect, onCancel }: Props) {
     try {
       setPhotos(await searchUnsplashPhotos(q, 12));
     } catch (e) {
-      setError((e as Error).message);
+      setError(userMessage(e));
     } finally {
       setLoading(false);
     }

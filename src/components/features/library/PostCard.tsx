@@ -13,6 +13,7 @@ import { timeAgo } from '@/lib/format';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { useFeedCache } from '@/store/feedCache';
+import { userMessage } from '@/lib/errors';
 
 export interface PostCardProps {
   post: Omit<ContributionPost, 'author'> & {
@@ -124,7 +125,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const remove = () => { setRemoved(true); onRemoved?.(post.id); };
   const run = async (fn: () => Promise<void>) => {
     setMenuOpen(false);
-    try { await fn(); } catch (e: any) { toast.error(e.message || 'Something went wrong. Please try again.', () => { void run(fn); }); }
+    try { await fn(); } catch (e: any) { toast.error(userMessage(e, 'Something went wrong. Please try again.'), () => { void run(fn); }); }
   };
 
   const handleDelete = async () => {
@@ -158,7 +159,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
       toast.success(now ? 'Saved. Find it under Library, Saved.' : 'Removed from saved.');
     } catch (e: any) {
       setSaved(was);
-      toast.error(e.message || 'Could not save this post.');
+      toast.error(userMessage(e, 'Could not save this post.'));
     } finally { saving.current = false; }
   };
   const authorName = post.author?.display_name || post.author?.username || 'Anonymous';

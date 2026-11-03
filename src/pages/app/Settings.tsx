@@ -15,6 +15,8 @@ import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { SUPPORT_SUBJECT } from '@/lib/site';
 import { EMAILS, mailto } from '@/lib/emails';
 import clsx from 'clsx';
+import { userMessage } from '@/lib/errors';
+import { checkEmail, checkPassword } from '@/lib/validate';
 
 type Tab = 'profile' | 'privacy' | 'appearance';
 
@@ -53,7 +55,7 @@ export default function Settings() {
   const changeActivity = async (show: boolean) => {
     setMsg('');
     try { await setShowActivity(show); if (me) await reloadProfile(me.id); toast.success(show ? 'Activity status is on.' : 'Activity status is off.'); }
-    catch (e) { toast.error((e as Error).message); }
+    catch (e) { toast.error(userMessage(e)); }
   };
   // Real stages only. The server doesn't report a percentage, so none is shown.
   const [exportStage, setExportStage] = useState<'idle' | 'preparing' | 'packaging' | 'done' | 'failed'>('idle');
@@ -100,7 +102,7 @@ export default function Settings() {
           <Section icon={Mail} title="Email" text={user?.email ? <>Currently <span className="font-medium text-ink">{user.email}</span></> : undefined}>
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="flex-1"><Input type="email" placeholder="new@email.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-              <Button size="sm" variant="secondary" className="self-start sm:h-12" disabled={!email.trim()} onClick={async () => setMsg((await updateEmail(email)) ? 'Check both inboxes to confirm.' : '')}>Update email</Button>
+              <Button size="sm" variant="secondary" className="self-start sm:h-12" disabled={!email.trim()} onClick={async () => { const problem = checkEmail(email); if (problem) { toast.error(problem); return; } setMsg((await updateEmail(email.trim())) ? 'Check both inboxes to confirm.' : ''); }}>Update email</Button>
             </div>
           </Section>
         </>)}
@@ -111,8 +113,8 @@ export default function Settings() {
           ) : (
             <Section icon={KeyRound} title="Password" text="At least 8 characters.">
               <div className="flex flex-col gap-2 sm:flex-row">
-                <div className="flex-1"><Input type="password" minLength={8} placeholder="New password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
-                <Button size="sm" variant="secondary" className="self-start sm:h-12" disabled={pw.length < 8} onClick={async () => setMsg((await updatePassword(pw)) ? 'Password updated.' : '')}>Update password</Button>
+                <div className="flex-1"><Input type="password" autoComplete="new-password" placeholder="New password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
+                <Button size="sm" variant="secondary" className="self-start sm:h-12" disabled={!pw} onClick={async () => { const problem = checkPassword(pw); if (problem) { toast.error(problem); return; } setMsg((await updatePassword(pw)) ? 'Password updated.' : ''); }}>Update password</Button>
               </div>
             </Section>
           )}

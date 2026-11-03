@@ -7,6 +7,7 @@ import { listSavedPartners, savePartner, deletePartner, type SavedPartner } from
 import { useProfileStore } from '@/store/profileStore';
 import { usePartnersStore } from '@/store/partnersStore';
 import { languageLabel } from '@/lib/languages';
+import { userMessage } from '@/lib/errors';
 
 const CATEGORY_LABELS: Record<string, string> = { phrase: 'Phrase', idiom: 'Idiom', usage: 'Usage', grammar: 'Grammar' };
 
@@ -31,7 +32,7 @@ export default function Partners() {
       const data = await listSavedPartners();
       setPartners(data);
     } catch (e: any) {
-      setSavingError(e.message || 'Failed to load partners.');
+      setSavingError(userMessage(e, 'Failed to load partners.'));
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,7 @@ export default function Partners() {
         setPartners((prev) => prev ? [...prev, { user_id: me?.id ?? '', partner_id: partnerId, created_at: new Date().toISOString() }] : null);
       }
     } catch (e: any) {
-      setSavingError(e.message || 'Failed to update partner list.');
+      setSavingError(userMessage(e, 'Failed to update partner list.'));
     } finally {
       setSaving(null);
     }

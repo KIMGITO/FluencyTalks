@@ -3,6 +3,7 @@ import { BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { getVouchStatus, vouchFor, withdrawVouch, type VouchStatus } from '@/services/levels';
 import { useLanguageStore } from '@/store/languageStore';
+import { userMessage } from '@/lib/errors';
 
 const WHY_NOT: Record<string, string> = {
   not_enough_chat: 'You can vouch once you have chatted more: at least 15 of their messages in it, over 2 or more days.',
@@ -26,7 +27,7 @@ export function VouchCard({ userId, name }: { userId: string; name: string }) {
   if (status.blocker && !why) return null;
   const act = (fn: (id: string) => Promise<unknown>) => async () => {
     setBusy(true); setError('');
-    try { await fn(userId); await load(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    try { await fn(userId); await load(); } catch (e) { setError(userMessage(e)); } finally { setBusy(false); }
   };
   const language = nameOf(status.language);
 

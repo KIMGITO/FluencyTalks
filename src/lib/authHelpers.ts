@@ -55,7 +55,7 @@ export function totpSetupLink(secret: string, email: string | null | undefined):
   return `otpauth://totp/FluencyTalks${name ? `:${encodeURIComponent(name)}` : ''}?secret=${secret}&issuer=FluencyTalks`;
 }
 
-/** Auth errors come back as English sentences from the server; show something a person can act on. */
+/** Auth errors come back as English sentences from the server; show something a person can act on, and never the sentence itself. */
 export function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes('database error saving new user') || m.includes('reserved_email')) return "This email address can't be used to sign up.";
@@ -67,5 +67,5 @@ export function friendlyAuthError(message: string): string {
   if (m.includes('email not confirmed')) return 'Confirm your email first. Check your inbox for the link.';
   if (m.includes('already registered')) return 'An account with this email already exists. Log in instead.';
   if (m.includes('unable to validate email') || m.includes('invalid format')) return 'Enter a valid email address.';
-  return message;
+  return 'Something went wrong. Please try again.';
 }

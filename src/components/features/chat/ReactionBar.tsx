@@ -4,6 +4,7 @@ import type { Theme } from 'emoji-picker-react';
 import { SmilePlus } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
 import type { Reaction } from '@/types/db';
+import { userMessage } from '@/lib/errors';
 
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
@@ -27,7 +28,7 @@ export function ReactionBar({ reactions, myId, onToggle, chipsOnly }: { reaction
 
   const groups = new Map<string, { count: number; mine: boolean }>();
   reactions.forEach((r) => { const g = groups.get(r.emoji) ?? { count: 0, mine: false }; groups.set(r.emoji, { count: g.count + 1, mine: g.mine || r.user_id === myId }); });
-  const toggle = async (emoji: string) => { setPicking(false); setError(''); try { await onToggle(emoji); } catch (e) { setError((e as Error).message); } };
+  const toggle = async (emoji: string) => { setPicking(false); setError(''); try { await onToggle(emoji); } catch (e) { setError(userMessage(e)); } };
   
   const openPicker = (e: React.MouseEvent<HTMLButtonElement>) => {
     const r = e.currentTarget.getBoundingClientRect();

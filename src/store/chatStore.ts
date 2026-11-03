@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
 import type { ConversationRow, Correction, Message, Reaction } from '@/types/db';
+import { userMessage } from '@/lib/errors';
 
 let unsub: (() => void) | null = null;
 const reacting = new Set<string>();
@@ -65,7 +66,7 @@ export const useChatStore = create<S>((set, get) => ({
       const row = s.requests.find((c) => c.conversation_id === id);
       return { requests: s.requests.filter((c) => c.conversation_id !== id), active: accept && row ? [{ ...row, status: 'active' as const }, ...s.active] : s.active };
     });
-    try { await respondMessageRequest(id, accept); } catch (e) { toast.error((e as Error).message); }
+    try { await respondMessageRequest(id, accept); } catch (e) { toast.error(userMessage(e)); }
     await get().loadLists();
   },
   append: (m) => set((s) => {
@@ -123,7 +124,7 @@ export const useChatStore = create<S>((set, get) => ({
       await toggleReaction(messageId, emoji);
     } catch (e) {
       set((s) => ({ reactions: { ...s.reactions, [messageId]: before } }));
-      toast.error((e as Error).message);
+      toast.error(userMessage(e));
     } finally { reacting.delete(messageId); }
   },
   togglePin: (convId, messageId) => set((s) => {
@@ -166,7 +167,7 @@ export const useChatStore = create<S>((set, get) => ({
     mark(on);
     const job: Promise<void> = (savingPhrase.get(phrase) ?? Promise.resolve())
       .then(async () => { if (on) await savePhrase({ phrase, translation, languageCode: m.language_id ?? undefined, sourceMessageId: m.id }); else await unsavePhrase(phrase); })
-      .catch((e) => { mark(!on); toast.error((e as Error).message); })
+      .catch((e) => { mark(!on); toast.error(userMessage(e)); })
       .finally(() => { if (savingPhrase.get(phrase) === job) savingPhrase.delete(phrase); });
     savingPhrase.set(phrase, job);
   },

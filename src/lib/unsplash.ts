@@ -1,3 +1,4 @@
+import { UserError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
 export interface UnsplashPhoto {
@@ -19,16 +20,15 @@ interface RawPhoto {
 /**
  * Searches Unsplash through the `unsplash-proxy` Edge Function, so the access key never reaches the
  * browser (a VITE_ variable is public: anyone could read and abuse it).
- * Throws a readable Error when search is unavailable.
+ * Throws a UserError when search is unavailable.
  */
 export async function searchUnsplashPhotos(query: string, perPage = 12): Promise<UnsplashPhoto[]> {
   const search = query.trim();
   if (search.length < 2) return [];
   const { data, error } = await supabase.functions.invoke('unsplash-proxy', { body: { search, perPage } });
   if (error) {
-    // The function answers with { error: '...' } (e.g. 503 "Image search is not configured" when the secret is missing).
-    const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
-    throw new Error(detail?.error ? `${detail.error}.` : 'Image search is unavailable right now.');
+    const tooMany = (error as { context?: Response }).context?.status === 429;
+    throw new UserError(tooMany ? 'Too many searches. Wait a minute and try again.' : 'Image search is unavailable right now.');
   }
   const results = (data as { results?: RawPhoto[] } | null)?.results ?? [];
   return results.map((p) => ({

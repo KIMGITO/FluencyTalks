@@ -9,7 +9,7 @@ const TONE = { success: 'text-success', error: 'text-danger', info: 'text-muted'
 export function Toaster() {
   const { toasts, dismiss } = useToastStore();
   return (
-    <div className="pointer-events-none fixed inset-x-3 bottom-[calc(var(--layout-bottomNavH)+env(safe-area-inset-bottom,0px)+1.5rem)] z-[60] flex flex-col items-center gap-2 md:inset-x-auto md:bottom-6 md:right-6 md:items-end">
+    <div className="ft-toaster pointer-events-none fixed inset-x-3 bottom-[calc(var(--layout-bottomNavH)+env(safe-area-inset-bottom,0px)+1.5rem)] z-[60] flex flex-col items-center gap-2 md:inset-x-auto md:bottom-6 md:right-6 md:items-end">
       {toasts.map((t) => {
         const Icon = ICON[t.kind];
         return (

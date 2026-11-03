@@ -8,6 +8,7 @@ import { refreshAdminCounts } from '@/store/adminStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
 import { Chip, IconTile, Panel, Switch } from './AdminKit';
+import { checkWholeNumber } from '@/lib/validate';
 
 const FIELDS: { key: keyof AccountabilityPolicy; label: string }[] = [
   { key: 'first_reminder_hours', label: 'First reminder after (hours)' },
@@ -27,14 +28,16 @@ export function AdminDecisions() {
   const [data, setData] = useState<AdminAccountability | null>(null);
   const [failed, setFailed] = useState(false);
   const [draft, setDraft] = useState<Partial<AccountabilityPolicy>>({});
+  const [numbers, setNumbers] = useState<Record<string, string>>({});   // as typed, so a half-typed value can be shown and refused
   const [dialog, setDialog] = useState<Dialog>(null);
   const isAdmin = useProfileStore((s) => s.me?.role === 'admin');
-  const load = () => adminAccountability().then((d) => { setData(d); setDraft({}); setFailed(false); }).catch(() => setFailed(true));
+  const load = () => adminAccountability().then((d) => { setData(d); setDraft({}); setNumbers({}); setFailed(false); }).catch(() => setFailed(true));
   useEffect(() => { void load(); }, []);
   if (failed && !data) return <ErrorState title="Couldn't load decisions" onRetry={() => void load()} />;
   if (!data) return <RowListSkeleton />;
   const policy = { ...data.policy, ...draft };
   const dirty = Object.keys(draft).length > 0;
+  const numbersWrong = Object.values(numbers).some((v) => checkWholeNumber(v, { label: 'This' }));
   const act = async (reason: string) => {
     const d = dialog!;
     if (d.kind === 'grant' || d.kind === 'deny') await adminDecideAppeal(d.id, d.kind === 'grant', reason);
@@ -86,12 +89,13 @@ export function AdminDecisions() {
         <div className="space-y-4">
           <Switch label="Reminders and restrictions" hint={policy.enabled ? 'On: people are reminded, then restricted when overdue.' : 'Off: no reminders go out and nobody gets restricted.'} disabled={!isAdmin} checked={!!policy.enabled} onChange={(on) => setDraft({ ...draft, enabled: on })} />
           <div className="grid gap-3 sm:grid-cols-2">
-            {FIELDS.map((f) => <Input key={f.key} type="number" min={0} label={f.label} disabled={!isAdmin} value={String(policy[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: Number(e.target.value) })} />)}
+            {FIELDS.map((f) => <Input key={f.key} type="number" label={f.label} disabled={!isAdmin} error={numbers[f.key] === undefined ? undefined : checkWholeNumber(numbers[f.key], { label: 'This' }) || undefined} value={numbers[f.key] ?? String(policy[f.key] ?? '')}
+              onChange={(e) => { const v = e.target.value.trim(); setNumbers({ ...numbers, [f.key]: v }); if (!checkWholeNumber(v, { label: 'This' })) setDraft({ ...draft, [f.key]: Number(v) }); }} />)}
           </div>
           {isAdmin && (
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" disabled={!dirty} onClick={() => setDialog({ kind: 'policy', id: '' })}>Save policy</Button>
-              {dirty && <Button size="sm" variant="ghost" onClick={() => { setDraft({}); toast.info('Changes discarded.'); }}>Discard</Button>}
+              <Button size="sm" disabled={!dirty || numbersWrong} onClick={() => setDialog({ kind: 'policy', id: '' })}>Save policy</Button>
+              {dirty && <Button size="sm" variant="ghost" onClick={() => { setDraft({}); setNumbers({}); toast.info('Changes discarded.'); }}>Discard</Button>}
             </div>
           )}
           {data.policy.last_sweep_at && <p className="text-xs text-muted">Last checked {formatTime(data.policy.last_sweep_at)}.</p>}

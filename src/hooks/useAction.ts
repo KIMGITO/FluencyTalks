@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from '@/store/toastStore';
+import { userMessage } from '@/lib/errors';
 
 const SLOW_MS = 8000;
 
@@ -40,7 +41,7 @@ export function useAction<A extends unknown[], R>(fn: (...args: A) => Promise<R>
       return result;
     } catch (e) {
       const { error: fallback, silent, onError } = latest.current.opts;
-      const message = (e as Error).message || fallback || 'Something went wrong. Please try again.';
+      const message = userMessage(e, fallback);
       setError(message);
       if (!silent) toast.error(message, () => { void run(...args); });
       onError?.(e as Error);

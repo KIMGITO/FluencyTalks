@@ -6,6 +6,7 @@ import { useInfiniteScroll } from '@/store/feedCache';
 import { useNotificationStore } from '@/store/notificationStore';
 import { toast } from '@/store/toastStore';
 import type { AppNotification } from '@/types/db';
+import { userMessage } from '@/lib/errors';
 
 const PAGE = 25;
 
@@ -73,13 +74,13 @@ export function useNotificationFeed(category: string | null) {
     const stamp = new Date().toISOString();
     setItems((old) => old?.map((o) => (o.id === n.id ? { ...o, read_at: stamp } : o)) ?? old);
     try { await markRead([n.id]); }
-    catch (e) { setItems((old) => old?.map((o) => (o.id === n.id ? { ...o, read_at: null } : o)) ?? old); toast.error((e as Error).message); }
+    catch (e) { setItems((old) => old?.map((o) => (o.id === n.id ? { ...o, read_at: null } : o)) ?? old); toast.error(userMessage(e)); }
   };
   const remove = async (n: AppNotification) => {
     const before = items;
     setItems((old) => old?.filter((o) => o.id !== n.id) ?? old);
     try { await deleteNotifications([n.id]); void useNotificationStore.getState().load(); }
-    catch (e) { setItems(before); toast.error((e as Error).message); }
+    catch (e) { setItems(before); toast.error(userMessage(e)); }
   };
   const allRead = async () => {
     setMarkingAll(true);
@@ -87,7 +88,7 @@ export function useNotificationFeed(category: string | null) {
     const stamp = new Date().toISOString();
     setItems((old) => old?.map((o) => (o.read_at ? o : { ...o, read_at: stamp })) ?? old);
     try { await markAllRead(); toast.success('All marked as read.'); }
-    catch (e) { setItems(before); toast.error((e as Error).message); }
+    catch (e) { setItems(before); toast.error(userMessage(e)); }
     finally { setMarkingAll(false); }
   };
 

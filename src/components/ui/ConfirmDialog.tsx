@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { Modal } from './Modal';
+import { userMessage } from '@/lib/errors';
+import { cleanText, limitLength } from '@/lib/validate';
 
 /** Before something consequential: says what will happen. Stays open and shows the error if it fails. */
 export function ConfirmDialog({ open, title, children, confirmLabel, danger, reasonLabel, reasonRequired, onConfirm, onClose }: {
@@ -14,11 +16,11 @@ export function ConfirmDialog({ open, title, children, confirmLabel, danger, rea
   const [error, setError] = useState('');
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (open) { setReason(''); setError(''); first.current?.focus(); } }, [open]);
-  const missing = !!reasonRequired && !reason.trim();
+  const missing = !!reasonRequired && !cleanText(reason);
   const go = async () => {
     setBusy(true); setError('');
-    try { await onConfirm(reason.trim()); onClose(); }
-    catch (e) { setError((e as Error).message || 'Something went wrong. Please try again.'); }
+    try { await onConfirm(cleanText(reason)); onClose(); }
+    catch (e) { setError(userMessage(e, 'Something went wrong. Please try again.')); }
     finally { setBusy(false); }
   };
   return (
@@ -26,7 +28,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, danger, rea
       {children && <div className="text-sm text-muted">{children}</div>}
       {reasonLabel && (
         <label className="block text-sm font-semibold text-ink">{reasonLabel}
-          <textarea rows={2} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)}
+          <textarea rows={2} value={reason} onChange={(e) => setReason(limitLength(e.target.value, 500))}
             className="mt-1 w-full rounded-md border border-border bg-surface p-2.5 text-base font-normal text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
         </label>
       )}

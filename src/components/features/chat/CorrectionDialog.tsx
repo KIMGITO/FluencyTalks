@@ -5,6 +5,8 @@ import type { Message } from '@/types/db';
 import { useProfileStore } from '@/store/profileStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { canCorrect } from '@/lib/corrections';
+import { userMessage } from '@/lib/errors';
+import { cleanText } from '@/lib/validate';
 
 export function CorrectionDialog({ message, onClose, onSubmit }: { message: Message | null; onClose: () => void; onSubmit: (text: string, note: string) => Promise<void> }) {
   const [text, setText] = useState(''); const [note, setNote] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
@@ -16,7 +18,7 @@ export function CorrectionDialog({ message, onClose, onSubmit }: { message: Mess
   
   const canEdit = !!message && canCorrect(me, message.language_id);
   
-  const submit = async () => { setBusy(true); setError(''); try { await onSubmit(text.trim(), note.trim()); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } };
+  const submit = async () => { setBusy(true); setError(''); try { await onSubmit(cleanText(text), cleanText(note)); } catch (e) { setError(userMessage(e)); } finally { setBusy(false); } };
   return (
     <Modal open={!!message} onClose={onClose} title="Suggest a correction">
       {message && (<>

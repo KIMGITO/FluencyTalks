@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { UserError } from './errors';
+import { cleanArgs } from './validate';
 
 
 const friendly: Record<string, string> = {
@@ -6,7 +8,7 @@ const friendly: Record<string, string> = {
   user_unavailable: 'This person is unavailable.',
   app_paused: 'The app is paused right now. Please try again soon.', rate_limited: 'Slow down a little and try again soon.', awaiting_acceptance: 'Wait for them to accept your message request.',
   conversation_unavailable: 'This conversation is unavailable.', empty_message: 'Write something first.',
-  username_taken: 'That username is taken.',
+  username_taken: 'That username is taken.', invalid_input: 'Please check what you entered and try again.',
   language_required: 'Choose the language you speak natively.', language_same: 'Your native and learning languages must be different.',
   language_unsupported: 'That language is not available yet.', invalid_level: 'Choose a level from A1 to C2.',
   insufficient_points: 'You need 50 points to ask the community.', too_many_bounties: 'You can have 3 open bounties at a time.',
@@ -45,11 +47,13 @@ const friendly: Record<string, string> = {
 };
 /** Set by the app status store: this file can't import it, the store's services import this. */
 export const apiHooks = { onPaused: () => {} };
-export class ApiError extends Error { constructor(public code: string, message: string) { super(message); } }
+export class ApiError extends UserError { constructor(public code: string, message: string) { super(message); } }
 
 
 export async function rpc<T = void>(fn: string, args?: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.rpc(fn, args);
+  let safeArgs = args;
+  try { safeArgs = cleanArgs(args); } catch { throw new ApiError('invalid_input', friendly.invalid_input); }
+  const { data, error } = await supabase.rpc(fn, safeArgs);
   if (error) {
     if (import.meta.env.DEV) console.warn('API error', fn, error.message, error.hint ?? '');   
     const code = error.code === '23505' ? 'username_taken' : Object.keys(friendly).find((c) => error.message.includes(c)) ?? 'unknown';

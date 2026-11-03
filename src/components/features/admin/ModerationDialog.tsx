@@ -4,6 +4,7 @@ import { useAction } from '@/hooks/useAction';
 import { adminSetUserStatus } from '@/services';
 import { refreshAdminCounts } from '@/store/adminStore';
 import type { AccountStatus } from '@/types/db';
+import { cleanText } from '@/lib/validate';
 
 export interface ModTarget { userId: string; name: string; status: AccountStatus; reportId?: string }
 const copy: Record<AccountStatus, { title: string; hint: string; button: string; done: string }> = {
@@ -13,7 +14,7 @@ const copy: Record<AccountStatus, { title: string; hint: string; button: string;
 };
 export function ModerationDialog({ target, onClose, onDone }: { target: ModTarget | null; onClose: () => void; onDone: (t: ModTarget) => void }) {
   const [reason, setReason] = useState('');
-  const submit = useAction(async (t: ModTarget) => { await adminSetUserStatus(t.userId, t.status, reason.trim() || undefined, t.reportId); return t; }, {
+  const submit = useAction(async (t: ModTarget) => { await adminSetUserStatus(t.userId, t.status, cleanText(reason) || undefined, t.reportId); return t; }, {
     silent: true,
     success: (_r, t) => `${t.name} ${copy[t.status].done}.`,
     onDone: (t) => { void refreshAdminCounts(); onDone(t as ModTarget); },
@@ -27,7 +28,7 @@ export function ModerationDialog({ target, onClose, onDone }: { target: ModTarge
       <Textarea label={needsReason ? 'Reason (required)' : 'Note (optional)'} rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
       {submit.error && <p role="alert" className="text-sm text-danger">{submit.error}</p>}
       <div className="flex justify-end gap-2"><Button variant="ghost" disabled={submit.busy} onClick={onClose}>Cancel</Button>
-        <Button variant={target.status === 'active' ? 'primary' : 'danger'} loading={submit.busy} disabled={needsReason && reason.trim().length < 3} onClick={() => void submit.run(target)}>{c.button}</Button></div>
+        <Button variant={target.status === 'active' ? 'primary' : 'danger'} loading={submit.busy} disabled={needsReason && cleanText(reason).length < 3} onClick={() => void submit.run(target)}>{c.button}</Button></div>
     </Modal>
   );
 }

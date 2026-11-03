@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui';
 import { startConversation } from '@/services';
 import { actionBtn } from './ActionButtonStyle';
+import { userMessage } from '@/lib/errors';
 
 export function MessageButton({ userId }: { userId: string }) {
   const nav = useNavigate();
@@ -16,7 +17,7 @@ export function MessageButton({ userId }: { userId: string }) {
     try {
       nav(`/messages/${await startConversation(userId)}`);
     } catch (e) {
-      setError((e as Error).message);
+      setError(userMessage(e));
       setBusy(false);
     }
   };

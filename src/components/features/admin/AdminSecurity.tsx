@@ -9,6 +9,8 @@ import { myStaffStatus } from '@/services/admin';
 import { toast } from '@/store/toastStore';
 import { Chip, Meter, Panel } from './AdminKit';
 import { MfaEnroll, RecoveryCodes } from './MfaForms';
+import { UserError } from '@/lib/errors';
+import { checkPassword } from '@/lib/validate';
 
 interface Factor { id: string; friendly_name?: string; created_at: string }
 const MIN_PASSWORD = 12;
@@ -35,7 +37,8 @@ export function AdminSecurity() {
 
   const changePassword = async (e: FormEvent) => {
     e.preventDefault(); setPwError('');
-    if (pw.length < MIN_PASSWORD) { setPwError(`Use at least ${MIN_PASSWORD} characters.`); return; }
+    const problem = checkPassword(pw, MIN_PASSWORD);
+    if (problem) { setPwError(problem); return; }
     if (pw !== pw2) { setPwError('The two passwords do not match.'); return; }
     setPwBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
@@ -81,9 +84,9 @@ export function AdminSecurity() {
         )}
       </Panel>
       <Panel title="Password" icon={KeyRound} tone="accent">
-        <form onSubmit={changePassword} className="space-y-3">
-          <Input id="new-pw" type="password" label="New password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required />
-          <Input id="new-pw2" type="password" label="Repeat password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required />
+        <form noValidate onSubmit={changePassword} className="space-y-3">
+          <Input id="new-pw" type="password" label="New password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+          <Input id="new-pw2" type="password" label="Repeat password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
           <ul className="space-y-0.5">
             <Rule ok={pw.length >= MIN_PASSWORD}>{`At least ${MIN_PASSWORD} characters`}</Rule>
             <Rule ok={!!pw && pw === pw2}>Both passwords match</Rule>
@@ -98,7 +101,7 @@ export function AdminSecurity() {
       <ConfirmDialog open={!!removing} danger title={`Remove ${removing?.friendly_name ?? 'this authenticator'}?`} confirmLabel="Remove" onClose={() => setRemoving(null)}
         onConfirm={async () => {
           const { error } = await supabase.auth.mfa.unenroll({ factorId: removing!.id });
-          if (error) throw new Error(friendlyAuthError(error.message));
+          if (error) throw new UserError(friendlyAuthError(error.message));
           toast.success('Authenticator removed.');
           await load();
         }}>

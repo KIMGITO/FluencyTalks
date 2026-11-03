@@ -11,6 +11,7 @@ import { CATEGORY_LABEL, hasActor, notificationVerb } from '@/lib/notificationTe
 import { setNotificationPrefs } from '@/services/review';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
+import { userMessage } from '@/lib/errors';
 
 type Filter = 'all' | 'corrections' | 'decisions' | 'reminders' | 'system';
 const FILTERS: { key: Filter; label: string }[] = [
@@ -32,7 +33,7 @@ export default function Notifications() {
   const setPref = async (key: string, on: boolean) => {
     if (!me) return;
     try { await setNotificationPrefs({ ...(me.notification_prefs ?? {}), [key]: on }); await reloadMe(me.id); toast.success('Saved.'); }
-    catch (e) { toast.error((e as Error).message); }
+    catch (e) { toast.error(userMessage(e)); }
   };
 
   return (

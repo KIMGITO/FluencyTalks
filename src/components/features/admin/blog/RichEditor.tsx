@@ -10,6 +10,8 @@ import clsx from 'clsx';
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Quote, Redo2, Strikethrough, Underline, Undo2, type LucideIcon } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
 import { BLOG_COLORS, BLOG_FONTS, BLOG_SIZES, safeUrl, type DocNode } from '@/lib/blogHtml';
+import { userMessage } from '@/lib/errors';
+import { cleanText } from '@/lib/validate';
 
 /** Marks a phrase as another language, so screen readers and search engines read it correctly. No button: it comes with existing posts. */
 const Lang = Mark.create({
@@ -145,9 +147,9 @@ export function RichEditor({ value, onChange, onUpload, onError }: { value: DocN
     setImage({ ...image, busy: true });
     try {
       const src = await onUpload(image.file);
-      editor.chain().focus().setImage({ src, alt: image.alt.trim() }).run();
+      editor.chain().focus().setImage({ src, alt: cleanText(image.alt, { singleLine: true }) }).run();
       setImage(null);
-    } catch (e) { onError((e as Error).message); setImage((i) => i && { ...i, busy: false }); }
+    } catch (e) { onError(userMessage(e)); setImage((i) => i && { ...i, busy: false }); }
   };
 
   return (
@@ -159,7 +161,7 @@ export function RichEditor({ value, onChange, onUpload, onError }: { value: DocN
         if (file) setImage({ file, preview: URL.createObjectURL(file), alt: '', busy: false });
       }} />
       <Modal open={link !== null} onClose={() => setLink(null)} title="Link">
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveLink(); }}>
+        <form noValidate className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveLink(); }}>
           <Input autoFocus label="Web address" value={link ?? ''} error={linkError} placeholder="https://example.com or /faq" onChange={(e) => { setLink(e.target.value); setLinkError(''); }} />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={() => setLink(null)}>Cancel</Button>
@@ -168,7 +170,7 @@ export function RichEditor({ value, onChange, onUpload, onError }: { value: DocN
         </form>
       </Modal>
       <Modal open={!!image} onClose={() => { if (!image?.busy) setImage(null); }} title="Add an image">
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void insertImage(); }}>
+        <form noValidate className="space-y-4" onSubmit={(e) => { e.preventDefault(); void insertImage(); }}>
           {image && <img src={image.preview} alt="" className="max-h-[12rem] w-full rounded-md object-contain" />}
           <Input autoFocus label="Describe the image" placeholder="Two friends chatting at a café" maxLength={200} value={image?.alt ?? ''} onChange={(e) => setImage((i) => i && { ...i, alt: e.target.value })} />
           <p className="text-xs text-muted">People using screen readers, and search engines, rely on this description.</p>

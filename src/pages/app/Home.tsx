@@ -1,19 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ImagePlus } from 'lucide-react';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
+import { mixFeed, weavePosts } from '@/lib/feedMix';
 import { ProfileCard } from '@/components/features';
 import {
   Avatar,
   Button,
-  Card,
-  Divider,
   EmptyState,
-  ErrorState, PostListSkeleton, RowListSkeleton, Spinner,
+  ErrorState, PostListSkeleton, Spinner,
 } from '@/components/ui';
-import { homeFeed, type MiniUser } from '@/services';
+import { homeFeed } from '@/services';
 import { useCountries } from '@/store/countryStore';
-import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
+import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
 import { listContributionPosts, listPostsNeedingFix, type ContributionPost } from '@/services/library';
@@ -22,25 +21,20 @@ import { PostCard } from '@/components/features/library';
 import { useFeedCache, useInfiniteScroll, usePagedList } from '@/store/feedCache';
 
 const HELP_PREVIEW = 3;
-const OTHERS_PREVIEW = 5;   // the posts feed scrolls forever below, so "everyone else" is a short preview
-
-
+const OTHERS_PREVIEW = 5;   // people with no shared language only fill in; the rest are in search
 
 export default function Home() {
   const { me, languages } = useProfileStore();
-  const labelOf = useLanguageStore((s) => s.labelOf);
   const languageName = useLanguageStore((s) => s.name);
-  const locales = useDisplayLocales();
   const providerAvatar = useProviderAvatar();
-  useCountries(); 
+  useCountries();
   const [hidden, setHidden] = useState<string[]>([]);
 
-  
   const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
   // Posts: cached and paged — shown instantly when coming back, next page loads on scroll.
   // Posts in my two languages come first; the key changes when those languages do.
   const feed = usePagedList(`posts:home:${me?.native_language_id ?? ''}:${me?.learning_language_id ?? ''}`, async (offset, limit) => (await listContributionPosts(undefined, undefined, { offset, limit }, true)).posts);
-  // A short strip above the feed, so requests for help are seen without filling it.
+  // Requests for help in my languages, so they get seen among the other posts.
   const myLanguages = [me?.native_language_id, me?.learning_language_id].filter((l): l is string => !!l);
   const needingFix = usePagedList<ContributionPost>(me ? `posts:needfix:${myLanguages.join(',')}` : null, async (offset) => (offset || !me ? [] : listPostsNeedingFix(myLanguages, me.id, HELP_PREVIEW)), HELP_PREVIEW);
   const removePost = useFeedCache((s) => s.removeEverywhere);
@@ -49,7 +43,6 @@ export default function Home() {
   // People: cached too; the key changes (and refetches) when my languages or country change.
   const peopleKey = `people:home:${languages.map((l) => `${l.language_id}.${l.role}`).sort().join(',')}:${me?.country_code ?? ''}:${me?.timezone ?? ''}`;
   const peopleList = usePagedList<FeedPerson>(peopleKey, async (offset) => (offset ? [] : homeFeed()), 10_000);
-  const people = peopleList.initialLoading ? null : peopleList.items;
 
   const nativeName = nameOf(me?.native_language_id);
   const learningName = nameOf(me?.learning_language_id);
@@ -60,14 +53,22 @@ export default function Home() {
       : 'Search for anyone by name or @username.';
 
   const { partners, others } = useMemo(() => {
-    const rows = (people ?? []).filter((p) => !hidden.includes(p.id));
+    const rows = peopleList.items.filter((p) => !hidden.includes(p.id));
     return {
       partners: rows.filter((p) => p.match_kind !== 'other'),
       others: rows.filter((p) => p.match_kind === 'other'),
     };
-  }, [people, hidden]);
+  }, [peopleList.items, hidden]);
+
+  const posts = useMemo(() => weavePosts(feed.items, needingFix.items.filter((p) => p.review_status === 'needs_fix')), [feed.items, needingFix.items]);
+  const { items, morePeople } = useMemo(
+    () => mixFeed(posts, [...partners, ...others.slice(0, OTHERS_PREVIEW)], feed.done || !!feed.error),
+    [posts, partners, others, feed.done, feed.error],
+  );
 
   const drop = (id: string) => setHidden((h) => [...h, id]);
+  // Held until all three have answered, so a late list doesn't push down what is being read.
+  const firstLoad = feed.initialLoading || peopleList.initialLoading || needingFix.initialLoading;
 
   return (
     <>
@@ -84,97 +85,47 @@ export default function Home() {
         </span>
         <ImagePlus size={22} className="shrink-0 text-accent" aria-hidden />
       </Link>
-      <div className="flex flex-col gap-2">
-        {people === null ? (
-          <RowListSkeleton count={3} label="Loading people" />
-        ) : (
-          <>
-            {partners.length > 0 &&
-              partners.map((p) => (
-                <ProfileCard key={p.id} person={p} onHidden={drop} />
-              ))}
 
-            {partners.length === 0 && others.length === 0 && (
+      {firstLoad ? (
+        <PostListSkeleton count={3} />
+      ) : (
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+          {feed.error && <ErrorState title="Couldn't load posts" busy={feed.loading} onRetry={() => void feed.refresh()} />}
+
+          {!items.length && !feed.error && (peopleList.error
+            ? <ErrorState title="Couldn't load your feed" busy={peopleList.loading} onRetry={() => void peopleList.refresh()} />
+            : (
               <EmptyState
-                title="No matches yet"
+                title="Nothing here yet"
                 text={emptyText}
                 action={
-                  <Link to="/search">
-                    <Button size="sm">Search people</Button>
-                  </Link>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Link to="/library/contribute"><Button size="sm">Share a phrase</Button></Link>
+                    <Link to="/search"><Button size="sm" variant="secondary">Search people</Button></Link>
+                  </div>
                 }
               />
-            )}
-
-            {}
-            {partners.length === 0 && others.length > 0 && (
-              <EmptyState
-                title="No language match yet"
-
-                text="Nobody here shares one of your languages right now. Browse posts and everyone below while more people join."
-                action={
-                  <Link to="/profile/edit">
-                    <Button size="sm" variant="secondary">
-                      My languages
-                    </Button>
-                  </Link>
-                }
-              />
-            )}
-          </>
-        )}
-
-        {others.length > 0 && (
-          <>
-            <Divider label="Everyone else" className="mt-4 mb-1" position="ne" />
-            {others.slice(0, OTHERS_PREVIEW).map((p) => (
-              <ProfileCard key={p.id} person={p} onHidden={drop} />
             ))}
-            {others.length > OTHERS_PREVIEW && (
-              <Link to="/search?tab=people" className="ft-inset self-center text-sm font-semibold text-brand hover:underline">
-                Find more people
-              </Link>
-            )}
-          </>
-        )}
 
-        {needingFix.items.some((p) => p.review_status === 'needs_fix') && (
-          <>
-            <Divider label="Learners asking for help" className="mt-4 mb-1" position="ne" />
-            <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-              {needingFix.items.filter((p) => p.review_status === 'needs_fix').map((p) => <PostCard key={p.id} post={p} onRemoved={removePost} />)}
-              <Link to="/library?tab=practice" className="ft-inset self-center text-sm font-semibold text-brand hover:underline">See all in Practice</Link>
-            </div>
-          </>
-        )}
+          {items.map((item) => (item.kind === 'post'
+            ? <PostCard key={`post:${item.post.id}`} post={item.post} onRemoved={removePost} />
+            : <ProfileCard key={`person:${item.person.id}`} person={item.person} onHidden={drop} />))}
 
-        {/* Community feed: newest posts, loading more as you scroll */}
-        <Divider label="From the community" className="mt-4 mb-1" position="ne" />
-        {feed.initialLoading ? (
-          <PostListSkeleton count={2} />
-        ) : feed.error ? (
-          <ErrorState title="Couldn't load posts" busy={feed.loading} onRetry={() => void feed.refresh()} />
-        ) : feed.items.length === 0 ? (
-          <EmptyState
-            title="No posts yet"
-            text="Phrases, idioms and examples people share will show up here."
-            action={
-              <Link to="/library/contribute">
-                <Button size="sm">Share a phrase</Button>
-              </Link>
-            }
-          />
-        ) : (
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-            {feed.items.map((p) => (
-              <PostCard key={p.id} post={p} onRemoved={removePost} />
-            ))}
-            <div ref={sentinel} aria-hidden />
-            {feed.loading && <div className="flex justify-center p-4"><Spinner /></div>}
-            {feed.done && feed.items.length > 0 && <p className="py-4 text-center text-xs text-muted">You're all caught up.</p>}
-          </div>
-        )}
-      </div>
+          <div ref={sentinel} aria-hidden />
+          {feed.loading && <div className="flex justify-center p-4"><Spinner /></div>}
+          {!partners.length && !!others.length && (
+            <p className="ft-inset text-center text-sm text-muted">
+              Nobody here shares one of your languages yet. <Link to="/profile/edit" className="font-semibold text-brand hover:underline">Check my languages</Link>
+            </p>
+          )}
+          {(morePeople || others.length > OTHERS_PREVIEW) && feed.done && (
+            <Link to="/search?tab=people" className="ft-inset self-center text-sm font-semibold text-brand hover:underline">
+              Find more people
+            </Link>
+          )}
+          {feed.done && !!items.length && <p className="py-4 text-center text-xs text-muted">You're all caught up.</p>}
+        </div>
+      )}
     </>
   );
 }

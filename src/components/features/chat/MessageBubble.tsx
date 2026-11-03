@@ -10,6 +10,7 @@ import { translateText } from '@/lib/translate';
 import { canCorrect } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
 import type { Correction, Message, Reaction } from '@/types/db';
+import { userMessage } from '@/lib/errors';
 
 
 export type TickState = 'sent' | 'delivered' | 'read';
@@ -112,7 +113,7 @@ export function MessageBubble({
       if (out.trim().toLowerCase() !== message.body.trim().toLowerCase())
         onTranslated?.(message, out, translateTo);
     } catch (e) {
-      setTr({ state: 'error', text: (e as Error).message });
+      setTr({ state: 'error', text: userMessage(e) });
     }
   };
   const alreadyMine =

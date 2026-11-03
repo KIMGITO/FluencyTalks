@@ -10,6 +10,7 @@ import { savePhrase } from '@/services/phrasebook';
 import { decideCorrection, overrideCorrection, rateHelpFix, resolveClarification, toggleAgreement, withdrawDiscussion, type PostThread, type ThreadItem } from '@/services/review';
 import { Composer } from './Composer';
 import { StatusPill } from './StatusPill';
+import { userMessage } from '@/lib/errors';
 
 /** How far a branch indents before it stops and relies on "replying to" labels instead. */
 const MAX_INDENT = 3;
@@ -97,7 +98,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
       toast.success(helpful ? 'Thanks sent.' : 'Noted. Thanks for telling us.');
       await reload();
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(userMessage(e));
       await reload();
     }
   };
@@ -105,7 +106,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
     try {
       await savePhrase({ phrase: item.proposed_phrase!, languageCode: post.language_id ?? undefined });
       toast.success('Added to your phrasebook.');
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) { toast.error(userMessage(e)); }
   };
 
   const agree = async () => {
@@ -118,7 +119,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
       patchItem(item.id, { i_agreed: now, agree_count: was.agree_count + (now === was.i_agreed ? 0 : now ? 1 : -1) });
     } catch (e) {
       patchItem(item.id, was);
-      toast.error((e as Error).message);
+      toast.error(userMessage(e));
     } finally { agreeing.current = false; }
   };
 

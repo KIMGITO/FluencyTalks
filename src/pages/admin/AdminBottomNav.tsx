@@ -37,7 +37,7 @@ export function AdminBottomNav({ tier, name, email, signingOut, onSignOut }: { t
         aria-label="Admin"
         onFocus={() => setHidden(false)}
         className={clsx(
-          'fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] z-20 flex rounded-full border border-on-deep/10 bg-deep/90 px-1.5 shadow-[0_10px_30px_-8px_rgb(0_0_0/0.45)] backdrop-blur-md md:hidden',
+          'ft-hide-on-keyboard fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] z-20 flex rounded-full border border-on-deep/10 bg-deep/90 px-1.5 shadow-[0_10px_30px_-8px_rgb(0_0_0/0.45)] backdrop-blur-md md:hidden',
           'transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none',
           hidden && !more ? 'pointer-events-none translate-y-[calc(100%+env(safe-area-inset-bottom,0px)+1.5rem)] opacity-0' : 'translate-y-0 opacity-100',
         )}

@@ -52,6 +52,17 @@ export function ChatThread({ id }: { id: string }) {
   const replyTarget = rawReply && isGone(rawReply) ? null : rawReply;
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [visible.length, replyTarget?.id, peerTyping]);
 
+  // The keyboard (or a taller message box) changes this list's height: the newest messages stay where they are.
+  const threadRef = useRef<HTMLDivElement>(null);
+  const threadShown = !!list && !!row;
+  useEffect(() => {
+    const el = threadRef.current; if (!el) return;
+    let height = el.clientHeight;
+    const watch = new ResizeObserver(() => { el.scrollTop += height - el.clientHeight; height = el.clientHeight; });
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [threadShown]);
+
   if (!list) return <ChatSkeleton />;
   if (!row) return <EmptyState title="Conversation unavailable" action={<Button onClick={() => nav('/messages')}>Back to messages</Button>} />;
   const days = groupByDay(visible);
@@ -87,7 +98,7 @@ export function ChatThread({ id }: { id: string }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); togglePin(id, m.id); } }}><X size={13} /></span>
             </div>))}
         </div>)}
-      <div className="ft-thread" role="log" aria-label={`Conversation with ${row.other_name}`}>
+      <div ref={threadRef} className="ft-thread" role="log" aria-label={`Conversation with ${row.other_name}`}>
         {!visible.length && <p className="py-6 text-center text-sm text-muted">Say hello in the language you're practising.</p>}
         {days.map((day) => (
           <section key={day.key} aria-label={day.label}>

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Button } from '@/components/ui';
 import { useAction } from '@/hooks/useAction';
 import { submitDiscussion, type ItemKind } from '@/services/review';
+import { cleanText, limitLength } from '@/lib/validate';
 
 const FIELD = 'w-full rounded-md border border-border bg-surface p-2.5 text-base text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40';
 /** Someone showed you their mistakes in public: the copy asks for kindness and shows the text ready to edit. */
@@ -32,29 +33,30 @@ export function Composer({ postId, parentId, kind, currentPhrase, currentTransla
   const key = useRef(newKey());
   const copy = COPY[kind];
   const send = useAction(
-    () => submitDiscussion({ post: postId, parent: parentId, kind, body, phrase: phrase || null, translation: translation || null, clientKey: key.current }),
+    () => submitDiscussion({ post: postId, parent: parentId, kind, body: cleanText(body), phrase: cleanText(phrase) || null, translation: cleanText(translation) || null, clientKey: key.current }),
     { success: help ? 'Sent. Thank you for helping.' : copy.done, silent: true, onDone: (id) => onDone(id as string) },
   );
-  const ready = !!body.trim() && (kind !== 'correction' || !!phrase.trim() || !!translation.trim());
+  const ready = !!cleanText(body) && (kind !== 'correction' || !!cleanText(phrase) || !!cleanText(translation));
   return (
     <form
+      noValidate
       className="space-y-2 rounded-md border border-border bg-surface-2/50 p-3"
       onSubmit={(e) => { e.preventDefault(); if (ready) void send.run(); }}
     >
       {kind === 'correction' && (
         <>
           <label className="block text-xs font-semibold text-ink">{help ? help.field : 'Replacement phrase'}
-            <textarea rows={2} maxLength={500} value={phrase} onChange={(e) => setPhrase(e.target.value)} placeholder={help ? undefined : currentPhrase} className={`${FIELD} mt-1 font-normal`} />
+            <textarea rows={2} value={phrase} onChange={(e) => setPhrase(limitLength(e.target.value, 500))} placeholder={help ? undefined : currentPhrase} className={`${FIELD} mt-1 font-normal`} />
           </label>
           {!help && (
             <label className="block text-xs font-semibold text-ink">Replacement translation (optional)
-              <input maxLength={500} value={translation} onChange={(e) => setTranslation(e.target.value)} placeholder={currentTranslation ?? ''} className={`${FIELD} mt-1 font-normal`} />
+              <input value={translation} onChange={(e) => setTranslation(limitLength(e.target.value, 500))} placeholder={currentTranslation ?? ''} className={`${FIELD} mt-1 font-normal`} />
             </label>
           )}
         </>
       )}
       <label className="block text-xs font-semibold text-ink">{help ? help.label : copy.label}
-        <textarea autoFocus={kind !== 'correction'} rows={2} maxLength={1000} value={body} onChange={(e) => setBody(e.target.value)} placeholder={help ? help.placeholder : copy.placeholder} className={`${FIELD} mt-1 font-normal`} />
+        <textarea autoFocus={kind !== 'correction'} rows={2} value={body} onChange={(e) => setBody(limitLength(e.target.value, 1000))} placeholder={help ? help.placeholder : copy.placeholder} className={`${FIELD} mt-1 font-normal`} />
       </label>
       {send.error && <p role="alert" className="text-sm text-danger">{send.error} Your text is still here.</p>}
       <div className="flex justify-end gap-2">

@@ -323,7 +323,6 @@ export function Select({
       <select
         className="hidden"
         name={name}
-        required={required}
         disabled={disabled}
         value={value !== undefined ? value : internal}
         onChange={onChange}

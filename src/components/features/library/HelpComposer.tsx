@@ -6,6 +6,8 @@ import { useFeedCache } from '@/store/feedCache';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
+import { userMessage } from '@/lib/errors';
+import { checkText, cleanText, firstProblem } from '@/lib/validate';
 
 const MAX = 280;
 const FEW_HELPERS = 3;
@@ -55,23 +57,25 @@ export function HelpComposer({ type, editing, onDone }: { type: HelpType; editin
   }
 
   const submit = async () => {
-    setError(null);
+    const problem = firstProblem(checkText(text, { label: 'Your text', required: true, max: MAX }), checkText(context, { label: 'The extra detail', max: 200 }));
+    setError(problem || null);
+    if (problem) return;
     setBusy(true);
     try {
-      if (editing) await updateContribution(editing.id, text.trim(), null, language, editing.category, context.trim() || null, null, 'left');
-      else await postHelpRequest(type, text.trim(), context.trim() || null);
+      if (editing) await updateContribution(editing.id, cleanText(text), null, language, editing.category, cleanText(context) || null, null, 'left');
+      else await postHelpRequest(type, cleanText(text), cleanText(context) || null);
       toast.success(editing ? 'Changes saved.' : 'Posted. You will be told as soon as someone answers.');
       useFeedCache.getState().invalidate('posts:');
       onDone();
     } catch (e) {
-      setError((e as Error).message);
+      setError(userMessage(e));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void submit(); }}>
+    <form noValidate className="space-y-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
       <p className="text-sm text-muted">{copy.hint(languageName)}</p>
       <div>
         <Textarea label={copy.label(languageName)} rows={4} maxLength={MAX} value={text} disabled={locked} onChange={(e) => setText(e.target.value)} placeholder={idea ?? copy.placeholder} />

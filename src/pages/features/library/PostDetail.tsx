@@ -13,6 +13,7 @@ import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
 import { getPostThread, markDecisionsViewed, revertAccepted, setThreadMute, subscribeToThread, toggleEndorsement, type ItemKind, type PostThread, type ThreadItem } from '@/services/review';
+import { userMessage } from '@/lib/errors';
 
 const HISTORY_LABEL: Record<string, string> = {
   submitted: 'submitted', accepted: 'accepted', declined: 'declined', superseded: 'superseded', withdrawn: 'withdrawn', resolved: 'resolved',
@@ -125,14 +126,14 @@ export default function PostDetail() {
       await load();
     } catch (e) {
       setThread((t) => t && { ...t, me: { ...t.me, endorsed: was.endorsed }, post: { ...t.post, endorse_count: was.count } });
-      toast.error((e as Error).message);
+      toast.error(userMessage(e));
     } finally { endorsing.current = false; }
   };
   const mute = async () => {
     const was = me.muted;
     setThread((t) => t && { ...t, me: { ...t.me, muted: !was } });
     try { await setThreadMute(id, !was); toast.success(was ? 'You will hear about this discussion again.' : 'Muted. You will still hear about decisions you have to make.'); }
-    catch (e) { setThread((t) => t && { ...t, me: { ...t.me, muted: was } }); toast.error((e as Error).message); }
+    catch (e) { setThread((t) => t && { ...t, me: { ...t.me, muted: was } }); toast.error(userMessage(e)); }
   };
 
   return (

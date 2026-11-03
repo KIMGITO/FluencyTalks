@@ -1,6 +1,7 @@
 import { rpc } from '@/lib/api';
 import { POST_CARD_COLUMNS, POST_COLUMNS, type DocNode, type Post, type PostCard } from '@/lib/blogHtml';
 import { supabase } from '@/lib/supabase';
+import { UserError } from '@/lib/errors';
 
 export interface BlogDraft {
   title: string; seo_title: string | null; description: string; kicker: string | null; summary: string;
@@ -62,13 +63,13 @@ async function shrinkImage(file: File): Promise<Blob> {
 }
 
 export async function uploadBlogImage(postId: string, file: File) {
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Choose a JPG, PNG or WebP image.');
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new UserError('Choose a JPG, PNG or WebP image.');
   const image = await shrinkImage(file);
-  if (image.size > 5 * 1024 * 1024) throw new Error('That image is too large. The limit is 5 MB.');
+  if (image.size > 5 * 1024 * 1024) throw new UserError('That image is too large. The limit is 5 MB.');
   const ext = image.type.split('/')[1];
   const bucket = supabase.storage.from('blog-images');
   const path = `${postId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await bucket.upload(path, image, { contentType: image.type, cacheControl: '31536000' });
-  if (error) throw new Error("Couldn't upload that image. Please try again.");
+  if (error) throw new UserError("Couldn't upload that image. Please try again.");
   return bucket.getPublicUrl(path).data.publicUrl;
 }

@@ -1,16 +1,21 @@
 import clsx from 'clsx';
 import { forwardRef, useId, useState, type InputHTMLAttributes } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { limitLength } from '@/lib/validate';
 
 export type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 
-type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
+/** Checks live in the code that submits (lib/validate), so the browser's own validation attributes aren't accepted here. */
+type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'required' | 'minLength' | 'min' | 'max' | 'pattern'> & {
   label?: string;
   error?: string;
   size?: InputSize;
 };
 
+
+/** These types trigger the browser's own validation. They are plain text fields that keep the phone keyboard they would have had. */
+const KEYBOARDS: Partial<Record<string, InputHTMLAttributes<HTMLInputElement>['inputMode']>> = { email: 'email', number: 'numeric', url: 'url', tel: 'tel' };
 
 const sizes: Record<InputSize, { input: string; label: string; message: string }> = {
   xs: { input: 'h-8 rounded-sm px-2.5 text-xs', label: 'mb-1 text-xs', message: 'mt-1 text-xs' },
@@ -21,7 +26,7 @@ const sizes: Record<InputSize, { input: string; label: string; message: string }
 };
 
 export const Input = forwardRef<HTMLInputElement, Props>(
-  ({ label, error, size = 'sm', className, id, type, ...rest }, ref) => {
+  ({ label, error, size = 'sm', className, id, type, maxLength, onChange, ...rest }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
     const errorId = `${inputId}-error`;
@@ -37,7 +42,11 @@ export const Input = forwardRef<HTMLInputElement, Props>(
         <input
           ref={ref}
           id={inputId}
-          type={isPassword && reveal ? 'text' : type}
+          type={(isPassword && reveal) || (type && KEYBOARDS[type]) ? 'text' : type}
+          inputMode={type ? KEYBOARDS[type] : undefined}
+          autoCapitalize={type === 'email' ? 'none' : undefined}
+          spellCheck={type === 'email' ? false : undefined}
+          onChange={(e) => { if (maxLength) e.target.value = limitLength(e.target.value, maxLength); onChange?.(e); }}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           className={clsx(

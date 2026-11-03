@@ -137,3 +137,17 @@
   .ft-card { border-radius: 0; border-left-width: 0; border-right-width: 0; }
   .ft-card .ft-card, .ft-menu, .ft-thread-shell .ft-card { border-radius: theme('borderRadius.lg'); border-left-width: 1px; border-right-width: 1px; }
 }
+
+/* While the phone keyboard is open (lib/keyboard.ts sets the class and the --ft-* variables). */
+html.ft-keyboard body { padding-bottom: var(--ft-kb); }   /* room to lift a field from the bottom of the page */
+html.ft-keyboard .ft-overlay { top: var(--ft-vv-top); bottom: var(--ft-vv-bottom); }
+html.ft-keyboard .ft-overlay > * { max-height: 100%; overflow-y: auto; }
+html.ft-keyboard .ft-toaster { bottom: calc(var(--ft-vv-bottom) + 0.5rem); }
+html.ft-keyboard .ft-hide-on-keyboard, html.ft-keyboard .lp-sticky { display: none; }
+@media (max-width: 767px) {
+  html.ft-keyboard .ft-thread-shell { top: var(--ft-vv-top); bottom: var(--ft-vv-bottom); height: auto; }
+}
+/* iPhones zoom the whole page into any field under 16px, and it stays zoomed after the keyboard closes. */
+@media (pointer: coarse) {
+  input.text-2xs, input.text-xs, input.text-sm, textarea.text-2xs, textarea.text-xs, textarea.text-sm { font-size: 16px; }
+}

@@ -1,3 +1,4 @@
+import { UserError } from '@/lib/errors';
 import { normalizeCode, providerCode } from '@/lib/languages';
 
 
@@ -7,7 +8,7 @@ const MAX_BYTES = 450;
 const MAX_CHUNKS = 12;     
 const cache = new Map<string, string>();
 
-export class TranslateError extends Error {}
+export class TranslateError extends UserError {}
 const bytes = (s: string) => new TextEncoder().encode(s).length;
 
 const apiCode = (iso3: string) => { const c = providerCode(iso3); return c === 'zh' ? 'zh-CN' : c; };

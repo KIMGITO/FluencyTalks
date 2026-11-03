@@ -11,6 +11,8 @@ import { BlogStatusChip } from '../AdminBlog';
 import { BlogPreview } from './BlogPreview';
 import { RichEditor } from './RichEditor';
 import '@/styles/landing.css';
+import { userMessage } from '@/lib/errors';
+import { limitLength } from '@/lib/validate';
 
 const EMPTY: BlogDraft = { title: '', seo_title: null, description: '', kicker: null, summary: '', cover_url: null, cover_alt: null, body: null };
 const AUTOSAVE_MS = 4000;
@@ -73,7 +75,7 @@ export function BlogEditor() {
       setSlug(saved.slug);
       if (isNew) window.history.replaceState(window.history.state, '', `/admin/blog/${id}`);
       return saved;
-    }).catch((e: Error) => { setDirty(true); setSaveError(e.message); throw e; }).finally(() => { inFlight.current = null; setSaving(false); });
+    }).catch((e: Error) => { setDirty(true); setSaveError(userMessage(e)); throw e; }).finally(() => { inFlight.current = null; setSaving(false); });
     inFlight.current = run.catch(() => null);
     return run;
   }, [id]);
@@ -97,7 +99,7 @@ export function BlogEditor() {
   const uploadCover = async (file: File) => {
     setUploading(true);
     try { change({ cover_url: await uploadBlogImage(id, file) }); }
-    catch (e) { toast.error((e as Error).message); }
+    catch (e) { toast.error(userMessage(e)); }
     finally { setUploading(false); }
   };
   const publish = async () => {
@@ -107,7 +109,7 @@ export function BlogEditor() {
       const saved = await adminBlogPublish(id);
       setPost(saved); setPreviewing(false);
       toast.success(`Published. It's on the site within about a minute.`);
-    } catch (e) { toast.error((e as Error).message); setPreviewing(false); }
+    } catch (e) { toast.error(userMessage(e)); setPreviewing(false); }
     finally { setPublishing(false); }
   };
   const previewPost = useMemo<Post | null>(() => {
@@ -152,7 +154,7 @@ export function BlogEditor() {
           <Card>
             <label className="block">
               <span className="sr-only">Title</span>
-              <textarea rows={2} maxLength={120} value={form.title} placeholder="Post title" onChange={(e) => change({ title: e.target.value.replace(/\n/g, ' ') })}
+              <textarea rows={2} value={form.title} placeholder="Post title" onChange={(e) => change({ title: limitLength(e.target.value.replace(/\n/g, ' '), 120) })}
                 className="w-full resize-none bg-transparent font-display text-3xl font-medium leading-tight text-ink placeholder:text-muted focus:outline-none md:text-4xl" />
             </label>
           </Card>

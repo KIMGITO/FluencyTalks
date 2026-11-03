@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
+import { RouteError } from '@/components/ui';
 import { AppShell } from '@/components/layout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AdminRoute } from './AdminRoute';
@@ -40,7 +41,7 @@ import Partners from '@/pages/features/partners/Partners';
 import BountyQueue from '@/pages/app/BountyQueue';
 import PointsHistory from '@/pages/app/PointsHistory';
 
-export const router = createBrowserRouter([
+const routes: RouteObject[] = [
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
   { path: '/signup', element: <PausedGate><Signup /></PausedGate> },
@@ -68,24 +69,29 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: '/home', element: <Home /> },
-          { path: '/search', element: <Search /> },
-          { path: '/discover', element: <Navigate to='/search' replace /> },
-          { path: '/messages', element: <Messages /> },
-          { path: '/messages/:id', element: <Messages /> },
-          { path: '/profile', element: <Profile /> },
-          { path: '/profile/edit', element: <EditProfile /> },
-          { path: '/u/:username', element: <UserProfile /> },
-          { path: '/settings', element: <Settings /> },
-          { path: '/learning', element: <Learning /> },
-          { path: '/phrasebook', element: <Navigate to='/learning' replace /> },
-          { path: '/bounty-queue', element: <BountyQueue /> },
-          { path: '/points-history', element: <PointsHistory /> },
-          { path: '/library', element: <Library /> },
-          { path: '/library/contribute', element: <ContributePage /> },
-          { path: '/library/post/:id', element: <PostDetail /> },
-          { path: '/notifications', element: <Notifications /> },
-          { path: '/partners', element: <Partners /> },
+          {
+            errorElement: <RouteError />,
+            children: [
+              { path: '/home', element: <Home /> },
+              { path: '/search', element: <Search /> },
+              { path: '/discover', element: <Navigate to='/search' replace /> },
+              { path: '/messages', element: <Messages /> },
+              { path: '/messages/:id', element: <Messages /> },
+              { path: '/profile', element: <Profile /> },
+              { path: '/profile/edit', element: <EditProfile /> },
+              { path: '/u/:username', element: <UserProfile /> },
+              { path: '/settings', element: <Settings /> },
+              { path: '/learning', element: <Learning /> },
+              { path: '/phrasebook', element: <Navigate to='/learning' replace /> },
+              { path: '/bounty-queue', element: <BountyQueue /> },
+              { path: '/points-history', element: <PointsHistory /> },
+              { path: '/library', element: <Library /> },
+              { path: '/library/contribute', element: <ContributePage /> },
+              { path: '/library/post/:id', element: <PostDetail /> },
+              { path: '/notifications', element: <Notifications /> },
+              { path: '/partners', element: <Partners /> },
+            ],
+          },
         ],
       },
     ],
@@ -100,22 +106,27 @@ export const router = createBrowserRouter([
           {
             element: <AdminLayout />,
             children: [
-              { path: '/admin', element: <AdminOverviewPage /> },
-              { path: '/admin/reports', element: <AdminReports /> },
-              { path: '/admin/decisions', element: <AdminDecisions /> },
-              { path: '/admin/people', element: <AdminUsers /> },
-              { path: '/admin/people/:username', element: <UserProfile /> },
-              { path: '/admin/posts/:id', element: <PostDetail /> },
-              { path: '/admin/blog', element: <AdminBlog /> },
-              // Loaded on its own, so the editor's code never reaches the public pages.
-              { path: '/admin/blog/:id', lazy: async () => ({ Component: (await import('@/components/features/admin/blog/BlogEditor')).BlogEditor }) },
-              { path: '/admin/faq', element: <AdminFaq /> },
-              { path: '/admin/notifications', element: <AdminNotifications /> },
-              { path: '/admin/activity', element: <AdminActivity /> },
-              { path: '/admin/team', element: <AdminTeam /> },
-              { path: '/admin/health', element: <AdminHealth /> },
-              { path: '/admin/logs', element: <AdminAudit /> },
-              { path: '/admin/security', element: <AdminSecurity /> },
+              {
+                errorElement: <RouteError />,
+                children: [
+                  { path: '/admin', element: <AdminOverviewPage /> },
+                  { path: '/admin/reports', element: <AdminReports /> },
+                  { path: '/admin/decisions', element: <AdminDecisions /> },
+                  { path: '/admin/people', element: <AdminUsers /> },
+                  { path: '/admin/people/:username', element: <UserProfile /> },
+                  { path: '/admin/posts/:id', element: <PostDetail /> },
+                  { path: '/admin/blog', element: <AdminBlog /> },
+                  // Loaded on its own, so the editor's code never reaches the public pages.
+                  { path: '/admin/blog/:id', lazy: async () => ({ Component: (await import('@/components/features/admin/blog/BlogEditor')).BlogEditor }) },
+                  { path: '/admin/faq', element: <AdminFaq /> },
+                  { path: '/admin/notifications', element: <AdminNotifications /> },
+                  { path: '/admin/activity', element: <AdminActivity /> },
+                  { path: '/admin/team', element: <AdminTeam /> },
+                  { path: '/admin/health', element: <AdminHealth /> },
+                  { path: '/admin/logs', element: <AdminAudit /> },
+                  { path: '/admin/security', element: <AdminSecurity /> },
+                ],
+              },
             ],
           },
         ],
@@ -123,4 +134,7 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '*', element: <NotFound /> },
-]);
+];
+
+// The root boundary catches anything outside those shells, so React Router's own crash page never shows.
+export const router = createBrowserRouter([{ errorElement: <RouteError />, children: routes }]);

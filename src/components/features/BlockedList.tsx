@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Avatar, Button, PartialError, Skeleton } from '@/components/ui';
 import { toast } from '@/store/toastStore';
 import { listBlocked, unblockUser, type MiniUser } from '@/services';
+import { userMessage } from '@/lib/errors';
 export function BlockedList() {
   const [users, setUsers] = useState<MiniUser[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -16,7 +17,7 @@ export function BlockedList() {
       <Button size="sm" variant="secondary" loading={busy === u.id} onClick={async () => {
         setBusy(u.id);
         try { await unblockUser(u.id); setUsers(users.filter((x) => x.id !== u.id)); toast.success(`${u.display_name} is unblocked.`); }
-        catch (e) { toast.error((e as Error).message); }
+        catch (e) { toast.error(userMessage(e)); }
         finally { setBusy(null); }
       }}>Unblock</Button></li>))}</ul>);
 }

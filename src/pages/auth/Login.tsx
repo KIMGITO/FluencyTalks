@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { BRAND } from '@/lib/site';
 import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
+import { checkEmail } from '@/lib/validate';
 
 export default function Login() {
   const appPaused = useAppStatus()?.paused;
@@ -20,11 +21,15 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [problems, setProblems] = useState({ email: '', password: '' });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    const found = { email: checkEmail(email), password: password ? '' : 'Enter your password.' };
+    setProblems(found);
+    if (found.email || found.password) return;
     setBusy(true);
-    if (await signIn(email, password)) nav('/home');
+    if (await signIn(email.trim(), password)) nav('/home');
     setBusy(false);
   };
 
@@ -41,23 +46,25 @@ export default function Login() {
           </p>
         )}
 
-        <form onSubmit={submit} className="space-y-4">
+        <form noValidate onSubmit={submit} className="space-y-4">
           <Input
             id="email"
             type="email"
             label="Email"
+            autoComplete="email"
+            error={problems.email}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            onChange={(e) => { setEmail(e.target.value); setProblems((p) => ({ ...p, email: '' })); }}
           />
           <div className="space-y-2">
             <Input
               id="password"
               type="password"
               label="Password"
+              autoComplete="current-password"
+              error={problems.password}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              onChange={(e) => { setPassword(e.target.value); setProblems((p) => ({ ...p, password: '' })); }}
             />
             <div className="text-right">
               <Link

@@ -7,6 +7,9 @@ import { friendlyAuthError } from '@/lib/authHelpers';
 import { supabase } from '@/lib/supabase';
 import { acceptAdminInvitation } from '@/services/admin';
 import { useAuthStore } from '@/store/authStore';
+import { userMessage } from '@/lib/errors';
+import { checkPassword } from '@/lib/validate';
+import { UserError } from '@/lib/errors';
 
 const MIN_PASSWORD = 12;
 
@@ -24,16 +27,17 @@ export default function AcceptInvite() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setError('');
-    if (pw.length < MIN_PASSWORD) { setError(`Use at least ${MIN_PASSWORD} characters.`); return; }
+    const problem = checkPassword(pw, MIN_PASSWORD);
+    if (problem) { setError(problem); return; }
     if (pw !== again) { setError('The two passwords do not match.'); return; }
     setBusy(true);
     try {
       await acceptAdminInvitation(token);   // first: a bad link must not change anyone's password
       const { error: pwErr } = await supabase.auth.updateUser({ password: pw });
-      if (pwErr && !pwErr.message.toLowerCase().includes('different from the old')) throw new Error(friendlyAuthError(pwErr.message));
+      if (pwErr && !pwErr.message.toLowerCase().includes('different from the old')) throw new UserError(friendlyAuthError(pwErr.message));
       await signOut();
       nav('/login', { replace: true, state: { reason: 'Invitation accepted. Log in with your new password, then set up Google Authenticator.' } });
-    } catch (err) { setError((err as Error).message); }
+    } catch (err) { setError(userMessage(err)); }
     finally { setBusy(false); }
   };
 
@@ -48,10 +52,10 @@ export default function AcceptInvite() {
   }
   return (
     <AuthLayout title="Join the team">
-      <form onSubmit={submit} className="space-y-3">
+      <form noValidate onSubmit={submit} className="space-y-3">
         <p className="text-sm text-muted">You've been invited to help run The Fluency Talks as <b className="text-ink">{session.user.email}</b>. Choose a password for this account. You'll use it every time, along with Google Authenticator.</p>
-        <Input id="pw" type="password" label="Password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required />
-        <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} required />
+        <Input id="pw" type="password" label="Password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+        <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
         <p className="text-xs text-muted">At least {MIN_PASSWORD} characters.</p>
         {error && <p role="alert" className="text-sm text-danger">{error}</p>}
         <Button type="submit" full loading={busy}>Accept invitation</Button>

@@ -6,6 +6,8 @@ import { FAQ_SECTIONS } from '@/lib/blogHtml';
 import { adminFaqDelete, adminFaqList, adminFaqMove, adminFaqSave, type AdminFaqItem, type FaqDraft } from '@/services/faq';
 import { toast } from '@/store/toastStore';
 import { ActionMenu, Chip, IconTile, RefreshButton, Switch, Toolbar } from './AdminKit';
+import { checkText, cleanText, firstProblem } from '@/lib/validate';
+import { UserError } from '@/lib/errors';
 
 const MAX_QUESTION = 200;
 const MAX_ANSWER = 2000;
@@ -86,17 +88,20 @@ function FaqForm({ item, onClose, onSaved }: { item: AdminFaqItem | null; onClos
     ? { section: item.section, question: item.question, answer: item.answer, on_home: item.on_home, is_live: item.is_live }
     : { section: FAQ_SECTIONS[0].id, question: '', answer: '', on_home: false, is_live: true });
   const set = (patch: Partial<FaqDraft>) => setDraft((d) => ({ ...d, ...patch }));
-  const save = useAction(async () => { await adminFaqSave(item?.id ?? null, draft, item?.updated_at ?? null); await onSaved(!item); }, { silent: true });
+  const save = useAction(async () => {
+    const problem = firstProblem(checkText(draft.question, { label: 'The question', required: true, max: MAX_QUESTION }), checkText(draft.answer, { label: 'The answer', required: true, max: MAX_ANSWER }));
+    if (problem) throw new UserError(problem);
+    await adminFaqSave(item?.id ?? null, { ...draft, question: cleanText(draft.question, { singleLine: true }), answer: cleanText(draft.answer) }, item?.updated_at ?? null); await onSaved(!item); }, { silent: true });
   return (
     <Modal open title={item ? 'Edit question' : 'New question'} onClose={() => { if (!save.busy) onClose(); }}>
-      <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save.run(); }}>
+      <form noValidate className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save.run(); }}>
         <div className="-mx-1 max-h-[65dvh] space-y-3 overflow-y-auto px-1 pb-1">
           <Select label="Section" value={draft.section} onChange={(e) => set({ section: e.target.value })}>
             {FAQ_SECTIONS.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
           </Select>
-          <Input label="Question" value={draft.question} maxLength={MAX_QUESTION} required onChange={(e) => set({ question: e.target.value })} />
+          <Input label="Question" value={draft.question} maxLength={MAX_QUESTION} onChange={(e) => set({ question: e.target.value })} />
           <div>
-            <Textarea label="Answer" rows={6} value={draft.answer} maxLength={MAX_ANSWER} required onChange={(e) => set({ answer: e.target.value })} />
+            <Textarea label="Answer" rows={6} value={draft.answer} maxLength={MAX_ANSWER} onChange={(e) => set({ answer: e.target.value })} />
             <p className="mt-1 text-xs text-muted">Plain text. Start with the direct answer in short sentences, because search and AI tools quote single paragraphs. {draft.answer.length} of {MAX_ANSWER}.</p>
           </div>
           <Switch label="Show on the site" hint="Off keeps the text here without showing it to anyone." checked={draft.is_live} onChange={(is_live) => set({ is_live })} />

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { myStaffStatus } from '@/services/admin';
 import { useAuthStore } from '@/store/authStore';
 import { useSeo } from '@/hooks/useSeo';
+import { checkPassword } from '@/lib/validate';
 
 /**
  * Opened from the link in the password-reset email. Three outcomes:
@@ -33,8 +34,8 @@ export default function ResetPassword() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setProblem('');
-    if (pw !== again) { setProblem('The two passwords do not match.'); return; }
-    if (staff && pw.length < 12) { setProblem('Staff passwords need at least 12 characters.'); return; }
+    const found = checkPassword(pw, staff ? 12 : 8) || (pw !== again ? 'The two passwords do not match.' : '');
+    if (found) { setProblem(found); return; }
     setBusy(true);
     const ok = await updatePassword(pw);
     setBusy(false);
@@ -63,9 +64,9 @@ export default function ResetPassword() {
 
   return (
     <AuthLayout title="Choose a new password">
-      <form onSubmit={submit} className="space-y-3">
-        <Input id="pw" type="password" label="New password" autoComplete="new-password" minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} required />
-        <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" minLength={8} value={again} onChange={(e) => setAgain(e.target.value)} required />
+      <form noValidate onSubmit={submit} className="space-y-3">
+        <Input id="pw" type="password" label="New password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+        <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
         <p className="text-xs text-muted">At least {staff ? 12 : 8} characters.</p>
         {(problem || error) && <p className="text-sm text-danger">{problem || error}</p>}
         <Button type="submit" full loading={busy}>Save password</Button>

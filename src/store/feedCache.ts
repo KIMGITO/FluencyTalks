@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { create } from 'zustand';
+import { userMessage } from '@/lib/errors';
 
 /**
  * In-memory cache for paged lists (posts on Home, Library, profiles, Saved; the people feed).
@@ -68,7 +69,7 @@ export function usePagedList<T extends Row>(key: string | null, fetchPage: (offs
       setEntry(key, { items: [...fresh, ...tail], done: fresh.length < pageSize && !tail.length, fetchedAt: Date.now(), loading: false });
     } catch (e) {
       console.error('Loading list failed', key, e);
-      setEntry(key, { loading: false, error: (e as Error).message || 'Could not load.', fetchedAt: Date.now() });
+      setEntry(key, { loading: false, error: userMessage(e, 'Could not load.'), fetchedAt: Date.now() });
     }
   }, [key, pageSize, setEntry]);
 
@@ -82,7 +83,7 @@ export function usePagedList<T extends Row>(key: string | null, fetchPage: (offs
       const ids = new Set(cur.items.map((r) => r.id));
       setEntry(key, { items: [...cur.items, ...page.filter((r) => !ids.has(r.id))], done: page.length < pageSize, loading: false });
     } catch (e) {
-      setEntry(key, { loading: false, error: (e as Error).message || 'Could not load more.' });
+      setEntry(key, { loading: false, error: userMessage(e, 'Could not load more.') });
     }
   }, [key, pageSize, setEntry]);
 

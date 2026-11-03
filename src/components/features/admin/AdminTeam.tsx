@@ -6,6 +6,8 @@ import { formatTime } from '@/lib/format';
 import { adminListTeam, adminRevokeInvitation, inviteStaff, removeStaff, resetStaffMfa, type StaffTier, type Team, type TeamInvitation, type TeamMember } from '@/services/admin';
 import { toast } from '@/store/toastStore';
 import { ActionMenu, Chip, Panel, type Tone } from './AdminKit';
+import { userMessage } from '@/lib/errors';
+import { checkEmail } from '@/lib/validate';
 
 const TIER: Record<StaffTier, { label: string; tone: Tone }> = { super: { label: 'Super admin', tone: 'accent' }, admin: { label: 'Admin', tone: 'brand' }, moderator: { label: 'Moderator', tone: 'aqua' } };
 type Dialog = { kind: 'reset' | 'remove'; member: TeamMember } | null;
@@ -19,11 +21,15 @@ export function AdminTeam() {
   useEffect(() => { void load(); }, []);
 
   const invite = async (e: FormEvent) => {
-    e.preventDefault(); setBusy(true); setInviteError('');
+    e.preventDefault();
+    const problem = checkEmail(email);
+    setInviteError(problem);
+    if (problem) return;
+    setBusy(true);
     try {
       const { email: sent } = await inviteStaff(email.trim(), tier);
       toast.success(`Invitation sent to ${sent}.`); setEmail(''); await load();
-    } catch (err) { setInviteError((err as Error).message); }
+    } catch (err) { setInviteError(userMessage(err)); }
     finally { setBusy(false); }
   };
   const act = async (reason: string) => {
@@ -39,9 +45,9 @@ export function AdminTeam() {
     <div className="space-y-4">
       {isSuper ? (
         <Panel title="Invite someone" icon={MailPlus} tone="accent">
-          <form onSubmit={invite} className="space-y-3">
+          <form noValidate onSubmit={invite} className="space-y-3">
             <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]">
-              <Input id="invite-email" type="email" label="Email" error={inviteError || undefined} value={email} onChange={(e) => { setEmail(e.target.value); setInviteError(''); }} required />
+              <Input id="invite-email" type="email" label="Email" error={inviteError || undefined} value={email} onChange={(e) => { setEmail(e.target.value); setInviteError(''); }} />
               <Select className="border-border" label="Role" value={tier} onChange={(e) => setTier(e.target.value as 'admin' | 'moderator')}>
                 <option value="admin">Admin</option>
                 <option value="moderator">Moderator</option>

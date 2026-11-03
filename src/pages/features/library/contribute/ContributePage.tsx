@@ -13,7 +13,11 @@ import { toast } from '@/store/toastStore';
 import { LanguageMark } from '@/components/features/LanguagePicker';
 import { UnsplashPicker } from '@/components/features/library/UnsplashPicker';
 import { HelpComposer } from '@/components/features/library/HelpComposer';
+import { userMessage } from '@/lib/errors';
+import { checkText, cleanText, firstProblem } from '@/lib/validate';
 
+const MAX_PHRASE = 5000;
+const MAX_NOTE = 1000;
 const isHelpType = (t: string | null | undefined): t is HelpType => t === 'correct_me' || t === 'how_do_i_say';
 
 function TypeOption({ icon: Icon, title, text, onClick }: { icon: LucideIcon; title: string; text: string; onClick: () => void }) {
@@ -88,19 +92,24 @@ export default function ContributePage() {
 
   const submit = async () => {
     setError(null);
-    if (!phrase.trim()) { setError('Phrase is required.'); return; }
+    const problem = firstProblem(
+      checkText(phrase, { label: 'Phrase', required: true, max: MAX_PHRASE }),
+      checkText(translation, { label: 'Translation', max: MAX_NOTE }),
+      checkText(sourceContext, { label: 'Source context', max: MAX_NOTE }),
+    );
+    if (problem) { setError(problem); return; }
     if (!language) { setError('Please select a language.'); return; }
     setBusy(true);
     try {
       if (editId) {
-        await updateContribution(editId, phrase.trim(), translation.trim() || null, language, category, sourceContext.trim() || null, unsplashUrl || null, textAlign);
+        await updateContribution(editId, cleanText(phrase), cleanText(translation) || null, language, category, cleanText(sourceContext) || null, unsplashUrl || null, textAlign);
       } else {
         await postContribution(
-          phrase.trim(),
-          translation.trim() || null as any,
+          cleanText(phrase),
+          cleanText(translation) || null as any,
           language,
           category,
-          sourceContext.trim() || null as any,
+          cleanText(sourceContext) || null as any,
           unsplashUrl || null as any,
           textAlign,
         );
@@ -109,7 +118,7 @@ export default function ContributePage() {
       useFeedCache.getState().invalidate('posts:');   // every post list refreshes on the next visit
       goBack();
     } catch (e: any) {
-      setError(e.message || (editId ? 'Could not save your changes.' : 'Could not post to the library.'));
+      setError(userMessage(e, editId ? 'Could not save your changes.' : 'Could not post to the library.'));
     } finally {
       setBusy(false);
     }

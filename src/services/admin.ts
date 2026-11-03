@@ -1,5 +1,6 @@
 import { rpc } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { UserError } from '@/lib/errors';
 
 export type StaffTier = 'super' | 'admin' | 'moderator';
 export interface StaffStatus { is_staff: boolean; tier?: StaffTier; session_ok?: boolean; used_password?: boolean; recovery_codes_left?: number }
@@ -49,7 +50,7 @@ async function staffAction<T = { ok: true }>(body: Record<string, unknown>): Pro
   const { data, error } = await supabase.functions.invoke('admin-staff', { body });
   if (error) {
     const code = await (error as { context?: Response }).context?.json?.().then((b: { error?: string }) => b.error).catch(() => undefined);
-    throw new Error((code && EDGE_ERRORS[code]) || 'Something went wrong. Please try again.');
+    throw new UserError((code && EDGE_ERRORS[code]) || 'Something went wrong. Please try again.');
   }
   return data as T;
 }

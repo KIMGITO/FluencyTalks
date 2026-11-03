@@ -5,12 +5,13 @@ import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
+import { checkEmail } from '@/lib/validate';
 export default function ForgotPassword() {
   useSeo({ title: 'Forgot password', description: 'Reset your The Fluency Talks password. We email you a secure reset link.', path: '/forgot-password', noIndex: true });
   const { sendPasswordReset, clearError, error } = useAuthStore();
-  const [email, setEmail] = useState(''); const [sent, setSent] = useState(false); const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState(''); const [sent, setSent] = useState(false); const [busy, setBusy] = useState(false); const [problem, setProblem] = useState('');
   useEffect(() => { clearError(); }, [clearError]);
-  const submit = async (e: FormEvent) => { e.preventDefault(); setBusy(true); setSent(await sendPasswordReset(email.trim())); setBusy(false); };
+  const submit = async (e: FormEvent) => { e.preventDefault(); const found = checkEmail(email); setProblem(found); if (found) return; setBusy(true); setSent(await sendPasswordReset(email.trim())); setBusy(false); };
   return (
     <AuthLayout title="Reset your password">
       {sent ? (
@@ -19,8 +20,8 @@ export default function ForgotPassword() {
           <p>Nothing after a few minutes? Check your spam folder.</p>
         </div>
       ) : (
-        <form onSubmit={submit} className="space-y-3">
-          <Input id="email" type="email" label="Email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <form noValidate onSubmit={submit} className="space-y-3">
+          <Input id="email" type="email" label="Email" autoComplete="email" error={problem} value={email} onChange={(e) => { setEmail(e.target.value); setProblem(''); }} />
           {error && <p className="text-sm text-danger">{error}</p>}
           <Button type="submit" full loading={busy}>Send reset link</Button>
         </form>)}
