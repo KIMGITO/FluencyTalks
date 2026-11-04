@@ -6,8 +6,7 @@ import { useLanguageStore } from '@/store/languageStore';
 import { userMessage } from '@/lib/errors';
 
 const WHY_NOT: Record<string, string> = {
-  not_enough_chat: 'You can vouch once you have chatted more: at least 15 of their messages in it, over 2 or more days.',
-  too_new: 'You can vouch after 7 days on The Fluency Talks.',
+  not_enough_chat: 'Keep chatting and you can vouch: it takes 15 of their messages in this language, over 2 or more days, and 5 of yours.',
   low_ratings: "You can't vouch while most recent ratings of your corrections are “not helpful”.",
   limit: "You've used your 3 vouches for this month.",
 };
@@ -40,6 +39,7 @@ export function VouchCard({ userId, name }: { userId: string; name: string }) {
         {status.vouched
           ? 'You vouched that they write at B1 or above. Two vouches from native speakers verify them at B1.'
           : why ?? `Only vouch if they really do write ${language} at B1 or above. Two vouches from native speakers verify them at B1, which lets them correct others and earn points.`}
+        {!why && status.counts_from && ` Your vouch starts counting on ${new Date(status.counts_from).toLocaleDateString()}, a week after you joined. There's nothing more you need to do.`}
       </p>
       {error && <p className="text-xs text-danger">{error}</p>}
       {status.vouched

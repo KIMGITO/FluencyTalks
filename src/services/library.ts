@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
 import { qualifiedLanguages } from '@/lib/corrections';
+import { PRACTICE_TYPES, REFERENCE_TYPES, type PracticeType } from '@/lib/postTypes';
 import type { ContributionPost, Person, SavedPartner } from '@/types/db';
 
 export type { ContributionPost, SavedPartner };
@@ -22,28 +23,28 @@ export const listContributionPosts = async (p_languageId?: string, p_category?: 
   let q = supabase.from('contribution_posts').select(POST_SELECT);
   // A computed column on the database (matches_my_languages): posts in my two languages, then the rest.
   if (myLanguagesFirst) q = q.order('matches_my_languages', { ascending: false });
-  q = q.eq('post_type', 'library').order('created_at', { ascending: false }).range(...rangeOf(page));
+  q = q.in('post_type', REFERENCE_TYPES).order('created_at', { ascending: false }).range(...rangeOf(page));
   if (p_languageId) q = q.eq('language_id', p_languageId);
   if (p_category) q = q.eq('category', p_category);
   const { data, error } = await q;
   if (error) throw error;
   return { posts: ((data ?? []) as PostRow[]).map(toPost) };
 };
-/** The Practice tab: requests for help, my languages first, then the ones still waiting for a fix. */
+/** The Practice tab: learners' posts, my languages first, then the ones still waiting for feedback. */
 export const listPracticePosts = async (p_languageId?: string, page?: Page) => {
-  let q = supabase.from('contribution_posts').select(POST_SELECT).neq('post_type', 'library')
-    .order('matches_my_languages', { ascending: false }).order('review_status', { ascending: false })
+  let q = supabase.from('contribution_posts').select(POST_SELECT).in('post_type', PRACTICE_TYPES)
+    .order('matches_my_languages', { ascending: false }).order('review_status', { ascending: true })
     .order('created_at', { ascending: false }).range(...rangeOf(page));
   if (p_languageId) q = q.eq('language_id', p_languageId);
   const { data, error } = await q;
   if (error) throw error;
   return ((data ?? []) as PostRow[]).map(toPost);
 };
-/** Help posts nobody has answered yet in these languages, oldest first so nobody waits forever. */
+/** Practice posts nobody has answered yet in these languages, oldest first so nobody waits forever. */
 export const listPostsNeedingFix = async (languages: string[], notBy: string, limit = 5) => {
   if (!languages.length) return [];
   const { data, error } = await supabase.from('contribution_posts').select(POST_SELECT)
-    .neq('post_type', 'library').eq('review_status', 'needs_fix').in('language_id', languages).neq('user_id', notBy)
+    .in('post_type', PRACTICE_TYPES).eq('review_status', 'awaiting_feedback').in('language_id', languages).neq('user_id', notBy)
     .order('created_at', { ascending: true }).limit(limit);
   if (error) throw error;
   return ((data ?? []) as PostRow[]).map(toPost);
@@ -80,11 +81,13 @@ export const listSavedPartners = async (): Promise<SavedPartner[]> => {
 export const savePartner = (partnerId: string) => rpc<string>('save_partner', { p_partner: partnerId });
 export const deletePartner = (partnerId: string) => rpc<string>('delete_partner', { p_partner: partnerId });
 export type TextAlign = ContributionPost['text_align'];
-export const postContribution = (phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string, unsplashUrl: string, textAlign: TextAlign = 'left') => rpc<string>('post_contribution', { p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl, p_text_align: textAlign });
-export const updateContribution = (id: string, phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string | null, unsplashUrl: string | null, textAlign: TextAlign = 'left') => rpc<void>('update_contribution', { p_id: id, p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl, p_text_align: textAlign });
-export type HelpType = 'correct_me' | 'how_do_i_say';
+export type ImageLayout = NonNullable<ContributionPost['image_layout']>;
+export const postContribution = (phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string | null, unsplashUrl: string | null, textAlign: TextAlign = 'left', postType: 'library' | 'lesson' = 'library', body: string | null = null, imageLayout: ImageLayout = 'above') => rpc<string>('post_contribution', { p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl, p_text_align: textAlign, p_post_type: postType, p_body: body, p_image_layout: imageLayout });
+export const updateContribution = (id: string, phrase: string, translation: string | null, languageId: string, category: string, sourceContext: string | null, unsplashUrl: string | null, textAlign: TextAlign = 'left', body: string | null = null, imageLayout: ImageLayout = 'above') => rpc<void>('update_contribution', { p_id: id, p_phrase: phrase, p_translation: translation, p_language: languageId, p_category: category, p_source_context: sourceContext, p_unsplash_image_url: unsplashUrl, p_text_align: textAlign, p_body: body, p_image_layout: imageLayout });
+export type HelpType = PracticeType;
 /** No level needed. The server picks the language: always the one you are learning. */
-export const postHelpRequest = (type: HelpType, text: string, context: string | null) => rpc<string>('post_help_request', { p_type: type, p_text: text, p_context: context });
+export const postHelpRequest = (type: HelpType, text: string, context: string | null, extra: { body?: string | null; imageUrl?: string | null; layout?: ImageLayout } = {}) =>
+  rpc<string>('post_help_request', { p_type: type, p_text: text, p_context: context, p_body: extra.body ?? null, p_image_url: extra.imageUrl ?? null, p_image_layout: extra.layout ?? 'above' });
 export const helpSupply = (language: string) => rpc<number>('help_supply', { p_language: language });
 export const pinContribution = (id: string, pinned: boolean) => rpc<void>('pin_contribution', { p_id: id, p_pinned: pinned });
 /** Returns the new state: true = saved. */
@@ -97,5 +100,5 @@ export const getContribution = async (id: string): Promise<ContributionPost | nu
 export const deleteContribution = (id: string) => rpc<string>('delete_contribution', { p_id: id });
 
 
-/** Can this person post at all? In which language is qualifiedLanguages' answer (the server checks too). */
-export const isContributionEligible = (me: Parameters<typeof qualifiedLanguages>[0]) => qualifiedLanguages(me).length > 0;
+/** Can this person post at all? Anyone with a language can: practice posts need no level. What they can teach is qualifiedLanguages' answer (the server checks too). */
+export const isContributionEligible = (me: Parameters<typeof qualifiedLanguages>[0]) => qualifiedLanguages(me).length > 0 || !!me?.learning_language_id;

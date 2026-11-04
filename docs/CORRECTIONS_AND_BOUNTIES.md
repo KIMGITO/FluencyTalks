@@ -9,8 +9,8 @@ There are two correction systems. They serve different things and are deliberate
 | Table | `post_discussion` (+ `post_discussion_events` audit log) | `message_corrections` |
 | Who corrects | Native speakers or learners **verified** at B1+ in the post's language (`can_correct_language`) | Same rule |
 | Discussion | Threaded replies, challenges, clarifications (depth ≤ 12) | Reply to the message in the chat |
-| Decided by | Post owner; moderators once escalated | Message sender |
-| Accountability | `decision_items` with deadlines, reminders, escalation (`accountability_policy`) | Bounty answers get a reminder before the bounty expires |
+| Decided by | Post owner; moderators once escalated. A practice post asks for no decision | Message sender |
+| Accountability | Teaching posts only: `decision_items` with deadlines, reminders, a warning and escalation (`accountability_policy`). See [Contribution system](CONTRIBUTION_SYSTEM.md#when-a-teaching-posts-author-goes-quiet) | Bounty answers get a reminder before the bounty expires |
 
 ## Audit (2026-11-02)
 

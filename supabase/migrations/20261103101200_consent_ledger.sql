@@ -58,7 +58,8 @@ begin
     'contributions', coalesce((select jsonb_agg(to_jsonb(c)) from contribution_posts c where c.user_id = auth.uid()), '[]'),
     'post_discussion', coalesce((select jsonb_agg(to_jsonb(d) - 'client_key') from post_discussion d where d.author_id = auth.uid()), '[]'),
     'decisions_owed', coalesce((select jsonb_agg(to_jsonb(i)) from decision_items i where i.user_id = auth.uid()), '[]'),
-    'restrictions', coalesce((select jsonb_agg(to_jsonb(r)) from user_restrictions r where r.user_id = auth.uid()), '[]'));
+    'restrictions', coalesce((select jsonb_agg(to_jsonb(r)) from user_restrictions r where r.user_id = auth.uid()), '[]'),
+    'restriction_warning', (select to_jsonb(w) from accountability_warnings w where w.user_id = auth.uid()));
 end $$;
 
 create function public.consent_document_hash() returns trigger language plpgsql set search_path = pg_catalog as $$

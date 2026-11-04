@@ -23,7 +23,7 @@ assert.match(friendlyAuthError('Password should be at least 8 characters.'), /8 
 assert.match(friendlyAuthError('email rate limit exceeded'), /Too many attempts/);
 assert.match(friendlyAuthError('For security purposes, you can only request this after 52 seconds.'), /Too many attempts/);
 assert.equal(friendlyAuthError('Invalid login credentials'), 'Wrong email or password.');
-assert.equal(friendlyAuthError('Database error: relation "x" does not exist'), 'Something went wrong. Please try again.');
+assert.equal(friendlyAuthError('Database error: relation "x" does not exist'), 'Oops! Something went wrong. Please try again.');
 // Staff logins: password and code both, in any order; anything else is not enough.
 const token = (claims) => `h.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.s`;
 const amr = (...methods) => methods.map((method) => ({ method, timestamp: 1 }));

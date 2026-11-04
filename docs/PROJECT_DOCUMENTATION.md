@@ -79,7 +79,7 @@ The Fluency Talks is a **study-partner platform, not a social network**. There a
 
 **Accounts.** Sign up with email and password, or with Google. Passwords need at least 8 characters, and password reset is built in.
 
-**Onboarding.** Choose one native language, optionally one learning language, and a level, then confirm age, terms and privacy. The first language change is free, then one every 30 days.
+**Onboarding.** Choose one native language, optionally one learning language, and a level, then confirm age, terms and privacy. The first language change is free. After that, the language you're learning can change every 7 days and your native language every 30.
 
 **Home feed.** One column mixing posts and people, always opening with posts and mostly posts. One person appears after every 3, 5, then 4 posts, and every third post slot goes to a request for help. Loading more never moves what's already on screen.
 
@@ -102,11 +102,11 @@ Within a tier, recent activity comes first, then timezone closeness, then newest
 
 **Translation.** "Translate" under a message shows it in your language and saves it to your history. Text goes to an outside provider, MyMemory, only when someone taps Translate.
 
-**Community library.** Qualified speakers publish phrases, idioms, usage and grammar notes, with an optional image. Others save them, confirm them or propose corrections. Nothing is overwritten: the original stays, and the accepted version sits beside it. The post's owner decides on corrections, and moderators can step in with a reason.
+**Community library.** Qualified speakers publish phrases, idioms, usage and grammar notes and longer lessons, with an optional image that can carry the text. Others save them, confirm them or propose corrections. Nothing is overwritten: the original stays, and the accepted version sits beside it. The post's owner decides on corrections, and moderators can step in with a reason.
 
-**Accountability.** Corrections on a post create a decision for its owner, with reminders and a 7-day deadline. Three overdue decisions, after notice, pause new posts until they're answered. Owners can ask for one extension or appeal.
+**Accountability.** Corrections on a teaching post create a decision for its owner, with reminders and a 7-day deadline. Three overdue decisions bring a warning, then a pause on new teaching posts until they're answered. Owners can decline, ask about a correction, take one extension or appeal. Practice posts are never paused.
 
-**Practice posts.** Beginners can ask for help with no level needed, using "Correct me" or "How do I say…?". They carry no duties, each fix shows as a diff, and qualified people are notified.
+**Practice posts.** Any learner can publish from day one with no level needed: "Correct me", "How do I say…?", stories, photos with captions and questions. They carry no duties, stories are fixed one sentence at a time, and qualified people are notified.
 
 **Saved partners.** Private bookmarks, and the other person isn't told.
 
@@ -114,15 +114,15 @@ Within a tier, recent activity comes first, then timezone closeness, then newest
 
 **Profile and settings.** Name, username, bio, country, time zone, photo, email, password, activity status, blocked people, theme (light, dark or device), data export and account deletion.
 
-*Full detail: [FEATURES.md](FEATURES.md), [POST_TYPES_AND_UNLOCKS.md](POST_TYPES_AND_UNLOCKS.md)*
+*Full detail: [FEATURES.md](FEATURES.md), [CONTRIBUTION_SYSTEM.md](CONTRIBUTION_SYSTEM.md)*
 
 ## 4. Levels, points and bounties
 
 ### Earned levels
 
-The level someone picks is only an estimate, and it unlocks nothing. A separate **verified level** rises by itself from real activity, and only that lets a learner correct others, answer bounties, post and earn in their learning language. Changing the learning language resets it.
+The level someone picks is only an estimate, and it unlocks nothing. A separate **verified level** rises by itself from real activity, and only that lets a learner correct others, answer bounties, teach and earn in their learning language. Practice posts need no level, and likes or post counts never raise a level. Changing the learning language resets it.
 
-| Level | Messages | Active days | Native partners | Reviewed | Max error % | Other |
+| Level | Messages | Active days | Reviewers (native or B2+) | Reviewed | Max error % | Other |
 |---|---|---|---|---|---|---|
 | A1 | 5 | 1 | 0 | 0 | 100 | |
 | A2 | 20 | 3 | 1 | 10 | 80 | |
@@ -176,7 +176,7 @@ Staff run the app rather than use it. They get a separate area at `/admin`, and 
 
 **Recovery.** Each staff member gets 10 recovery codes and can add a backup authenticator. The super admin can reset anyone's MFA. An owner script is the last resort for the super admin.
 
-**Monitoring.** The Health and Logs pages show database uptime, browser errors from signed-in people, edge function failures, sign-ins and the archive state. An outside monitor is still recommended for the website itself.
+**Monitoring.** The Health and Logs pages show database uptime, browser errors and failed database requests from signed-in people, edge function failures, sign-ins and the archive state. An outside monitor is still recommended for the website itself.
 
 *Full detail: [ADMIN_SETUP.md](ADMIN_SETUP.md), [URLS_AND_ACCESS.md](URLS_AND_ACCESS.md)*
 
@@ -236,7 +236,7 @@ The look is a university prospectus rather than a software template: serif headl
 
 ## 10. The database
 
-The database has 58 tables and about 240 functions, built by 20 migration files, one per area: foundation, accounts, staff, app controls, social graph, notifications, messaging, moderation, posts, corrections, phrasebook, points and levels, consent, archive, blog, reference data, legal documents, blog posts, FAQ and FAQ questions.
+The database has 59 tables and about 240 functions, built by 20 migration files, one per area: foundation, accounts, staff, app controls, social graph, notifications, messaging, moderation, posts, corrections, phrasebook, points and levels, consent, archive, blog, reference data, legal documents, blog posts, FAQ and FAQ questions.
 
 **Rules for changing it**
 
@@ -252,7 +252,8 @@ The database has 58 tables and about 240 functions, built by 20 migration files,
 | Messages | 30 a minute |
 | New chats | 20 a day |
 | Chat corrections | 20 an hour, 30 a day |
-| Library posts | 20 a day, 500 characters per field |
+| Library posts | 20 a day, 500 characters per field, lessons 5,000 |
+| Practice posts | 5 a day, 280 characters, stories 5,000 |
 | Practice posts | 3 a day, 280 characters |
 | Open bounties | 3 |
 | Reports | 10 an hour |
@@ -447,7 +448,8 @@ The full documents are in the project repository's `docs/` folder.
 | Product | [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) | What it is, principles and key facts |
 | | [FEATURES.md](FEATURES.md) | Every feature in detail |
 | | [CORRECTIONS_AND_BOUNTIES.md](CORRECTIONS_AND_BOUNTIES.md) | Correction systems and state machines |
-| | [POST_TYPES_AND_UNLOCKS.md](POST_TYPES_AND_UNLOCKS.md) | Help posts and the proposed ladder |
+| | [CONTRIBUTION_SYSTEM.md](CONTRIBUTION_SYSTEM.md) | Post types, corrections, levels and accountability |
+| | [POST_TYPES_AND_UNLOCKS.md](POST_TYPES_AND_UNLOCKS.md) | Post type ideas not built |
 | | [ROADMAP.md](ROADMAP.md) | Built, not built, gaps and decisions |
 | | [PRODUCT_ANALYSIS.md](PRODUCT_ANALYSIS.md) | The original plan, kept as history |
 | Engineering | [ARCHITECTURE.md](ARCHITECTURE.md) | Stack, folders, flow and scripts |

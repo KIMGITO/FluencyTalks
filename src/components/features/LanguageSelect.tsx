@@ -12,15 +12,17 @@ export type LearnerLevel = (typeof LEARNER_LEVELS)[number];
 
 export interface LanguageChoice { native: string; learning: string; level: LearnerLevel }
 
-const COOLDOWN_DAYS = 30;
+// The native language gives the right to correct others, so it waits longest (server rule).
+const NATIVE_COOLDOWN_DAYS = 30;
+const LEARNING_COOLDOWN_DAYS = 7;
 
 const LEVEL_NAMES: Record<LearnerLevel, string> = {
   A1: 'Beginner', A2: 'Elementary', B1: 'Intermediate', B2: 'Upper intermediate', C1: 'Advanced', C2: 'Proficient',
 };
 
-export function languageLockedUntil(lastChange: string | null | undefined): Date | null {
+export function languageLockedUntil(lastChange: string | null | undefined, days: number): Date | null {
   if (!lastChange) return null;
-  const until = new Date(new Date(lastChange).getTime() + COOLDOWN_DAYS * 86_400_000);
+  const until = new Date(new Date(lastChange).getTime() + days * 86_400_000);
   return until.getTime() > Date.now() ? until : null;
 }
 
@@ -97,10 +99,11 @@ export function LanguageSelect({ value, onChange }: { value: LanguageChoice; onC
   const locales = useDisplayLocales();
   const name = useLanguageStore((s) => s.nameIn);
   const me = useProfileStore((s) => s.me);
-  const lockedUntil = languageLockedUntil(me?.last_language_change_at);
+  const nativeLockedUntil = languageLockedUntil(me?.last_language_change_at, NATIVE_COOLDOWN_DAYS);
+  const learningLockedUntil = languageLockedUntil(me?.last_language_change_at, LEARNING_COOLDOWN_DAYS);
   // The cooldown covers replacing a language. Adding one for the first time is always free (server rule).
-  const nativeLocked = !!lockedUntil && !!me?.native_language_id;
-  const learningLocked = !!lockedUntil && !!me?.learning_language_id;
+  const nativeLocked = !!nativeLockedUntil && !!me?.native_language_id;
+  const learningLocked = !!learningLockedUntil && !!me?.learning_language_id;
   const [picking, setPicking] = useState<'native' | 'learning' | null>(null);
 
   const options = useMemo(() => {
@@ -127,9 +130,8 @@ export function LanguageSelect({ value, onChange }: { value: LanguageChoice; onC
     if (savedLanguage && earned > LEARNER_LEVELS.indexOf(value.level)) onChange({ ...value, level: LEARNER_LEVELS[earned] });
   }, [savedLanguage, me?.verified_level]);
   // Saving a replaced language starts the cooldown, so say so before it happens.
-  const replacesSaved = !lockedUntil && (
-    (!!me?.native_language_id && me.native_language_id !== value.native) ||
-    (!!me?.learning_language_id && me.learning_language_id !== value.learning));
+  const replacesNative = !!me?.native_language_id && me.native_language_id !== value.native;
+  const replacesLearning = !!me?.learning_language_id && me.learning_language_id !== value.learning;
 
   return (
     <div className="space-y-3">
@@ -169,11 +171,13 @@ export function LanguageSelect({ value, onChange }: { value: LanguageChoice; onC
       )}
 
       <p className="text-xs text-muted">
-        {lockedUntil
-          ? `You changed languages recently. You can replace them again on ${lockedUntil.toLocaleDateString()}.`
-          : replacesSaved
-            ? `Saving this replaces a language, and you won't be able to replace one again for ${COOLDOWN_DAYS} days. Your verified level starts again in the new language.`
-            : `Pick the language you'd happily correct others in, and at most one to learn. After your first change, languages can be replaced once every ${COOLDOWN_DAYS} days.`}
+        {learningLocked
+          ? `You changed languages recently. You can change the language you're learning on ${learningLockedUntil!.toLocaleDateString()}, and your native language on ${nativeLockedUntil!.toLocaleDateString()}.`
+          : nativeLocked && !replacesLearning
+            ? `You changed languages recently. You can change your native language on ${nativeLockedUntil!.toLocaleDateString()}, and the language you're learning at any time.`
+            : replacesNative || replacesLearning
+              ? `Saving this replaces a language, so you can change the language you're learning again in ${LEARNING_COOLDOWN_DAYS} days, and your native language in ${NATIVE_COOLDOWN_DAYS}. Your verified level starts again in the new language.`
+              : `Pick the language you'd happily correct others in, and at most one to learn. After your first change, you can change the language you're learning once every ${LEARNING_COOLDOWN_DAYS} days, and your native language every ${NATIVE_COOLDOWN_DAYS}.`}
       </p>
 
       {picking && (

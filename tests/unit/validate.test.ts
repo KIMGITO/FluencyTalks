@@ -76,8 +76,8 @@ test('cleanArgs refuses numbers JSON would turn into null', () => {
 
 test('only UserError reaches the screen', () => {
   assert.equal(userMessage(new UserError('Choose a category.')), 'Choose a category.');
-  assert.equal(userMessage(new Error('relation "profiles" does not exist')), 'Something went wrong. Please try again.');
-  assert.equal(userMessage({ message: 'permission denied for table x', code: '42501' }), 'Something went wrong. Please try again.');
+  assert.equal(userMessage(new Error('relation "profiles" does not exist')), 'Oops! Something went wrong. Please try again.');
+  assert.equal(userMessage({ message: 'permission denied for table x', code: '42501' }), 'Oops! Something went wrong. Please try again.');
   assert.equal(userMessage(new TypeError('Failed to fetch'), 'Could not load.'), 'Could not load.');
-  assert.equal(userMessage(undefined), 'Something went wrong. Please try again.');
+  assert.equal(userMessage(undefined), 'Oops! Something went wrong. Please try again.');
 });

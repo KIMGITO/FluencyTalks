@@ -5,7 +5,7 @@
 | Command | Checks | Needs | When |
 |---|---|---|---|
 | `npx tsc --noEmit` | Types | Nothing | Always |
-| `npm run test:unit` | Pure helpers: feed mix, validation, keyboard, blog HTML, composer languages, archive files, write-once rules, and no browser validation | Node 22 | After changing `src/lib` or forms |
+| `npm run test:unit` | Pure helpers: feed mix, post types, sentence splitting, validation, keyboard, blog HTML, composer languages, archive files, write-once rules, and no browser validation | Node 22 | After changing `src/lib` or forms |
 | `npm run test:auth` | Password reset and auth helpers | Node 22 | After changing sign-in |
 | `npm run test:db` | Builds the database from scratch and replays the app's flows | A throwaway Postgres 15+ | After any migration or `src/services/*` change |
 | `npm run test:security` | Real API, Storage and Realtime access | The local stack | After any change to access rules |

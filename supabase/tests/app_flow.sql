@@ -102,6 +102,14 @@ select tt.expect_error($q$select public.set_language_profile('vie','swh','B1')$q
 select public.set_language_profile('vie', 'swh', 'A1');                 -- lowering is free
 select public.set_language_profile('vie', 'fra', 'A1');                 -- first real change is free
 select tt.expect_error($q$select public.set_language_profile('vie','swh','A1')$q$, 'language_change_cooldown');
+-- A week later the language being learned can change again. The native language waits the full 30 days.
+reset role;
+select set_config('app.bypass_protect', 'on', false);   -- test setup only
+update public.profiles set last_language_change_at = now() - interval '8 days' where id = '00000000-0000-0000-0000-0000000000b2';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+select tt.expect_error($q$select public.set_language_profile('eng','fra','A1')$q$, 'language_change_cooldown');
+select public.set_language_profile('vie', 'swh', 'A1');
 -- put Linh back for the matching tests below (bypass: this is test setup, run as superuser)
 reset role;
 select set_config('app.bypass_protect', 'on', false);   -- test setup only
@@ -561,7 +569,10 @@ insert into public.message_corrections (message_id, corrector_id, suggested_text
 insert into public.messages (conversation_id, sender_id, body, language_id) select c2, '00000000-0000-0000-0000-00000000e003', 'Tres bien', 'fra' from lena_conv;
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
-do $$ begin assert (public.my_level_progress()->>'verified_level') = 'A1', 'practice alone earns A1: partners new to the app do not count as reviewers'; end $$;
+do $$ declare p jsonb := public.my_level_progress(); begin
+  assert (p->>'verified_level') = 'A1', 'new partners count toward A2, but every message corrected stays A1: ' || p::text;
+  assert (p->'evidence'->>'partners_any')::int = 2 and (p->'evidence'->>'partners')::int = 0 and (p->'evidence'->>'partners_settling')::int = 2, 'they wait for B1: ' || p::text;
+end $$;
 reset role;
 update public.profiles set created_at = now() - interval '30 days' where id in ('00000000-0000-0000-0000-00000000e002', '00000000-0000-0000-0000-00000000e003');
 set role authenticated;
@@ -693,10 +704,29 @@ do $$ declare p jsonb := public.my_level_progress(); begin
   assert public.level_rank(p->>'verified_level') < public.level_rank('B1'), 'one vouch is not enough: ' || p::text;
   assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'level_vouch'), 'told about the vouch';
 end $$;
+-- Someone new can vouch straight away. It waits, by itself, until they've been here 7 days, so a second account can't promote the first.
+reset role;
+select set_config('app.bypass_protect', 'on', false);   -- test setup only
+update public.profiles set created_at = now() - interval '2 days' where id = '00000000-0000-0000-0000-00000000f002';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000f002');
+do $$ begin assert (public.vouch_status('00000000-0000-0000-0000-00000000f001')->>'blocker') is null, 'being new blocks nothing'; end $$;
 select public.vouch_for('00000000-0000-0000-0000-00000000f001');
 select public.vouch_for('00000000-0000-0000-0000-00000000f001');   -- twice is harmless
+do $$ begin assert (public.vouch_status('00000000-0000-0000-0000-00000000f001')->>'counts_from')::timestamptz > now(), 'says when it starts counting'; end $$;
 select tt.as_user('00000000-0000-0000-0000-00000000f001');
+do $$ declare p jsonb := public.my_level_progress(); begin
+  assert (p->>'vouches')::int = 1 and (p->>'vouches_waiting')::int = 1, 'one counts, one waits: ' || p::text;
+  assert public.level_rank(p->>'verified_level') < public.level_rank('B1'), 'a waiting vouch promotes nobody: ' || p::text;
+end $$;
+reset role;
+select set_config('app.bypass_protect', 'on', false);   -- test setup only
+update public.profiles set created_at = now() - interval '30 days' where id = '00000000-0000-0000-0000-00000000f002';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-00000000f001');
+select public.my_level_progress();   -- the week passed: opening progress applies it, nothing else needed
 do $$ begin
   assert (select verified_level from public.profiles where id = auth.uid()) = 'B1', 'two vouches reach B1';
   assert public.can_correct_language(auth.uid(), 'fra'), 'and bring the rights';
@@ -797,7 +827,7 @@ select tt.expect_error($q$select public.submit_discussion((select id from dpost)
 select tt.as_user('00000000-0000-0000-0000-00000000d001');
 do $$ begin
   assert (select count(*) from public.notifications where user_id = auth.uid() and type = 'post_correction') = 1, 'Dennis told once';
-  assert (select review_status from public.contribution_posts where id = (select id from dpost)) = 'disputed', 'post shows as disputed';
+  assert (select review_status from public.contribution_posts where id = (select id from dpost)) = 'corrections_received', 'a correction waiting reads as feedback, not as a dispute';
   assert (select count(*) from public.decision_items where user_id = auth.uid() and resolved_at is null) = 1, 'a decision is owed';
   assert (select phrase from public.contribution_posts where id = (select id from dpost)) = 'Habari gani', 'original untouched';
   assert (select current_phrase from public.contribution_posts where id = (select id from dpost)) is null, 'nothing accepted yet';
@@ -862,7 +892,7 @@ do $$ declare p public.contribution_posts; begin
   assert p.phrase = 'Habari gani' and p.translation = 'How are you', 'accepting never touches the original';
   assert p.current_phrase = 'Habari yako' and p.current_translation = 'How are you doing', 'accepted value shown separately';
   assert p.accepted_item_id = (select id from cm);
-  assert p.review_status = 'disputed', 'John''s proposal is still open, so it is still disputed';
+  assert p.review_status = 'corrections_received', 'John''s proposal is still open';
   assert (select status from public.post_discussion where id = (select id from cj)) = 'pending', 'accepting Mary does not touch John';
   assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-00000000d002') = 105, 'Mary earns +5';
 end $$;
@@ -872,7 +902,7 @@ do $$ declare p public.contribution_posts; begin
   select * into p from public.contribution_posts where id = (select id from dpost);
   assert p.current_phrase = 'Mambo vipi', 'John''s phrase is now current';
   assert p.current_translation = 'How are you doing', 'John proposed no translation: the accepted one stays';
-  assert p.review_status = 'corrected';
+  assert p.review_status = 'reviewed';
   assert (select status from public.post_discussion where id = (select id from cm)) = 'superseded', 'Mary superseded';
   assert (select count(*) from public.decision_items where user_id = auth.uid() and resolved_at is null) = 0, 'nothing owed any more';
 end $$;
@@ -971,6 +1001,17 @@ insert into public.post_discussion (id, post_id, author_id, kind, body, proposed
 insert into public.decision_items (user_id, post_id, item_id, due_at, overdue_notified_at)
   select '00000000-0000-0000-0000-00000000d001', d.post_id, d.id, now() - interval '5 days', now() - interval '5 days' from public.post_discussion d where d.body like 'more %';
 select public.accountability_sweep();
+do $$ begin
+  assert not exists (select 1 from public.user_restrictions where user_id = '00000000-0000-0000-0000-00000000d001' and lifted_at is null), 'a warning comes first';
+  assert (select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-00000000d001' and type = 'restriction_warning') = 1, 'told what is coming and when';
+end $$;
+select public.accountability_sweep();
+do $$ begin
+  assert not exists (select 1 from public.user_restrictions where user_id = '00000000-0000-0000-0000-00000000d001' and lifted_at is null), 'the warning gets its notice period';
+  assert (select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-00000000d001' and type = 'restriction_warning') = 1, 'warned once, not on every sweep';
+end $$;
+update public.accountability_warnings set warned_at = now() - interval '4 days' where user_id = '00000000-0000-0000-0000-00000000d001';
+select public.accountability_sweep();
 do $$ begin assert exists (select 1 from public.user_restrictions where user_id = '00000000-0000-0000-0000-00000000d001' and lifted_at is null), 'restricted after notice'; end $$;
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000d001');
@@ -992,12 +1033,15 @@ do $$ begin
 end $$;
 do $$ begin
   assert not exists (select 1 from public.user_restrictions where user_id = auth.uid() and lifted_at is null), 'lifted once under the line';
+  assert not exists (select 1 from public.accountability_warnings where user_id = auth.uid()), 'and the warning is spent';
   assert (select count(*) from public.notifications where user_id = auth.uid() and type = 'restriction_lifted') = 1, 'told';
 end $$;
 select public.post_contribution('Mpya', null, 'swh', 'phrase', null, null);
 -- Decisions lift it too, and an appeal granted clears the cause. A moderator's exemption does not count against them.
 reset role;
 update public.decision_items set due_at = now() - interval '5 days', overdue_notified_at = now() - interval '5 days' where item_id = (select id from cq);
+select public.accountability_sweep();
+update public.accountability_warnings set warned_at = now() - interval '4 days' where user_id = '00000000-0000-0000-0000-00000000d001';
 select public.accountability_sweep();
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000d001');
@@ -1289,7 +1333,7 @@ select tt.expect_error($q$select public.post_help_request('correct_me', repeat('
 create temp table hp as select public.post_help_request('correct_me', 'Watashi wa gakkou ni iku deshita', 'I went to school') as id;
 do $$ begin
   assert (select verified_level is null from public.profiles where id = auth.uid()), 'posting did not need a level';
-  assert (select post_type = 'correct_me' and review_status = 'needs_fix' and language_id = 'jpn' from public.contribution_posts where id = (select id from hp)), 'a new help post needs a fix';
+  assert (select post_type = 'correct_me' and review_status = 'awaiting_feedback' and language_id = 'jpn' from public.contribution_posts where id = (select id from hp)), 'a new help post awaits feedback';
   assert not exists (select 1 from public.search_posts('gakkou')), 'help posts stay out of search';
 end $$;
 reset role;
@@ -1305,7 +1349,9 @@ reset role;
 do $$ begin assert (select count(*) from public.notifications where type = 'help_request' and user_id = '00000000-0000-0000-0000-0000fade0002') = 1, 'nobody hears more than once in 6 hours'; end $$;
 set role authenticated;
 select public.post_help_request('correct_me', 'Third post of the day', null);
-select tt.expect_error($q$select public.post_help_request('correct_me', 'Fourth post of the day', null)$q$, 'rate_limited');
+select public.post_help_request('correct_me', 'Fourth post of the day', null);
+select public.post_help_request('correct_me', 'Fifth post of the day', null);
+select tt.expect_error($q$select public.post_help_request('correct_me', 'Sixth post of the day', null)$q$, 'practice_limit');
 
 -- Only qualified people can fix it, and fixes create no duty for the author.
 select tt.as_user('00000000-0000-0000-0000-0000fade0003');
@@ -1315,12 +1361,13 @@ select tt.as_user('00000000-0000-0000-0000-0000fade0002');
 select tt.expect_error($q$select public.submit_discussion((select id from hp), null, 'clarification', 'What?', null, null, gen_random_uuid())$q$, 'help_post_fix_only');
 create temp table fix1 as select public.submit_discussion((select id from hp), null, 'correction', 'Past tense takes ikimashita', 'Watashi wa gakkou ni ikimashita', null, gen_random_uuid()) as id;
 select tt.as_user('00000000-0000-0000-0000-0000fade0004');
-select tt.expect_error($q$select public.submit_discussion((select id from hp), (select id from fix1), 'correction', 'No', 'Other', null, gen_random_uuid())$q$, 'help_post_fix_only');
+select tt.expect_error($q$select public.submit_discussion((select id from hp), null, 'correction', 'Same again', 'Watashi wa gakkou ni ikimashita', null, gen_random_uuid())$q$, 'duplicate_correction');   -- somebody else's proposal: agree with it instead
+select public.submit_discussion((select id from hp), (select id from fix1), 'correction', 'A little more natural', 'Gakkou e ikimashita', null, gen_random_uuid());
 create temp table fix2 as select public.submit_discussion((select id from hp), null, 'correction', 'Another way', 'Gakkou ni ikimashita', null, gen_random_uuid()) as id;
 reset role;
 do $$ begin
   assert not exists (select 1 from public.decision_items where post_id = (select id from hp)), 'a help post creates no decisions';
-  assert (select review_status = 'helped' from public.contribution_posts where id = (select id from hp)), 'a fix makes it helped';
+  assert (select review_status = 'corrections_received' from public.contribution_posts where id = (select id from hp)), 'a fix shows as received';
   assert exists (select 1 from public.notifications where type = 'help_fix' and user_id = '00000000-0000-0000-0000-0000fade0001'), 'the author hears about the fix';
 end $$;
 set role authenticated;
@@ -1349,19 +1396,19 @@ do $$ begin
     assert false, 'a help post cannot take an accepted version';
   exception when check_violation then null; end;
 end $$;
--- Back to needs_fix when the only fix is rated not helpful.
+-- Back to awaiting feedback when the only fix is rated not helpful.
 select tt.as_user('00000000-0000-0000-0000-0000fade0001');
 create temp table hp2 as select (select id from public.contribution_posts where user_id = auth.uid() and phrase = 'Third post of the day') as id;
 select tt.as_user('00000000-0000-0000-0000-0000fade0002');
 create temp table fix3 as select public.submit_discussion((select id from hp2), null, 'correction', 'Try this', 'Better third post', null, gen_random_uuid()) as id;
 select tt.as_user('00000000-0000-0000-0000-0000fade0001');
 select public.rate_help_fix((select id from fix3), false);
-do $$ begin assert (select review_status = 'needs_fix' from public.contribution_posts where id = (select id from hp2)), 'still needs a fix'; end $$;
+do $$ begin assert (select review_status = 'awaiting_feedback' from public.contribution_posts where id = (select id from hp2)), 'still awaiting a useful fix'; end $$;
 
 -- Levels: posts alone reach A2, but B1 still needs real chat.
 reset role;
 insert into public.contribution_posts (user_id, language_id, phrase, post_type, review_status, created_at)
-select '00000000-0000-0000-0000-0000fade0003', 'jpn', 'Practice sentence number ' || g, 'correct_me', 'needs_fix', now() - (g % 8) * interval '1 day' from generate_series(1, 100) g;
+select '00000000-0000-0000-0000-0000fade0003', 'jpn', 'Practice sentence number ' || g, 'correct_me', 'awaiting_feedback', now() - (g % 8) * interval '1 day' from generate_series(1, 100) g;
 insert into public.post_discussion (post_id, author_id, kind, body, proposed_phrase, status, client_key)
 select c.id, n.id, 'correction', 'Fix', 'Fixed sentence', 'pending', gen_random_uuid()
 from public.contribution_posts c cross join (values ('00000000-0000-0000-0000-0000fade0002'::uuid), ('00000000-0000-0000-0000-0000fade0004'::uuid)) n(id)
@@ -1376,6 +1423,191 @@ reset role;
 do $$ begin
   assert exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-0000fade0003' and type = 'level_up'), 'the learner hears about the promotion';
   assert not public.can_correct_language('00000000-0000-0000-0000-0000fade0003', 'jpn'), 'posts alone give no right to correct';
+end $$;
+set role authenticated;
+
+-- ============ THE WHOLE CONTRIBUTION SYSTEM (docs/CONTRIBUTION_SYSTEM.md) ============
+reset role;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000c0de0001', 'beginner@test.com'),
+  ('00000000-0000-0000-0000-0000c0de0002', 'teacher@test.com'),
+  ('00000000-0000-0000-0000-0000c0de0003', 'b2learner@test.com'),
+  ('00000000-0000-0000-0000-0000c0de0004', 'teacher2@test.com'),
+  ('00000000-0000-0000-0000-0000c0de0005', 'fresh@test.com');
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set onboarding_done = true, native_language_id = 'swh', learning_language_id = 'nld', learning_level = 'A1', created_at = now() - interval '30 days' where id = '00000000-0000-0000-0000-0000c0de0001';
+update public.profiles set onboarding_done = true, native_language_id = 'nld', created_at = now() - interval '30 days' where id in ('00000000-0000-0000-0000-0000c0de0002', '00000000-0000-0000-0000-0000c0de0004');
+update public.profiles set onboarding_done = true, native_language_id = 'swh', learning_language_id = 'nld', learning_level = 'B2', verified_level = 'B2', created_at = now() - interval '30 days' where id = '00000000-0000-0000-0000-0000c0de0003';
+update public.profiles set onboarding_done = true, native_language_id = 'nld', created_at = now() where id = '00000000-0000-0000-0000-0000c0de0005';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+
+-- A beginner can write from day one, in every practice type, with limits that make sense for each.
+select tt.as_user('00000000-0000-0000-0000-0000c0de0001');
+select tt.expect_error($q$select public.post_help_request('story', 'Mijn dag', null, '   ')$q$, 'empty_body');
+select tt.expect_error($q$select public.post_help_request('story', 'Mijn dag', null, repeat('x', 5001))$q$, 'text_too_long');
+select tt.expect_error($q$select public.post_help_request('question', 'Wat?', null, repeat('x', 2001))$q$, 'text_too_long');
+select tt.expect_error($q$select public.post_help_request('photo', 'Mijn hond', null, null, null)$q$, 'invalid_image');
+select tt.expect_error($q$select public.post_help_request('photo', 'Mijn hond', null, null, 'https://evil.example/x.jpg')$q$, 'invalid_image');
+select tt.expect_error($q$select public.post_help_request('photo', repeat('x', 121), null, null, 'https://images.unsplash.com/a', 'overlay')$q$, 'overlay_too_long');
+-- A lesson teaches, so it stays with people who know the language.
+select tt.expect_error($q$select public.post_contribution('Les', null, 'nld', 'grammar', null, null, 'left', 'lesson', 'Tekst')$q$, 'not_contribution_eligible');
+select tt.expect_error($q$select public.post_contribution('Hallo', null, 'nld', 'phrase', null, null)$q$, 'not_contribution_eligible');
+-- 😀 is one character here and two in a browser: positions are counted in characters, so this body catches a mismatch.
+create temp table st as select public.post_help_request('story', 'Mijn dag', null, 'Ik ben 😀 blij. Gisteren ik ga naar school. Het was leuk.') as id; grant select on st to public;
+create temp table qu as select public.post_help_request('question', 'Wanneer zeg je "alsjeblieft"?', null, 'Ik hoor het overal.') as id; grant select on qu to public;
+create temp table ph as select public.post_help_request('photo', 'Mijn hond', null, null, 'https://images.unsplash.com/photo-1', 'overlay') as id; grant select on ph to public;
+do $$ begin
+  assert (select verified_level is null from public.profiles where id = auth.uid()), 'none of it needed a level';
+  assert (select image_layout = 'overlay' and unsplash_image_url is not null from public.contribution_posts where id = (select id from ph)), 'text can sit on the photo';
+  assert not exists (select 1 from public.search_posts('Mijn dag')), 'practice stays out of the Library search';
+end $$;
+
+-- A long post is corrected a stretch at a time.
+select tt.as_user('00000000-0000-0000-0000-0000c0de0002');
+select tt.expect_error($q$select public.submit_discussion((select id from st), null, 'correction', 'Hele tekst', 'Alles nieuw', null, gen_random_uuid())$q$, 'sentence_required');
+select tt.expect_error($q$select public.submit_discussion((select id from st), null, 'correction', 'Buiten de tekst', 'x', null, gen_random_uuid(), 50, 9000)$q$, 'sentence_required');
+select tt.expect_error($q$select public.submit_discussion((select id from st), null, 'correction', 'Geen verschil', 'Gisteren ik ga naar school.', null, gen_random_uuid(), 15, 42)$q$, 'no_change');
+create temp table s1 as select public.submit_discussion((select id from st), null, 'correction', 'Past tense', 'Gisteren ging ik naar school.', null, gen_random_uuid(), 15, 42) as id; grant select on s1 to public;
+create temp table s2 as select public.submit_discussion((select id from st), null, 'correction', 'Word order', 'Ik ben blij 😀.', null, gen_random_uuid(), 0, 14) as id; grant select on s2 to public;
+select tt.expect_error($q$select public.submit_discussion((select id from qu), null, 'correction', 'Nee', 'Beter', null, gen_random_uuid())$q$, 'help_post_fix_only');
+do $$ begin
+  assert (select target_text = 'Gisteren ik ga naar school.' from public.post_discussion where id = (select id from s1)), 'the server reads the sentence itself, in characters';
+  assert not exists (select 1 from public.decision_items where post_id = (select id from st)), 'no duty on a story';
+end $$;
+-- A question takes replies from anyone, and shows that it has been answered.
+select tt.as_user('00000000-0000-0000-0000-0000c0de0003');
+select public.submit_discussion((select id from qu), null, 'comment', 'Vooral bij vragen.', null, null, gen_random_uuid());
+do $$ begin assert (select review_status = 'corrections_received' from public.contribution_posts where id = (select id from qu)), 'a replied question shows the replies'; end $$;
+-- Someone qualified can improve a fix, and flag one they think is wrong. A beginner can't flag.
+create temp table s3 as select public.submit_discussion((select id from st), (select id from s1), 'correction', 'Sounds more natural', 'Gisteren ging ik naar de school.', null, gen_random_uuid()) as id; grant select on s3 to public;
+do $$ begin assert (select target_start = 15 and target_end = 42 from public.post_discussion where id = (select id from s3)), 'an improvement covers the same words'; end $$;
+do $$ begin assert public.toggle_correction_agreement((select id from s1)), 'agree'; assert public.toggle_correction_flag((select id from s1)), 'a flag replaces the agreement'; end $$;
+do $$ declare it jsonb; begin
+  select x into it from jsonb_array_elements(public.get_post_thread((select id from st))->'items') x where x->>'id' = (select id::text from s1);
+  assert (it->>'agree_count')::int = 0 and (it->>'flag_count')::int = 1 and (it->>'i_flagged')::boolean, 'one stance per person';
+end $$;
+do $$ begin assert not public.toggle_correction_flag((select id from s1)), 'and it can be taken back'; end $$;
+select tt.as_user('00000000-0000-0000-0000-0000c0de0001');
+select tt.expect_error($q$select public.toggle_correction_flag((select id from s1))$q$, 'not_qualified_to_correct');
+
+-- The author thanks fixes: the original stays, the corrected reading appears, and the fix goes to their phrasebook.
+select public.rate_help_fix((select id from s1), true);
+select public.rate_help_fix((select id from s2), true);
+do $$ declare p public.contribution_posts; begin
+  select * into p from public.contribution_posts where id = (select id from st);
+  assert p.body = 'Ik ben 😀 blij. Gisteren ik ga naar school. Het was leuk.', 'the original is never changed';
+  assert p.current_body = 'Ik ben blij 😀. Gisteren ging ik naar school. Het was leuk.', format('both fixes applied, got %s', p.current_body);
+  assert p.review_status = 'corrections_received', 'one improvement is still open';
+  assert (select source_post_id = p.id and language_id = 'nld' from public.saved_phrases where user_id = auth.uid() and phrase = 'Gisteren ging ik naar school.'), 'an accepted fix is in the phrasebook, with where it came from';
+end $$;
+select public.rate_help_fix((select id from s3), true, 'Thanks');
+do $$ declare p public.contribution_posts; begin
+  select * into p from public.contribution_posts where id = (select id from st);
+  assert p.current_body = 'Ik ben blij 😀. Gisteren ging ik naar de school. Het was leuk.', 'the newest decision on the same words wins';
+  assert p.review_status = 'reviewed', 'all answered';
+end $$;
+select tt.expect_error($q$select public.update_contribution((select id from st), 'Mijn dag', null, 'nld', 'phrase', null, null, 'left', 'Nieuw verhaal')$q$, 'post_under_review');
+
+-- Levels: a B2 learner counts as a reviewer where natives are few, a new account counts for A1 and A2 only, and it updates on its own.
+select tt.as_user('00000000-0000-0000-0000-0000c0de0005');
+select public.submit_discussion((select id from public.contribution_posts where user_id = '00000000-0000-0000-0000-0000c0de0001' and post_type = 'photo'), null, 'correction', 'Fresh account', 'Onze hond', null, gen_random_uuid());
+reset role;
+do $$ declare e jsonb := public.level_evidence('00000000-0000-0000-0000-0000c0de0001', 'nld'); begin
+  assert (e->>'partners_any')::int = 3, format('the native, the verified B2 and the new account all count toward A2, got %s', e);
+  assert (e->>'partners')::int = 0, format('nothing here counts toward B1 yet, got %s', e);
+  assert (e->>'reviewed_any')::int = 2, format('the story and the photo have been reviewed, got %s', e);
+  assert (e->>'messages')::int = 2, 'story and photo count as writing, a question does not';
+end $$;
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000c0de0003');
+select public.toggle_post_endorsement((select id from ph));
+reset role;
+do $$ declare e jsonb := public.level_evidence('00000000-0000-0000-0000-0000c0de0001', 'nld'); begin
+  assert (e->>'reviewed_any')::int = 2, format('a second review of the photo is still one reviewed post, got %s', e);
+  assert (select level_checked_at is not null from public.profiles where id = '00000000-0000-0000-0000-0000c0de0001'), 'being reviewed re-checks the level';
+end $$;
+insert into public.contribution_posts (user_id, language_id, phrase, post_type, created_at)
+select '00000000-0000-0000-0000-0000c0de0001', 'nld', 'Oefenzin nummer ' || g, 'correct_me', now() - interval '2 days' from generate_series(1, 3) g;
+do $$ begin
+  assert (select verified_level = 'A1' from public.profiles where id = '00000000-0000-0000-0000-0000c0de0001'), 'writing alone promotes to A1, with no chat message and no page load';
+  assert (select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-0000c0de0001' and type = 'level_up') = 1, 'and says so once';
+end $$;
+-- Corrections given: an explanation counts in full, none counts half, and one friend can't carry it.
+insert into public.conversations (id, direct_key) values ('00000000-0000-0000-0000-0000c0de00c1', 'c0de-test');
+insert into public.conversation_members (conversation_id, user_id) values ('00000000-0000-0000-0000-0000c0de00c1', '00000000-0000-0000-0000-0000c0de0001'), ('00000000-0000-0000-0000-0000c0de00c1', '00000000-0000-0000-0000-0000c0de0003');
+insert into public.messages (id, conversation_id, sender_id, body, language_id)
+select ('00000000-0000-0000-0000-0000c0dea' || lpad(g::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000c0de00c1', '00000000-0000-0000-0000-0000c0de0001', 'Bericht nummer ' || g, 'nld' from generate_series(1, 30) g;
+insert into public.message_corrections (message_id, corrector_id, suggested_text, note, status, decided_at, created_at)
+select ('00000000-0000-0000-0000-0000c0dea' || lpad(g::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000c0de0003', 'Beter ' || g, case when g <= 1 then 'Why' end, 'accepted', now() - g * interval '1 day', now() - g * interval '1 day' from generate_series(1, 4) g;
+do $$ begin assert (public.level_evidence('00000000-0000-0000-0000-0000c0de0003', 'nld')->>'accepted_given')::int = 3, format('the thanked story fix + 1 explained + 3 unexplained / 2, got %s', public.level_evidence('00000000-0000-0000-0000-0000c0de0003', 'nld')); end $$;
+insert into public.message_corrections (message_id, corrector_id, suggested_text, note, status, decided_at, created_at)
+select ('00000000-0000-0000-0000-0000c0dea' || lpad(g::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000c0de0003', 'Beter ' || g, 'Why', 'accepted', now() - g * interval '1 day', now() - g * interval '1 day' from generate_series(5, 30) g;
+do $$ begin assert (public.level_evidence('00000000-0000-0000-0000-0000c0de0003', 'nld')->>'accepted_given')::int <= 10, 'no more than 10 from one person'; end $$;
+delete from public.message_corrections where corrector_id = '00000000-0000-0000-0000-0000c0de0003';
+delete from public.messages where conversation_id = '00000000-0000-0000-0000-0000c0de00c1';
+delete from public.conversations where id = '00000000-0000-0000-0000-0000c0de00c1';
+set role authenticated;
+
+-- A lesson: qualified author, sentence corrections, and the author decides. Asking first restarts the clock, once.
+select tt.as_user('00000000-0000-0000-0000-0000c0de0002');
+select tt.expect_error($q$select public.post_contribution('Hallo', null, 'nld', 'phrase', null, null, 'left', 'correct_me')$q$, 'invalid_post_type');
+select tt.expect_error($q$select public.post_contribution('Les', null, 'nld', 'grammar', null, null, 'left', 'lesson', '  ')$q$, 'empty_body');
+create temp table le as select public.post_contribution('De of het', null, 'nld', 'grammar', null, null, 'left', 'lesson', 'Dutch has two articles. Het is for neuter words.') as id; grant select on le to public;
+select tt.as_user('00000000-0000-0000-0000-0000c0de0004');
+create temp table lc as select public.submit_discussion((select id from le), null, 'correction', 'Clearer', 'Dutch has two definite articles.', null, gen_random_uuid(), 0, 23) as id; grant select on lc to public;
+create temp table lc2 as select public.submit_discussion((select id from le), null, 'correction', 'Name them', 'Het is the article for neuter words.', null, gen_random_uuid(), 24, 48) as id; grant select on lc2 to public;
+select tt.as_user('00000000-0000-0000-0000-0000c0de0002');
+do $$ begin
+  assert exists (select 1 from public.decision_items where item_id = (select id from lc) and resolved_at is null), 'a teaching post does ask for a decision';
+  assert exists (select 1 from public.search_posts('De of het')), 'lessons are in the Library';
+end $$;
+select tt.expect_error($q$select public.ask_about_correction((select id from lc), '  ', gen_random_uuid())$q$, 'reason_required');
+reset role;
+update public.decision_items set due_at = now() + interval '1 hour' where item_id = (select id from lc);
+set role authenticated;
+select public.ask_about_correction((select id from lc), 'Do you mean only de and het?', gen_random_uuid());
+select tt.expect_error($q$select public.ask_about_correction((select id from lc), 'And again?', gen_random_uuid())$q$, 'already_asked');
+do $$ begin
+  assert (select due_at > now() + interval '6 days' from public.decision_items where item_id = (select id from lc)), 'asking gives the full time back';
+  assert (select status = 'pending' from public.post_discussion where id = (select id from lc)), 'and decides nothing';
+end $$;
+reset role;
+do $$ begin assert exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-0000c0de0004' and type = 'post_reply'), 'the corrector hears the question'; end $$;
+update public.decision_items set due_at = now() - interval '5 days' where item_id = (select id from lc2);
+select public.accountability_sweep();
+do $$ begin assert (select review_status = 'under_review' from public.contribution_posts where id = (select id from le)), 'with the moderators, and it says so'; end $$;
+set role authenticated;
+select public.decide_correction((select id from lc), true, null);
+select public.decide_correction((select id from lc2), true, null);
+do $$ declare p public.contribution_posts; begin
+  select * into p from public.contribution_posts where id = (select id from le);
+  assert p.current_body = 'Dutch has two definite articles. Het is the article for neuter words.', format('both sentences read corrected, got %s', p.current_body);
+  assert p.accepted_item_id is null, 'a sentence is not a new version of the whole post';
+  assert p.review_status = 'reviewed', 'reviewed once nothing is open';
+  assert exists (select 1 from public.saved_phrases where user_id = auth.uid() and phrase = 'Dutch has two definite articles.'), 'to the phrasebook here too';
+end $$;
+select public.revert_accepted((select id from le), 'Changed my mind');
+do $$ declare p public.contribution_posts; begin
+  select * into p from public.contribution_posts where id = (select id from le);
+  assert p.current_body is null and p.review_status = 'awaiting_feedback', 'going back undoes every sentence';
+end $$;
+select tt.expect_error($q$select public.revert_accepted((select id from st), 'No')$q$, 'forbidden');
+select tt.as_user('00000000-0000-0000-0000-0000c0de0001');
+select tt.expect_error($q$select public.revert_accepted((select id from st), 'No')$q$, 'correction_unavailable');
+
+-- Being paused for overdue teaching decisions never stops anyone asking for help.
+reset role;
+insert into public.user_restrictions (user_id, reason) values ('00000000-0000-0000-0000-0000c0de0001', 'Test');
+set role authenticated;
+select public.post_help_request('correct_me', 'Ik mag nog steeds vragen', null);
+select tt.expect_error($q$select public.post_contribution('Habari', null, 'swh', 'phrase', null, null)$q$, 'posting_restricted');
+reset role;
+delete from public.user_restrictions where user_id = '00000000-0000-0000-0000-0000c0de0001';
+do $$ begin
+  assert not has_function_privilege('authenticated', 'public.keep_correction(uuid, text, text, uuid)', 'execute'), 'nobody can write into someone else''s phrasebook';
+  assert not has_function_privilege('authenticated', 'public.applied_body(uuid)', 'execute');
+  assert not has_function_privilege('authenticated', 'public.recheck_level(uuid, text)', 'execute');
 end $$;
 set role authenticated;
 

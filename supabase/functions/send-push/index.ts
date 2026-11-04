@@ -19,7 +19,10 @@ Deno.serve(async (req) => {
   // The claim is what makes a retry harmless: only one call ever gets the row back.
   const { data: rows, error } = await db.from('notifications').update({ push_claimed_at: new Date().toISOString() })
     .eq('id', id).is('push_claimed_at', null).select('*');
-  if (error) return reply(500, { error: error.message });
+  if (error) {
+    await db.from('app_logs').insert({ level: 'error', source: 'edge:send-push', message: error.message.slice(0, 1000) });
+    return reply(500, { error: 'failed' });
+  }
   const n = rows?.[0];
   if (!n) return reply(200, { skipped: 'already sent' });
 

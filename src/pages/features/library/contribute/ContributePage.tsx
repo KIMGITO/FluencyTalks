@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Image, X, ChevronLeft, AlignLeft, AlignCenter, AlignRight, Check, Lock, Languages, PencilLine, Sparkles, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, AlignLeft, AlignCenter, AlignRight, Camera, Check, GraduationCap, Lock, Languages, MessageCircleQuestion, PencilLine, ScrollText, Sparkles, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button, DeniedState, Select, Textarea, ThreadSkeleton, Input } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
 import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
-import { getContribution, isContributionEligible, postContribution, updateContribution, type ContributionPost, type HelpType, type TextAlign } from '@/services/library';
+import { getContribution, isContributionEligible, postContribution, updateContribution, type ContributionPost, type ImageLayout, type TextAlign } from '@/services/library';
 import { useFeedCache } from '@/store/feedCache';
 import { useAccountabilityStore } from '@/store/accountabilityStore';
 import { toast } from '@/store/toastStore';
 import { LanguageMark } from '@/components/features/LanguagePicker';
-import { UnsplashPicker } from '@/components/features/library/UnsplashPicker';
+import { ImageField } from '@/components/features/library/ImageField';
 import { HelpComposer } from '@/components/features/library/HelpComposer';
 import { userMessage } from '@/lib/errors';
+import { isPractice, MAX_OVERLAY_TEXT, maxBody, type PracticeType } from '@/lib/postTypes';
 import { checkText, cleanText, firstProblem } from '@/lib/validate';
 
 const MAX_PHRASE = 500;
 const MAX_NOTE = 500;
-const isHelpType = (t: string | null | undefined): t is HelpType => t === 'correct_me' || t === 'how_do_i_say';
 
 function TypeOption({ icon: Icon, title, text, onClick }: { icon: LucideIcon; title: string; text: string; onClick: () => void }) {
   return (
@@ -31,6 +31,8 @@ function TypeOption({ icon: Icon, title, text, onClick }: { icon: LucideIcon; ti
     </button>
   );
 }
+
+const POST_TITLE: Record<PracticeType, string> = { correct_me: 'Correct me', how_do_i_say: 'How do I say…?', story: 'Story or journal', question: 'Question or discussion', photo: 'Photo and caption' };
 
 export default function ContributePage() {
   const navigate = useNavigate();
@@ -49,9 +51,9 @@ export default function ContributePage() {
   const [sourceContext, setSourceContext] = useState('');
   const [textAlign, setTextAlign] = useState<TextAlign>('left');
   const [unsplashUrl, setUnsplashUrl] = useState('');
-  const [unsplashThumb, setUnsplashThumb] = useState('');
-  const [unsplashAttrib, setUnsplashAttrib] = useState<{ name: string; link: string } | null>(null);
-  const [showPicker, setShowPicker] = useState(false);
+  const [imageLayout, setImageLayout] = useState<ImageLayout>('above');
+  const [body, setBody] = useState('');
+  const [editingLesson, setEditingLesson] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,7 +75,10 @@ export default function ContributePage() {
     getContribution(editId)
       .then((p) => {
         if (!p || p.user_id !== me?.id) { setError('This post cannot be edited.'); return; }
-        if (isHelpType(p.post_type)) setHelpPost(p);
+        if (isPractice(p.post_type)) setHelpPost(p);
+        setEditingLesson(p.post_type === 'lesson');
+        setBody(p.body ?? '');
+        setImageLayout(p.image_layout ?? 'above');
         setPhrase(p.phrase);
         setTranslation(p.translation ?? '');
         setLanguage(p.language_id ?? '');
@@ -87,13 +92,15 @@ export default function ContributePage() {
       .finally(() => setLoadingPost(false));
   }, [editId, me?.id]);
   const canContribute = isContributionEligible(me);
+  const isLesson = editingLesson || type === 'lesson';
   const restriction = useAccountabilityStore((s) => s.data?.restriction ?? null);
   const [locked, setLocked] = useState(false);   // people are discussing this text, so only the rest can change
 
   const submit = async () => {
     setError(null);
     const problem = firstProblem(
-      checkText(phrase, { label: 'Phrase', required: true, max: MAX_PHRASE }),
+      checkText(phrase, { label: isLesson ? 'Title' : 'Phrase', required: true, max: imageLayout === 'overlay' ? MAX_OVERLAY_TEXT : MAX_PHRASE }),
+      isLesson ? checkText(body, { label: 'Your lesson', required: true, max: maxBody('lesson') }) : '',
       checkText(translation, { label: 'Translation', max: MAX_NOTE }),
       checkText(sourceContext, { label: 'Source context', max: MAX_NOTE }),
     );
@@ -102,16 +109,19 @@ export default function ContributePage() {
     setBusy(true);
     try {
       if (editId) {
-        await updateContribution(editId, cleanText(phrase), cleanText(translation) || null, language, category, cleanText(sourceContext) || null, unsplashUrl || null, textAlign);
+        await updateContribution(editId, cleanText(phrase), cleanText(translation) || null, language, category, cleanText(sourceContext) || null, unsplashUrl || null, textAlign, isLesson ? cleanText(body) : null, imageLayout);
       } else {
         await postContribution(
           cleanText(phrase),
-          cleanText(translation) || null as any,
+          cleanText(translation) || null,
           language,
           category,
-          cleanText(sourceContext) || null as any,
-          unsplashUrl || null as any,
+          cleanText(sourceContext) || null,
+          unsplashUrl || null,
           textAlign,
+          isLesson ? 'lesson' : 'library',
+          isLesson ? cleanText(body) : null,
+          imageLayout,
         );
       }
       toast.success(editId ? 'Changes saved.' : 'Posted to the Library.');
@@ -131,7 +141,7 @@ export default function ContributePage() {
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning/10 text-4xl">🔒</div>
           <p className="max-w-sm text-muted">
-            Set your native language in your profile to start posting. Your learning language unlocks once you're verified at <strong>B1</strong>.
+            Add your languages to your profile to start posting. Stories, questions and “Correct me” posts need no level.
           </p>
           <Button variant="secondary" onClick={() => navigate('/library')}>Go back to Library</Button>
         </div>
@@ -139,11 +149,12 @@ export default function ContributePage() {
     );
   }
   if (loadingPost) return <div className="mx-auto w-full max-w-3xl p-4"><ThreadSkeleton /></div>;
-  if (restriction && !editId) {
+  // A pause only ever covers teaching posts. Asking for help stays open.
+  if (restriction && !editId && type && !isPractice(type)) {
     return (
       <div className="mx-auto w-full max-w-3xl p-4">
         <PageHeader title="Contribute" />
-        <DeniedState title="New posts are paused" text={`${restriction.reason}. Answer them, ask for more time, or appeal, and posting comes back.`}
+        <DeniedState title="New teaching posts are paused" text={`${restriction.reason}. Answer them, ask for more time, or appeal, and teaching posts come back. Stories, questions and “Correct me” posts still work.`}
           action={<Link to="/notifications" className="font-semibold underline">See what's waiting</Link>} />
       </div>
     );
@@ -154,30 +165,54 @@ export default function ContributePage() {
       <ChevronLeft size={16} /> Back
     </button>
   );
-  if (helpPost || isHelpType(type)) {
-    const helpType = helpPost?.post_type ?? type;
+  if (helpPost || isPractice(type)) {
+    const helpType = (helpPost?.post_type ?? type) as PracticeType;
     return (
       <div className="mx-auto w-full max-w-3xl p-4 pb-24">
         {backButton}
-        <PageHeader title={helpPost ? 'Edit post' : helpType === 'correct_me' ? 'Correct me' : 'How do I say…?'} />
-        <HelpComposer type={helpType as HelpType} editing={helpPost ?? undefined} onDone={goBack} />
+        <PageHeader title={helpPost ? 'Edit post' : POST_TITLE[helpType]} />
+        <HelpComposer type={helpType} editing={helpPost ?? undefined} onDone={goBack} />
       </div>
     );
   }
-  // Someone learning a language chooses first. A native speaker with nothing to ask goes straight to the form.
-  if (!editId && !type && me?.learning_language_id) {
-    const learning = languageName(me.learning_language_id);
+  // Choosing what to write comes first, and decides which form follows.
+  if (!editId && !type) {
+    const learning = me?.learning_language_id ? languageName(me.learning_language_id) : null;
     const choose = (t: string) => setParams({ type: t }, { replace: true });
     const shareIn = qualified.map((id) => languageName(id)).join(' or ');
     return (
       <div className="mx-auto w-full max-w-3xl p-4 pb-24">
         {backButton}
         <PageHeader title="What do you want to post?" />
-        <div className="space-y-2">
-          <TypeOption icon={PencilLine} title="Correct me" text={`Write something in ${learning} and people will fix it. Mistakes are welcome, no level needed.`} onClick={() => choose('correct_me')} />
-          <TypeOption icon={Languages} title="How do I say…?" text={`Ask how to say something in ${learning}.`} onClick={() => choose('how_do_i_say')} />
-          <TypeOption icon={Sparkles} title="Share a phrase" text={`Teach a phrase, idiom or example in ${shareIn}.`} onClick={() => choose('library')} />
-        </div>
+        {learning && (
+          <section aria-label="Practise" className="space-y-2">
+            <h2 className="ft-kicker">Practise {learning}. No level needed</h2>
+            <TypeOption icon={PencilLine} title="Correct me" text={`Write a little in ${learning} and people will fix it. Mistakes are welcome.`} onClick={() => choose('correct_me')} />
+            <TypeOption icon={ScrollText} title="Story or journal" text="Your day, a memory, an opinion. Readers fix one sentence at a time." onClick={() => choose('story')} />
+            <TypeOption icon={Camera} title="Photo and caption" text={`Pick a photo and describe it in ${learning}.`} onClick={() => choose('photo')} />
+            <TypeOption icon={MessageCircleQuestion} title="Question or discussion" text="Ask how something is used, compare expressions, or start a conversation." onClick={() => choose('question')} />
+            <TypeOption icon={Languages} title="How do I say…?" text={`Ask how to say something in ${learning}.`} onClick={() => choose('how_do_i_say')} />
+          </section>
+        )}
+        <section aria-label="Teach" className={learning ? 'mt-5 space-y-2' : 'space-y-2'}>
+          <h2 className="ft-kicker">Teach{shareIn && ` in ${shareIn}`}</h2>
+          {qualified.length > 0 ? (
+            restriction
+              ? <p className="rounded-md bg-warning/10 p-2.5 text-sm text-warning">New teaching posts are paused. {restriction.reason}. <Link to="/notifications" className="font-semibold underline">See what's waiting</Link></p>
+              : (
+                <>
+                  <TypeOption icon={Sparkles} title="Phrase or expression" text="Share a phrase, idiom or useful sentence, with its meaning and an example." onClick={() => choose('library')} />
+                  <TypeOption icon={GraduationCap} title="Lesson or explanation" text="Explain grammar, vocabulary, pronunciation or a common mistake." onClick={() => choose('lesson')} />
+                </>
+              )
+          ) : null}
+          {lockedLearning && (
+            <p className="flex items-start gap-2 text-sm text-muted">
+              <Lock size={14} aria-hidden className="mt-1 shrink-0" />
+              <span>Teaching in {languageName(lockedLearning)} opens when you're verified at B1, so readers can trust what the Library says. <Link to="/profile/edit" className="underline hover:text-ink">See your progress</Link></span>
+            </p>
+          )}
+        </section>
       </div>
     );
   }
@@ -191,17 +226,17 @@ export default function ContributePage() {
         <ChevronLeft size={16} /> Back
       </button>
 
-      <PageHeader title={editId ? 'Edit post' : 'New Contribution'} />
+      <PageHeader title={editId ? 'Edit post' : isLesson ? 'New lesson' : 'New phrase'} />
 
       <div className="space-y-4">
         {locked && <p className="rounded-md bg-warning/10 p-2.5 text-sm text-warning">People are discussing this text, so the phrase, translation and language can't change. Corrections go through the discussion. You can still edit the rest.</p>}
         <div>
           <Textarea
-            label="Phrase / idiom *"
-            rows={3}
+            label={isLesson ? 'Title *' : 'Phrase / idiom *'}
+            rows={isLesson ? 2 : 3}
             value={phrase}
             onChange={(e) => setPhrase(e.target.value)}
-            placeholder="e.g. break the ice"
+            placeholder={isLesson ? 'e.g. When to use “de” and “het”' : 'e.g. break the ice'}
             disabled={locked}
             className={textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'}
           />
@@ -223,6 +258,13 @@ export default function ContributePage() {
             ))}
           </div>
         </div>
+
+        {isLesson && (
+          <div>
+            <Textarea label="Your lesson *" rows={12} maxLength={maxBody('lesson')} value={body} disabled={locked} onChange={(e) => setBody(e.target.value)} placeholder="Explain it the way you would to a friend. Examples help most." />
+            <p className="mt-1 text-right text-xs text-muted">{body.length} / {maxBody('lesson')}</p>
+          </div>
+        )}
 
         <div>
           <span id="post-language" className="mb-1 block text-sm font-semibold text-ink">Language this post teaches *</span>
@@ -250,7 +292,7 @@ export default function ContributePage() {
                 <LanguageMark id={lockedLearning} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold text-muted">{languageName(lockedLearning)}</span>
-                  <span className="block text-xs text-muted">Posting unlocks when you're verified at B1. <Link to="/profile/edit" className="underline hover:text-ink">See your progress</Link></span>
+                  <span className="block text-xs text-muted">Teaching posts open at B1, and practice posts are open now. <Link to="/profile/edit" className="underline hover:text-ink">See your progress</Link></span>
                 </span>
                 <Lock size={16} aria-hidden className="shrink-0 text-muted" />
               </div>
@@ -285,53 +327,12 @@ export default function ContributePage() {
           placeholder="Where you saw or heard it used"
         />
 
-        {unsplashUrl ? (
-          <div className="relative overflow-hidden rounded-md">
-            <img src={unsplashThumb || unsplashUrl} alt="Selected" className="h-48 w-full object-cover" />
-            <div className="absolute inset-0 flex flex-col justify-between p-2">
-              <button
-                type="button"
-                onClick={() => { setUnsplashUrl(''); setUnsplashThumb(''); setUnsplashAttrib(null); }}
-                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-ink/60 text-on-deep hover:bg-ink/80 transition"
-              >
-                <X size={16} />
-              </button>
-              {unsplashAttrib && (
-                <p className="bg-deep/40 px-2 py-1 text-[10px] text-on-deep/80">
-                  Photo by{' '}
-                  <a href={unsplashAttrib.link} target="_blank" rel="noopener noreferrer" className="underline">
-                    {unsplashAttrib.name}
-                  </a>{' '}
-                  on Unsplash
-                </p>
-              )}
-            </div>
-          </div>
-        ) : showPicker ? (
-          <UnsplashPicker
-            onSelect={(regular, thumb, attrib) => {
-              setUnsplashUrl(regular);
-              setUnsplashThumb(thumb);
-              setUnsplashAttrib(attrib);
-              setShowPicker(false);
-            }}
-            onCancel={() => setShowPicker(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowPicker(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border py-4 text-sm text-muted transition hover:border-brand/50 hover:text-brand"
-          >
-            <Image size={18} />
-            Add an image from Unsplash (optional)
-          </button>
-        )}
+        <ImageField url={unsplashUrl} layout={imageLayout} textLength={phrase.length} label="Add an image from Unsplash (optional)" onUrl={setUnsplashUrl} onLayout={setImageLayout} />
 
         {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end pt-4">
-          <Button size="lg" loading={busy} onClick={submit}>{editId ? 'Save changes' : 'Post to Library'}</Button>
+          <Button size="lg" loading={busy} onClick={submit}>{editId ? 'Save changes' : isLesson ? 'Publish lesson' : 'Post to Library'}</Button>
         </div>
       </div>
     </div>

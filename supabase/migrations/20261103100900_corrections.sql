@@ -23,6 +23,7 @@ create table public.correction_agreements (
   item_id uuid not null references public.post_discussion(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now(),
+  stance text not null default 'agree' check (stance in ('agree', 'flag')),
   primary key (item_id, user_id)
 );
 alter table public.correction_agreements enable row level security;
@@ -145,19 +146,30 @@ language plpgsql security definer set search_path = public as $$
 declare prev public.post_discussion; v_reward boolean := true; v_count int; v_data jsonb;
 begin
   v_data := jsonb_build_object('post_id', post.id, 'item_id', it.id, 'phrase', public.post_snippet(post));
-  if post.accepted_item_id is not null and post.accepted_item_id <> it.id then
+  if it.target_start is not null then
+    -- One stretch of a long post: only a correction of the same words steps aside.
+    for prev in select * from post_discussion d where d.post_id = post.id and d.id <> it.id and d.kind = 'correction' and d.status = 'accepted'
+                  and d.target_start < it.target_end and d.target_end > it.target_start loop
+      update post_discussion set status = 'superseded', decided_at = now(), decided_by = auth.uid() where id = prev.id;
+      perform public.log_discussion(post.id, prev.id, 'superseded', 'accepted', 'superseded', 'Replaced by a newer accepted correction');
+      perform public.notify_event(prev.author_id, auth.uid(), 'post_superseded', v_data || jsonb_build_object('item_id', prev.id, 'by_item', it.id), 'superseded:' || prev.id || ':' || it.id);
+    end loop;
+  elsif post.accepted_item_id is not null and post.accepted_item_id <> it.id then
     select * into prev from post_discussion where id = post.accepted_item_id;
     update post_discussion set status = 'superseded', decided_at = now(), decided_by = auth.uid() where id = prev.id;
     perform public.log_discussion(post.id, prev.id, 'superseded', 'accepted', 'superseded', 'Replaced by a newer accepted correction');
     perform public.notify_event(prev.author_id, auth.uid(), 'post_superseded', v_data || jsonb_build_object('item_id', prev.id, 'by_item', it.id), 'superseded:' || prev.id || ':' || it.id);
   end if;
   update post_discussion set status = 'accepted', decided_by = auth.uid(), decided_at = now(), decision_note = p_note where id = it.id;
-  update contribution_posts set accepted_item_id = it.id,
-    current_phrase = coalesce(it.proposed_phrase, post.current_phrase),
-    current_translation = coalesce(it.proposed_translation, post.current_translation)
-  where id = post.id;
+  if it.target_start is null then
+    update contribution_posts set accepted_item_id = it.id,
+      current_phrase = coalesce(it.proposed_phrase, post.current_phrase),
+      current_translation = coalesce(it.proposed_translation, post.current_translation)
+    where id = post.id;
+  end if;
   perform public.log_discussion(post.id, it.id, 'accepted', p_from, 'accepted', p_note);
   perform public.close_decision(it.id, 'decided', p_note);
+  if post.user_id = auth.uid() then perform public.keep_correction(post.user_id, it.proposed_phrase, post.language_id, post.id); end if;
 
   if not public.corrector_in_good_standing(it.author_id) then v_reward := false; end if;
   select count(*) into v_count from points_ledger where user_id = it.author_id and reason in ('correction_accepted','post_correction_accepted') and created_at > now() - interval '24 hours';
@@ -204,6 +216,38 @@ begin
   return case when p_accept then 'accepted' else 'declined' end;
 end $$;
 
+-- The owner isn't ready to decide: ask the person who proposed it. The clock restarts, once per correction, and the question stays in the thread.
+create function public.ask_about_correction(p_id uuid, p_question text, p_client_key uuid) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare it public.post_discussion; post public.contribution_posts; di public.decision_items; pol public.accountability_policy; v_question text := nullif(btrim(coalesce(p_question, '')), ''); v_id uuid;
+begin
+  perform assert_active();
+  if p_client_key is null then raise exception 'missing_client_key'; end if;
+  select id into v_id from post_discussion where author_id = auth.uid() and client_key = p_client_key;
+  if v_id is not null then return v_id; end if;
+  if v_question is null then raise exception 'reason_required'; end if;
+  if char_length(v_question) > 1000 then raise exception 'text_too_long'; end if;
+  select * into it from post_discussion where id = p_id for update;
+  if it.id is null or it.kind <> 'correction' then raise exception 'correction_unavailable'; end if;
+  select * into post from contribution_posts where id = it.post_id;
+  if post.user_id <> auth.uid() then raise exception 'forbidden'; end if;
+  if it.status <> 'pending' then raise exception 'already_decided'; end if;
+  select * into di from decision_items where item_id = p_id and resolved_at is null for update;
+  if di.clarification_asked_at is not null then raise exception 'already_asked'; end if;
+
+  insert into post_discussion (post_id, parent_id, depth, author_id, kind, body, client_key)
+  values (post.id, it.id, it.depth + 1, auth.uid(), 'comment', v_question, p_client_key) returning id into v_id;
+  perform public.log_discussion(post.id, it.id, 'clarification_requested', 'pending', 'pending');
+  if di.id is not null then
+    select * into pol from accountability_policy;
+    update decision_items set clarification_asked_at = now(), due_at = greatest(due_at, now() + make_interval(hours => pol.deadline_hours)), overdue_notified_at = null, escalated_at = null where id = di.id;
+    perform public.reconcile_restriction(auth.uid());
+  end if;
+  perform public.notify_event(it.author_id, auth.uid(), 'post_reply', jsonb_build_object('post_id', post.id, 'item_id', v_id, 'phrase', public.post_snippet(post), 'parent_id', it.id), 'reply:' || v_id || ':' || coalesce(it.author_id::text, ''));
+  perform public.refresh_post_review(post.id);
+  return v_id;
+end $$;
+
 create function public.resolve_clarification(p_id uuid, p_note text) returns void
 language plpgsql security definer set search_path = public as $$
 declare it public.post_discussion; post public.contribution_posts; v_note text := nullif(btrim(coalesce(p_note, '')), '');
@@ -225,19 +269,26 @@ end $$;
 
 create function public.revert_accepted(p_post uuid, p_note text) returns void
 language plpgsql security definer set search_path = public as $$
-declare post public.contribution_posts; v_id uuid; v_author uuid; v_note text := nullif(btrim(coalesce(p_note, '')), '');
+declare post public.contribution_posts; v_id uuid; v_author uuid; v_note text := nullif(btrim(coalesce(p_note, '')), ''); v_found boolean := false;
 begin
   perform assert_active();
   select * into post from contribution_posts where id = p_post for update;
   if post.id is null then raise exception 'post_not_found'; end if;
   if post.user_id <> auth.uid() and not public.is_admin() then raise exception 'forbidden'; end if;
   if v_note is null then raise exception 'reason_required'; end if;
-  v_id := post.accepted_item_id;
-  if v_id is null then raise exception 'correction_unavailable'; end if;
-  update post_discussion set status = 'declined', decided_by = auth.uid(), decided_at = now(), decision_note = v_note where id = v_id returning author_id into v_author;
+  if post.post_type not in ('library', 'lesson') then raise exception 'correction_unavailable'; end if;
+  -- A short post has one accepted version. A lesson can have one per sentence, and they all go back together.
+  for v_id, v_author in
+    update post_discussion set status = 'declined', decided_by = auth.uid(), decided_at = now(), decision_note = v_note
+    where post_id = p_post and kind = 'correction' and status = 'accepted' and (id = post.accepted_item_id or target_start is not null)
+    returning id, author_id
+  loop
+    v_found := true;
+    perform public.log_discussion(p_post, v_id, 'reverted', 'accepted', 'declined', v_note);
+    perform public.notify_event(v_author, auth.uid(), 'post_reverted', jsonb_build_object('post_id', p_post, 'item_id', v_id, 'phrase', left(post.phrase, 80), 'note', v_note), 'reverted:' || v_id || ':' || extract(epoch from now())::bigint);
+  end loop;
+  if not v_found then raise exception 'correction_unavailable'; end if;
   update contribution_posts set accepted_item_id = null, current_phrase = null, current_translation = null where id = p_post;
-  perform public.log_discussion(p_post, v_id, 'reverted', 'accepted', 'declined', v_note);
-  perform public.notify_event(v_author, auth.uid(), 'post_reverted', jsonb_build_object('post_id', p_post, 'item_id', v_id, 'phrase', left(post.phrase, 80), 'note', v_note), 'reverted:' || v_id || ':' || extract(epoch from now())::bigint);
   perform public.refresh_post_review(p_post);
 end $$;
 
@@ -285,9 +336,33 @@ begin
   select * into it from post_discussion where id = p_id;
   if it.id is null or it.kind <> 'correction' or public.is_blocked_between(auth.uid(), it.author_id) then raise exception 'correction_unavailable'; end if;
   if it.author_id = auth.uid() then raise exception 'cannot_review_own'; end if;
-  delete from correction_agreements where item_id = p_id and user_id = auth.uid();
+  delete from correction_agreements where item_id = p_id and user_id = auth.uid() and stance = 'agree';
   v_on := not found;
-  if v_on then insert into correction_agreements (item_id, user_id) values (p_id, auth.uid()); end if;
+  if v_on then
+    insert into correction_agreements (item_id, user_id) values (p_id, auth.uid())
+    on conflict (item_id, user_id) do update set stance = 'agree', created_at = now();
+  end if;
+  return v_on;
+end $$;
+
+-- Someone qualified thinks this correction is wrong. It stays in the thread: the count helps the author decide.
+create function public.toggle_correction_flag(p_id uuid) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare it public.post_discussion; v_on boolean; v_lang text;
+begin
+  perform assert_active();
+  select * into it from post_discussion where id = p_id;
+  if it.id is null or it.kind <> 'correction' or public.is_blocked_between(auth.uid(), it.author_id) then raise exception 'correction_unavailable'; end if;
+  if it.author_id = auth.uid() then raise exception 'cannot_review_own'; end if;
+  select language_id into v_lang from contribution_posts where id = it.post_id;
+  if not public.can_correct_language(auth.uid(), v_lang) then raise exception 'not_qualified_to_correct'; end if;
+  delete from correction_agreements where item_id = p_id and user_id = auth.uid() and stance = 'flag';
+  v_on := not found;
+  if v_on then
+    insert into correction_agreements (item_id, user_id, stance) values (p_id, auth.uid(), 'flag')
+    on conflict (item_id, user_id) do update set stance = 'flag', created_at = now();
+    perform public.log_discussion(it.post_id, p_id, 'flagged', null, null);
+  end if;
   return v_on;
 end $$;
 
@@ -451,10 +526,12 @@ revoke all on function
   public.accept_correction(uuid),
   public.apply_accept(public.contribution_posts, public.post_discussion, text, text),
   public.decide_correction(uuid, boolean, text),
+  public.ask_about_correction(uuid, text, uuid),
   public.resolve_clarification(uuid, text),
   public.revert_accepted(uuid, text),
   public.admin_override_correction(uuid, text, text),
   public.toggle_correction_agreement(uuid),
+  public.toggle_correction_flag(uuid),
   public.guard_correction_status(),
   public.supersede_bounty_answers(),
   public.guard_bounty_status(),
@@ -474,10 +551,12 @@ grant execute on function
   public.rate_correction(uuid, boolean),
   public.accept_correction(uuid),
   public.decide_correction(uuid, boolean, text),
+  public.ask_about_correction(uuid, text, uuid),
   public.resolve_clarification(uuid, text),
   public.revert_accepted(uuid, text),
   public.admin_override_correction(uuid, text, text),
   public.toggle_correction_agreement(uuid),
+  public.toggle_correction_flag(uuid),
   public.decline_correction(uuid, text),
   public.list_open_bounties(integer, integer),
   public.list_my_bounty_answers(),

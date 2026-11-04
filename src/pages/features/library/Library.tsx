@@ -75,7 +75,7 @@ export default function Library() {
     <div className="mx-auto w-full max-w-3xl py-4 pb-24 md:p-4">
       <PageHeader
         title="Community Library"
-        subtitle={view === 'practice' ? 'Learners asking for help. Mistakes are welcome here.' : 'Browse phrases, idioms and examples contributed by the community'}
+        subtitle={view === 'practice' ? 'Stories, questions and first attempts from learners. Mistakes are welcome here.' : 'Browse phrases, idioms and lessons contributed by the community'}
       />
 
       <div className="ft-inset mb-3">
@@ -131,11 +131,11 @@ export default function Library() {
 
         {me && (
           <Link
-            to={view === 'practice' ? '/library/contribute?type=correct_me' : '/library/contribute'}
+            to="/library/contribute"
             className={buttonClass('primary', 'sm')}
           >
             <Plus size={15} />
-            {view === 'practice' ? 'Correct me' : 'Contribute'}
+            New post
           </Link>
         )}
       </div>
@@ -176,12 +176,9 @@ export default function Library() {
 
       {}
       {me && !eligible && (
-        <div className="mb-4 flex items-start gap-3 border-y border-warning/40 md:rounded-md md:border bg-warning/10 px-4 py-3 text-sm text-warning">
-          <span className="mt-0.5 text-lg">🔒</span>
-          <span>
-            To contribute, set your native language in your profile. Your learning language unlocks once you're verified at <strong>B1</strong>.
-          </span>
-        </div>
+        <p className="ft-inset mb-4 text-sm text-muted">
+          <Link to="/profile/edit" className="font-semibold text-brand hover:underline">Add your languages</Link> to start posting. Stories, questions and “Correct me” posts are open to everyone from day one.
+        </p>
       )}
 
       {}
@@ -198,17 +195,17 @@ export default function Library() {
               : view === 'saved'
                 ? 'Use “Save post” in a post’s ⋮ menu to keep it here.'
                 : view === 'practice'
-                  ? 'Be the first. Write something in the language you are learning and people will help you fix it.'
-                : 'Be the first to share a phrase, idiom or usage example.'
+                  ? 'Be the first. Write something in the language you are learning and people will help you with it.'
+                : 'Be the first to share a phrase, idiom or lesson.'
           }
           action={
             me && eligible && view !== 'saved' ? (
               <Link
-                to={view === 'practice' ? '/library/contribute?type=correct_me' : '/library/contribute'}
+                to="/library/contribute"
                 className={buttonClass('primary', 'lg')}
               >
                 <Plus size={16} />
-                {view === 'practice' ? 'Correct me' : 'Contribute'}
+                New post
               </Link>
             ) : null
           }

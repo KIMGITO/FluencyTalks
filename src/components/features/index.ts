@@ -1,6 +1,7 @@
 export * from './LanguageChip'; export * from './ProfileCard'; export * from './SocialButtons';
 export * from './MessageButton'; export * from './UserMenu'; export * from './ReportDialog'; export * from './LanguageSelect';
 export * from './VouchCard'; export * from './ProfileForm'; export * from './BlockedList'; export * from './AccountZone';
+export * from './FirstSteps';
 export * from './CountryBadge'; export * from './CountryPicker'; export * from './MatchBadge';
 export * from './search';
 export * from './chat/ChatThread'; export * from './chat/ConversationList';

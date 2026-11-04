@@ -78,12 +78,20 @@ create table public.decision_items (
   escalated_at timestamptz,
   extensions int not null default 0,
   extension_reason text,
+  clarification_asked_at timestamptz,
   constraint decision_items_check check ((resolved_at is null) = (resolution is null))
 );
 alter table public.decision_items enable row level security;
 create index decision_items_open_idx on public.decision_items (due_at) where resolved_at is null;
 create index decision_items_user_idx on public.decision_items (user_id, created_at desc);
 grant select on public.decision_items to authenticated;
+
+-- When someone was told a pause is coming. A pause can only follow a warning that has had time to be read.
+create table public.accountability_warnings (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  warned_at timestamptz not null default now()
+);
+alter table public.accountability_warnings enable row level security;
 
 create table public.user_restrictions (
   id uuid default gen_random_uuid() primary key,
@@ -187,24 +195,30 @@ end $$;
 
 create function public.reconcile_restriction(p_user uuid) returns void
 language plpgsql security definer set search_path = public as $$
-declare pol public.accountability_policy; v_overdue int; v_noticed int; r public.user_restrictions; me public.profiles;
+declare pol public.accountability_policy; v_overdue int; v_noticed int; r public.user_restrictions; me public.profiles; v_warned timestamptz;
 begin
   select * into pol from accountability_policy;
   select * into me from profiles where id = p_user;
   select count(*), count(*) filter (where overdue_notified_at <= now() - make_interval(hours => pol.restrict_notice_hours)) into v_overdue, v_noticed
   from decision_items where user_id = p_user and resolved_at is null and due_at <= now();
   select * into r from user_restrictions where user_id = p_user and lifted_at is null;
+  select warned_at into v_warned from accountability_warnings where user_id = p_user;
 
   if r.id is not null and (v_overdue < pol.restrict_after_overdue or me.accountability_exempt or not pol.enabled) then
     update user_restrictions set lifted_at = now(), lift_reason = 'Overdue decisions are answered' where id = r.id;
     update restriction_appeals set status = 'granted', decided_at = now(), decision_note = 'Closed: the restriction was lifted' where restriction_id = r.id and status = 'open';
     insert into accountability_audit (target_user, action, reason, ref_id) values (p_user, 'restriction_lifted', 'Overdue decisions are answered', r.id);
     perform public.notify_event(p_user, null, 'restriction_lifted', jsonb_build_object('restriction_id', r.id), 'restriction_lifted:' || r.id, true);
-  elsif r.id is null and pol.enabled and not me.accountability_exempt and me.status = 'active' and v_noticed >= pol.restrict_after_overdue then
+  elsif r.id is null and pol.enabled and not me.accountability_exempt and me.status = 'active' and v_noticed >= pol.restrict_after_overdue and v_warned is null then
+    insert into accountability_warnings (user_id) values (p_user);
+    insert into accountability_audit (target_user, action, reason) values (p_user, 'restriction_warned', v_noticed || ' decisions on your posts are overdue');
+    perform public.notify_event(p_user, null, 'restriction_warning', jsonb_build_object('overdue', v_noticed, 'hours', pol.restrict_notice_hours), 'restriction_warning:' || p_user || ':' || extract(epoch from now())::bigint, true);
+  elsif r.id is null and pol.enabled and not me.accountability_exempt and me.status = 'active' and v_noticed >= pol.restrict_after_overdue and v_warned <= now() - make_interval(hours => pol.restrict_notice_hours) then
     insert into user_restrictions (user_id, reason) values (p_user, v_noticed || ' decisions on your posts are overdue') returning * into r;
     insert into accountability_audit (target_user, action, reason, ref_id) values (p_user, 'restriction_applied', r.reason, r.id);
     perform public.notify_event(p_user, null, 'restriction_applied', jsonb_build_object('restriction_id', r.id, 'overdue', v_noticed), 'restriction_applied:' || r.id, true);
   end if;
+  if v_overdue < pol.restrict_after_overdue then delete from accountability_warnings where user_id = p_user; end if;
 end $$;
 
 create function public.close_decision(p_item uuid, p_resolution text, p_note text default null) returns void
@@ -246,10 +260,11 @@ begin
       from decision_items i join post_discussion d on d.id = i.item_id join contribution_posts p on p.id = i.post_id left join profiles u on u.id = d.author_id
       where i.user_id = auth.uid() and i.resolved_at is null), '[]'),
     'record', public.response_record(auth.uid()),
+    'warned_at', (select warned_at from accountability_warnings where user_id = auth.uid()),
     'restriction', (select jsonb_build_object('id', r.id, 'reason', r.reason, 'created_at', r.created_at,
         'appeal', (select jsonb_build_object('status', a.status, 'message', a.message, 'decision_note', a.decision_note) from restriction_appeals a where a.restriction_id = r.id order by a.created_at desc limit 1))
       from user_restrictions r where r.user_id = auth.uid() and r.lifted_at is null),
-    'policy', jsonb_build_object('deadline_hours', pol.deadline_hours, 'first_reminder_hours', pol.first_reminder_hours, 'restrict_after_overdue', pol.restrict_after_overdue, 'extension_hours', pol.extension_hours, 'max_extensions', pol.max_extensions, 'enabled', pol.enabled));
+    'policy', jsonb_build_object('deadline_hours', pol.deadline_hours, 'first_reminder_hours', pol.first_reminder_hours, 'restrict_after_overdue', pol.restrict_after_overdue, 'restrict_notice_hours', pol.restrict_notice_hours, 'extension_hours', pol.extension_hours, 'max_extensions', pol.max_extensions, 'enabled', pol.enabled));
 end $$;
 
 create function public.request_decision_extension(p_item uuid, p_reason text) returns timestamptz
@@ -301,7 +316,7 @@ end $$;
 
 create function public.admin_decide_appeal(p_appeal uuid, p_grant boolean, p_note text) returns void
 language plpgsql security definer set search_path = public as $$
-declare a public.restriction_appeals; v_note text := nullif(btrim(coalesce(p_note, '')), '');
+declare a public.restriction_appeals; v_note text := nullif(btrim(coalesce(p_note, '')), ''); v_post uuid;
 begin
   if not public.is_admin() then raise exception 'forbidden'; end if;
   if v_note is null then raise exception 'reason_required'; end if;
@@ -310,7 +325,9 @@ begin
   update restriction_appeals set status = case when p_grant then 'granted' else 'denied' end, decided_by = auth.uid(), decided_at = now(), decision_note = v_note where id = a.id;
   insert into accountability_audit (actor_id, target_user, action, reason, ref_id) values (auth.uid(), a.user_id, case when p_grant then 'appeal_granted' else 'appeal_denied' end, v_note, a.id);
   if p_grant then
-    update decision_items set resolved_at = now(), resolution = 'exempted', resolved_note = v_note where user_id = a.user_id and resolved_at is null and due_at <= now();
+    for v_post in update decision_items set resolved_at = now(), resolution = 'exempted', resolved_note = v_note where user_id = a.user_id and resolved_at is null and due_at <= now() returning post_id loop
+      perform public.refresh_post_review(v_post);
+    end loop;
     update user_restrictions set lifted_at = now(), lifted_by = auth.uid(), lift_reason = v_note where id = a.restriction_id and lifted_at is null;
   end if;
   perform public.notify_event(a.user_id, auth.uid(), 'appeal_decided', jsonb_build_object('granted', p_grant, 'note', v_note), 'appeal:' || a.id, true);
@@ -318,26 +335,29 @@ end $$;
 
 create function public.admin_lift_restriction(p_restriction uuid, p_reason text) returns void
 language plpgsql security definer set search_path = public as $$
-declare r public.user_restrictions; v_reason text := nullif(btrim(coalesce(p_reason, '')), '');
+declare r public.user_restrictions; v_reason text := nullif(btrim(coalesce(p_reason, '')), ''); v_post uuid;
 begin
   if not public.is_admin() then raise exception 'forbidden'; end if;
   if v_reason is null then raise exception 'reason_required'; end if;
   update user_restrictions set lifted_at = now(), lifted_by = auth.uid(), lift_reason = v_reason where id = p_restriction and lifted_at is null returning * into r;
   if r.id is null then raise exception 'already_decided'; end if;
-  update decision_items set resolved_at = now(), resolution = 'exempted', resolved_note = v_reason where user_id = r.user_id and resolved_at is null and due_at <= now();
+  for v_post in update decision_items set resolved_at = now(), resolution = 'exempted', resolved_note = v_reason where user_id = r.user_id and resolved_at is null and due_at <= now() returning post_id loop
+    perform public.refresh_post_review(v_post);
+  end loop;
   insert into accountability_audit (actor_id, target_user, action, reason, ref_id) values (auth.uid(), r.user_id, 'restriction_lifted_by_staff', v_reason, r.id);
   perform public.notify_event(r.user_id, auth.uid(), 'restriction_lifted', jsonb_build_object('restriction_id', r.id, 'note', v_reason), 'restriction_lifted:' || r.id, true);
 end $$;
 
 create function public.admin_exempt_decision(p_decision uuid, p_reason text) returns void
 language plpgsql security definer set search_path = public as $$
-declare v_user uuid; v_reason text := nullif(btrim(coalesce(p_reason, '')), '');
+declare v_user uuid; v_post uuid; v_reason text := nullif(btrim(coalesce(p_reason, '')), '');
 begin
   if not public.is_admin() then raise exception 'forbidden'; end if;
   if v_reason is null then raise exception 'reason_required'; end if;
-  update decision_items set resolved_at = now(), resolution = 'exempted', resolved_note = v_reason where id = p_decision and resolved_at is null returning user_id into v_user;
+  update decision_items set resolved_at = now(), resolution = 'exempted', resolved_note = v_reason where id = p_decision and resolved_at is null returning user_id, post_id into v_user, v_post;
   if v_user is null then raise exception 'already_decided'; end if;
   insert into accountability_audit (actor_id, target_user, action, reason, ref_id) values (auth.uid(), v_user, 'decision_exempted', v_reason, p_decision);
+  perform public.refresh_post_review(v_post);
   perform public.reconcile_restriction(v_user);
 end $$;
 
@@ -385,6 +405,7 @@ begin
         perform public.notify_event(v_mod, null, 'action_escalated', v_data, 'escalated:' || i.id);
       end loop;
       insert into post_discussion_events (post_id, item_id, action, note) values (i.post_id, i.item_id, 'escalated', 'Passed to moderators');
+      perform public.refresh_post_review(i.post_id);
       n := n + 1;
     end if;
   end loop;

@@ -9,7 +9,8 @@ create table public.saved_phrases (
   source_message_id uuid references public.messages(id) on delete set null,
   created_at timestamptz not null default now(),
   is_public boolean not null default false,
-  unsplash_image_url text
+  unsplash_image_url text,
+  source_post_id uuid references public.contribution_posts(id) on delete set null
 );
 alter table public.saved_phrases enable row level security;
 create unique index saved_phrases_user_phrase on public.saved_phrases (user_id, phrase);
@@ -49,7 +50,7 @@ begin
   return v_id;
 end $$;
 
-create function public.save_phrase(p_phrase text, p_translation text default null, p_language text default null, p_source uuid default null)
+create function public.save_phrase(p_phrase text, p_translation text default null, p_language text default null, p_source uuid default null, p_source_post uuid default null)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare v_id uuid; v_lang text;
 begin
@@ -58,11 +59,22 @@ begin
   v_lang := public.normalize_language_code(p_language);
   if v_lang is not null and not exists (select 1 from languages l where l.id = v_lang) then v_lang := null; end if;
   if p_source is not null and not exists (select 1 from messages m where m.id = p_source and public.can_access_conversation(m.conversation_id)) then p_source := null; end if;
-  insert into saved_phrases (user_id, phrase, translation, language_id, source_message_id)
-  values (auth.uid(), left(btrim(p_phrase), 500), left(p_translation, 500), v_lang, p_source)
+  if p_source_post is not null and not exists (select 1 from contribution_posts c where c.id = p_source_post and not public.is_blocked_between(auth.uid(), c.user_id)) then p_source_post := null; end if;
+  insert into saved_phrases (user_id, phrase, translation, language_id, source_message_id, source_post_id)
+  values (auth.uid(), left(btrim(p_phrase), 500), left(p_translation, 500), v_lang, p_source, p_source_post)
   on conflict (user_id, phrase) do update set translation = coalesce(excluded.translation, saved_phrases.translation)
   returning id into v_id;
   return v_id;
+end $$;
+
+-- The correction an author accepted goes to their phrasebook, as it does in chat. Called from the decision itself.
+create function public.keep_correction(p_user uuid, p_phrase text, p_language text, p_post uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if char_length(btrim(coalesce(p_phrase, ''))) = 0 then return; end if;
+  insert into saved_phrases (user_id, phrase, language_id, source_post_id)
+  values (p_user, left(btrim(p_phrase), 500), p_language, p_post)
+  on conflict (user_id, phrase) do nothing;
 end $$;
 
 create function public.search_phrases(p_query text default null, p_language text default null, p_limit int default 20, p_offset int default 0)
@@ -93,12 +105,15 @@ create policy "read own translations" on public.translation_history for select t
 
 revoke all on function
   public.save_translation(text, text, text, uuid),
-  public.save_phrase(text, text, text, uuid),
+  public.save_phrase(text, text, text, uuid, uuid),
+  public.keep_correction(uuid, text, text, uuid),
   public.search_phrases(text, text, integer, integer)
 from public, anon, authenticated, service_role;
 
 grant execute on function
   public.save_translation(text, text, text, uuid),
-  public.save_phrase(text, text, text, uuid),
+  public.save_phrase(text, text, text, uuid, uuid),
   public.search_phrases(text, text, integer, integer)
 to authenticated, service_role;
+
+grant execute on function public.keep_correction(uuid, text, text, uuid) to service_role;

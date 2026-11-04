@@ -4,6 +4,8 @@ import { Bookmark, BookmarkCheck, Flag, MessagesSquare, MoreVertical, Pencil, Pe
 import clsx from 'clsx';
 import { Avatar, Button, ConfirmDialog, buttonClass } from '@/components/ui';
 import { canCorrect } from '@/lib/corrections';
+import { FIX_LABEL, isPractice, POST_TYPE_LABEL } from '@/lib/postTypes';
+import { CATEGORY_LOOK, LESSON_LOOK, PRACTICE_LOOK } from './postLooks';
 import { StatusPill } from '@/components/features/review/StatusPill';
 import { toast } from '@/store/toastStore';
 import { ReportDialog } from '@/components/features/ReportDialog';
@@ -28,22 +30,6 @@ export interface PostCardProps {
   /** Profile view: called after pin/unpin so the list can reorder. */
   onPinChange?: (id: string, pinned: boolean) => void;
 }
-
-export const CATEGORY_COLORS: Record<string, string> = {
-  phrase: 'border border-ink/30 bg-brand-soft text-ink',
-  idiom: 'border border-ink/30 bg-surface-2 text-ink',
-  usage: 'border border-ink/30 bg-surface text-ink',
-  grammar: 'border border-ink/30 bg-surface-2 text-ink',
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  phrase: 'Phrase',
-  idiom: 'Idiom',
-  usage: 'Usage',
-  grammar: 'Grammar',
-};
-
-const HELP_LABELS: Record<string, string> = { correct_me: 'Correct me', how_do_i_say: 'How do I say…?' };
 
 const ALIGN = { left: 'text-left', center: 'text-center', right: 'text-right' } as const;
 
@@ -95,6 +81,18 @@ function ClampText({ children, className, align }: { children: React.ReactNode; 
   );
 }
 
+/** Text on a photo. The scrim holds the contrast on any photo, bright or dark, in both themes. */
+function OverlayImage({ src, text, align }: { src: string; text: string; align?: string }) {
+  return (
+    <span className="relative block overflow-hidden rounded-xl bg-deep">
+      <img src={src} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover" />
+      <span className="absolute inset-0 flex items-center bg-deep/70 p-5">
+        <span className={clsx('line-clamp-6 w-full whitespace-pre-line break-words font-display text-2xl font-bold leading-snug text-on-deep md:text-3xl', align)}>{text}</span>
+      </span>
+    </span>
+  );
+}
+
 export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, onPinChange }: PostCardProps) {
   const navigate = useNavigate();
   const [removed, setRemoved] = useState(false);
@@ -125,7 +123,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const remove = () => { setRemoved(true); onRemoved?.(post.id); };
   const run = async (fn: () => Promise<void>) => {
     setMenuOpen(false);
-    try { await fn(); } catch (e: any) { toast.error(userMessage(e, 'Something went wrong. Please try again.'), () => { void run(fn); }); }
+    try { await fn(); } catch (e: any) { toast.error(userMessage(e, 'Oops! Something went wrong. Please try again.'), () => { void run(fn); }); }
   };
 
   const handleDelete = async () => {
@@ -180,7 +178,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const threadSize = post.thread_count ?? 0;
   const review = (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <StatusPill status={post.review_status ?? 'unreviewed'} />
+      <StatusPill status={post.review_status ?? 'awaiting_feedback'} />
       {post.accepted_item_id && <span className="min-w-0 truncate text-xs text-muted">Original: {post.phrase}</span>}
       <Link to={threadLink} className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
         <MessagesSquare size={14} aria-hidden /> {threadSize ? `Discussion · ${threadSize}` : 'Review'}{(post.open_corrections ?? 0) > 0 && ` · ${post.open_corrections} open`}
@@ -188,7 +186,11 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
     </div>
   );
   const language = post.language_id ? languageName(post.language_id) ?? post.language_id : null;
-  const category = CATEGORY_LABELS[post.category] ?? post.category;
+  const isLesson = post.post_type === 'lesson';
+  const look = isLesson ? LESSON_LOOK : CATEGORY_LOOK[post.category] ?? CATEGORY_LOOK.phrase;
+  const category = look.label;
+  const overlaid = post.image_layout === 'overlay' && !!post.unsplash_image_url;
+  const lessonText = post.current_body ?? post.body;
   const align = ALIGN[post.text_align ?? 'left'] ?? ALIGN.left;
   const isLong = lineCount(post.current_phrase ?? post.phrase) > LONG_LINES;
 
@@ -244,9 +246,17 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
     </>
   );
 
-  // ---------- Help post: a page from a learner's notebook, the same in every list. ----------
-  if (post.post_type && post.post_type !== 'library') {
-    const canFix = !isOwner && canCorrect(me, post.language_id);
+  // ---------- Practice: a learner's own writing. Each type has its own page, the same in every list. ----------
+  if (isPractice(post.post_type)) {
+    const type = post.post_type;
+    const look = PRACTICE_LOOK[type];
+    const canFix = !isOwner && (type === 'question' || canCorrect(me, post.language_id));
+    const answered = type === 'question' || type === 'how_do_i_say';
+    const stamp = (
+      <span className={clsx('inline-flex w-fit -rotate-1 items-center gap-1 rounded-sm border-2 px-2 py-px text-2xs font-bold uppercase tracking-wide text-ink', look.stamp)}>
+        <look.icon size={11} aria-hidden /> {POST_TYPE_LABEL[type]}
+      </span>
+    );
     return (
       <article className="ft-card overflow-hidden p-3 md:p-4">
         <header className="flex items-center gap-3 px-1">
@@ -257,20 +267,44 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
           </div>
           {menu}
         </header>
-        <Link to={threadLink} aria-label={`Open post: ${post.phrase}`} className="mt-3 block rounded-md border border-border bg-surface-2 px-4 pb-4 pt-3 transition hover:border-ink/40">
-          <span className="block w-fit -rotate-1 rounded-sm border-2 border-accent px-2 py-px text-2xs font-bold uppercase tracking-wide text-ink">{HELP_LABELS[post.post_type]}</span>
-          {/* Ruled lines sit on the same 1.75rem rhythm as the text, so words rest on them. */}
-          <span
-            className="mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink"
-            style={{ backgroundImage: 'linear-gradient(to bottom, transparent calc(1.75rem - 1px), rgba(127, 127, 127, 0.3) calc(1.75rem - 1px))', backgroundSize: '100% 1.75rem' }}
-          >{post.phrase}</span>
-          {post.source_context && <span className="mt-2 block text-sm text-muted">{post.post_type === 'correct_me' && 'Trying to say: '}{post.source_context}</span>}
+        <Link to={threadLink} aria-label={`Open post: ${post.phrase}`} className={clsx('mt-3 block rounded-md border border-border px-4 pb-4 pt-3 transition hover:border-ink/40', look.panel)}>
+          {stamp}
+          {type === 'story' && (
+            <>
+              <span className="mt-2 block break-words font-display text-xl font-semibold text-ink">{post.phrase}</span>
+              <span className="mt-1 line-clamp-4 whitespace-pre-line break-words font-display text-base leading-7 text-ink first-letter:text-2xl first-letter:font-bold">{post.current_body ?? post.body}</span>
+            </>
+          )}
+          {type === 'question' && (
+            <>
+              <span className="mt-2 block break-words text-lg font-semibold leading-snug text-ink">{post.phrase}</span>
+              {post.body && <span className="mt-1 line-clamp-3 whitespace-pre-line break-words text-sm text-muted">{post.body}</span>}
+            </>
+          )}
+          {type === 'photo' && post.unsplash_image_url && (
+            post.image_layout === 'overlay'
+              ? <span className="mt-2 block"><OverlayImage src={post.unsplash_image_url} text={post.phrase} /></span>
+              : (
+                <>
+                  <img src={post.unsplash_image_url} alt={post.phrase} loading="lazy" className="mt-2 aspect-[4/3] w-full rounded-md object-cover" />
+                  <span className="mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink">{post.phrase}</span>
+                </>
+              )
+          )}
+          {(type === 'correct_me' || type === 'how_do_i_say') && (
+            // Ruled lines sit on the same 1.75rem rhythm as the text, so words rest on them.
+            <span
+              className="mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink"
+              style={type === 'correct_me' ? { backgroundImage: 'linear-gradient(to bottom, transparent calc(1.75rem - 1px), rgba(127, 127, 127, 0.3) calc(1.75rem - 1px))', backgroundSize: '100% 1.75rem' } : undefined}
+            >{post.phrase}</span>
+          )}
+          {post.source_context && <span className="mt-2 block text-sm text-muted">{(type === 'correct_me' || type === 'photo') && 'Trying to say: '}{post.source_context}</span>}
         </Link>
         <div className="flex flex-wrap items-center gap-2 px-1 pt-2">
-          <StatusPill status={post.review_status === 'helped' ? 'helped' : 'needs_fix'} />
+          <StatusPill status={post.review_status ?? 'awaiting_feedback'} label={answered && post.review_status === 'corrections_received' ? 'Answers received' : undefined} />
           {threadSize > 0 && <span className="text-xs text-muted">{threadSize} {threadSize === 1 ? 'response' : 'responses'}</span>}
           <Link to={threadLink} className={clsx('ml-auto', canFix ? buttonClass('primary', 'sm') : buttonClass('ghost', 'sm'))}>
-            {canFix ? <><PencilLine size={14} aria-hidden /> {post.post_type === 'correct_me' ? 'Fix this' : 'Answer'}</> : 'See responses'}
+            {canFix ? <><PencilLine size={14} aria-hidden /> {FIX_LABEL[type]}</> : 'See responses'}
           </Link>
         </div>
         {extras}
@@ -289,14 +323,14 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             className="flex min-w-0 flex-1 items-start gap-3 text-left"
             aria-label={`Open post: ${shownPhrase}`}
           >
-            <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-brand-soft">
+            <span className={clsx('flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md', look.panel)}>
               {post.unsplash_image_url
                 ? <img src={post.unsplash_image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                : <span className="font-mono text-xs font-bold text-ink">{(post.language_id ?? category).toUpperCase().slice(0, 3)}</span>}
+                : <look.icon size={22} aria-hidden className="text-ink" />}
             </span>
             <span className="min-w-0 flex-1">
               <span className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{shownPhrase}</span>
-              {shownTranslation && <span className="mt-0.5 line-clamp-1 text-xs text-muted">{shownTranslation}</span>}
+              {(shownTranslation || lessonText) && <span className="mt-0.5 line-clamp-1 text-xs text-muted">{shownTranslation ?? lessonText}</span>}
               <span className="mt-1 block truncate text-2xs text-muted">
                 {pinned && '📌 '}{authorName} · {timeAgo(post.created_at)} · {category}{language && ` · ${language}`}
               </span>
@@ -340,8 +374,10 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
       {/* Media: the image; for text-only posts the phrase on a tinted panel at least 6 lines tall,
           or — when it runs past 10 lines — as ordinary text with no panel. */}
       {post.unsplash_image_url || !isLong ? (
-        <div className="relative mt-3 overflow-hidden rounded-xl bg-brand-soft">
-          {post.unsplash_image_url ? (
+        <div className={clsx('relative mt-3 overflow-hidden rounded-xl', look.panel)}>
+          {overlaid ? (
+            <OverlayImage src={post.unsplash_image_url!} text={shownPhrase} align={align} />
+          ) : post.unsplash_image_url ? (
             <>
               <img
                 src={post.unsplash_image_url}
@@ -357,8 +393,8 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             </div>
           )}
 
-          <span className="absolute right-2 top-2 rounded-sm bg-deep/85 px-2 py-px text-2xs font-bold text-on-deep">
-            {category}
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-sm bg-deep/85 px-2 py-px text-2xs font-bold text-on-deep">
+            <look.icon size={11} aria-hidden /> {category}
           </span>
 
           {post.language_id && (
@@ -370,7 +406,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2 px-1 text-xs">
-          <span className="rounded-full bg-surface-2 px-2.5 py-0.5 font-semibold text-ink">{category}</span>
+          <span className={clsx('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold text-ink', look.panel)}><look.icon size={12} aria-hidden /> {category}</span>
           {post.language_id && (
             <span className="rounded-full bg-accent/15 px-2.5 py-0.5 font-semibold text-ink">{language}</span>
           )}
@@ -379,9 +415,10 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
 
       {/* Caption */}
       <div className={clsx('space-y-1.5 px-1 pt-3', align)}>
-        {(post.unsplash_image_url || isLong) && (
+        {(post.unsplash_image_url || isLong) && !overlaid && (
           <ClampText className={clsx('leading-relaxed text-ink', phraseSize(shownPhrase, false))}>{shownPhrase}</ClampText>
         )}
+        {lessonText && <ClampText className="font-display text-base leading-7 text-ink">{lessonText}</ClampText>}
         {shownTranslation && <p className="whitespace-pre-line text-sm text-muted">{shownTranslation}</p>}
         {post.source_context && (
           <p className={clsx('flex gap-1.5 text-sm text-ink', post.text_align === 'center' && 'justify-center', post.text_align === 'right' && 'justify-end')}>

@@ -45,10 +45,12 @@ This file replaces `features.md` (the business view) and `FEATURES_DESCRIPTION.m
 - `ProtectedRoute` sends users to `/onboarding` until `onboarding_done` is true and a native language is set.
 - The native language is required. The learning language is optional, and required once a level is chosen.
 - `set_language_profile` writes the values to `profiles`. The two languages can't be the same.
-- The first language change is free, then one change every 30 days.
+- The first language change is free. After that, the language you're learning can change every 7 days and your native language every 30.
 - `record_consent` stores each consent with its version, and also adds it to the [permanent consent ledger](DATA_RETENTION.md#proof-of-consent).
 
 **Depends on.** `profiles` (`native_language_id`, `learning_language_id`, `learning_level`, `onboarding_done`), `languages` and `consents`.
+
+**First steps.** Home shows a short checklist for a new member (`FirstSteps`): write a post, say hello, earn a first level. It goes away once done or dismissed.
 
 **When it's used.** Once for a new user, and again whenever they change a language.
 
@@ -70,13 +72,13 @@ This file replaces `features.md` (the business view) and `FEATURES_DESCRIPTION.m
 
 ## 4. Earned levels and vouches
 
-**What it does.** The level a user picks is only their own estimate, and it unlocks nothing. After setup they can lower it but not raise it. A separate **verified level** rises by itself, and that alone lets a learner correct others, answer bounties, post and earn in their learning language.
+**What it does.** The level a user picks is only their own estimate, and it unlocks nothing. After setup they can lower it but not raise it. A separate **verified level** rises by itself, and that alone lets a learner correct others, answer bounties, teach and earn in their learning language. Practice posts need no level.
 
 **How it helps.** Trust comes from real activity, so someone can't claim a high level to gain privileges.
 
-**How it works.** The level reads distinct messages, active days, native partners on the app for 7+ days who replied, and the error rate over the latest 50 reviewed messages. From B2 it also reads accepted corrections, helpfulness ratings and saves of the learner's posts. These are the current thresholds in `level_rules`:
+**How it works.** The level reads distinct messages and written posts, active days, reviewers who replied (native speakers, or people verified at B2+ in the language; from B1 up, only those here 7+ days count), and the error rate over the latest 50 reviewed messages. It's re-checked whenever a post, correction, decision, rating, confirmation or save happens. Likes and post counts never move it. From B2 it also reads accepted corrections, helpfulness ratings and saves of the learner's posts. These are the current thresholds in `level_rules`:
 
-| Level | Messages | Active days | Native partners | Reviewed | Max error % | Corrections accepted | Helpful % | Post saves | Vouches instead |
+| Level | Messages | Active days | Reviewers | Reviewed | Max error % | Corrections accepted | Helpful % | Post saves | Vouches instead |
 |---|---|---|---|---|---|---|---|---|---|
 | A1 | 5 | 1 | 0 | 0 | 100 | 0 | 0 | 0 | |
 | A2 | 20 | 3 | 1 | 10 | 80 | 0 | 0 | 0 | |
@@ -85,9 +87,9 @@ This file replaces `features.md` (the business view) and `FEATURES_DESCRIPTION.m
 | C1 | 400 | 30 | 3 | 200 | 20 | 20 | 70 | 3 | |
 | C2 | 800 | 60 | 3 | 400 | 10 | 50 | 80 | 10 | |
 
-Changing the learning language resets the verified level. It otherwise never falls. Progress shows on the profile form (`LevelProgress`).
+Changing the learning language resets the verified level. It otherwise never falls. Progress shows on the profile form (`LevelProgress`), with what you've contributed listed separately. An accepted correction counts with up to 3 a day and 10 overall from one person, and a chat correction with no explanation counts as half. What counts, and why, is in [The contribution system](CONTRIBUTION_SYSTEM.md#how-levels-work).
 
-**Vouches.** Two native speakers who have really chatted with a learner (15+ of the learner's messages over 2+ days) can vouch from the learner's profile. That reaches B1 and no further, and needs the learner's recent error rate to hold. Each voucher has 3 vouches a month.
+**Vouches.** Two native speakers who have really chatted with a learner (15+ of the learner's messages over 2+ days) can vouch from the learner's profile. That reaches B1 and no further, and needs the learner's recent error rate to hold. Each voucher has 3 vouches a month. Someone new can vouch straight away, and their vouch starts counting once they've been here 7 days.
 
 **What others see.** Cards show a learner's verified level. With none yet, they show the estimate marked "self-assessed".
 
@@ -242,13 +244,14 @@ The full state machine and audit are in [Corrections and bounties](CORRECTIONS_A
 
 ## 15. Community library
 
-**What it does.** Eligible members publish phrases, idioms, usage notes and grammar notes, with a translation, context and an optional Unsplash image. Others save them and learn from them.
+**What it does.** Qualified members publish phrases, idioms, usage notes, grammar notes and longer lessons, with a translation, context and an optional Unsplash image, which can carry the text. Others save them and learn from them. Learners' own writing goes to [Practice](#17-practice-posts) instead.
 
 **How it helps.** Knowledge from outside a learner's own chats becomes a shared resource.
 
 **How it works**
-- A post needs a language the author qualifies in: native, or verified B1+ in their learning language. The form lists those and shows a lower learning language as locked, and the database checks again.
-- Phrase, translation and context can each be up to 500 characters. The limit is 20 posts a day.
+- A teaching post needs a language the author qualifies in: native, or verified B1+ in their learning language. The composer explains when a learning language isn't open yet, and the database checks again.
+- Phrase, translation and context can each be up to 500 characters, and lesson text up to 5,000. Text on an image is limited to 120. The limit is 20 posts a day.
+- Each category has its own colour and mark (`postLooks.ts`).
 - `post_contribution` writes to `contribution_posts`, and `listContributionPosts` reads by language and category.
 - Editing may keep a post's language even if the author no longer qualifies. Moving it to another language needs the qualification.
 - Authors can delete their own posts, unless a decision is still open. Readers can save up to 500 posts.
@@ -262,12 +265,16 @@ The full state machine and audit are in [Corrections and bounties](CORRECTIONS_A
 
 - A correction has a target, a proposed phrase or translation, an explanation, an author, a status and a history. A reply has none of those, and table constraints enforce the difference.
 - Nothing is overwritten. The original stays in `phrase` and `translation`, and the accepted version sits in `current_phrase` and `current_translation`.
-- Statuses: `pending`, `accepted`, `declined`, `superseded`, `withdrawn` and `resolved` (clarifications only).
-- The post's owner decides. Accepting replaces only the previously accepted correction, so other proposals stay open and the post stays "In review". Newest doesn't win. Moderators can decide or reverse with a required reason.
+- Post statuses: Awaiting feedback, Corrections received, Under review, Reviewed.
+- Correction statuses: `pending`, `accepted`, `declined`, `superseded`, `withdrawn` and `resolved` (clarifications only).
+- The post's owner decides: accept, decline, or ask the person about it. Accepting replaces only the previously accepted correction, so other proposals stay open and the post stays "Corrections received". Newest doesn't win. Moderators can decide or reverse with a required reason.
+- On a lesson, a correction covers one sentence, and several can be accepted. The original stays in `body`, and `current_body` holds the corrected reading.
+- Accepted corrections go to the author's phrasebook.
+- Qualified people can flag a correction as wrong. The author sees the count.
 - Text under review can't be edited. A post with open decisions can't be deleted by its owner.
 - An accepted correction earns +5 under the same limits as chat corrections.
 
-**Accountability.** A correction or clarification creates a `decision_items` row for the post's owner. Only a decision, a withdrawal or an exemption closes it. Being online or opening it never does.
+**Accountability.** On a teaching post, a correction or clarification creates a `decision_items` row for the post's owner. Practice posts never do. Only a decision, a withdrawal or an exemption closes it. Being online or opening it never does.
 
 `accountability_sweep` sends reminders, overdue notices and escalations. It runs from pg_cron where available, and otherwise from app activity. These are the defaults, which admins can change in `accountability_policy` (Decisions page):
 
@@ -276,23 +283,26 @@ The full state machine and audit are in [Corrections and bounties](CORRECTIONS_A
 | First reminder, then repeats | After 48 hours, then every 48 hours |
 | Decision deadline | 7 days |
 | Escalation to moderators | 72 hours after the deadline |
-| New posts paused | At 3 overdue decisions, after 72 hours' notice |
+| Warning | At 3 decisions overdue for 72 hours |
+| New teaching posts paused | 72 hours after the warning, if still at 3 |
+| Asking about a correction | Restarts the deadline, once per correction |
 | Extensions | One, of 7 days |
 
-Posting restarts by itself once decisions are answered. Owners can ask for an extension or appeal, and every step is audited.
+A pause covers new teaching posts only: practice posts, chat and replies carry on. It lifts by itself once decisions are answered. Owners can ask for an extension or appeal, and every step is audited.
 
 ## 17. Practice posts
 
-**What it does.** Beginners can ask for help in public with no level needed: **Correct me** ("fix what I wrote") and **How do I say…?**. These posts show on the Library's Practice tab and in the Home feed.
+**What it does.** Any learner can publish from day one with no level needed: **Correct me**, **How do I say…?**, **Story or journal**, **Photo and caption**, and **Question or discussion**. These posts show on the Library's Practice tab and in the Home feed.
 
 **How it's different from a library post**
-- Status is **Needs a fix**, then **Helped**. The owner has no duty and can't be restricted because of them.
-- The original stays visible, with each fix shown as a diff. "Add to phrasebook" works on any fix.
-- Up to 280 characters, and 3 a day.
+- The owner has no duty and no deadline, and can't be restricted because of them. Being paused for overdue teaching decisions doesn't stop practice posts either.
+- The original stays visible, with each fix shown as a diff. A fix the owner thanks goes to their phrasebook, and "Add to phrasebook" works on any fix.
+- Readers fix a story one sentence at a time, and it shows a corrected reading beside the original. A question takes replies from anyone, and no corrections.
+- Up to 280 characters, stories up to 5,000, and 5 posts a day.
 - Open posts appear in the **I can answer** queue and notify up to 5 qualified people. A language with few helpers shows an honest note in the composer.
-- Correct me posts count toward levels, with B1 still anchored in real chat. Fixes on them don't count against the author's error rate.
+- Correct me posts, stories and photo captions count toward levels, with B1 still anchored in real chat. Fixes on them don't count against the author's error rate.
 
-The full proposal, what was built and what wasn't are in [Post types and unlocks](POST_TYPES_AND_UNLOCKS.md).
+The full rules and what can happen are in [The contribution system](CONTRIBUTION_SYSTEM.md).
 
 ## 18. Notifications and push
 

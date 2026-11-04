@@ -67,5 +67,5 @@ export function friendlyAuthError(message: string): string {
   if (m.includes('email not confirmed')) return 'Confirm your email first. Check your inbox for the link.';
   if (m.includes('already registered')) return 'An account with this email already exists. Log in instead.';
   if (m.includes('unable to validate email') || m.includes('invalid format')) return 'Enter a valid email address.';
-  return 'Something went wrong. Please try again.';
+  return 'Oops! Something went wrong. Please try again.';
 }

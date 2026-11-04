@@ -55,7 +55,7 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
       if (mode === 'onboarding') await Promise.all([recordConsent('age_18', LEGAL_VERSIONS.age_18), recordConsent('terms', LEGAL_VERSIONS.terms), recordConsent('privacy', LEGAL_VERSIONS.privacy)]);
       onDone();
     } catch (err) {
-      const message = userMessage(err, 'Something went wrong. Please try again.');
+      const message = userMessage(err, 'Oops! Something went wrong. Please try again.');
       if (onError) onError(message); else setError(message);
     } finally { setBusy(false); }
   };

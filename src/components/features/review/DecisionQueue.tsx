@@ -19,7 +19,7 @@ export function DecisionBanner() {
     <Link to="/notifications" className={clsx('ft-card mb-3 flex items-center gap-2.5 p-3 text-sm font-semibold transition-colors hover:bg-surface-2', overdue || data.restriction ? 'text-danger' : 'text-warning')}>
       <CircleAlert size={18} aria-hidden className="shrink-0" />
       <span className="min-w-0 flex-1">
-        {data.restriction ? 'New posts are paused. ' : ''}
+        {data.restriction ? 'New teaching posts are paused. ' : data.warned_at ? 'A pause on teaching posts is coming. ' : ''}
         {data.items.length} {data.items.length === 1 ? 'correction needs' : 'corrections need'} your decision{overdue > 0 && `, ${overdue} overdue`}
       </span>
       <span className="shrink-0 underline underline-offset-2">Review</span>
@@ -34,14 +34,14 @@ export function DecisionQueue() {
   const [appealing, setAppealing] = useState(false);
   if (failed && !data) return <PartialError text="Couldn't load your open decisions." onRetry={() => void load()} />;
   if (!data) return null;
-  const { items, record, restriction, policy } = data;
+  const { items, record, restriction, policy, warned_at: warned } = data;
   if (!items.length && !restriction) return null;
   return (
     <section aria-label="Needs your decision" className="mb-4 space-y-2">
       {restriction && (
         <Card className="space-y-2 border-danger/40">
-          <h2 className="flex items-center gap-1.5 font-semibold text-danger"><CircleAlert size={16} aria-hidden /> New posts are paused</h2>
-          <p className="text-sm text-muted">{restriction.reason}. Everything else still works. Posting comes back by itself as soon as fewer than {policy.restrict_after_overdue} are overdue.</p>
+          <h2 className="flex items-center gap-1.5 font-semibold text-danger"><CircleAlert size={16} aria-hidden /> New teaching posts are paused</h2>
+          <p className="text-sm text-muted">{restriction.reason}. Everything else still works, including stories, questions and “Correct me” posts. Teaching posts come back by itself as soon as fewer than {policy.restrict_after_overdue} are overdue.</p>
           {restriction.appeal?.status === 'open'
             ? <p className="text-sm font-semibold text-ink">Your appeal is with the moderators.</p>
             : <>
@@ -49,6 +49,11 @@ export function DecisionQueue() {
                 <Button size="sm" variant="secondary" onClick={() => setAppealing(true)}>Explain or appeal</Button>
               </>}
         </Card>
+      )}
+      {warned && !restriction && (
+        <p className="ft-inset rounded-md bg-warning/10 p-2.5 text-sm font-semibold text-warning">
+          {policy.restrict_after_overdue} or more decisions are overdue. New teaching posts pause in about {Math.max(1, Math.ceil((new Date(warned).getTime() + policy.restrict_notice_hours * 3_600_000 - Date.now()) / 86_400_000))} days unless you answer them or ask for more time.
+        </p>
       )}
       {items.length > 0 && (
         <Card pad={false} className="divide-y divide-border">
@@ -72,7 +77,7 @@ export function DecisionQueue() {
       {record.decided > 0 && <p className="ft-inset text-xs text-muted">You've answered {record.on_time} of {record.decided} corrections on time.</p>}
       <details className="ft-inset text-xs text-muted">
         <summary className="min-h-9 cursor-pointer py-2 font-semibold">How this works</summary>
-        <p>You have {Math.round(policy.deadline_hours / 24)} days to accept or decline a correction on your post. Opening it or being online doesn't count as an answer. We remind you after {Math.round(policy.first_reminder_hours / 24)} days. If you need longer, ask for more time ({Math.round(policy.extension_hours / 24)} days, {policy.max_extensions === 1 ? 'once' : `${policy.max_extensions} times`} per decision). New posts pause only when {policy.restrict_after_overdue} or more decisions are overdue after notice, and start again once they're answered. Moderators can step in on overdue ones, and you can always appeal.</p>
+        <p>This applies to posts that teach (phrases and lessons), never to practice posts. You have {Math.round(policy.deadline_hours / 24)} days to accept or decline a correction, or to ask the person about it, which gives you the time again. You don't have to accept anything: declining is a real answer. Opening it or being online doesn't count as an answer. We remind you after {Math.round(policy.first_reminder_hours / 24)} days. If you need longer, ask for more time ({Math.round(policy.extension_hours / 24)} days, {policy.max_extensions === 1 ? 'once' : `${policy.max_extensions} times`} per decision). New teaching posts pause only when {policy.restrict_after_overdue} or more decisions stay overdue after a warning, and start again once they're answered. Asking for help is never paused. Moderators can step in on overdue ones, and you can always appeal.</p>
       </details>
 
       <ConfirmDialog open={!!extending} title="Ask for more time" confirmLabel="Ask for more time" reasonLabel="What's the reason?" reasonRequired

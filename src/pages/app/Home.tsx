@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ImagePlus } from 'lucide-react';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { mixFeed, weavePosts } from '@/lib/feedMix';
-import { ProfileCard } from '@/components/features';
+import { FirstSteps, ProfileCard } from '@/components/features';
 import {
   Avatar,
   Button,
@@ -60,7 +60,7 @@ export default function Home() {
     };
   }, [peopleList.items, hidden]);
 
-  const posts = useMemo(() => weavePosts(feed.items, needingFix.items.filter((p) => p.review_status === 'needs_fix')), [feed.items, needingFix.items]);
+  const posts = useMemo(() => weavePosts(feed.items, needingFix.items.filter((p) => p.review_status === 'awaiting_feedback')), [feed.items, needingFix.items]);
   const { items, morePeople } = useMemo(
     () => mixFeed(posts, [...partners, ...others.slice(0, OTHERS_PREVIEW)], feed.done || !!feed.error),
     [posts, partners, others, feed.done, feed.error],
@@ -73,6 +73,7 @@ export default function Home() {
   return (
     <>
       <DecisionBanner />
+      <FirstSteps />
       {/* Composer: looks like an input so it invites typing, but opens the contribute page */}
       <Link
         to="/library/contribute"
@@ -81,7 +82,7 @@ export default function Home() {
       >
         <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="md" />
         <span className="min-w-0 flex-1 truncate rounded-full border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted">
-          Ask for a correction, or share a phrase…
+          Write something, ask a question, share a photo…
         </span>
         <ImagePlus size={22} className="shrink-0 text-accent" aria-hidden />
       </Link>
@@ -100,7 +101,7 @@ export default function Home() {
                 text={emptyText}
                 action={
                   <div className="flex flex-wrap justify-center gap-2">
-                    <Link to="/library/contribute"><Button size="sm">Share a phrase</Button></Link>
+                    <Link to="/library/contribute"><Button size="sm">Write a post</Button></Link>
                     <Link to="/search"><Button size="sm" variant="secondary">Search people</Button></Link>
                   </div>
                 }

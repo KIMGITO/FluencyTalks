@@ -4,7 +4,7 @@ create table public.notifications (
   id uuid default gen_random_uuid() primary key,
   user_id uuid not null references public.profiles(id) on delete cascade,
   actor_id uuid references public.profiles(id) on delete set null,
-  type text not null check (type in ('follow', 'follow_request', 'follow_accepted', 'message_request', 'correction', 'correction_accepted', 'bounty_paid', 'level_up', 'level_vouch', 'post_correction', 'post_challenged', 'post_clarification', 'post_reply', 'post_endorsed', 'post_accepted', 'post_declined', 'post_withdrawn', 'post_superseded', 'post_resolved', 'post_reverted', 'post_override', 'action_reminder', 'action_overdue', 'action_escalated', 'restriction_applied', 'restriction_lifted', 'appeal_decided', 'correction_declined', 'correction_superseded', 'bounty_reminder', 'admin_report', 'admin_security', 'admin_appeal', 'admin_site', 'help_request', 'help_fix', 'help_thanked')),
+  type text not null check (type in ('follow', 'follow_request', 'follow_accepted', 'message_request', 'correction', 'correction_accepted', 'bounty_paid', 'level_up', 'level_vouch', 'post_correction', 'post_challenged', 'post_clarification', 'post_reply', 'post_endorsed', 'post_accepted', 'post_declined', 'post_withdrawn', 'post_superseded', 'post_resolved', 'post_reverted', 'post_override', 'action_reminder', 'action_overdue', 'action_escalated', 'restriction_warning', 'restriction_applied', 'restriction_lifted', 'appeal_decided', 'correction_declined', 'correction_superseded', 'bounty_reminder', 'admin_report', 'admin_security', 'admin_appeal', 'admin_site', 'help_request', 'help_fix', 'help_thanked')),
   data jsonb not null default '{}'::jsonb,
   read_at timestamptz,
   created_at timestamptz not null default now(),
@@ -175,7 +175,7 @@ begin
             and not public.is_blocked_between(me.id, m.sender_id)
             and not exists (select 1 from message_corrections mc where mc.message_id = m.id and mc.corrector_id = me.id) limit 100) x)
       + (select count(*) from (select 1 from contribution_posts c
-          where c.post_type <> 'library' and c.review_status = 'needs_fix' and c.created_at > v_bounties and c.user_id <> me.id
+          where c.post_type not in ('library', 'lesson') and c.review_status = 'awaiting_feedback' and c.created_at > v_bounties and c.user_id <> me.id
             and public.can_correct_language(me.id, c.language_id) and not public.is_blocked_between(me.id, c.user_id) limit 100) x));
 end $$;
 
@@ -187,7 +187,7 @@ create function public.notification_category(p_type text) returns text language 
     when p_type in ('post_correction','post_challenged','post_clarification','post_reply','post_endorsed','correction','correction_accepted','help_request','help_fix','help_thanked') then 'corrections'
     when p_type in ('post_accepted','post_declined','post_withdrawn','post_superseded','post_resolved','post_reverted','post_override',
                     'correction_declined','correction_superseded') then 'decisions'
-    when p_type in ('action_reminder','action_overdue','bounty_reminder') then 'reminders'
+    when p_type in ('action_reminder','action_overdue','bounty_reminder','restriction_warning') then 'reminders'
     when p_type = 'admin_report' then 'reports'
     when p_type in ('admin_appeal','action_escalated') then 'escalations'
     when p_type in ('admin_security','admin_site') then 'security'

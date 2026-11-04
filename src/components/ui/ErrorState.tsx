@@ -11,7 +11,7 @@ export function ErrorState({ title = "Couldn't load this", text, onRetry, busy }
     <Card role="alert" className="flex flex-col items-center gap-2 py-8 text-center">
       <Icon size={22} aria-hidden className="text-muted" />
       <h3 className="font-display text-xl font-medium">{offline ? "You're offline" : title}</h3>
-      <p className="max-w-sm text-sm text-muted">{offline ? 'Check your connection, then try again.' : text ?? 'Something went wrong on our side or with your connection.'}</p>
+      <p className="max-w-sm text-sm text-muted">{offline ? 'Check your connection, then try again.' : text ?? 'Oops! Something went wrong on our side or with your connection.'}</p>
       {onRetry && <Button size="sm" variant="secondary" loading={busy} onClick={onRetry}><RefreshCw size={14} aria-hidden /> Try again</Button>}
     </Card>
   );

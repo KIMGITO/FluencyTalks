@@ -94,7 +94,7 @@ Each topic also has its own file, listed in the [documentation index](docs/READM
 
 | Topic | Files |
 |---|---|
-| **Product** | [Overview](docs/PRODUCT_OVERVIEW.md) · [Features](docs/FEATURES.md) · [Corrections and bounties](docs/CORRECTIONS_AND_BOUNTIES.md) · [Post types and unlocks](docs/POST_TYPES_AND_UNLOCKS.md) · [Roadmap and known gaps](docs/ROADMAP.md) · [Original analysis](docs/PRODUCT_ANALYSIS.md) |
+| **Product** | [Overview](docs/PRODUCT_OVERVIEW.md) · [Features](docs/FEATURES.md) · [Corrections and bounties](docs/CORRECTIONS_AND_BOUNTIES.md) · [Contribution system](docs/CONTRIBUTION_SYSTEM.md) · [Post type ideas](docs/POST_TYPES_AND_UNLOCKS.md) · [Roadmap and known gaps](docs/ROADMAP.md) · [Original analysis](docs/PRODUCT_ANALYSIS.md) |
 | **Engineering** | [Architecture](docs/ARCHITECTURE.md) · [Database](docs/DATABASE.md) · [App-wide rules](docs/APP_WIDE_RULES.md) · [Design system](docs/DESIGN_SYSTEM.md) · [URLs and access](docs/URLS_AND_ACCESS.md) · [Local development](docs/LOCAL_DEVELOPMENT.md) · [Testing](docs/TESTING.md) |
 | **Operations** | [Deployment](docs/DEPLOYMENT.md) · [Admin setup and recovery](docs/ADMIN_SETUP.md) · [Security](docs/SECURITY.md) · [Data retention](docs/DATA_RETENTION.md) · [Legal compliance](docs/LEGAL_COMPLIANCE.md) |
 | **Growth** | [SEO](docs/SEO.md) · [Indexing checklist](docs/INDEXING_CHECKLIST.md) · [Search Console](docs/GOOGLE_SEARCH_CONSOLE.md) · [AI visibility](docs/AI_VISIBILITY.md) · [Content plan](docs/CONTENT_PLAN.md) · [Public content plan](docs/PUBLIC_CONTENT_SEO.md) |

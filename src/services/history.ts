@@ -12,7 +12,7 @@ export const listTranslations = async (): Promise<(TranslationRecord & { convers
     .map(({ source, ...t }) => ({ ...t, conversation_id: source?.conversation_id ?? null }));
 };
 
-export const deleteTranslation = async (id: string) => { await supabase.from('translation_history').delete().eq('id', id); };
+export const deleteTranslation = async (id: string) => { const { error } = await supabase.from('translation_history').delete().eq('id', id); if (error) throw error; };
 
 
 export const listPointsLedger = async (userId: string) => {

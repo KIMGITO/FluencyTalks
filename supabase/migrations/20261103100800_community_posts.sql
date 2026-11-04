@@ -17,12 +17,22 @@ create table public.contribution_posts (
   current_phrase text,
   current_translation text,
   accepted_item_id uuid,
-  review_status text not null default 'unreviewed' check (review_status in ('unreviewed', 'confirmed', 'disputed', 'corrected', 'needs_fix', 'helped')),
+  review_status text not null default 'awaiting_feedback' check (review_status in ('awaiting_feedback', 'corrections_received', 'under_review', 'reviewed')),
   open_corrections int not null default 0,
   thread_count int not null default 0,
   endorse_count int not null default 0,
-  post_type text not null default 'library' check (post_type in ('library', 'correct_me', 'how_do_i_say')),
-  constraint contribution_posts_help_shape check ((post_type = 'library') or ((char_length(phrase) <= 280) and (unsplash_image_url is null) and (accepted_item_id is null)))
+  -- library and lesson teach, so they need a qualified author. The rest are practice: open to every learner.
+  post_type text not null default 'library' check (post_type in ('library', 'lesson', 'correct_me', 'how_do_i_say', 'story', 'question', 'photo')),
+  body text check (char_length(body) <= 5000),
+  current_body text,
+  image_layout text not null default 'above' check (image_layout in ('above', 'overlay')),
+  constraint contribution_posts_shape check (
+    (post_type in ('library', 'lesson') or ((char_length(phrase) <= 280) and (accepted_item_id is null)))
+    and (post_type in ('library', 'lesson', 'photo') or (unsplash_image_url is null))
+    and (post_type <> 'photo' or (unsplash_image_url is not null))
+    and (post_type not in ('story', 'lesson') or (body is not null))
+    and (post_type in ('story', 'lesson', 'question') or (body is null))
+    and (image_layout = 'above' or ((unsplash_image_url is not null) and (char_length(phrase) <= 120))))
 );
 alter table public.contribution_posts enable row level security;
 create index contribution_posts_created_idx on public.contribution_posts (created_at desc);
@@ -40,7 +50,7 @@ create table public.post_discussion (
   author_id uuid references public.profiles(id) on delete set null,
   kind text not null check (kind in ('correction', 'clarification', 'comment')),
   body text not null check ((char_length(body) >= 1) and (char_length(body) <= 1000)),
-  proposed_phrase text check ((char_length(proposed_phrase) >= 1) and (char_length(proposed_phrase) <= 500)),
+  proposed_phrase text check ((char_length(proposed_phrase) >= 1) and (char_length(proposed_phrase) <= 1000)),
   proposed_translation text check ((char_length(proposed_translation) >= 1) and (char_length(proposed_translation) <= 500)),
   status text check (status in ('pending', 'accepted', 'declined', 'superseded', 'withdrawn', 'resolved')),
   decided_by uuid references public.profiles(id) on delete set null,
@@ -50,6 +60,11 @@ create table public.post_discussion (
   created_at timestamptz not null default now(),
   feedback text check ((feedback is null) or (feedback in ('helpful', 'not_helpful'))),
   feedback_at timestamptz,
+  -- A correction on a long post covers one stretch of the body: characters target_start up to target_end, counted from 0.
+  target_start int,
+  target_end int,
+  target_text text check (char_length(target_text) <= 1000),
+  constraint post_discussion_target check (((target_start is null) = (target_end is null)) and ((target_start is null) = (target_text is null)) and ((target_start is null) or ((kind = 'correction') and (target_start >= 0) and (target_end > target_start)))),
   unique (author_id, client_key),
   constraint post_discussion_check check (parent_id is distinct from id),
   constraint post_discussion_check1 check ((parent_id is null) = (depth = 0)),
@@ -154,7 +169,7 @@ begin
   insert into public.reports (reporter_id, target_user_id, post_id, reason, details, evidence)
   values (auth.uid(), p.user_id, p.id, p_reason, left(p_details, 1000),
           jsonb_build_array(jsonb_build_object('id', p.id, 'sender_id', p.user_id, 'created_at', p.created_at,
-            'body', concat_ws(E'\n', p.phrase, '→ ' || p.translation, '“' || p.source_context || '”', p.unsplash_image_url))))
+            'body', concat_ws(E'\n', p.phrase, p.body, '→ ' || p.translation, '“' || p.source_context || '”', p.unsplash_image_url))))
   returning id into v_id;
 
   select count(distinct reporter_id) into v_recent from public.reports where target_user_id = p.user_id and created_at > now() - interval '7 days';
@@ -190,6 +205,7 @@ create function public.protect_discussion() returns trigger language plpgsql as 
 begin
   if new.post_id <> old.post_id or new.parent_id is distinct from old.parent_id or new.kind <> old.kind or new.body <> old.body
      or new.proposed_phrase is distinct from old.proposed_phrase or new.proposed_translation is distinct from old.proposed_translation
+     or new.target_start is distinct from old.target_start or new.target_end is distinct from old.target_end or new.target_text is distinct from old.target_text
      or new.created_at <> old.created_at or new.depth <> old.depth
      or (new.author_id is distinct from old.author_id and new.author_id is not null) then
     raise exception 'discussion_is_immutable';
@@ -276,8 +292,11 @@ begin
         'proposed_translation', case when public.is_blocked_between(v_me, d.author_id) then null else d.proposed_translation end,
         'author', case when public.is_blocked_between(v_me, d.author_id) or u.id is null then null else jsonb_build_object('id', u.id, 'username', u.username, 'display_name', u.display_name, 'avatar_url', u.avatar_url) end,
         'decided_by_name', dec.display_name,
-        'agree_count', (select count(*) from correction_agreements ca where ca.item_id = d.id),
-        'i_agreed', exists (select 1 from correction_agreements ca where ca.item_id = d.id and ca.user_id = v_me),
+        'target_start', d.target_start, 'target_end', d.target_end, 'target_text', d.target_text,
+        'agree_count', (select count(*) from correction_agreements ca where ca.item_id = d.id and ca.stance = 'agree'),
+        'i_agreed', exists (select 1 from correction_agreements ca where ca.item_id = d.id and ca.user_id = v_me and ca.stance = 'agree'),
+        'flag_count', (select count(*) from correction_agreements ca where ca.item_id = d.id and ca.stance = 'flag'),
+        'i_flagged', exists (select 1 from correction_agreements ca where ca.item_id = d.id and ca.user_id = v_me and ca.stance = 'flag'),
         'due_at', di.due_at, 'waiting_since', case when di.resolved_at is null then di.created_at end, 'responsible_open', di.id is not null and di.resolved_at is null)
         order by d.created_at)
       from post_discussion d
@@ -293,14 +312,16 @@ end $$;
 
 create function public.post_contribution(p_phrase text, p_translation text default null, p_language text default null,
                                                     p_category text default 'phrase', p_source_context text default null,
-                                                    p_unsplash_image_url text default null, p_text_align text default 'left')
+                                                    p_unsplash_image_url text default null, p_text_align text default 'left',
+                                                    p_post_type text default 'library', p_body text default null, p_image_layout text default 'above')
 returns uuid language plpgsql security definer set search_path = public as $$
 declare v_id uuid; v_lang text; v_cat text := lower(btrim(coalesce(p_category, 'phrase'))); v_img text := nullif(btrim(coalesce(p_unsplash_image_url, '')), '');
-        v_align text := lower(btrim(coalesce(p_text_align, 'left')));
+        v_align text := lower(btrim(coalesce(p_text_align, 'left'))); v_body text := nullif(btrim(coalesce(p_body, '')), ''); v_layout text := coalesce(p_image_layout, 'above');
 begin
   perform assert_active();
   perform public.sweep_if_due();
   if exists (select 1 from user_restrictions where user_id = auth.uid() and lifted_at is null and kind = 'new_posts') then raise exception 'posting_restricted'; end if;
+  if p_post_type not in ('library', 'lesson') then raise exception 'invalid_post_type'; end if;
   if char_length(btrim(coalesce(p_phrase, ''))) = 0 then raise exception 'empty_phrase'; end if;
   v_lang := public.normalize_language_code(nullif(btrim(coalesce(p_language, '')), ''));
   if v_lang is null then raise exception 'language_required'; end if;
@@ -308,35 +329,49 @@ begin
   if v_cat not in ('phrase', 'idiom', 'usage', 'grammar') then raise exception 'invalid_category'; end if;
   if v_align not in ('left', 'center', 'right') then raise exception 'invalid_alignment'; end if;
   if v_img is not null and (char_length(v_img) > 500 or v_img !~ '^https://images\.unsplash\.com/[^[:space:]]+$') then raise exception 'invalid_image'; end if;
+  if p_post_type = 'lesson' and v_body is null then raise exception 'empty_body'; end if;
+  if p_post_type = 'library' then v_body := null; end if;
+  if char_length(v_body) > 5000 then raise exception 'text_too_long'; end if;
+  if v_layout not in ('above', 'overlay') or (v_layout = 'overlay' and v_img is null) then raise exception 'invalid_image'; end if;
+  if v_layout = 'overlay' and char_length(btrim(p_phrase)) > 120 then raise exception 'overlay_too_long'; end if;
   if (select count(*) from public.contribution_posts where user_id = auth.uid() and created_at > now() - interval '24 hours') >= 20 then raise exception 'rate_limited'; end if;
 
-  insert into public.contribution_posts (user_id, certified_at, language_id, phrase, translation, category, source_context, unsplash_image_url, text_align, updated_at)
+  insert into public.contribution_posts (user_id, certified_at, language_id, phrase, translation, category, source_context, unsplash_image_url, text_align, updated_at, post_type, body, image_layout)
   values (auth.uid(), now(), v_lang, left(btrim(p_phrase), 500), left(nullif(btrim(coalesce(p_translation, '')), ''), 500), v_cat,
-          left(nullif(btrim(coalesce(p_source_context, '')), ''), 500), v_img, v_align, now())
+          left(nullif(btrim(coalesce(p_source_context, '')), ''), 500), v_img, v_align, now(), p_post_type, v_body, v_layout)
   returning id into v_id;
   return v_id;
 end $$;
 
 create function public.update_contribution(p_id uuid, p_phrase text, p_translation text default null, p_language text default null,
                                                       p_category text default 'phrase', p_source_context text default null,
-                                                      p_unsplash_image_url text default null, p_text_align text default 'left')
+                                                      p_unsplash_image_url text default null, p_text_align text default 'left',
+                                                      p_body text default null, p_image_layout text default 'above')
 returns void language plpgsql security definer set search_path = public as $$
 declare v_lang text; old public.contribution_posts; v_cat text := lower(btrim(coalesce(p_category, 'phrase'))); v_img text := nullif(btrim(coalesce(p_unsplash_image_url, '')), '');
-        v_align text := lower(btrim(coalesce(p_text_align, 'left')));
+        v_align text := lower(btrim(coalesce(p_text_align, 'left'))); v_body text := nullif(btrim(coalesce(p_body, '')), ''); v_layout text := coalesce(p_image_layout, 'above');
 begin
   perform assert_active();
   select * into old from public.contribution_posts where id = p_id and user_id = auth.uid();
   if not found then raise exception 'post_not_found'; end if;
   if char_length(btrim(coalesce(p_phrase, ''))) = 0 then raise exception 'empty_phrase'; end if;
+  if old.post_type not in ('library', 'lesson') and char_length(btrim(p_phrase)) > 280 then raise exception 'text_too_long'; end if;
   v_lang := public.normalize_language_code(nullif(btrim(coalesce(p_language, '')), ''));
   if v_lang is null then raise exception 'language_required'; end if;
   if v_lang is distinct from old.language_id and not public.can_correct_language(auth.uid(), v_lang) then raise exception 'not_contribution_eligible'; end if;
   if v_cat not in ('phrase', 'idiom', 'usage', 'grammar') then raise exception 'invalid_category'; end if;
   if v_align not in ('left', 'center', 'right') then raise exception 'invalid_alignment'; end if;
   if v_img is not null and (char_length(v_img) > 500 or v_img !~ '^https://images\.unsplash\.com/[^[:space:]]+$') then raise exception 'invalid_image'; end if;
+  if old.post_type = 'photo' and v_img is null then raise exception 'invalid_image'; end if;
+  if old.post_type in ('story', 'lesson') and v_body is null then raise exception 'empty_body'; end if;
+  if old.post_type not in ('story', 'lesson', 'question') then v_body := null; end if;
+  if char_length(v_body) > (case when old.post_type = 'question' then 2000 else 5000 end) then raise exception 'text_too_long'; end if;
+  if v_layout not in ('above', 'overlay') or (v_layout = 'overlay' and v_img is null) then raise exception 'invalid_image'; end if;
+  if v_layout = 'overlay' and char_length(btrim(p_phrase)) > 120 then raise exception 'overlay_too_long'; end if;
   if (old.thread_count > 0 or old.endorse_count > 0) and (
        left(btrim(p_phrase), 500) <> old.phrase
     or left(nullif(btrim(coalesce(p_translation, '')), ''), 500) is distinct from old.translation
+    or v_body is distinct from old.body
     or v_lang is distinct from old.language_id) then
     raise exception 'post_under_review';
   end if;
@@ -344,7 +379,7 @@ begin
   update public.contribution_posts
      set language_id = v_lang, phrase = left(btrim(p_phrase), 500), translation = left(nullif(btrim(coalesce(p_translation, '')), ''), 500),
          category = v_cat, source_context = left(nullif(btrim(coalesce(p_source_context, '')), ''), 500), unsplash_image_url = v_img,
-         text_align = v_align, updated_at = now()
+         text_align = v_align, body = v_body, image_layout = v_layout, updated_at = now()
    where id = p_id and user_id = auth.uid();
 end $$;
 
@@ -356,37 +391,73 @@ begin
   delete from public.contribution_posts where id = p_id and user_id = auth.uid();
 end $$;
 
+-- The body as it reads with accepted corrections applied, or null when none apply. The original is never changed.
+-- Where accepted corrections overlap, the newest decision wins.
+create function public.applied_body(p_post uuid) returns text
+language plpgsql stable security definer set search_path = public as $$
+declare v_body text; v_changed boolean := false; it record;
+begin
+  select body into v_body from contribution_posts where id = p_post;
+  if v_body is null then return null; end if;
+  for it in
+    select d.target_start, d.target_end, d.proposed_phrase from post_discussion d
+    where d.post_id = p_post and d.kind = 'correction' and d.status = 'accepted' and d.target_start is not null and d.proposed_phrase is not null
+      and not exists (select 1 from post_discussion n
+                      where n.post_id = d.post_id and n.kind = 'correction' and n.status = 'accepted' and n.target_start is not null
+                        and n.target_start < d.target_end and n.target_end > d.target_start
+                        and (n.decided_at, n.id) > (d.decided_at, d.id))
+    order by d.target_start desc
+  loop
+    v_body := overlay(v_body placing it.proposed_phrase from it.target_start + 1 for it.target_end - it.target_start);
+    v_changed := true;
+  end loop;
+  return case when v_changed then v_body end;
+end $$;
+
 create function public.refresh_post_review(p_post uuid) returns void
 language sql security definer set search_path = public as $$
   update contribution_posts c set
     open_corrections = o.open, thread_count = o.total, endorse_count = o.endorsed,
+    current_body = public.applied_body(p_post),
     review_status = case
-      when c.post_type <> 'library' then case when o.live > 0 or o.endorsed > 0 then 'helped' else 'needs_fix' end
-      when o.open > 0 then 'disputed' when c.accepted_item_id is not null then 'corrected' when o.endorsed > 0 then 'confirmed' else 'unreviewed' end
+      when o.escalated > 0 then 'under_review'
+      when o.open > 0 or (c.post_type = 'question' and o.total > 0) then 'corrections_received'
+      when o.accepted > 0 or o.endorsed > 0 then 'reviewed'
+      else 'awaiting_feedback' end
   from (select
           (select count(*)::int from post_discussion d where d.post_id = p_post and d.status = 'pending') as open,
           (select count(*)::int from post_discussion d where d.post_id = p_post) as total,
-          (select count(*)::int from post_discussion d where d.post_id = p_post and d.kind = 'correction' and d.status in ('pending','accepted')) as live,
+          (select count(*)::int from post_discussion d where d.post_id = p_post and d.kind = 'correction' and d.status = 'accepted') as accepted,
+          (select count(*)::int from decision_items i where i.post_id = p_post and i.resolved_at is null and i.escalated_at is not null) as escalated,
           (select count(*)::int from post_endorsements e where e.post_id = p_post) as endorsed) o
   where c.id = p_post;
 $$;
 
-create function public.post_help_request(p_type text, p_text text, p_context text default null) returns uuid
+-- Every practice type: nobody needs a level, and the language is always the one you are learning.
+create function public.post_help_request(p_type text, p_text text, p_context text default null, p_body text default null,
+                                         p_image_url text default null, p_image_layout text default 'above') returns uuid
 language plpgsql security definer set search_path = public as $$
 declare me public.profiles; post public.contribution_posts; v_text text := btrim(coalesce(p_text, '')); v_helper uuid;
+        v_body text := nullif(btrim(coalesce(p_body, '')), ''); v_img text := nullif(btrim(coalesce(p_image_url, '')), ''); v_layout text := coalesce(p_image_layout, 'above');
 begin
   perform assert_active();
   perform public.sweep_if_due();
-  if exists (select 1 from user_restrictions where user_id = auth.uid() and lifted_at is null and kind = 'new_posts') then raise exception 'posting_restricted'; end if;
-  if p_type not in ('correct_me', 'how_do_i_say') then raise exception 'invalid_post_type'; end if;
+  if p_type not in ('correct_me', 'how_do_i_say', 'story', 'question', 'photo') then raise exception 'invalid_post_type'; end if;
   select * into me from profiles where id = auth.uid();
   if me.learning_language_id is null then raise exception 'learning_language_required'; end if;
   if char_length(v_text) = 0 then raise exception 'empty_phrase'; end if;
   if char_length(v_text) > 280 then raise exception 'text_too_long'; end if;
-  if (select count(*) from contribution_posts where user_id = me.id and post_type <> 'library' and created_at > now() - interval '24 hours') >= 3 then raise exception 'rate_limited'; end if;
+  if p_type = 'story' and v_body is null then raise exception 'empty_body'; end if;
+  if p_type not in ('story', 'question') then v_body := null; end if;
+  if char_length(v_body) > (case when p_type = 'question' then 2000 else 5000 end) then raise exception 'text_too_long'; end if;
+  if p_type <> 'photo' then v_img := null; v_layout := 'above'; end if;
+  if p_type = 'photo' and (v_img is null or char_length(v_img) > 500 or v_img !~ '^https://images\.unsplash\.com/[^[:space:]]+$') then raise exception 'invalid_image'; end if;
+  if v_layout not in ('above', 'overlay') then raise exception 'invalid_image'; end if;
+  if v_layout = 'overlay' and char_length(v_text) > 120 then raise exception 'overlay_too_long'; end if;
+  if (select count(*) from contribution_posts where user_id = me.id and post_type not in ('library', 'lesson') and created_at > now() - interval '24 hours') >= 5 then raise exception 'practice_limit'; end if;
 
-  insert into contribution_posts (user_id, certified_at, language_id, phrase, source_context, post_type, review_status, updated_at)
-  values (me.id, now(), me.learning_language_id, v_text, left(nullif(btrim(coalesce(p_context, '')), ''), 200), p_type, 'needs_fix', now())
+  insert into contribution_posts (user_id, certified_at, language_id, phrase, source_context, post_type, review_status, updated_at, body, unsplash_image_url, image_layout)
+  values (me.id, now(), me.learning_language_id, v_text, left(nullif(btrim(coalesce(p_context, '')), ''), 200), p_type, 'awaiting_feedback', now(), v_body, v_img, v_layout)
   returning * into post;
 
   for v_helper in
@@ -400,7 +471,6 @@ begin
     perform public.notify_event(v_helper, me.id, 'help_request', jsonb_build_object('post_id', post.id, 'phrase', public.post_snippet(post)), 'help_request:' || post.id || ':' || v_helper);
   end loop;
 
-  perform public.check_level_safely(me.id);
   return post.id;
 end $$;
 
@@ -413,12 +483,14 @@ language sql stable security definer set search_path = public as $$
     limit 5) x;
 $$;
 
-create function public.submit_discussion(p_post uuid, p_parent uuid, p_kind text, p_body text, p_phrase text default null, p_translation text default null, p_client_key uuid default null)
+create function public.submit_discussion(p_post uuid, p_parent uuid, p_kind text, p_body text, p_phrase text default null, p_translation text default null, p_client_key uuid default null,
+                                          p_target_start int default null, p_target_end int default null)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare
   post public.contribution_posts; par public.post_discussion; v_id uuid; v_depth int := 0;
   v_body text := btrim(coalesce(p_body, '')); v_phrase text := nullif(btrim(coalesce(p_phrase, '')), ''); v_trans text := nullif(btrim(coalesce(p_translation, '')), '');
   v_base_phrase text; v_base_trans text; pol public.accountability_policy; v_data jsonb;
+  v_start int; v_end int; v_target text;
 begin
   perform assert_active();
   if p_client_key is null then raise exception 'missing_client_key'; end if;
@@ -429,7 +501,7 @@ begin
   if post.id is null or public.is_blocked_between(auth.uid(), post.user_id) then raise exception 'post_not_found'; end if;
   if p_kind not in ('correction','clarification','comment') then raise exception 'invalid_kind'; end if;
   if char_length(v_body) = 0 then raise exception 'explanation_required'; end if;
-  if char_length(v_body) > 1000 or char_length(v_phrase) > 500 or char_length(v_trans) > 500 then raise exception 'text_too_long'; end if;
+  if char_length(v_body) > 1000 or char_length(v_phrase) > 1000 or char_length(v_trans) > 500 then raise exception 'text_too_long'; end if;
   if (select count(*) from post_discussion where author_id = auth.uid() and created_at > now() - interval '1 hour') >= 30 then raise exception 'rate_limited'; end if;
 
   if p_parent is not null then
@@ -440,7 +512,9 @@ begin
     if v_depth > 12 then raise exception 'thread_too_deep'; end if;
   end if;
 
-  if post.post_type <> 'library' and (p_kind = 'clarification' or (p_kind = 'correction' and p_parent is not null)) then raise exception 'help_post_fix_only'; end if;
+  -- Practice posts take fixes and replies, a question only replies. Nothing here can create a duty for the author.
+  if post.post_type not in ('library', 'lesson') and p_kind = 'clarification' then raise exception 'help_post_fix_only'; end if;
+  if post.post_type = 'question' and p_kind = 'correction' then raise exception 'help_post_fix_only'; end if;
 
   if p_kind in ('correction','clarification') then
     if not public.can_correct_language(auth.uid(), post.language_id) then raise exception 'not_qualified_to_correct'; end if;
@@ -455,9 +529,20 @@ begin
   if p_kind = 'correction' then
     v_base_phrase := coalesce(par.proposed_phrase, post.current_phrase, post.phrase);
     v_base_trans := coalesce(par.proposed_translation, post.current_translation, post.translation);
+    if post.body is not null then
+      -- A long post is corrected one stretch at a time, so one fix never replaces the whole text.
+      v_start := coalesce(par.target_start, p_target_start);
+      v_end := coalesce(par.target_end, p_target_end);
+      if v_start is null or v_end is null or v_start < 0 or v_end <= v_start or v_end > char_length(post.body) then raise exception 'sentence_required'; end if;
+      v_target := substr(post.body, v_start + 1, v_end - v_start);
+      if char_length(v_target) > 1000 then raise exception 'text_too_long'; end if;
+      v_base_phrase := coalesce(par.proposed_phrase, v_target);
+      v_trans := null;
+    end if;
     if v_phrase is null and v_trans is null then raise exception 'proposal_required'; end if;
     if (v_phrase is null or lower(v_phrase) = lower(v_base_phrase)) and (v_trans is null or lower(v_trans) = lower(coalesce(v_base_trans, ''))) then raise exception 'no_change'; end if;
-    if exists (select 1 from post_discussion d where d.post_id = p_post and d.author_id = auth.uid() and d.status = 'pending' and d.parent_id is not distinct from p_parent
+    if exists (select 1 from post_discussion d where d.post_id = p_post and d.kind = 'correction' and d.status = 'pending' and d.parent_id is not distinct from p_parent
+               and d.target_start is not distinct from v_start
                and lower(coalesce(d.proposed_phrase, '')) = lower(coalesce(v_phrase, '')) and lower(coalesce(d.proposed_translation, '')) = lower(coalesce(v_trans, ''))) then
       raise exception 'duplicate_correction';
     end if;
@@ -465,8 +550,8 @@ begin
     v_phrase := null; v_trans := null;
   end if;
 
-  insert into post_discussion (post_id, parent_id, depth, author_id, kind, body, proposed_phrase, proposed_translation, status, client_key)
-  values (p_post, p_parent, v_depth, auth.uid(), p_kind, v_body, v_phrase, v_trans, case when p_kind = 'comment' then null else 'pending' end, p_client_key)
+  insert into post_discussion (post_id, parent_id, depth, author_id, kind, body, proposed_phrase, proposed_translation, status, client_key, target_start, target_end, target_text)
+  values (p_post, p_parent, v_depth, auth.uid(), p_kind, v_body, v_phrase, v_trans, case when p_kind = 'comment' then null else 'pending' end, p_client_key, v_start, v_end, v_target)
   returning id into v_id;
   perform public.log_discussion(p_post, v_id, 'submitted', null, case when p_kind = 'comment' then null else 'pending' end);
 
@@ -477,7 +562,7 @@ begin
       perform public.notify_event(post.user_id, auth.uid(), 'post_reply', v_data, 'reply:' || v_id || ':' || post.user_id);
     end if;
   else
-    if post.post_type = 'library' then
+    if post.post_type in ('library', 'lesson') then
       select * into pol from accountability_policy;
       insert into decision_items (user_id, post_id, item_id, due_at)
       values (post.user_id, p_post, v_id, now() + make_interval(hours => pol.deadline_hours));
@@ -490,27 +575,28 @@ begin
     end if;
   end if;
   perform public.refresh_post_review(p_post);
-  if post.post_type <> 'library' and p_kind = 'correction' then perform public.check_level_safely(post.user_id); end if;
   return v_id;
 end $$;
 
-create function public.rate_help_fix(p_id uuid, p_helpful boolean) returns void
+create function public.rate_help_fix(p_id uuid, p_helpful boolean, p_note text default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare it public.post_discussion; post public.contribution_posts; v_status text := case when p_helpful then 'accepted' else 'declined' end; v_reward boolean := p_helpful; v_count int;
+        v_note text := left(nullif(btrim(coalesce(p_note, '')), ''), 500);
 begin
   perform assert_active();
   select * into it from post_discussion where id = p_id for update;
   if it.id is null or it.kind <> 'correction' then raise exception 'correction_unavailable'; end if;
   select * into post from contribution_posts where id = it.post_id;
-  if post.user_id <> auth.uid() or post.post_type = 'library' then raise exception 'forbidden'; end if;
+  if post.user_id <> auth.uid() or post.post_type in ('library', 'lesson') then raise exception 'forbidden'; end if;
   if it.status <> 'pending' then raise exception 'already_decided'; end if;
 
-  update post_discussion set status = v_status, decided_by = auth.uid(), decided_at = now(),
+  update post_discussion set status = v_status, decided_by = auth.uid(), decided_at = now(), decision_note = v_note,
     feedback = case when p_helpful then 'helpful' else 'not_helpful' end, feedback_at = now()
   where id = it.id;
-  perform public.log_discussion(post.id, it.id, v_status, 'pending', v_status);
+  perform public.log_discussion(post.id, it.id, v_status, 'pending', v_status, v_note);
 
   if v_reward then
+    perform public.keep_correction(post.user_id, it.proposed_phrase, post.language_id, post.id);
     if not public.corrector_in_good_standing(it.author_id) then v_reward := false; end if;
     select count(*) into v_count from points_ledger where user_id = it.author_id and reason in ('correction_accepted','post_correction_accepted') and created_at > now() - interval '24 hours';
     if v_count >= 10 then v_reward := false; end if;
@@ -520,7 +606,6 @@ begin
     if v_reward and it.author_id is not null then perform public.award_points(it.author_id, 5, 'post_correction_accepted', 'post_discussion', it.id); else v_reward := false; end if;
     perform public.notify_event(it.author_id, auth.uid(), 'help_thanked',
       jsonb_build_object('post_id', post.id, 'item_id', it.id, 'phrase', public.post_snippet(post), 'points', case when v_reward then 5 else 0 end), 'help_thanked:' || it.id);
-    perform public.check_level_safely(it.author_id);
   end if;
   perform public.refresh_post_review(post.id);
 end $$;
@@ -529,7 +614,8 @@ create function public.search_posts(p_query text default null, p_language text d
 returns table (id uuid, user_id uuid, language_id text, phrase text, translation text, category text, source_context text,
   unsplash_image_url text, text_align text, pinned_at timestamptz, created_at timestamptz, updated_at timestamptz, certified_at timestamptz,
   author_username text, author_name text, author_avatar text, saved boolean,
-  current_phrase text, current_translation text, review_status text, open_corrections int, thread_count int, endorse_count int)
+  current_phrase text, current_translation text, review_status text, open_corrections int, thread_count int, endorse_count int,
+  post_type text, body text, current_body text, image_layout text)
 language plpgsql security definer set search_path = public as $$
 declare v_q text; v_like text; v_lang text;
 begin
@@ -544,14 +630,15 @@ begin
     c.unsplash_image_url, c.text_align, c.pinned_at, c.created_at, c.updated_at, c.certified_at,
     a.username, a.display_name, a.avatar_url,
     exists (select 1 from saved_posts s where s.user_id = auth.uid() and s.post_id = c.id),
-    c.current_phrase, c.current_translation, c.review_status, c.open_corrections, c.thread_count, c.endorse_count
+    c.current_phrase, c.current_translation, c.review_status, c.open_corrections, c.thread_count, c.endorse_count,
+    c.post_type, c.body, c.current_body, c.image_layout
   from contribution_posts c
   join profiles a on a.id = c.user_id
-  where c.post_type = 'library'
+  where c.post_type in ('library', 'lesson')
     and (a.status = 'active' or a.id = auth.uid())
     and not public.is_blocked_between(auth.uid(), c.user_id)
     and (v_lang is null or c.language_id = v_lang)
-    and (v_like is null or c.phrase ilike v_like or c.translation ilike v_like or c.source_context ilike v_like
+    and (v_like is null or c.phrase ilike v_like or c.body ilike v_like or c.translation ilike v_like or c.source_context ilike v_like
          or a.display_name ilike v_like or a.username ilike v_like)
   order by case
       when v_q is null then 2
@@ -591,14 +678,15 @@ revoke all on function
   public.withdraw_discussion(uuid),
   public.toggle_post_endorsement(uuid),
   public.get_post_thread(uuid),
-  public.post_contribution(text, text, text, text, text, text, text),
-  public.update_contribution(uuid, text, text, text, text, text, text, text),
+  public.post_contribution(text, text, text, text, text, text, text, text, text, text),
+  public.update_contribution(uuid, text, text, text, text, text, text, text, text, text),
   public.delete_contribution(uuid),
+  public.applied_body(uuid),
   public.refresh_post_review(uuid),
-  public.post_help_request(text, text, text),
+  public.post_help_request(text, text, text, text, text, text),
   public.help_supply(text),
-  public.submit_discussion(uuid, uuid, text, text, text, text, uuid),
-  public.rate_help_fix(uuid, boolean),
+  public.submit_discussion(uuid, uuid, text, text, text, text, uuid, integer, integer),
+  public.rate_help_fix(uuid, boolean, text),
   public.search_posts(text, text, integer, integer)
 from public, anon, authenticated, service_role;
 
@@ -615,17 +703,18 @@ grant execute on function
   public.withdraw_discussion(uuid),
   public.toggle_post_endorsement(uuid),
   public.get_post_thread(uuid),
-  public.post_contribution(text, text, text, text, text, text, text),
-  public.update_contribution(uuid, text, text, text, text, text, text, text),
+  public.post_contribution(text, text, text, text, text, text, text, text, text, text),
+  public.update_contribution(uuid, text, text, text, text, text, text, text, text, text),
   public.delete_contribution(uuid),
-  public.post_help_request(text, text, text),
+  public.post_help_request(text, text, text, text, text, text),
   public.help_supply(text),
-  public.submit_discussion(uuid, uuid, text, text, text, text, uuid),
-  public.rate_help_fix(uuid, boolean),
+  public.submit_discussion(uuid, uuid, text, text, text, text, uuid, integer, integer),
+  public.rate_help_fix(uuid, boolean, text),
   public.search_posts(text, text, integer, integer)
 to authenticated, service_role;
 
 grant execute on function
   public.log_discussion(uuid, uuid, text, text, text, text),
+  public.applied_body(uuid),
   public.refresh_post_review(uuid)
 to service_role;

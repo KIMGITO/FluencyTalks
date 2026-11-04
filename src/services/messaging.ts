@@ -43,7 +43,9 @@ export const declineCorrection = (id: string, reason: string) => rpc('decline_co
 export async function getMessages(conv: string, before?: string, limit = 40) {
   let q = supabase.from('messages').select('*').eq('conversation_id', conv).order('created_at', { ascending: false }).limit(limit);
   if (before) q = q.lt('created_at', before);
-  return ((await q).data ?? []) as Message[];
+  const { data, error } = await q;
+  if (error) throw error;   // a failed load mustn't look like an empty chat
+  return (data ?? []) as Message[];
 }
 
 

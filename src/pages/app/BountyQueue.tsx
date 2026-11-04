@@ -85,10 +85,10 @@ export default function BountyQueue() {
       {error && open !== null && <p className="ft-inset mb-3 text-sm text-danger">{error}</p>}
       {error && (open === null || mine === null || answers === null) ? <ErrorState title="Couldn't load bounties" onRetry={() => void refresh()} />
         : tab === 'open' ? (<>
-          {needFix.filter((p) => p.review_status === 'needs_fix').length > 0 && (
+          {needFix.filter((p) => p.review_status === 'awaiting_feedback').length > 0 && (
             <section aria-label="Learners waiting for a fix" className="mb-4 space-y-3">
               <h2 className="ft-inset text-sm font-semibold text-ink">Waiting for a fix · +5 points when they thank you</h2>
-              {needFix.filter((p) => p.review_status === 'needs_fix').map((p) => <PostCard key={p.id} post={p} onRemoved={(id) => setNeedFix((l) => l.filter((x) => x.id !== id))} />)}
+              {needFix.filter((p) => p.review_status === 'awaiting_feedback').map((p) => <PostCard key={p.id} post={p} onRemoved={(id) => setNeedFix((l) => l.filter((x) => x.id !== id))} />)}
               <Link to="/library?tab=practice" className="ft-inset block text-sm font-semibold text-brand hover:underline">See all in Practice</Link>
             </section>
           )}

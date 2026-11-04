@@ -15,16 +15,17 @@ const rowsFor = (e: LevelEvidence, n: LevelNeeds, next: string | null): Row[] =>
   const early = next === 'A1' || next === 'A2';
   const partners = early ? e.partners_any : e.partners;
   const reviewed = early ? e.reviewed_any : e.reviewed;
+  const errorPct = early ? e.error_pct_any : e.error_pct;
   return [
-  n.min_messages > 0 && count('Different messages', e.messages, n.min_messages),
+  n.min_messages > 0 && count('Different messages and written posts', e.messages, n.min_messages),
   n.min_active_days > 0 && count('Days active', e.active_days, n.min_active_days),
-  n.min_partners > 0 && count(early ? 'Native speakers who replied or fixed a post' : 'Native partners who replied', partners, n.min_partners),
+  n.min_partners > 0 && count(early ? 'Native or B2+ speakers who replied or fixed a post' : 'Native or B2+ partners who replied', partners, n.min_partners),
   n.min_reviewed > 0 && count(early ? 'Messages and posts they reviewed' : 'Messages they reviewed', reviewed, n.min_reviewed),
-  n.min_reviewed > 0 && n.max_error_pct < 100 && !(early && e.reviewed < n.min_reviewed) && {
+  n.min_reviewed > 0 && n.max_error_pct < 100 && !(early && e.reviewed_chat_any < n.min_reviewed) && {
     label: 'Recent messages needing a correction',
-    value: e.error_pct == null ? `${n.max_error_pct}% or less` : `${e.error_pct}% (${n.max_error_pct}% or less)`,
-    pct: e.error_pct == null ? 0 : Math.min(100, (n.max_error_pct / Math.max(e.error_pct, 1)) * 100),
-    done: e.error_pct != null && e.error_pct <= n.max_error_pct,
+    value: errorPct == null ? `${n.max_error_pct}% or less` : `${errorPct}% (${n.max_error_pct}% or less)`,
+    pct: errorPct == null ? 0 : Math.min(100, (n.max_error_pct / Math.max(errorPct, 1)) * 100),
+    done: errorPct != null && errorPct <= n.max_error_pct,
   },
   n.min_accepted_given > 0 && count('Your corrections accepted', e.accepted_given, n.min_accepted_given),
   n.min_helpful_pct > 0 && e.rated >= 3 && {
@@ -67,7 +68,7 @@ export function LevelProgress({ language }: { language: string }) {
         {data.verified_level ? `Verified at ${data.verified_level} in ${language}` : `Not verified in ${language} yet`}
       </p>
       {data.next_level
-        ? <p className="text-xs text-muted">Your level rises by itself as you chat with native speakers and make fewer errors{data.next_level === 'A1' || data.next_level === 'A2' ? ', or as they fix your “Correct me” posts' : ''}. To reach {data.next_level}:</p>
+        ? <p className="text-xs text-muted">Your level rises by itself as you chat with native or B2+ speakers and make fewer errors{data.next_level === 'A1' || data.next_level === 'A2' ? ', or as they fix your stories and “Correct me” posts' : ''}. Likes and post counts don't move it: it shows what you can do. To reach {data.next_level}:</p>
         : <p className="text-xs text-muted">You've reached the top level.</p>}
       {rows.length > 0 && (
         <ul className="space-y-2">
@@ -84,13 +85,24 @@ export function LevelProgress({ language }: { language: string }) {
           ))}
         </ul>
       )}
+      {rows.length > 0 && !!data.evidence?.partners_settling && !(data.next_level === 'A1' || data.next_level === 'A2') && (
+        <p className="text-xs text-muted">{data.evidence.partners_settling === 1 ? 'One person who replied to you is' : `${data.evidence.partners_settling} people who replied to you are`} new here. Your messages with them start counting toward this level once they've been here a week, and none of it is lost.</p>
+      )}
       {data.next_level && ['A1', 'A2', 'B1'].includes(data.next_level) && (
         <p className="text-xs text-muted">
           Faster route to B1: {data.vouches_needed} native speakers you've chatted with vouch for you, and your recent error rate holds.
           {data.vouches > 0 && ` You have ${data.vouches} of ${data.vouches_needed}.`}
+          {data.vouches_waiting > 0 && ` ${data.vouches_waiting} more ${data.vouches_waiting === 1 ? 'vouch starts' : 'vouches start'} counting once ${data.vouches_waiting === 1 ? 'that person has' : 'those people have'} been here a week.`}
         </p>
       )}
       <CorrectionRatings progress={data} />
+      <div className="border-t border-border pt-2">
+        <p className="text-sm font-semibold text-ink">Your contribution</p>
+        <p className="text-xs text-muted">
+          {data.contribution.posts} {data.contribution.posts === 1 ? 'post' : 'posts'} · {data.contribution.corrections_given} {data.contribution.corrections_given === 1 ? 'correction' : 'corrections'} given, {data.contribution.corrections_accepted} accepted · {data.contribution.points} points
+          {data.contribution.response.decided > 0 && ` · ${data.contribution.response.on_time} of ${data.contribution.response.decided} decisions answered on time`}.
+        </p>
+      </div>
     </div>
   );
 }

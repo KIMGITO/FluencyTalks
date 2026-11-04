@@ -135,13 +135,14 @@ begin
 end $$;
 
 create function public.list_conversations(p_status text default 'active')
-returns table (conversation_id uuid, other_user_id uuid, other_name text, other_username text, other_avatar text, last_body text, last_at timestamptz, unread_count bigint, status text)
+returns table (conversation_id uuid, other_user_id uuid, other_name text, other_username text, other_avatar text, last_body text, last_at timestamptz, unread_count bigint, status text, other_status text)
 language sql stable security definer set search_path = public as $$
   select c.id, o.id, o.display_name, o.username, o.avatar_url,
     lm.body,
     c.last_message_at,
     (select count(*) from messages m where m.conversation_id = c.id and m.sender_id <> auth.uid() and m.deleted_at is null and m.body <> '[deleted]' and m.created_at > me.last_read_at),
-    me.status
+    me.status,
+    om.status
   from conversation_members me
   join conversations c on c.id = me.conversation_id
   join conversation_members om on om.conversation_id = c.id and om.user_id <> auth.uid()

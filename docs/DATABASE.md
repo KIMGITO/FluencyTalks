@@ -42,7 +42,7 @@ There's one file per area, holding the final definition of everything in it. Con
 | Social | `follows`, `blocks`, `saved_partners` |
 | Notifications | `notifications`, `push_settings`, `push_subscriptions`, `message_push_claims`, `tab_seen` |
 | Messaging | `conversations`, `conversation_members`, `messages`, `message_reactions` |
-| Moderation | `reports`, `moderation_actions`, `accountability_policy`, `accountability_audit`, `decision_items`, `user_restrictions`, `restriction_appeals` |
+| Moderation | `reports`, `moderation_actions`, `accountability_policy`, `accountability_audit`, `accountability_warnings`, `decision_items`, `user_restrictions`, `restriction_appeals` |
 | Library | `contribution_posts`, `post_discussion`, `post_discussion_events`, `post_endorsements`, `post_thread_mutes`, `saved_posts` |
 | Corrections | `message_corrections`, `correction_agreements` |
 | Phrasebook | `saved_phrases`, `translation_history` |
@@ -82,8 +82,8 @@ There's one file per area, holding the final definition of everything in it. Con
 | Chat corrections | 20 an hour and 30 a day |
 | Rewarded corrections | 10 a day, and 3 a day from one author |
 | Library posts | 20 a day |
-| Practice posts | 3 a day, up to 280 characters |
-| Post phrase, translation, context | 500 characters each |
+| Practice posts | 5 a day. Title or text up to 280 characters, story text up to 5,000, question detail up to 2,000, 120 on an image |
+| Teaching post phrase, translation, context | 500 characters each. Lesson text up to 5,000 |
 | Discussion entries | 30 an hour, up to 1,000 characters, 12 levels deep |
 | Saved posts | 500 |
 | Reports | 10 an hour |

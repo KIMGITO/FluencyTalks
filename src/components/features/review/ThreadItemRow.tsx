@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { BookmarkPlus, Check, CornerDownRight, MoreHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { BookmarkPlus, Check, CornerDownRight, Flag, MoreHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button, ConfirmDialog } from '@/components/ui';
@@ -7,8 +7,9 @@ import { DiffText } from '@/components/features/chat/DiffText';
 import { timeAgo, waited } from '@/lib/format';
 import { toast } from '@/store/toastStore';
 import { savePhrase } from '@/services/phrasebook';
-import { decideCorrection, overrideCorrection, rateHelpFix, resolveClarification, toggleAgreement, withdrawDiscussion, type PostThread, type ThreadItem } from '@/services/review';
-import { Composer } from './Composer';
+import { askAboutCorrection, decideCorrection, overrideCorrection, rateHelpFix, resolveClarification, toggleAgreement, toggleFlag, withdrawDiscussion, type PostThread, type ThreadItem } from '@/services/review';
+import { hasLongBody, isPractice } from '@/lib/postTypes';
+import { Composer, newKey } from './Composer';
 import { StatusPill } from './StatusPill';
 import { userMessage } from '@/lib/errors';
 
@@ -61,28 +62,30 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   const hiddenBelow = kids.slice(visibleKids.length).reduce((n, k) => n + 1 + countBelow(k.id, children), 0);
   const indent = level < MAX_INDENT;
   const [composer, setComposer] = useState<'comment' | 'correction' | null>(null);
-  const [dialog, setDialog] = useState<'accept' | 'decline' | 'withdraw' | 'resolve' | 'override-accepted' | 'override-declined' | 'override-pending' | null>(null);
+  const [dialog, setDialog] = useState<'accept' | 'decline' | 'ask' | 'not-helpful' | 'withdraw' | 'resolve' | 'override-accepted' | 'override-declined' | 'override-pending' | null>(null);
   const [menu, setMenu] = useState(false);
   const agreeing = useRef(false);   // a ref: taps in the same tick must see it straight away
+  const askKey = useRef(newKey());   // a repeated tap can't ask twice
 
   const parent = item.parent_id ? byId.get(item.parent_id) : undefined;
   const mine = !!item.author && item.author.id === ctx.myId;
   const isCorrection = item.kind === 'correction';
-  const helpPost = !!post.post_type && post.post_type !== 'library';
+  const helpPost = isPractice(post.post_type);
+  const helpType = isPractice(post.post_type) && post.post_type !== 'question' ? post.post_type : undefined;
   const decider = (me.is_owner || me.is_moderator) && !mine;
   const asModerator = me.is_moderator && !me.is_owner;
   const canDecide = !helpPost && isCorrection && item.status === 'pending' && decider;
-  const canCounter = !helpPost && !ctx.readOnly && isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
+  const canCounter = !ctx.readOnly && isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
   const authorName = item.hidden ? 'Hidden' : item.author?.display_name ?? 'Deleted account';
   // What this proposal would replace: its parent's proposal, or the post as it stands.
-  const fromPhrase = parent?.proposed_phrase ?? post.current_phrase ?? post.phrase;
+  const fromPhrase = parent?.proposed_phrase ?? item.target_text ?? post.current_phrase ?? post.phrase;
   const fromTranslation = parent?.proposed_translation ?? post.current_translation ?? post.translation ?? '';
   const overdue = item.responsible_open && item.due_at && new Date(item.due_at).getTime() <= Date.now();
 
   const decide = async (accept: boolean, note: string) => {
     try {
       const out = await decideCorrection(item.id, accept, note);
-      toast.success(out === 'accepted' ? 'Accepted. It is now the current version, and the original is kept.' : 'Declined. The author has been told.');
+      toast.success(out === 'accepted' ? 'Accepted and added to your phrasebook. The original is kept.' : 'Declined. The author has been told.');
       await reload();
     } catch (e) {
       // Someone got there first: show what actually happened rather than an error alone.
@@ -92,10 +95,10 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   };
 
   // Optimistic would hide a failure: this one is final and pays the helper, so wait for the answer.
-  const rate = async (helpful: boolean) => {
+  const rate = async (helpful: boolean, note?: string) => {
     try {
-      await rateHelpFix(item.id, helpful);
-      toast.success(helpful ? 'Thanks sent.' : 'Noted. Thanks for telling us.');
+      await rateHelpFix(item.id, helpful, note);
+      toast.success(helpful ? 'Thanks sent, and added to your phrasebook.' : 'Noted. Thanks for telling us.');
       await reload();
     } catch (e) {
       toast.error(userMessage(e));
@@ -104,7 +107,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   };
   const keep = async () => {
     try {
-      await savePhrase({ phrase: item.proposed_phrase!, languageCode: post.language_id ?? undefined });
+      await savePhrase({ phrase: item.proposed_phrase!, languageCode: post.language_id ?? undefined, sourcePostId: post.id });
       toast.success('Added to your phrasebook.');
     } catch (e) { toast.error(userMessage(e)); }
   };
@@ -121,6 +124,14 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
       patchItem(item.id, was);
       toast.error(userMessage(e));
     } finally { agreeing.current = false; }
+  };
+
+  const flag = async () => {
+    try {
+      const now = await toggleFlag(item.id);
+      patchItem(item.id, { i_flagged: now, flag_count: item.flag_count + (now ? 1 : -1), ...(now && item.i_agreed ? { i_agreed: false, agree_count: item.agree_count - 1 } : {}) });
+      if (now) toast.success('Flagged. The author can see that someone thinks this is wrong.');
+    } catch (e) { toast.error(userMessage(e)); }
   };
 
   return (
@@ -169,6 +180,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
             <>
               {isCorrection && (
                 <div className="space-y-1 rounded-md bg-surface-2 p-2.5">
+                  {item.target_text && !parent?.proposed_phrase && <p className="text-2xs font-bold uppercase tracking-wide text-muted">One sentence</p>}
                   {item.proposed_phrase && (post.post_type === 'how_do_i_say'
                     ? <p className="whitespace-pre-line break-words font-semibold text-ink">{item.proposed_phrase}</p>
                     : <DiffText original={fromPhrase} corrected={item.proposed_phrase} />)}
@@ -196,16 +208,17 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
             {helpPost && isCorrection && me.is_owner && item.status === 'pending' && !item.hidden && !ctx.readOnly && (
               <>
                 <Button size="sm" onClick={() => void rate(true)}><Check size={14} aria-hidden /> Thanks</Button>
-                <button type="button" aria-label="Not helpful" title="Not helpful" onClick={() => void rate(false)} className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"><ThumbsDown size={14} aria-hidden /></button>
+                <button type="button" aria-label="Not helpful" title="Not helpful" onClick={() => setDialog('not-helpful')} className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"><ThumbsDown size={14} aria-hidden /></button>
               </>
             )}
-            {helpPost && isCorrection && !mine && !item.hidden && !ctx.readOnly && item.proposed_phrase && item.status !== 'declined' && item.status !== 'withdrawn' && (
+            {(helpPost || item.status === 'accepted') && isCorrection && !mine && !item.hidden && !ctx.readOnly && item.proposed_phrase && item.status !== 'declined' && item.status !== 'withdrawn' && (hasLongBody(post.post_type) ? item.target_text : true) && (
               <Button size="sm" variant="secondary" onClick={() => void keep()}><BookmarkPlus size={14} aria-hidden /> Add to phrasebook</Button>
             )}
             {canDecide && (
               <>
                 <Button size="sm" onClick={() => setDialog('accept')}><Check size={14} aria-hidden /> Accept</Button>
                 <Button size="sm" variant="secondary" onClick={() => setDialog('decline')}>Decline</Button>
+                {me.is_owner && <Button size="sm" variant="ghost" onClick={() => setDialog('ask')}>Ask about it</Button>}
               </>
             )}
             {item.kind === 'clarification' && item.status === 'pending' && (decider || mine) && (
@@ -218,6 +231,13 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
               </button>
             )}
             {isCorrection && mine && item.agree_count > 0 && <span className="px-1 text-xs text-muted">{item.agree_count} agree</span>}
+            {!ctx.readOnly && isCorrection && !mine && !item.hidden && me.can_review && !me.is_owner && (
+              <button type="button" aria-pressed={item.i_flagged} aria-label={`Flag as wrong, ${item.flag_count} so far`} onClick={() => void flag()}
+                className={clsx('inline-flex min-h-10 items-center gap-1 rounded-full px-2.5 text-xs font-semibold transition', item.i_flagged ? 'bg-warning/15 text-warning' : 'text-muted hover:bg-surface-2 hover:text-ink')}>
+                <Flag size={14} aria-hidden /> Wrong?{item.flag_count > 0 && ` · ${item.flag_count}`}
+              </button>
+            )}
+            {isCorrection && (mine || me.is_owner || !me.can_review) && item.flag_count > 0 && <span className="px-1 text-xs text-warning">{item.flag_count} {item.flag_count === 1 ? 'person thinks' : 'people think'} this is wrong</span>}
             {!ctx.readOnly && !item.hidden && (
               <button type="button" aria-expanded={composer === 'comment'} onClick={() => setComposer(composer === 'comment' ? null : 'comment')} className="inline-flex min-h-10 items-center rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">Reply</button>
             )}
@@ -233,6 +253,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
             <Composer
               postId={post.id} parentId={item.id} kind={composer}
               currentPhrase={item.proposed_phrase ?? fromPhrase} currentTranslation={item.proposed_translation ?? fromTranslation}
+              helpType={composer === 'correction' ? helpType : undefined} noTranslation={!!item.target_text}
               onCancel={() => setComposer(null)}
               onDone={async () => { setComposer(null); setShow('all'); await reload(); }}
             />
@@ -258,12 +279,21 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
       <ConfirmDialog open={dialog === 'accept'} title="Accept this correction?" confirmLabel="Accept"
         reasonLabel={asModerator ? 'Reason (required for moderators)' : 'Add a note (optional)'} reasonRequired={asModerator}
         onClose={() => setDialog(null)} onConfirm={(note) => decide(true, note)}>
-        It becomes the current version shown on your post. The original and the rest of the discussion stay. {post.accepted_item_id ? 'The correction accepted before it will be marked superseded. ' : ''}Other open proposals stay open.
+        {item.target_text ? 'This sentence reads corrected on your post.' : 'It becomes the current version shown on your post.'} The original and the rest of the discussion stay, and it goes to your phrasebook. {post.accepted_item_id && !item.target_text ? 'The correction accepted before it will be marked superseded. ' : ''}Other open proposals stay open.
       </ConfirmDialog>
       <ConfirmDialog open={dialog === 'decline'} title="Decline this correction?" confirmLabel="Decline"
         reasonLabel={asModerator ? 'Reason (required for moderators)' : 'Say why (optional, the author sees it)'} reasonRequired={asModerator}
         onClose={() => setDialog(null)} onConfirm={(note) => decide(false, note)}>
         It stays in the thread, marked declined. The author is told.
+      </ConfirmDialog>
+      <ConfirmDialog open={dialog === 'ask'} title="Ask about this correction" confirmLabel="Ask" reasonLabel="What would you like to know?" reasonRequired
+        onClose={() => setDialog(null)}
+        onConfirm={async (question) => { await askAboutCorrection(item.id, question, askKey.current); toast.success('Asked. You have more time to decide.'); await reload(); }}>
+        {item.author?.display_name ?? 'The author'} sees your question in this thread. Your deadline restarts, once per correction.
+      </ConfirmDialog>
+      <ConfirmDialog open={dialog === 'not-helpful'} title="This fix didn't help?" confirmLabel="Not helpful" reasonLabel="Say why (optional, the author sees it)"
+        onClose={() => setDialog(null)} onConfirm={(note) => rate(false, note)}>
+        It stays in the thread. This can't be changed afterwards.
       </ConfirmDialog>
       <ConfirmDialog open={dialog === 'withdraw'} title="Withdraw this?" confirmLabel="Withdraw" danger
         onClose={() => setDialog(null)}

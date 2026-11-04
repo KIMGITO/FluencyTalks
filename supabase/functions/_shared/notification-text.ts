@@ -2,7 +2,7 @@
 export interface NotificationLike {
   type: string;
   actor_username?: string | null;
-  data: { reason?: string; conversation_id?: string; points?: number; level?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; paused?: boolean; waiting?: boolean | number; overdue?: number; bounty?: boolean };
+  data: { reason?: string; conversation_id?: string; points?: number; level?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; paused?: boolean; waiting?: boolean | number; overdue?: number; hours?: number; bounty?: boolean };
 }
 
 /** The sentence after the actor's name; system notices have no actor. */
@@ -36,7 +36,8 @@ export const notificationVerb = (n: NotificationLike): string => {
     case 'action_reminder': return `A correction on${about} is still waiting for your decision`;
     case 'action_overdue': return n.data.waiting ? `Your correction on${about} is past its decision deadline` : `A decision on${about} is overdue`;
     case 'action_escalated': return `A decision on${about} needs a moderator`;
-    case 'restriction_applied': return `New posts are paused: ${n.data.overdue ?? 'several'} decisions are overdue. Answer them, ask for time, or appeal`;
+    case 'restriction_warning': return `${n.data.overdue ?? 'Several'} decisions on your posts are overdue. New teaching posts pause in ${Math.round((n.data.hours ?? 72) / 24)} days unless you answer them, ask for time, or appeal`;
+    case 'restriction_applied': return `New teaching posts are paused: ${n.data.overdue ?? 'several'} decisions are overdue. Answer them, ask for time, or appeal. Practice posts still work`;
     case 'restriction_lifted': return 'You can post again';
     case 'appeal_decided': return `Your appeal was ${n.data.granted ? 'granted' : 'not granted'}. ${n.data.note ?? ''}`.trim();
     case 'admin_report': return `New report${n.data.reason ? `: ${n.data.reason}` : ''}. It needs a decision`;
@@ -48,7 +49,7 @@ export const notificationVerb = (n: NotificationLike): string => {
 };
 
 /** System notices stand on their own, without "Someone" in front. */
-export const hasActor = (n: NotificationLike) => !['level_up', 'bounty_reminder', 'action_reminder', 'action_overdue', 'action_escalated', 'restriction_applied', 'restriction_lifted', 'admin_report', 'admin_security', 'admin_appeal', 'admin_site', 'post_override'].includes(n.type) && (n.type !== 'appeal_decided');
+export const hasActor = (n: NotificationLike) => !['level_up', 'bounty_reminder', 'action_reminder', 'action_overdue', 'action_escalated', 'restriction_warning', 'restriction_applied', 'restriction_lifted', 'admin_report', 'admin_security', 'admin_appeal', 'admin_site', 'post_override'].includes(n.type) && (n.type !== 'appeal_decided');
 
 export const notificationLink = (n: NotificationLike): string => {
   if (n.type === 'admin_report') return '/admin/reports';
@@ -59,7 +60,7 @@ export const notificationLink = (n: NotificationLike): string => {
   if (n.type === 'level_up' || n.type === 'level_vouch') return '/profile/edit';
   // A bounty helper is usually not in the asker's chat: their answers page shows the outcome.
   if (n.type === 'bounty_paid' || n.type === 'correction_superseded' || (n.type === 'correction_declined' && !n.data.conversation_id)) return '/bounty-queue?tab=answers';
-  if (n.type === 'restriction_applied' || n.type === 'restriction_lifted' || n.type === 'appeal_decided') return '/notifications';
+  if (n.type === 'restriction_warning' || n.type === 'restriction_applied' || n.type === 'restriction_lifted' || n.type === 'appeal_decided') return '/notifications';
   if (n.type === 'message_request' || n.type === 'correction' || n.type === 'correction_accepted' || n.type === 'correction_declined' || n.type === 'bounty_reminder') return n.data.conversation_id ? `/messages/${n.data.conversation_id}` : '/messages';
   return n.actor_username ? `/u/${n.actor_username}` : '/home';
 };

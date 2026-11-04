@@ -11,7 +11,8 @@ Every document about [The Fluency Talks](https://thefluencytalks.com), by what i
 | [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) | What it is, who it's for, principles, and the facts to keep consistent |
 | [FEATURES.md](FEATURES.md) | Every feature: what it does, how it helps, how it works, what it depends on |
 | [CORRECTIONS_AND_BOUNTIES.md](CORRECTIONS_AND_BOUNTIES.md) | The two correction systems, bounty rules and state machines |
-| [POST_TYPES_AND_UNLOCKS.md](POST_TYPES_AND_UNLOCKS.md) | Help posts, and the proposed ladder of post types and looks |
+| [CONTRIBUTION_SYSTEM.md](CONTRIBUTION_SYSTEM.md) | Post types, corrections, levels and accountability: the rules, and what can happen |
+| [POST_TYPES_AND_UNLOCKS.md](POST_TYPES_AND_UNLOCKS.md) | Post type ideas not built, and what replaced the original plan |
 | [ROADMAP.md](ROADMAP.md) | What's built, what isn't, known gaps, decisions made and still open |
 | [PRODUCT_ANALYSIS.md](PRODUCT_ANALYSIS.md) | The original analysis and plan, kept as a historical record |
 

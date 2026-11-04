@@ -20,7 +20,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, danger, rea
   const go = async () => {
     setBusy(true); setError('');
     try { await onConfirm(cleanText(reason)); onClose(); }
-    catch (e) { setError(userMessage(e, 'Something went wrong. Please try again.')); }
+    catch (e) { setError(userMessage(e, 'Oops! Something went wrong. Please try again.')); }
     finally { setBusy(false); }
   };
   return (

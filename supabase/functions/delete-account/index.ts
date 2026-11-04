@@ -32,6 +32,9 @@ Deno.serve(async (req) => {
 
   // Cascades remove profile, languages, follows, blocks, messages, notifications, etc.
   const { error: delErr } = await admin.auth.admin.deleteUser(uid);
-  if (delErr) return reply(500, { error: delErr.message });
+  if (delErr) {
+    await admin.from('app_logs').insert({ level: 'error', source: 'edge:delete-account', message: delErr.message.slice(0, 1000), user_id: uid });
+    return reply(500, { error: 'failed' });
+  }
   return reply(200, { ok: true });
 });

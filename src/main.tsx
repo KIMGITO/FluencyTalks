@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
+import { CrashBoundary } from '@/components/ui';
 import { injectTokens } from '@/theme/inject';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
@@ -16,5 +17,5 @@ startErrorReporting();
 startKeyboardHandling();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><RouterProvider router={router} /></React.StrictMode>
+  <React.StrictMode><CrashBoundary><RouterProvider router={router} /></CrashBoundary></React.StrictMode>
 );

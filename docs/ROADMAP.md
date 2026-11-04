@@ -19,13 +19,14 @@ Status as of 3 November 2026.
 | Staff accounts with MFA, admin area, pause switch and rate limits | Done |
 | Database-driven blog and FAQ, prerendered public pages | Done |
 | Archive, tamper protection and consent ledger | Built. The write-once store still has to be connected: see [Setup](DATA_RETENTION.md#setup) |
+| Contribution system: every learner posts from day one, stories, lessons, photos, sentence corrections, one set of statuses, warnings before a pause. See [Contribution system](CONTRIBUTION_SYSTEM.md) | Done |
 | App-wide error, validation and keyboard rules, mixed Home feed | Done. The keyboard behaviour still needs testing on real phones |
 
 ## Not built yet
 
 - **Voice and video sessions.** Not promised anywhere publicly.
 - **Translated interface and right-to-left layout.** Strings are inline, and should move to translation files if the app is translated.
-- **Post types, step 2 onward:** the visible unlock ladder, photo cards, stories, games and mini lessons. See [Post types and unlocks](POST_TYPES_AND_UNLOCKS.md#10-build-order).
+- **More post types:** games, dialogues, series and rich lessons. See [Post type ideas](POST_TYPES_AND_UNLOCKS.md#ideas-not-built).
 - **Public, searchable library posts.** See [Public content plan](PUBLIC_CONTENT_SEO.md).
 - **Bridge match tier.** Matching through a shared third language.
 - **Review mode for the phrasebook,** such as flip cards, and attaching images to saved phrases.
@@ -48,7 +49,7 @@ Status as of 3 November 2026.
 | **`vercel.json`** | Left over from before the move to Cloudflare. Cloudflare ignores it. |
 | **`public/_headers` comment** | Still mentions Cloudflare Pages, though the file works the same on the Worker. |
 | **Translation history** | Old translations are never pruned. A scheduled job is a future item. |
-| **Not measured** | Time to first fix on practice posts, and the baseline numbers in [Post types](POST_TYPES_AND_UNLOCKS.md#9-risks), haven't been collected. |
+| **Not measured** | Time to first fix on practice posts, and the baseline numbers in [Post type ideas](POST_TYPES_AND_UNLOCKS.md#what-to-measure), haven't been collected. |
 
 Legal gaps are listed separately in [Legal compliance](LEGAL_COMPLIANCE.md).
 
@@ -77,7 +78,7 @@ Legal gaps are listed separately in [Legal compliance](LEGAL_COMPLIANCE.md).
 2. Are the current point values and daily limits final?
 3. Should a bounty be answerable by anyone qualified, as it is now, or only by partners the asker has chatted with?
 4. Should practice posts launch in all languages, or only where helpers exist? This needs production numbers.
-5. Step 1 of the post types used the recommended answers to the [other decisions](POST_TYPES_AND_UNLOCKS.md#11-decisions-we-need-from-you). Those shape steps 2 to 4, so revisit them before starting.
+5. Are the starting numbers in the [contribution system](CONTRIBUTION_SYSTEM.md#decisions-for-the-owner) right? Measure them after launch.
 
 **Public content**
 

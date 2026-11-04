@@ -12,6 +12,11 @@ Only messages we wrote can reach a user. Database, network and auth errors becom
 - `friendlyAuthError` in `src/lib/authHelpers.ts` falls back to a generic line and never shows raw text.
 - `RouteError` replaces React Router's stack-trace page. There are boundaries at the root and inside `AppShell` and `AdminLayout`, so navigation survives a crash.
 - The real error still goes to the admin Logs page through `reportClientError`.
+- **Failed database requests are captured at the network layer.** `src/lib/supabase.ts` watches every response, including calls whose code ignores the error, and `failureReport` in `src/lib/refusals.ts` decides what staff should read. Planned refusals like `rate_limited` aren't logged. Anything else is, without the query or `details`, as they can hold what someone typed.
+- **Every refusal has words.** A new `raise exception` needs a line in `REFUSALS` (`src/lib/refusals.ts`), or a place on the list of internal codes in `tests/unit/refusals.test.ts`. The test fails otherwise.
+- **Nothing uncaught goes silent.** An unhandled failure shows an "Oops!" toast, at most one every 30 seconds so background work can't nag. `CrashBoundary` catches a crash outside any route.
+- **Edge functions** put details in `app_logs` and reply with a code, never with the database's text.
+- **Not captured:** failures before someone logs in, because `log_client_error` needs a signed-in user. They still show a friendly message.
 
 ## 2. No browser validation
 

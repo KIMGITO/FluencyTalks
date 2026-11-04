@@ -50,7 +50,7 @@ async function staffAction<T = { ok: true }>(body: Record<string, unknown>): Pro
   const { data, error } = await supabase.functions.invoke('admin-staff', { body });
   if (error) {
     const code = await (error as { context?: Response }).context?.json?.().then((b: { error?: string }) => b.error).catch(() => undefined);
-    throw new UserError((code && EDGE_ERRORS[code]) || 'Something went wrong. Please try again.');
+    throw new UserError((code && EDGE_ERRORS[code]) || 'Oops! Something went wrong. Please try again.');
   }
   return data as T;
 }

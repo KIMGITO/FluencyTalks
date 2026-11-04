@@ -96,6 +96,7 @@ The signed-in screens share the public pages' look. It comes from the design tok
 | Inputs, selects, text areas | White, hairline border, 4px corners, coral focus ring, labels in ink |
 | Tabs | Underlined, the open tab gets a coral rule (`Tabs`, `tabClass`, `tabsClass`) |
 | Tags (levels, categories, status) | Small outlined squares (`.ft-tag`); "native" is filled deep indigo |
+| Post types and categories | Each has its own tint and mark (`postLooks.ts`). Ink text on tints only. Text on an image sits on a 70% deep indigo layer |
 | Navigation | Dark indigo sidebar on a laptop, dark indigo tab bar on a phone; the current page has a coral mark |
 | Chat | Sent bubbles deep indigo, received paper; corrections show red and green |
 | Clickable cards | `.ft-lift`: rise 4px with a soft shadow |

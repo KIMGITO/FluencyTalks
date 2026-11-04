@@ -10,7 +10,9 @@ export interface ThreadItem {
   decided_at: string | null; decision_note: string | null; decided_by_name: string | null;
   hidden: boolean; body: string | null; proposed_phrase: string | null; proposed_translation: string | null;
   author: Pick<Person, 'id' | 'username' | 'display_name' | 'avatar_url'> | null;
-  agree_count: number; i_agreed: boolean;
+  agree_count: number; i_agreed: boolean; flag_count: number; i_flagged: boolean;
+  /** Set on a correction of one stretch of a long post. Counted in characters. */
+  target_start: number | null; target_end: number | null; target_text: string | null;
   due_at: string | null; waiting_since: string | null; responsible_open: boolean;
 }
 export interface ThreadEvent { id: number; item_id: string | null; action: string; from_status: string | null; to_status: string | null; note: string | null; created_at: string; actor_name: string | null }
@@ -24,17 +26,21 @@ export interface PostThread {
 }
 
 export const getPostThread = (id: string) => rpc<PostThread | null>('get_post_thread', { p_post: id });
-export const submitDiscussion = (a: { post: string; parent: string | null; kind: ItemKind; body: string; phrase?: string | null; translation?: string | null; clientKey: string }) =>
-  rpc<string>('submit_discussion', { p_post: a.post, p_parent: a.parent, p_kind: a.kind, p_body: a.body, p_phrase: a.phrase ?? null, p_translation: a.translation ?? null, p_client_key: a.clientKey });
+export const submitDiscussion = (a: { post: string; parent: string | null; kind: ItemKind; body: string; phrase?: string | null; translation?: string | null; clientKey: string; targetStart?: number | null; targetEnd?: number | null }) =>
+  rpc<string>('submit_discussion', { p_post: a.post, p_parent: a.parent, p_kind: a.kind, p_body: a.body, p_phrase: a.phrase ?? null, p_translation: a.translation ?? null, p_client_key: a.clientKey, p_target_start: a.targetStart ?? null, p_target_end: a.targetEnd ?? null });
 export const decideCorrection = (id: string, accept: boolean, note?: string) => rpc<string>('decide_correction', { p_id: id, p_accept: accept, p_note: note || null });
+/** Not ready to decide: ask the person who proposed it. The deadline restarts, once per correction. */
+export const askAboutCorrection = (id: string, question: string, clientKey: string) => rpc<string>('ask_about_correction', { p_id: id, p_question: question, p_client_key: clientKey });
 export const resolveClarification = (id: string, note: string) => rpc('resolve_clarification', { p_id: id, p_note: note });
 export const withdrawDiscussion = (id: string) => rpc('withdraw_discussion', { p_id: id });
 export const revertAccepted = (post: string, note: string) => rpc('revert_accepted', { p_post: post, p_note: note });
 export const overrideCorrection = (id: string, status: 'pending' | 'accepted' | 'declined', reason: string) => rpc('admin_override_correction', { p_id: id, p_status: status, p_reason: reason });
-/** Help posts only: optional, final. Helpful pays the helper; the text of the post never changes. */
-export const rateHelpFix = (id: string, helpful: boolean) => rpc('rate_help_fix', { p_id: id, p_helpful: helpful });
+/** Practice posts only: optional, final. Helpful pays the helper and goes to the phrasebook; the original never changes. */
+export const rateHelpFix = (id: string, helpful: boolean, note?: string) => rpc('rate_help_fix', { p_id: id, p_helpful: helpful, p_note: note || null });
 export const toggleEndorsement = (post: string) => rpc<boolean>('toggle_post_endorsement', { p_post: post });
 export const toggleAgreement = (id: string) => rpc<boolean>('toggle_correction_agreement', { p_id: id });
+/** "I think this correction is wrong". Qualified people only; it replaces an agreement from the same person. */
+export const toggleFlag = (id: string) => rpc<boolean>('toggle_correction_flag', { p_id: id });
 export const setThreadMute = (post: string, muted: boolean) => rpc('set_thread_mute', { p_post: post, p_muted: muted });
 export const markDecisionsViewed = (post: string) => rpc('mark_decisions_viewed', { p_post: post });
 
@@ -50,8 +56,10 @@ export interface OwedDecision { id: string; post_id: string; item_id: string; ki
 export interface Accountability {
   items: OwedDecision[];
   record: ResponseRecord;
+  /** A pause is coming unless overdue decisions get answered. */
+  warned_at: string | null;
   restriction: { id: string; reason: string; created_at: string; appeal: { status: string; message: string; decision_note: string | null } | null } | null;
-  policy: { deadline_hours: number; first_reminder_hours: number; restrict_after_overdue: number; extension_hours: number; max_extensions: number; enabled: boolean };
+  policy: { deadline_hours: number; first_reminder_hours: number; restrict_after_overdue: number; restrict_notice_hours: number; extension_hours: number; max_extensions: number; enabled: boolean };
 }
 export const getMyAccountability = () => rpc<Accountability>('my_accountability');
 export const requestExtension = (item: string, reason: string) => rpc<string>('request_decision_extension', { p_item: item, p_reason: reason });

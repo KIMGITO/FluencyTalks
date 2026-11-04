@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pin, X } from 'lucide-react';
-import { Avatar, Button, ChatSkeleton, EmptyState } from '@/components/ui';
+import { Avatar, Button, ChatSkeleton, EmptyState, ErrorState } from '@/components/ui';
 import { UserMenu } from '../UserMenu';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
@@ -35,7 +35,8 @@ export function ChatThread({ id }: { id: string }) {
   const [peerReadAt, setPeerReadAt] = useState<string | null>(null);
   useEffect(() => { setPeerReadAt(null); getPeerReadAt(id).then(setPeerReadAt).catch(() => undefined); }, [id]);
   useEffect(() => (myId ? subscribeToReceipts(id, myId, setPeerReadAt) : undefined), [id, myId]);
-  useEffect(() => { open(id); return close; }, [id]);
+  const [loadFailed, setLoadFailed] = useState(false);
+  useEffect(() => { setLoadFailed(false); open(id).catch(() => setLoadFailed(true)); return close; }, [id]);
   const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
   const tickFor = (m: Message): TickState => {
     if (peerReadAt && m.created_at <= peerReadAt) return 'read';
@@ -63,9 +64,10 @@ export function ChatThread({ id }: { id: string }) {
     return () => watch.disconnect();
   }, [threadShown]);
 
-  if (!list) return <ChatSkeleton />;
+  if (!list) return loadFailed ? <ErrorState title="Couldn't load this chat" onRetry={() => { setLoadFailed(false); open(id).catch(() => setLoadFailed(true)); }} /> : <ChatSkeleton />;
   if (!row) return <EmptyState title="Conversation unavailable" action={<Button onClick={() => nav('/messages')}>Back to messages</Button>} />;
   const days = groupByDay(visible);
+  const waitingForThem = row.other_status === 'request' && visible.some((m) => m.sender_id === myId) && !visible.some((m) => m.sender_id !== myId);
   const jumpTo = (mid: string) => { setShowPins(false); document.getElementById(`msg-${mid}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
   return (
     <div className="ft-thread-shell">
@@ -131,7 +133,9 @@ export function ChatThread({ id }: { id: string }) {
             <Button size="sm" variant="secondary" onClick={() => { void respond(id, false); nav('/messages'); }}>Ignore</Button>
             <Button size="sm" variant="danger" onClick={async () => { await blockUser(row.other_user_id); nav('/messages'); }}>Block</Button>
           </div>
-        </div>) : <Composer onSend={(t, opts) => send(id, t, undefined, opts)} replyTo={replyTarget} onCancelReply={() => setReply(id, null)} onType={setTyping} />}
+        </div>) : <>
+        {waitingForThem && <p className="border-t border-border bg-surface px-3 pt-2 text-xs text-muted">Your message is on its way to {row.other_name}. You can keep chatting as soon as they accept it.</p>}
+        <Composer onSend={(t, opts) => send(id, t, undefined, opts)} replyTo={replyTarget} onCancelReply={() => setReply(id, null)} onType={setTyping} /></>}
       <CorrectionDialog message={correcting} onClose={() => setCorrecting(null)} onSubmit={async (t, n) => { await suggest(id, correcting!.id, t, n || undefined); setCorrecting(null); }} />
     </div>
   );

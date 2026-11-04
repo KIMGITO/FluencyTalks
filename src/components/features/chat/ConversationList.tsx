@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
-import { Avatar, EmptyState, tabClass, tabsClass } from '@/components/ui';
+import { Avatar, Button, EmptyState, tabClass, tabsClass } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import { useChatStore } from '@/store/chatStore';
 import { usePresenceOf } from '@/hooks/usePresence';
@@ -13,7 +13,7 @@ export function ConversationList() {
     <div className="space-y-3">
       <div role="tablist" className={tabsClass}>{([['active', 'Chats'], ['request', `Requests${requests.length ? ` (${requests.length})` : ''}`]] as const).map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)} className={tabClass(tab === k)}>{label}</button>))}</div>
-      {!rows.length ? <EmptyState title={tab === 'active' ? 'No chats yet' : 'No requests'} text={tab === 'active' ? 'Search for someone and say hello.' : 'First messages from people you have not talked to yet appear here. Accept to start chatting.'} /> : (
+      {!rows.length ? <EmptyState title={tab === 'active' ? 'No chats yet' : 'No requests'} text={tab === 'active' ? 'Search for someone and say hello.' : 'First messages from people you have not talked to yet appear here. Accept to start chatting.'} action={tab === 'active' ? <Link to="/search?tab=people"><Button size="sm">Find people</Button></Link> : undefined} /> : (
         <ul className="ft-card divide-y divide-border">{rows.map((c) => (
           <li key={c.conversation_id}><Link to={`/messages/${c.conversation_id}`} className="flex items-center gap-2.5 p-2.5 hover:bg-surface-2 md:p-3">
             <Avatar name={c.other_name} src={c.other_avatar} size="sm" online={!!seen[c.other_user_id]?.online} />
