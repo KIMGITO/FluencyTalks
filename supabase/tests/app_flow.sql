@@ -449,6 +449,7 @@ reset role;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000005e5', 'sharesnative@test.com'),
   ('00000000-0000-0000-0000-0000000005f6', 'teacher@test.com'),
+  ('00000000-0000-0000-0000-0000000005f7', 'swapper@test.com'),
   ('00000000-0000-0000-0000-0000000005a7', 'student@test.com'),
   ('00000000-0000-0000-0000-0000000005a8', 'sametarget@test.com');
 set role authenticated;
@@ -456,6 +457,8 @@ select tt.as_user('00000000-0000-0000-0000-0000000005e5');
 select public.set_language_profile('swh', 'fra', 'A1'); select public.save_profile('sharesnative', 'S', '', 'Africa/Nairobi', false, null, null);
 select tt.as_user('00000000-0000-0000-0000-0000000005f6');
 select public.set_language_profile('vie', null, null); select public.save_profile('teacher', 'T', '', 'Not/AZone', false, null, null);
+select tt.as_user('00000000-0000-0000-0000-0000000005f7');
+select public.set_language_profile('vie', 'swh', 'A1'); select public.save_profile('swapper', 'Sw', '', 'Asia/Hanoi', false, null, null);
 select tt.as_user('00000000-0000-0000-0000-0000000005a7');
 select public.set_language_profile('eng', 'swh', 'B1'); select public.save_profile('student', 'St', '', 'Europe/London', false, null, null);
 select tt.as_user('00000000-0000-0000-0000-0000000005a8');
@@ -464,8 +467,8 @@ select public.set_language_profile('fra', 'vie', 'A2'); select public.save_profi
 -- Amina is native Swahili, learning Vietnamese. A bad timezone on a profile must not break her feed.
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 do $$ declare kinds text[]; begin
-  assert (select match_kind from public.home_feed(10, 10) where username = 'linh') = 'swap', 'native Vietnamese learning Swahili is a perfect swap';
-  assert (select match_language from public.home_feed(10, 10) where username = 'linh') = 'vie', 'the swap names what they teach me';
+  assert (select match_kind from public.home_feed(10, 10) where username = 'swapper') = 'swap', 'native Vietnamese learning Swahili is a perfect swap';
+  assert (select match_language from public.home_feed(10, 10) where username = 'swapper') = 'vie', 'the swap names what they teach me';
   assert (select match_kind from public.home_feed(10, 10) where username = 'teacher') = 'native', 'native Vietnamese only: they teach me';
   assert (select match_kind from public.home_feed(10, 10) where username = 'student') = 'learning', 'learning Swahili: I teach them';
   assert (select match_language from public.home_feed(10, 10) where username = 'student') = 'swh', 'badge names the language they learn';
@@ -474,6 +477,18 @@ do $$ declare kinds text[]; begin
   select array_agg(match_kind) into kinds from public.home_feed(10, 10);
   assert kinds[1:3] = array['swap', 'native', 'learning'], 'tiers come in order';
 end $$;
+
+-- Home leaves out someone I'm talking to, and brings them back once we've lost touch.
+reset role;
+insert into public.conversations (id, direct_key) values ('00000000-0000-0000-0000-0000000fee01', 'amina:teacher');
+insert into public.conversation_members (conversation_id, user_id) values ('00000000-0000-0000-0000-0000000fee01', '00000000-0000-0000-0000-0000000000a1'), ('00000000-0000-0000-0000-0000000fee01', '00000000-0000-0000-0000-0000000005f6');
+insert into public.messages (conversation_id, sender_id, body) values ('00000000-0000-0000-0000-0000000fee01', '00000000-0000-0000-0000-0000000005f6', 'Chao ban');
+do $$ begin assert not exists (select 1 from public.home_feed(50, 50) where username = 'teacher'), 'a current chat is not a suggestion'; end $$;
+update public.messages set created_at = now() - interval '45 days' where conversation_id = '00000000-0000-0000-0000-0000000fee01';
+do $$ begin assert (select last_chatted_at from public.home_feed(50, 50) where username = 'teacher') < now() - interval '30 days', 'back after a long silence, saying when'; end $$;
+delete from public.conversations where id = '00000000-0000-0000-0000-0000000fee01';
+do $$ begin assert (select last_chatted_at from public.home_feed(50, 50) where username = 'teacher') is null, 'never chatted: nothing to say'; end $$;
+set role authenticated;
 
 -- A learner posts in their learning language only from B1; the native language always works.
 select tt.expect_error($q$select public.post_contribution('Xin chào', null, 'vie', 'phrase', null, null)$q$, 'not_contribution_eligible');
@@ -1106,6 +1121,10 @@ select public.report_user('00000000-0000-0000-0000-0000000000c3', 'points_abuse'
 select tt.expect_error($q$select public.report_user('00000000-0000-0000-0000-0000000000c3', 'not_a_reason', null, null)$q$, 'violates check');
 select public.block_user('00000000-0000-0000-0000-0000000000b2');
 do $$ begin assert (select count(*) from public.saved_partners where user_id = auth.uid()) = 0, 'blocking removes the saved partner'; end $$;
+-- A long silence would bring Amina back to Linh's feed, so only the block can be keeping her out.
+reset role;
+update public.messages set created_at = now() - interval '45 days' where conversation_id = (select conv from ctx);
+set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-0000000000b2');
 do $$ begin
   assert public.get_profile('amina') is null, 'blocked users cannot see each other';

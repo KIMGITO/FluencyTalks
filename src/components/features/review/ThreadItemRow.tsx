@@ -1,15 +1,16 @@
 import clsx from 'clsx';
-import { BookmarkPlus, Check, CornerDownRight, Flag, MoreHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Bookmark, BookmarkPlus, Check, CornerDownRight, Flag, Heart, MessageCircle, MoreHorizontal, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button, ConfirmDialog } from '@/components/ui';
 import { DiffText } from '@/components/features/chat/DiffText';
 import { timeAgo, waited } from '@/lib/format';
 import { toast } from '@/store/toastStore';
-import { savePhrase } from '@/services/phrasebook';
+import { savePhrase, unsavePhrase } from '@/services/phrasebook';
 import { askAboutCorrection, decideCorrection, overrideCorrection, rateHelpFix, resolveClarification, toggleAgreement, toggleFlag, withdrawDiscussion, type PostThread, type ThreadItem } from '@/services/review';
 import { hasLongBody, isPractice } from '@/lib/postTypes';
 import { Composer, newKey } from './Composer';
+import { ReactionButton } from './ReactionButton';
 import { StatusPill } from './StatusPill';
 import { userMessage } from '@/lib/errors';
 
@@ -36,7 +37,12 @@ type Ctx = {
   patchItem: (id: string, patch: Partial<ThreadItem>) => void;
   ownerName: string;
   myId: string | null;
+  savedPhrases: Set<string>;
+  setPhraseSaved: (phrase: string, saved: boolean) => void;
 };
+
+/** How save_phrase stores a text, so it can be matched against the phrasebook. */
+const phraseKey = (phrase: string) => phrase.trim().slice(0, 500);
 
 const countBelow = (id: string, children: Ctx['children']): number =>
   (children.get(id) ?? []).reduce((n, c) => n + 1 + countBelow(c.id, children), 0);
@@ -65,6 +71,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   const [dialog, setDialog] = useState<'accept' | 'decline' | 'ask' | 'not-helpful' | 'withdraw' | 'resolve' | 'override-accepted' | 'override-declined' | 'override-pending' | null>(null);
   const [menu, setMenu] = useState(false);
   const agreeing = useRef(false);   // a ref: taps in the same tick must see it straight away
+  const keeping = useRef(false);
   const askKey = useRef(newKey());   // a repeated tap can't ask twice
 
   const parent = item.parent_id ? byId.get(item.parent_id) : undefined;
@@ -74,7 +81,9 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
   const helpType = isPractice(post.post_type) && post.post_type !== 'question' ? post.post_type : undefined;
   const decider = (me.is_owner || me.is_moderator) && !mine;
   const asModerator = me.is_moderator && !me.is_owner;
-  const canDecide = !helpPost && isCorrection && item.status === 'pending' && decider;
+  // Who answers this one: the author on practice, the author or a moderator on teaching. They keep seeing their answer afterwards.
+  const answerer = isCorrection && (helpPost ? me.is_owner && !item.hidden && !ctx.readOnly : decider);
+  const open = item.status === 'pending';
   const canCounter = !ctx.readOnly && isCorrection && !mine && !me.is_owner && me.can_review && (item.status === 'pending' || item.status === 'accepted');
   const authorName = item.hidden ? 'Hidden' : item.author?.display_name ?? 'Deleted account';
   // What this proposal would replace: its parent's proposal, or the post as it stands.
@@ -105,11 +114,20 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
       await reload();
     }
   };
+  const phrase = item.proposed_phrase ? phraseKey(item.proposed_phrase) : null;
+  const kept = !!phrase && ctx.savedPhrases.has(phrase);
   const keep = async () => {
+    if (!phrase || keeping.current) return;
+    keeping.current = true;
+    ctx.setPhraseSaved(phrase, !kept);
     try {
-      await savePhrase({ phrase: item.proposed_phrase!, languageCode: post.language_id ?? undefined, sourcePostId: post.id });
-      toast.success('Added to your phrasebook.');
-    } catch (e) { toast.error(userMessage(e)); }
+      if (kept) await unsavePhrase(phrase);
+      else await savePhrase({ phrase, languageCode: post.language_id ?? undefined, sourcePostId: post.id });
+      toast.success(kept ? 'Removed from your phrasebook.' : 'Added to your phrasebook.');
+    } catch (e) {
+      ctx.setPhraseSaved(phrase, kept);
+      toast.error(userMessage(e));
+    } finally { keeping.current = false; }
   };
 
   const agree = async () => {
@@ -136,40 +154,42 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
 
   return (
     <li id={`item-${item.id}`} className={clsx('scroll-mt-20', branch && 'ft-child')}>
-      <article className={clsx('rounded-md px-1 py-2', targetId === item.id && 'ft-target', indent && kids.length > 0 && 'ft-descend')} aria-label={`${kindLabel(item, parent, helpPost)} by ${authorName}`}>
-        <header className="flex items-start gap-2">
-          {item.author && !item.hidden
-            ? <Link to={`/u/${item.author.username}`} className="shrink-0"><Avatar name={authorName} src={item.author.avatar_url} size="sm" /></Link>
-            : <Avatar name="?" size="sm" />}
-          <div className="min-w-0 flex-1">
-            <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm">
-              {item.author && !item.hidden
-                ? <Link to={`/u/${item.author.username}`} className="font-semibold text-ink hover:underline">{authorName}</Link>
-                : <span className="font-semibold text-muted">{authorName}</span>}
-              {item.author?.id === post.user_id && <span className="ft-tag">Author</span>}
-              <span className="text-xs text-muted">{timeAgo(item.created_at)}</span>
-            </p>
-            <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-              <span className={clsx('font-semibold', isCorrection && 'text-ink')}>{kindLabel(item, parent, helpPost)}</span>
-              {item.status && !helpPost && <StatusPill status={item.status} />}
-              {helpPost && item.status === 'accepted' && <span className="font-semibold text-success">Thanked</span>}
-            </p>
-          </div>
-          {(me.is_moderator && isCorrection && !helpPost) && (
-            <div className="relative">
-              <button type="button" aria-label="Moderator actions" aria-expanded={menu} onClick={() => setMenu((m) => !m)} className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"><MoreHorizontal size={16} aria-hidden /></button>
-              {menu && (
-                <div className="ft-menu right-0 mt-1" role="menu">
-                  {(['accepted', 'declined', 'pending'] as const).filter((s) => s !== item.status).map((s) => (
-                    <button key={s} role="menuitem" className="ft-menu-item" onClick={() => { setMenu(false); setDialog(`override-${s}`); }}>Set to {s}</button>
-                  ))}
-                </div>
+      <article className={clsx('flex gap-2.5 rounded-md px-1 py-3', level === 0 && 'ft-root', targetId === item.id && 'ft-target', indent && kids.length > 0 && 'ft-descend')} aria-label={`${kindLabel(item, parent, helpPost)} by ${authorName}`}>
+        {item.author && !item.hidden
+          ? <Link to={`/u/${item.author.username}`} className="shrink-0"><Avatar name={authorName} src={item.author.avatar_url} size={level === 0 ? 'md' : 'sm'} /></Link>
+          : <Avatar name="?" size={level === 0 ? 'md' : 'sm'} />}
+        <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+          <header className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                {item.author && !item.hidden
+                  ? <Link to={`/u/${item.author.username}`} className="font-semibold text-ink hover:underline">{authorName}</Link>
+                  : <span className="font-semibold text-muted">{authorName}</span>}
+                {item.author?.id === post.user_id && <span className="ft-tag">Author</span>}
+                <span className="text-xs text-muted">{timeAgo(item.created_at)}</span>
+              </p>
+              {item.kind !== 'comment' && (
+                <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                  <span className={clsx('font-semibold', isCorrection && 'text-ink')}>{kindLabel(item, parent, helpPost)}</span>
+                  {item.status && !helpPost && <StatusPill status={item.status} />}
+                  {helpPost && item.status === 'accepted' && <span className="font-semibold text-success">Thanked</span>}
+                </p>
               )}
             </div>
-          )}
-        </header>
+            {(me.is_moderator && isCorrection && !helpPost) && (
+              <div className="relative">
+                <button type="button" aria-label="Moderator actions" aria-expanded={menu} onClick={() => setMenu((m) => !m)} className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"><MoreHorizontal size={16} aria-hidden /></button>
+                {menu && (
+                  <div className="ft-menu right-0 mt-1" role="menu">
+                    {(['accepted', 'declined', 'pending'] as const).filter((s) => s !== item.status).map((s) => (
+                      <button key={s} role="menuitem" className="ft-menu-item" onClick={() => { setMenu(false); setDialog(`override-${s}`); }}>Set to {s}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </header>
 
-        <div className="mt-1.5 space-y-1.5 pl-10 text-sm">
           {level >= MAX_INDENT && parent && (
             <p className="flex items-center gap-1 text-xs text-muted">
               <CornerDownRight size={12} aria-hidden /> Replying to
@@ -204,42 +224,36 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-1 gap-y-1 pt-0.5">
-            {helpPost && isCorrection && me.is_owner && item.status === 'pending' && !item.hidden && !ctx.readOnly && (
-              <>
-                <Button size="sm" onClick={() => void rate(true)}><Check size={14} aria-hidden /> Thanks</Button>
-                <button type="button" aria-label="Not helpful" title="Not helpful" onClick={() => setDialog('not-helpful')} className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"><ThumbsDown size={14} aria-hidden /></button>
-              </>
+          <div className="-ml-2.5 flex flex-wrap items-center gap-x-0.5 gap-y-1">
+            {answerer && (open || item.status === 'accepted') && (
+              helpPost
+                ? <ReactionButton icon={Heart} label={open ? 'Thanks' : 'Thanked'} active={!open} tone="accent" burst="confetti" disabled={!open} onClick={() => void rate(true)} />
+                : <ReactionButton icon={Check} label={open ? 'Accept' : 'Accepted'} active={!open} filled={false} tone="success" burst="confetti" disabled={!open} onClick={() => setDialog('accept')} />
             )}
+            {answerer && (open || item.status === 'declined') && (
+              helpPost
+                ? <ReactionButton icon={ThumbsDown} label="Not helpful" active={!open} tone="quiet" disabled={!open} onClick={() => setDialog('not-helpful')} />
+                : <ReactionButton icon={X} label={open ? 'Decline' : 'Declined'} active={!open} filled={false} tone="quiet" disabled={!open} onClick={() => setDialog('decline')} />
+            )}
+            {!ctx.readOnly && isCorrection && !mine && !item.hidden && (
+              <ReactionButton icon={ThumbsUp} label="Agree" ariaLabel={`Agree, ${item.agree_count} so far`} count={item.agree_count} active={item.i_agreed} burst="sparks" onClick={agree} />
+            )}
+            {isCorrection && mine && item.agree_count > 0 && <span className="inline-flex items-center gap-1 px-1 text-xs text-muted"><ThumbsUp size={14} aria-hidden /> {item.agree_count} agree</span>}
             {(helpPost || item.status === 'accepted') && isCorrection && !mine && !item.hidden && !ctx.readOnly && item.proposed_phrase && item.status !== 'declined' && item.status !== 'withdrawn' && (hasLongBody(post.post_type) ? item.target_text : true) && (
-              <Button size="sm" variant="secondary" onClick={() => void keep()}><BookmarkPlus size={14} aria-hidden /> Add to phrasebook</Button>
+              <ReactionButton icon={BookmarkPlus} activeIcon={Bookmark} label={kept ? 'In your phrasebook' : 'Add to phrasebook'} active={kept} tone="brand" burst="ring" onClick={() => void keep()} />
             )}
-            {canDecide && (
-              <>
-                <Button size="sm" onClick={() => setDialog('accept')}><Check size={14} aria-hidden /> Accept</Button>
-                <Button size="sm" variant="secondary" onClick={() => setDialog('decline')}>Decline</Button>
-                {me.is_owner && <Button size="sm" variant="ghost" onClick={() => setDialog('ask')}>Ask about it</Button>}
-              </>
+            {!ctx.readOnly && !item.hidden && (
+              <ReactionButton icon={MessageCircle} label="Reply" wideLabelOnly={false} filled={false} active={composer === 'comment'} tone="quiet" expanded={composer === 'comment'} onClick={() => setComposer(composer === 'comment' ? null : 'comment')} />
+            )}
+            {!ctx.readOnly && isCorrection && !mine && !item.hidden && me.can_review && !me.is_owner && (
+              <ReactionButton icon={Flag} label="Wrong?" ariaLabel={`Flag as wrong, ${item.flag_count} so far`} count={item.flag_count} active={item.i_flagged} tone="warning" onClick={() => void flag()} />
+            )}
+            {isCorrection && (mine || me.is_owner || !me.can_review) && item.flag_count > 0 && <span className="px-1 text-xs text-warning">{item.flag_count} {item.flag_count === 1 ? 'person thinks' : 'people think'} this is wrong</span>}
+            {answerer && !helpPost && open && me.is_owner && (
+              <button type="button" onClick={() => setDialog('ask')} className="inline-flex min-h-10 items-center rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">Ask about it</button>
             )}
             {item.kind === 'clarification' && item.status === 'pending' && (decider || mine) && (
               <Button size="sm" variant="secondary" onClick={() => setDialog('resolve')}>Close with an answer</Button>
-            )}
-            {!ctx.readOnly && isCorrection && !mine && !item.hidden && (
-              <button type="button" aria-pressed={item.i_agreed} aria-label={`Agree, ${item.agree_count} so far`} onClick={agree}
-                className={clsx('inline-flex min-h-10 items-center gap-1 rounded-full px-2.5 text-xs font-semibold transition', item.i_agreed ? 'bg-brand-soft text-ink' : 'text-muted hover:bg-surface-2 hover:text-ink')}>
-                <ThumbsUp size={14} aria-hidden className={item.i_agreed ? 'ft-pop' : undefined} /> Agree{item.agree_count > 0 && ` · ${item.agree_count}`}
-              </button>
-            )}
-            {isCorrection && mine && item.agree_count > 0 && <span className="px-1 text-xs text-muted">{item.agree_count} agree</span>}
-            {!ctx.readOnly && isCorrection && !mine && !item.hidden && me.can_review && !me.is_owner && (
-              <button type="button" aria-pressed={item.i_flagged} aria-label={`Flag as wrong, ${item.flag_count} so far`} onClick={() => void flag()}
-                className={clsx('inline-flex min-h-10 items-center gap-1 rounded-full px-2.5 text-xs font-semibold transition', item.i_flagged ? 'bg-warning/15 text-warning' : 'text-muted hover:bg-surface-2 hover:text-ink')}>
-                <Flag size={14} aria-hidden /> Wrong?{item.flag_count > 0 && ` · ${item.flag_count}`}
-              </button>
-            )}
-            {isCorrection && (mine || me.is_owner || !me.can_review) && item.flag_count > 0 && <span className="px-1 text-xs text-warning">{item.flag_count} {item.flag_count === 1 ? 'person thinks' : 'people think'} this is wrong</span>}
-            {!ctx.readOnly && !item.hidden && (
-              <button type="button" aria-expanded={composer === 'comment'} onClick={() => setComposer(composer === 'comment' ? null : 'comment')} className="inline-flex min-h-10 items-center rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">Reply</button>
             )}
             {canCounter && (
               <button type="button" aria-expanded={composer === 'correction'} onClick={() => setComposer(composer === 'correction' ? null : 'correction')} className="inline-flex min-h-10 items-center rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">Correct this</button>

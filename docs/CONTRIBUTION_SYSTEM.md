@@ -31,7 +31,7 @@ There are two families. **Practice** is for learners and is always in the langua
 | Lesson or explanation | Teaching | Qualified | Title 500, text 5,000 | Confirm, correct one sentence at a time, ask |
 
 - **Limits:** 5 practice posts a day, 20 of any kind a day.
-- **Where they appear:** practice is on the Library's Practice tab and in Home. Teaching is on All posts, in search and in Home. Unreviewed learner writing stays out of the Library and out of search, so nobody learns from mistakes presented as reference.
+- **Where they appear:** practice is on the Library's Practice tab and in Home. Teaching is on All posts, in search and in Home. Home shows all of it, your own posts included. Unreviewed learner writing stays out of the Library and out of search, so nobody learns from mistakes presented as reference.
 - **Images:** any member can use one. There's nothing to earn. Images come from Unsplash only, so there's nothing to host or moderate. Text on an image has a dark layer behind it and a 120-character limit, so it stays readable on any photo.
 
 **Why a beginner can't post a Phrase or Lesson in their learning language.** The Library is where people go to find out what's correct. A beginner can publish anything they want, the same day, as practice. What waits for B1 is the claim that it's right.

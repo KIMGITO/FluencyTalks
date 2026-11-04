@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ImagePlus } from 'lucide-react';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { mixFeed, weavePosts } from '@/lib/feedMix';
-import { FirstSteps, ProfileCard } from '@/components/features';
+import { FirstSteps, PeopleRow } from '@/components/features';
 import {
   Avatar,
   Button,
@@ -15,25 +15,24 @@ import { useCountries } from '@/store/countryStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
-import { listContributionPosts, listPostsNeedingFix, type ContributionPost } from '@/services/library';
+import { listHomePosts, listPostsNeedingFix, type ContributionPost } from '@/services/library';
 import { DecisionBanner } from '@/components/features/review/DecisionQueue';
 import { PostCard } from '@/components/features/library';
 import { useFeedCache, useInfiniteScroll, usePagedList } from '@/store/feedCache';
 
 const HELP_PREVIEW = 3;
-const OTHERS_PREVIEW = 5;   // people with no shared language only fill in; the rest are in search
+const OTHERS_PREVIEW = 6;   // people with no shared language only fill in; the rest are in search
 
 export default function Home() {
   const { me, languages } = useProfileStore();
   const languageName = useLanguageStore((s) => s.name);
   const providerAvatar = useProviderAvatar();
   useCountries();
-  const [hidden, setHidden] = useState<string[]>([]);
 
   const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
-  // Posts: cached and paged — shown instantly when coming back, next page loads on scroll.
+  // Posts of every type, mine too: cached and paged — shown instantly when coming back, next page loads on scroll.
   // Posts in my two languages come first; the key changes when those languages do.
-  const feed = usePagedList(`posts:home:${me?.native_language_id ?? ''}:${me?.learning_language_id ?? ''}`, async (offset, limit) => (await listContributionPosts(undefined, undefined, { offset, limit }, true)).posts);
+  const feed = usePagedList(`posts:home:${me?.native_language_id ?? ''}:${me?.learning_language_id ?? ''}`, (offset, limit) => listHomePosts({ offset, limit }));
   // Requests for help in my languages, so they get seen among the other posts.
   const myLanguages = [me?.native_language_id, me?.learning_language_id].filter((l): l is string => !!l);
   const needingFix = usePagedList<ContributionPost>(me ? `posts:needfix:${myLanguages.join(',')}` : null, async (offset) => (offset || !me ? [] : listPostsNeedingFix(myLanguages, me.id, HELP_PREVIEW)), HELP_PREVIEW);
@@ -53,12 +52,11 @@ export default function Home() {
       : 'Search for anyone by name or @username.';
 
   const { partners, others } = useMemo(() => {
-    const rows = peopleList.items.filter((p) => !hidden.includes(p.id));
     return {
-      partners: rows.filter((p) => p.match_kind !== 'other'),
-      others: rows.filter((p) => p.match_kind === 'other'),
+      partners: peopleList.items.filter((p) => p.match_kind !== 'other'),
+      others: peopleList.items.filter((p) => p.match_kind === 'other'),
     };
-  }, [peopleList.items, hidden]);
+  }, [peopleList.items]);
 
   const posts = useMemo(() => weavePosts(feed.items, needingFix.items.filter((p) => p.review_status === 'awaiting_feedback')), [feed.items, needingFix.items]);
   const { items, morePeople } = useMemo(
@@ -66,7 +64,6 @@ export default function Home() {
     [posts, partners, others, feed.done, feed.error],
   );
 
-  const drop = (id: string) => setHidden((h) => [...h, id]);
   // Held until all three have answered, so a late list doesn't push down what is being read.
   const firstLoad = feed.initialLoading || peopleList.initialLoading || needingFix.initialLoading;
 
@@ -110,7 +107,7 @@ export default function Home() {
 
           {items.map((item) => (item.kind === 'post'
             ? <PostCard key={`post:${item.post.id}`} post={item.post} onRemoved={removePost} />
-            : <ProfileCard key={`person:${item.person.id}`} person={item.person} onHidden={drop} />))}
+            : <PeopleRow key={`people:${item.people[0].id}`} people={item.people} />))}
 
           <div ref={sentinel} aria-hidden />
           {feed.loading && <div className="flex justify-center p-4"><Spinner /></div>}

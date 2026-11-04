@@ -30,6 +30,13 @@ export const listContributionPosts = async (p_languageId?: string, p_category?: 
   if (error) throw error;
   return { posts: ((data ?? []) as PostRow[]).map(toPost) };
 };
+/** Home: everyone's posts of every type, mine too. My languages first, then newest. */
+export const listHomePosts = async (page?: Page) => {
+  const { data, error } = await supabase.from('contribution_posts').select(POST_SELECT)
+    .order('matches_my_languages', { ascending: false }).order('created_at', { ascending: false }).range(...rangeOf(page));
+  if (error) throw error;
+  return ((data ?? []) as PostRow[]).map(toPost);
+};
 /** The Practice tab: learners' posts, my languages first, then the ones still waiting for feedback. */
 export const listPracticePosts = async (p_languageId?: string, page?: Page) => {
   let q = supabase.from('contribution_posts').select(POST_SELECT).in('post_type', PRACTICE_TYPES)

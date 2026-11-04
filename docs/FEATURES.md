@@ -91,19 +91,19 @@ Changing the learning language resets the verified level. It otherwise never fal
 
 **Vouches.** Two native speakers who have really chatted with a learner (15+ of the learner's messages over 2+ days) can vouch from the learner's profile. That reaches B1 and no further, and needs the learner's recent error rate to hold. Each voucher has 3 vouches a month. Someone new can vouch straight away, and their vouch starts counting once they've been here 7 days.
 
-**What others see.** Cards show a learner's verified level. With none yet, they show the estimate marked "self-assessed".
+**What others see.** Cards show a learner's verified level. With none yet, they show the level the person gave, with no label casting doubt on it.
 
 ## 5. Home feed and matching
 
-**What it does.** Home is one column that mixes posts and people. It always opens with posts, and most of it is posts.
+**What it does.** Home is one column like a social feed: everyone's posts of every type, your own included, with rows of small square cards for people between them. It always opens with posts.
 
 **How it helps.** Members see useful content straight away and meet good partners along the way, without searching.
 
 **How the mix works** (`src/lib/feedMix.ts`)
-- One person appears after every 3, then 5, then 4 posts, and the pattern repeats.
+- A sideways row of up to 6 people appears after every 3, then 6, then 5 posts, and the pattern repeats. Each square card leads with the person's native language (`PeopleRow`).
 - A request for help takes every third post slot, from the second post on.
-- A person's place depends only on how many posts come before them, so loading more posts never moves what's on screen.
-- Once posts run out, up to 6 remaining people show at the end. The rest are a search away.
+- A row's place depends only on how many posts come before it, so loading more posts never moves what's on screen.
+- Once posts run out, one more row shows at the end. The rest are a search away.
 - Posts in the reader's two languages come first, then the rest.
 
 **How matching works** (`home_feed`)
@@ -111,6 +111,8 @@ Changing the learning language resets the verified level. It otherwise never fal
 2. **Teacher:** their native language is my target, whatever they are learning, even nothing.
 3. **Learner:** they are learning my native language, whatever their own native language is.
 4. **Everyone else.** Sharing a native or target language isn't a match.
+
+Anyone you've chatted with in the last 30 days is left out, since they're already in Messages. Someone you lost touch with comes back, marked with when you last chatted.
 
 Within a tier, people are ordered by the most recent day they were active, then timezone closeness, then newest. Follower count plays no part. Each person carries a `match_kind` label explaining the suggestion (`MatchBadge`), and `match_pool` counts teachers and learners for empty states.
 

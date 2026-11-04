@@ -61,7 +61,7 @@ Legal gaps are listed separately in [Legal compliance](LEGAL_COMPLIANCE.md).
 - **Levels are earned.** The picked level is an estimate that unlocks nothing, and after setup it can only be lowered. `verified_level` rises from `level_rules`, and only falls if the learning language changes.
 - **Who corrects:** native speakers and learners verified at B1+ of that language, not native speakers only as first proposed.
 - **Vouching:** two native speakers who have really chatted with a learner can verify them at B1, and only B1. Each voucher has 3 a month.
-- **Cards** show the verified level, or the estimate marked "self-assessed".
+- **Cards** show the verified level, or the level the person gave.
 - **Presence is server-side** (`user_presence`). Hiding it works both ways.
 - **Post review:** the owner decides, accepting supersedes only the previously accepted correction, and moderators can override with a reason. Chat corrections stay their own lighter flow.
 - **Helpfulness:** learners rate corrections. Mostly negative recent ratings from at least 3 people stop the corrector's +5 until they recover.

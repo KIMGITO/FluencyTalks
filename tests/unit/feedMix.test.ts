@@ -6,16 +6,18 @@ import { mixFeed, weavePosts } from '../../src/lib/feedMix.ts';
 const row = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}` }));
 const shape = (items: { kind: string }[]) => items.map((i) => (i.kind === 'post' ? 'P' : 'U')).join('');
 
-test('opens with posts, not people, and keeps posts in the clear majority', () => {
-  const { items } = mixFeed(row('p', 24), row('u', 20), false);
+test('opens with posts, not people, and rows of people stay well apart', () => {
+  const { items } = mixFeed(row('p', 24), row('u', 40), false);
   assert.equal(shape(items).slice(0, 4), 'PPPU');
-  const people = items.filter((i) => i.kind === 'person').length;
-  assert.ok(24 >= people * 3, `${people} people among 24 posts`);
+  assert.ok(!shape(items).includes('UU'));
+  assert.ok(items.filter((i) => i.kind === 'people').length <= 5);
 });
 
-test('people are spread through the posts, never side by side', () => {
-  const { items } = mixFeed(row('p', 36), row('u', 20), false);
-  assert.ok(!shape(items).includes('UU'));
+test('a row holds several people, and nobody shows twice', () => {
+  const { items } = mixFeed(row('p', 24), row('u', 8), false);
+  const rows = items.flatMap((i) => (i.kind === 'people' ? [i.people.map((u) => u.id)] : []));
+  assert.equal(rows[0].length, 6);
+  assert.equal(new Set(rows.flat()).size, 8);
 });
 
 test('a new page of posts does not move anything already on screen', () => {
@@ -28,13 +30,13 @@ test('a new page of posts does not move anything already on screen', () => {
 test('leftover people wait until the posts are finished, and are capped then', () => {
   assert.equal(mixFeed(row('p', 2), row('u', 20), false).items.length, 2);
   const done = mixFeed(row('p', 2), row('u', 20), true);
-  assert.equal(shape(done.items), 'PPUUUUUU');
+  assert.equal(shape(done.items), 'PPU');
   assert.equal(done.morePeople, true);
 });
 
 test('with no people it is simply the posts; with no posts, only people', () => {
   assert.equal(shape(mixFeed(row('p', 5), [], true).items), 'PPPPP');
-  assert.equal(shape(mixFeed([], row('u', 2), true).items), 'UU');
+  assert.equal(shape(mixFeed([], row('u', 2), true).items), 'U');
   assert.equal(mixFeed([], [], true).items.length, 0);
 });
 

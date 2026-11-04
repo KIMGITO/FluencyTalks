@@ -16,6 +16,7 @@ import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import { toast } from '@/store/toastStore';
 import { getPostThread, markDecisionsViewed, revertAccepted, setThreadMute, subscribeToThread, toggleEndorsement, type ItemKind, type PostThread, type ThreadItem } from '@/services/review';
+import { listSavedPhraseTexts } from '@/services/phrasebook';
 import { userMessage } from '@/lib/errors';
 
 const HISTORY_LABEL: Record<string, string> = {
@@ -41,6 +42,7 @@ export default function PostDetail() {
   const [sentence, setSentence] = useState<Sentence | null>(null);
   const [revert, setRevert] = useState(false);
   const [shown, setShown] = useState(PAGE);
+  const [savedPhrases, setSavedPhrases] = useState<Set<string>>(() => new Set());
   const endorsing = useRef(false);   // a ref: taps in the same tick must see it straight away
   const scrolled = useRef(false);
 
@@ -57,7 +59,10 @@ export default function PostDetail() {
       });
     }
   }, [id]);
-  const reload = useCallback(async () => { await load(); void loadAccountability(); }, [load, loadAccountability]);
+  // Thanking or accepting a fix also saves it, so a reload refreshes this too. Without the list, the button just reads "not saved yet".
+  const loadSaved = useCallback(() => listSavedPhraseTexts().then((t) => setSavedPhrases(new Set(t))).catch(() => undefined), []);
+  const reload = useCallback(async () => { await load(); void loadAccountability(); void loadSaved(); }, [load, loadAccountability, loadSaved]);
+  useEffect(() => { void loadSaved(); }, [loadSaved]);
 
   useEffect(() => { setThread(undefined); scrolled.current = false; load().catch(() => setFailed(true)); }, [load]);
   useEffect(() => { if (id) markDecisionsViewed(id).catch(() => undefined); }, [id]);
@@ -119,7 +124,12 @@ export default function PostDetail() {
   const helpType = isPractice(post.post_type) ? post.post_type : undefined;
   const longBody = hasLongBody(post.post_type) && !!post.body;
   const answered = helpType === 'question' || helpType === 'how_do_i_say';
-  const threadCtx = { ...ctx, thread, targetId, reload, patchItem, ownerName, myId, readOnly };
+  const setPhraseSaved = (phrase: string, saved: boolean) => setSavedPhrases((was) => {
+    const next = new Set(was);
+    if (saved) next.add(phrase); else next.delete(phrase);
+    return next;
+  });
+  const threadCtx = { ...ctx, thread, targetId, reload, patchItem, ownerName, myId, readOnly, savedPhrases, setPhraseSaved };
 
   const endorse = async () => {
     if (endorsing.current) return;
@@ -228,16 +238,18 @@ export default function PostDetail() {
         )}
       </Card>
 
-      <section aria-label="Discussion" className="ft-inset">
-        <h2 className="mb-1 flex items-baseline gap-2 font-display text-xl font-medium">
+      <section aria-label="Discussion" className="ft-card">
+        <h2 className="flex items-baseline gap-2 border-b border-border px-4 py-3 font-display text-xl font-medium">
           {helpType === 'question' ? 'Replies' : helpType ? 'Fixes and replies' : 'Discussion'} <span className="font-sans text-sm text-muted">{items.length}{!helpType && pending.length > 0 && ` · ${pending.length} open`}</span>
         </h2>
+        <div className="px-3 py-2 md:px-4">
         {roots.length === 0
           ? <p className="py-6 text-center text-sm text-muted">{helpType
               ? (me.is_owner ? 'Nobody has answered yet. You will be told as soon as someone does.' : helpType === 'question' ? 'No replies yet. You could be the first.' : me.can_review ? 'No fixes yet. You could be the first to help.' : 'No fixes yet.')
               : me.is_owner ? 'Nobody has reviewed this yet. You will be told when they do.' : 'No corrections yet. Is it right? Confirm it, or propose a correction.'}</p>
           : <ul className="ft-tree space-y-1">{roots.slice(0, shown).map((r) => <ThreadBranch key={r.id} item={r} ctx={threadCtx} />)}</ul>}
         {roots.length > shown && <Button size="sm" variant="secondary" full className="mt-2" onClick={() => setShown((n) => n + PAGE)}>Show more ({roots.length - shown})</Button>}
+        </div>
       </section>
 
       {history.length > 0 && (

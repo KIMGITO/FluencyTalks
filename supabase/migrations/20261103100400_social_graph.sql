@@ -190,13 +190,20 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 create function public.home_feed(p_partner_limit int default 12, p_other_limit int default 8)
-returns table (id uuid, username text, display_name text, avatar_url text, bio text, timezone text, country_code text, is_private boolean, followers_count int, languages jsonb, follow_status text, match_kind text, match_language text)
+returns table (id uuid, username text, display_name text, avatar_url text, bio text, timezone text, country_code text, is_private boolean, followers_count int, languages jsonb, follow_status text, match_kind text, match_language text, last_chatted_at timestamptz)
 language plpgsql stable security definer set search_path = public as $$
 begin
   return query
   with mine as (
     select me.native_language_id as native, me.learning_language_id as learning, me.timezone as tz
     from profiles me where me.id = auth.uid()
+  ), chats as (
+    select other.user_id as person, max(m.created_at) as last_at
+    from conversation_members mem
+    join conversation_members other on other.conversation_id = mem.conversation_id and other.user_id <> mem.user_id
+    join messages m on m.conversation_id = mem.conversation_id
+    where mem.user_id = auth.uid()
+    group by other.user_id
   ), candidates as (
     select p.id, p.username, p.display_name, p.avatar_url, p.bio, p.timezone, p.country_code, p.is_private,
       p.followers_count, p.created_at,
@@ -215,15 +222,18 @@ begin
       date_trunc('day', greatest(p.created_at,
         (select max(m.created_at) from messages m where m.sender_id = p.id),
         (select max(c.created_at) from contribution_posts c where c.user_id = p.id))) as active_day,
-      public.tz_hours_apart(p.timezone, mine.tz) as tz_apart
-    from profiles p cross join mine
+      public.tz_hours_apart(p.timezone, mine.tz) as tz_apart,
+      chats.last_at as last_chatted_at
+    from profiles p cross join mine left join chats on chats.person = p.id
     where p.id <> auth.uid() and p.status = 'active' and p.onboarding_done
       and not public.is_blocked_between(auth.uid(), p.id)
+      -- Home suggests new people and old friends. Someone you're talking to now is already in Messages.
+      and (chats.last_at is null or chats.last_at < now() - interval '30 days')
   )
   -- Every column is table-qualified: plpgsql would treat a bare "id" or "languages" as the
   -- function's OUT parameter and refuse the query as ambiguous.
   select feed.id, feed.username, feed.display_name, feed.avatar_url, feed.bio, feed.timezone, feed.country_code,
-    feed.is_private, feed.followers_count, feed.languages, feed.follow_status, feed.match_kind, feed.match_language
+    feed.is_private, feed.followers_count, feed.languages, feed.follow_status, feed.match_kind, feed.match_language, feed.last_chatted_at
   from (
     (select c.* from candidates c where c.match_kind = 'swap'
       order by c.active_day desc, c.tz_apart asc nulls last, c.created_at desc limit greatest(least(coalesce(p_partner_limit, 12), 50), 0))

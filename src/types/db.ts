@@ -9,7 +9,7 @@ export interface Person { id: string; username: string; display_name: string; av
 
 export type MatchKind = 'swap' | 'native' | 'learning' | 'other';
 
-export type FeedPerson = Person & { match_kind: MatchKind; match_language: string | null };
+export type FeedPerson = Person & { match_kind: MatchKind; match_language: string | null; /** Set when we've chatted before, over 30 days ago. */ last_chatted_at: string | null };
 export interface Country { code: string; name: string }
 
 export interface FullProfile extends Person { relationship: { is_me: boolean } }
