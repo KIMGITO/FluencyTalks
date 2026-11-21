@@ -6,7 +6,6 @@ import {
   CountryBadge,
   LanguageChip,
   languageEntry,
-  VouchCard,
   MessageButton,
   UserMenu,
   AccountZone,
@@ -80,8 +79,8 @@ export default function UserProfile() {
   return (
     <div className="flex flex-col gap-4">
       <Card pad={false} className="overflow-hidden">
-        {/* Cover band: the deep brand colour with a soft coral glow */}
-        <div aria-hidden className="h-20 bg-deep sm:h-24" style={{ backgroundImage: 'radial-gradient(120% 140% at 100% 0%, rgb(var(--c-accent) / 0.55), transparent 55%), radial-gradient(80% 120% at 0% 100%, rgb(var(--c-aqua) / 0.35), transparent 60%)' }} />
+        {/* Cover band: flat navy with the red editorial rule along its foot */}
+        <div aria-hidden className="h-20 border-b-4 border-accent bg-deep sm:h-24" />
         <div className="ft-card-pad pt-0">
           <div className="flex items-end justify-between gap-3">
             <span className="-mt-12 rounded-full bg-surface p-1 sm:-mt-14">
@@ -110,7 +109,6 @@ export default function UserProfile() {
               <div className="ft-chips"><LanguageChip languages={profile.languages.map((l) => languageEntry(l, labelOf(l, locales)))} /></div>
             </div>
           )}
-          {!r.is_me && !staff && <div className="mt-4"><VouchCard userId={profile.id} name={profile.display_name} /></div>}
         </div>
       </Card>
 

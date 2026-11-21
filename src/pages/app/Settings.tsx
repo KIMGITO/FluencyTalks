@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Ban, Download, Eye, KeyRound, LifeBuoy, Lock, Mail, Monitor, Moon, Palette, Pencil, Sun, UserRound, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Avatar, Button, buttonClass, Card, Input, tabClass, tabsClass } from '@/components/ui';
+import { Avatar, Button, buttonClass, Card, Input, tabClass, tabsClass, Checkbox } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
 import { setShowActivity } from '@/services/presence';
@@ -119,10 +119,9 @@ export default function Settings() {
             </Section>
           )}
           <Section icon={Eye} title="Activity status">
-            <label className="flex items-start gap-3 text-sm">
-              <input type="checkbox" className="mt-1" checked={me?.show_activity !== false} onChange={(e) => void changeActivity(e.target.checked)} />
-              <span>Show when I'm online and when I was last active.<span className="block text-xs text-muted">If you turn this off, you won't see it for other people either. Blocked people never see it.</span></span>
-            </label>
+            <Checkbox checked={me?.show_activity !== false} onChange={(v) => void changeActivity(v)}>
+              Show when I'm online and when I was last active.<span className="block text-xs text-muted">If you turn this off, you won't see it for other people either. Blocked people never see it.</span>
+            </Checkbox>
           </Section>
           <Section icon={Ban} title="Blocked people"><BlockedList /></Section>
           <Section icon={Download} title="Your data" text={<>Download a copy of everything we store about you. For deletion or privacy requests email <a className="underline" href={mailto(EMAILS.privacy, { subject: 'Privacy request' })}>{EMAILS.privacy}</a>.</>}>

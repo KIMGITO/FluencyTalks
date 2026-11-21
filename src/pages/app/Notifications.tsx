@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { CheckCheck, Settings2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Avatar, Button, EmptyState, ErrorState, NotificationSkeleton, PartialError, Spinner, Tabs } from '@/components/ui';
+import { Avatar, Button, EmptyState, ErrorState, NotificationSkeleton, PartialError, Spinner, Tabs, Checkbox } from '@/components/ui';
 import { PushToggle } from '@/components/features/review/PushToggle';
 import { DecisionQueue } from '@/components/features/review/DecisionQueue';
 import { useNotificationFeed } from '@/hooks/useNotificationFeed';
@@ -20,7 +20,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 const OPTIONAL: { key: string; label: string; hint: string }[] = [
   { key: 'corrections', label: 'Corrections and replies', hint: 'Someone challenges your correction, replies, or confirms your post.' },
   { key: 'decisions', label: 'Decisions', hint: 'Someone accepts or declines your correction.' },
-  { key: 'system', label: 'Notices', hint: 'Levels, vouches and points.' },
+  { key: 'system', label: 'Notices', hint: 'Your path, levels and points.' },
 ];
 
 export default function Notifications() {
@@ -49,10 +49,9 @@ export default function Notifications() {
           <PushToggle />
           <p className="text-xs text-muted">Decisions you have to make and restrictions always reach you.</p>
           {OPTIONAL.map((o) => (
-            <label key={o.key} className="flex min-h-11 items-start gap-3 text-sm">
-              <input type="checkbox" className="mt-1" checked={me?.notification_prefs?.[o.key] !== false} onChange={(e) => void setPref(o.key, e.target.checked)} />
-              <span><span className="font-semibold">{o.label}</span><span className="block text-xs text-muted">{o.hint}</span></span>
-            </label>
+            <Checkbox key={o.key} className="min-h-[2.75rem]" checked={me?.notification_prefs?.[o.key] !== false} onChange={(v) => void setPref(o.key, v)}>
+              <span className="font-semibold">{o.label}</span><span className="block text-xs text-muted">{o.hint}</span>
+            </Checkbox>
           ))}
         </div>
       )}

@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { Bell, BellOff, Check, ChevronLeft, History, MessageSquarePlus, PencilLine, ThumbsUp } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Avatar, Button, Card, ConfirmDialog, DeniedState, ErrorState, ThreadSkeleton } from '@/components/ui';
+import { Avatar, Button, Card, ConfirmDialog, DeniedState, ErrorState, ThreadSkeleton, Notice } from '@/components/ui';
 import { Composer } from '@/components/features/review/Composer';
 import { StatusPill } from '@/components/features/review/StatusPill';
 import { LongBody } from '@/components/features/review/LongBody';
@@ -166,17 +166,17 @@ export default function PostDetail() {
         </header>
 
         {post.current_body && (
-          <section aria-label="With corrections applied" className="rounded-md border border-success/40 bg-success/5 p-3">
+          <Notice tone="success" role="region" aria-label="With corrections applied">
             <p className="ft-kicker text-success">With corrections applied</p>
             <p className="mt-1 whitespace-pre-line break-words font-display text-lg leading-8 text-ink">{post.current_body}</p>
-          </section>
+          </Notice>
         )}
         {hasCurrent && (
-          <section aria-label="Current accepted version" className="rounded-md border border-success/40 bg-success/5 p-3">
+          <Notice tone="success" role="region" aria-label="Current accepted version">
             <p className="ft-kicker text-success">Current accepted version</p>
             <p className="mt-1 whitespace-pre-line break-words text-lg font-semibold text-ink">{post.current_phrase ?? post.phrase}</p>
             {(post.current_translation ?? post.translation) && <p className="text-sm text-muted">{post.current_translation ?? post.translation}</p>}
-          </section>
+          </Notice>
         )}
         <section aria-label="Original contribution">
           <p className="ft-kicker">{helpType ? `${ownerName} wrote` : 'Original contribution'}</p>

@@ -384,6 +384,14 @@ verify_jwt = false
 [functions.archive-run]
 verify_jwt = false
 
+# Called by LiveKit with its own signature (verified in the function), not by a signed-in user.
+[functions.livekit-webhook]
+verify_jwt = false
+
+# The guardian has no account: the consent page calls it signed out, with the emailed token. 'request' checks the JWT itself.
+[functions.guardian-consent]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

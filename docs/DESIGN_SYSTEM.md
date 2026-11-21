@@ -10,11 +10,11 @@ Tailwind, CSS variables and custom CSS work together, all fed by `src/theme/toke
 |---|---|
 | Colours (light and dark) | `themes` in tokens.ts, to `--c-*` variables, to Tailwind `bg-surface`, `text-muted`, `bg-brand/20` |
 | Fonts, sizes, spacing, radii | tokens.ts, to the Tailwind theme and `--font-*`, `--space-*`, `--radius-*` |
-| Gradients | `gradients` in tokens.ts, to `--grad-*`, to `bg-grad-brand`, `.ft-gradient-text` |
+| Gradients | **None, anywhere.** Every surface is one flat colour. `.ft-ruled` (notebook lines) is an SVG image. |
 | Layout widths | `layout` in tokens.ts, to `--layout-*` |
 | Light and dark | `data-theme` on `<html>`, set by `themeStore` |
 
-**Never** write `#hex`, `px` font sizes or `linear-gradient(...)` in a component. Add a token instead. Custom CSS in `index.css` may only reference `var(--...)`.
+**Never** write `#hex`, `px` font sizes or any gradient (`linear-`, `radial-`, `bg-gradient-*`) anywhere. Add a token instead. Custom CSS in `index.css` may only reference `var(--...)`.
 
 ## Responsive behaviour
 
@@ -45,19 +45,17 @@ scoped under `.lp`, so nothing leaks into the app. The mood is a university pros
 a serif for headlines, hairline rules, square-ish corners, photos pinned at slight angles, layouts that do not repeat.
 The reference was the Open University of Kenya site (structure and tone only; no text or images were copied).
 
-## Colour: 60-30-10
+## Colour: 60-30-10 (since 2026-11-21, from the owner's print-advert reference)
 | Share | Colour | Used for |
 |---|---|---|
-| 60% | **Paper** (warm off-white) | page background, cards, whitespace, reading text |
-| 30% | **Deep indigo** | mobile menu, the "what you get" band, the greeting ticker, the speaker card, the closing call to action, the footer, active section chips |
-| 10% (a ceiling) | **Coral** | primary buttons, link underlines, the active-nav mark, the "40 languages" badge, focus rings. Nothing else. |
+| 60% | **Off-white** `238 240 244` | page background, cards, whitespace |
+| 30% | **Navy** `14 32 72` for text and bands; **royal blue** `23 78 210` for headlines and links |
+| 10% (a ceiling) | **Red** `224 32 46` | primary buttons, star ratings, the short rule above a title (`.ft-rule`), focus rings |
 
-Measured on the rendered landing page: paper 62 to 68%, deep 26 to 28%, coral 0.4 to 1.4%. Coral is never used as text on paper
-(it fails contrast); text on coral is always deep indigo. Dark mode swaps paper and deep and keeps the coral.
+No purple, violet or maroon anywhere (owner's decision, 2026-11-21): blues sit at a true blue hue, reds are bright reds, `danger` is `200 30 30`. Red is never small text on off-white (4.2:1). Text on red is white (4.8:1), and small red text uses `danger`. Dark mode swaps the ground to navy and keeps the red.
 
 ## Type
-Newsreader for headlines, Source Sans 3 for body (both from Google Fonts, set in `src/theme/tokens.ts`, so the app uses them too).
-Reading text has a line height of 1.6; large headlines are tighter on purpose.
+Headlines (`h1`, `h2`, `.font-display`) use Barlow Condensed 800 italic capitals in royal blue, like the reference poster. `h3` is Barlow Condensed 700, upright. Body text is Barlow. Both come from Google Fonts and are set in `src/theme/tokens.ts`.
 
 ## Mobile first
 - Hero: a large headline with a hand-drawn underline, two photos pinned at angles, and a badge. Below it, a slow ticker of greetings.
@@ -91,16 +89,16 @@ The signed-in screens share the public pages' look. It comes from the design tok
 | Part | Style |
 |---|---|
 | Page background, cards | Paper background; white cards with a hairline border and 4px corners; flat shadows |
-| Primary button | **Coral** with deep-indigo text (`<Button>`, or `buttonClass()` for links). One per screen. Lifts 2px on hover. |
+| Primary button | **Coral** with navy text (`<Button>`, or `buttonClass()` for links). One per screen. Lifts 2px on hover. |
 | Everything else | Outlined buttons (`secondary`), plain text (`ghost`), outlined red (`danger`) |
-| Inputs, selects, text areas | White, hairline border, 4px corners, coral focus ring, labels in ink |
-| Tabs | Underlined, the open tab gets a coral rule (`Tabs`, `tabClass`, `tabsClass`) |
-| Tags (levels, categories, status) | Small outlined squares (`.ft-tag`); "native" is filled deep indigo |
-| Post types and categories | Each has its own tint and mark (`postLooks.ts`). Ink text on tints only. Text on an image sits on a 70% deep indigo layer |
-| Navigation | Dark indigo sidebar on a laptop, dark indigo tab bar on a phone; the current page has a coral mark |
-| Chat | Sent bubbles deep indigo, received paper; corrections show red and green |
+| Inputs, selects, text areas | White, hairline border, 4px corners, red focus ring, labels in ink |
+| Tabs | Underlined, the open tab gets a red rule (`Tabs`, `tabClass`, `tabsClass`) |
+| Tags (levels, categories, status) | Small outlined squares (`.ft-tag`); "native" is filled navy |
+| Post types and categories | Each has its own tint and mark (`postLooks.ts`). Ink text on tints only. Text on an image sits on a 70% navy layer |
+| Navigation | Navy sidebar on a laptop, navy tab bar on a phone; the current page has a red mark |
+| Chat | Sent bubbles navy, received paper; corrections show red and green |
 | Clickable cards | `.ft-lift`: rise 4px with a soft shadow |
-| Page titles | Serif (Newsreader), sentence case |
+| Page titles | Barlow Condensed 800 italic capitals, royal blue |
 
 **A trap in this project's Tailwind setup:** `tailwind.config.ts` replaces the default palette with the tokens, so classes such as
 `text-white`, `bg-black/40`, `bg-indigo-100` or `text-aqua` generate **nothing** and the text silently falls back to the default colour.
@@ -120,6 +118,10 @@ Three automated checks run against the built site and the app (they were used to
 | `npm run test:db` | The database matches what the app calls |
 
 **Rules that had drifted and were put back:**
-- **Coral is not a text colour.** Coral on paper is about 2.6:1, below the 3:1 floor even for large text. Category labels ("kickers"), bullets, quote bars, the greeting cloud and the comparison table highlight had turned coral; they are muted ink or indigo again. Coral stays on buttons, link underlines, the active mark, the badge and focus rings.
-- **Text in the indigo colour must use the `brand` token**, not `deep`: in dark mode `deep` is a dark surface and text set in it disappears. (`--on-accent` is the same indigo as `--deep`, so using it for text on the indigo band made it invisible.)
+- **Red is not a text colour.** Red on off-white is about 4.2:1, below AA for small text. Category labels ("kickers"), bullets, quote bars, the greeting cloud and the comparison table highlight had turned red; they are muted ink or blue again. Red stays on buttons, link underlines, the active mark, the badge and focus rings.
+- **Text in the blue colour must use the `brand` token**, not `deep`: in dark mode `deep` is a dark surface and text set in it disappears. (`--on-accent` is the same blue as `--deep`, so using it for text on the navy band made it invisible.)
 - Anything coloured with a fixed value (like the green correction example) must use the theme tokens so it adapts to dark mode.
+
+## Shared components
+
+Anything that appears more than twice is a component, and screens use the component instead of repeating the classes: `FormError` (an error under a form or action), `Checkbox` (a labelled tick box), `Notice` (info, warning, success or danger box), `Page` (the single-column screen container), `CharCount` ("120 / 500"), `MenuItem` (a row in a pop-up menu), plus the existing `Button`, `Input`, `Select`, `Textarea`, `Card`, `Modal` and the rest of `src/components/ui`. Date of birth and its agreements use `AgeAgreements` (components/features/age).

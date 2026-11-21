@@ -16,6 +16,8 @@ self.addEventListener('push', (e) => {
       // Several events about one post replace each other rather than stacking up.
       tag: n.tag || undefined,
       renotify: !!n.tag,
+      // An incoming call stays on screen until it's dealt with, and a missed call replaces it (same tag).
+      requireInteraction: !!n.call,
       data: { url: n.url || '/notifications' },
     });
   })());

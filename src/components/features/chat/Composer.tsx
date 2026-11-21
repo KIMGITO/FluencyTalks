@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Check, Coins, Send, X } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, MenuItem } from '@/components/ui';
 import type { Message } from '@/types/db';
 import { useProfileStore } from '@/store/profileStore';
 import { useLanguageStore } from '@/store/languageStore';
@@ -62,17 +62,17 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
                 {mine.length > 1 && (
                   <div role="radiogroup" aria-label="Message language">
                     {mine.map((id) => (
-                      <button key={id} type="button" role="radio" aria-checked={language === id} onClick={() => { setLanguage(id); setOptionsOpen(false); }} className="ft-menu-item">
+                      <MenuItem key={id} role="radio" aria-checked={language === id} onClick={() => { setLanguage(id); setOptionsOpen(false); }}>
                         <span className="min-w-0 flex-1 truncate">{nameOf(id)}</span>
                         {language === id && <Check size={15} aria-hidden />}
-                      </button>))}
+                      </MenuItem>))}
                   </div>)}
                 {canOfferBounty && (
-                  <button type="button" aria-pressed={isBounty} onClick={() => { setIsBounty(!isBounty); setOptionsOpen(false); }} className="ft-menu-item">
+                  <MenuItem aria-pressed={isBounty} onClick={() => { setIsBounty(!isBounty); setOptionsOpen(false); }}>
                     <Coins size={15} aria-hidden className="shrink-0 text-muted" />
                     <span className="min-w-0 flex-1 truncate">Bounty · {BOUNTY_COST} points</span>
                     {isBounty && <Check size={15} aria-hidden />}
-                  </button>)}
+                  </MenuItem>)}
               </div>
             </>)}
           </div>)}

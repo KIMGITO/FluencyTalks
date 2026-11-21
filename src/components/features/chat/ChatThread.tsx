@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pin, X } from 'lucide-react';
 import { Avatar, Button, ChatSkeleton, EmptyState, ErrorState } from '@/components/ui';
 import { UserMenu } from '../UserMenu';
+import { CallButton } from '../call/IncomingCall';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
 import { CorrectionDialog } from './CorrectionDialog';
@@ -82,6 +83,7 @@ export function ChatThread({ id }: { id: string }) {
         </Link>
         {!!pinnedMsgs.length && (
           <Button variant="ghost" size="sm" className="h-10 w-10 px-0" aria-label={`Pinned messages (${pinnedMsgs.length})`} onClick={() => setShowPins((v) => !v)}><Pin size={17} className="text-brand" /></Button>)}
+        {!isRequest && row.status === 'active' && row.other_status === 'active' && <CallButton userId={row.other_user_id} name={row.other_name} avatar={row.other_avatar} />}
         <UserMenu userId={row.other_user_id} name={row.other_name} conversationId={id} onBlocked={() => nav('/messages')} />
       </header>
       {!!pinnedMsgs.length && (

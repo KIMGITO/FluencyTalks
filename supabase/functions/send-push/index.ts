@@ -35,21 +35,23 @@ Deno.serve(async (req) => {
     title: hasActor(n) ? (actor?.display_name || actor?.username || 'The Fluency Talks') : 'The Fluency Talks',
     body: verb,
     url: notificationLink({ ...n, actor_username: actor?.username }),
-    tag: n.data?.post_id ? `post:${n.data.post_id}` : `n:${n.id}`,
+    tag: n.data?.call_id ? `call:${n.data.call_id}` : n.data?.post_id ? `post:${n.data.post_id}` : `n:${n.id}`,
+    call: n.type === 'call_incoming',
   });
 
-  return reply(200, { sent: await deliver(db, subs, payload) });
+  // A ring is only worth delivering while it rings: a phone that was offline must not ring an hour later.
+  return reply(200, { sent: await deliver(db, subs, payload, n.type === 'call_incoming' ? 60 : 86_400) });
 });
 
 type Db = ReturnType<typeof createClient>;
 type Sub = { id: string; endpoint: string; p256dh: string; auth: string };
 
-async function deliver(db: Db, subs: Sub[], payload: string) {
+async function deliver(db: Db, subs: Sub[], payload: string, ttl = 86_400) {
   webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT')!, Deno.env.get('VAPID_PUBLIC_KEY')!, Deno.env.get('VAPID_PRIVATE_KEY')!);
   let sent = 0;
   await Promise.all(subs.map(async (s) => {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86_400 });
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: ttl });
       sent += 1;
       await db.from('push_subscriptions').update({ last_success_at: new Date().toISOString() }).eq('id', s.id);
     } catch (e) {

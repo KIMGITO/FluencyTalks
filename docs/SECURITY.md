@@ -36,6 +36,16 @@ alter role authenticator reset pgrst.db_pre_request; notify pgrst, 'reload confi
 
 Undo with `alter role authenticator set pgrst.db_pre_request = 'public.check_request'; notify pgrst, 'reload config';`. The Site status panel warns staff when this isn't set.
 
+## Turning calls off
+
+If the media provider has an outage or usage spikes, this refuses new calls and joins straight away. Nothing else is affected:
+
+```sql
+update public.call_settings set calls_enabled = false where id;   -- back on: true
+```
+
+The participant cap, ring time, token lifetime and maximum call length are in the same row.
+
 ## Rate limits
 
 `check_request()` runs before every API request and counts per user, using `public.rate_limit_rules`. A refusal is a 429. To change a limit, no deploy needed:

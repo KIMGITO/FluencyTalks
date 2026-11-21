@@ -34,6 +34,10 @@ begin
     and a.attname in ('draft', 'draft_saved_at', 'is_live', 'created_at') and (has_column_privilege('anon', a.attrelid, a.attnum, 'select') or has_column_privilege('authenticated', a.attrelid, a.attnum, 'select'));
   assert v is null, 'blog columns readable by the public: ' || coalesce(v, '');
 
+  -- The provider room name stays on the server: only the token function reads it.
+  assert not has_column_privilege('authenticated', 'public.calls', 'provider_room', 'select'), 'call room names readable by members';
+  assert not has_table_privilege('authenticated', 'public.call_settings', 'select') and not has_table_privilege('authenticated', 'public.call_join_failures', 'select'), 'call internals readable by members';
+
   -- Whether a question is hidden stays with staff, and nobody but staff writes to the FAQ.
   assert not (has_column_privilege('anon', 'public.faq_items', 'is_live', 'select') or has_column_privilege('authenticated', 'public.faq_items', 'is_live', 'select')), 'faq is_live is public';
   assert not (has_table_privilege('authenticated', 'public.faq_items', 'insert') or has_table_privilege('authenticated', 'public.faq_items', 'update') or has_table_privilege('authenticated', 'public.faq_items', 'delete')), 'faq writable by members';

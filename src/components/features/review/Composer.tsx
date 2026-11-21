@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Button } from '@/components/ui';
+import { Button, FormError } from '@/components/ui';
 import { useAction } from '@/hooks/useAction';
 import { submitDiscussion, type ItemKind } from '@/services/review';
 import { cleanText, limitLength } from '@/lib/validate';
@@ -64,7 +64,7 @@ export function Composer({ postId, parentId, kind, currentPhrase, currentTransla
       <label className="block text-xs font-semibold text-ink">{help ? help.label : copy.label}
         <textarea autoFocus={kind !== 'correction'} rows={2} value={body} onChange={(e) => setBody(limitLength(e.target.value, 1000))} placeholder={help ? help.placeholder : copy.placeholder} className={`${FIELD} mt-1 font-normal`} />
       </label>
-      {send.error && <p role="alert" className="text-sm text-danger">{send.error} Your text is still here.</p>}
+      {send.error && <FormError>{send.error} Your text is still here.</FormError>}
       <div className="flex justify-end gap-2">
         <Button type="button" size="sm" variant="ghost" disabled={send.busy} onClick={onCancel}>Cancel</Button>
         <Button type="submit" size="sm" loading={send.busy} disabled={!ready}>{help ? help.send : copy.send}</Button>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Input, Textarea } from '@/components/ui';
+import { Button, Input, Textarea, FormError, CharCount, Notice } from '@/components/ui';
 import { helpSupply, postHelpRequest, updateContribution, type ContributionPost, type ImageLayout } from '@/services/library';
 import { useFeedCache } from '@/store/feedCache';
 import { useLanguageStore } from '@/store/languageStore';
@@ -122,7 +122,7 @@ export function HelpComposer({ type, editing, onDone }: { type: PracticeType; ed
         {copy.body
           ? <Input label={copy.label(languageName)} maxLength={MAX_TITLE} value={text} disabled={locked} onChange={(e) => setText(e.target.value)} placeholder={idea ?? copy.placeholder} />
           : <Textarea label={copy.label(languageName)} rows={4} maxLength={MAX_TITLE} value={text} disabled={locked} onChange={(e) => setText(e.target.value)} placeholder={idea ?? copy.placeholder} />}
-        <p className="mt-1 text-right text-xs text-muted">{text.length} / {layout === 'overlay' ? MAX_OVERLAY_TEXT : MAX_TITLE}</p>
+        <CharCount value={text.length} max={layout === 'overlay' ? MAX_OVERLAY_TEXT : MAX_TITLE} />
         {locked && <p className="text-xs text-muted">People have already answered this, so the text stays as it is.</p>}
       </div>
       {ideasFor && (
@@ -138,15 +138,15 @@ export function HelpComposer({ type, editing, onDone }: { type: PracticeType; ed
       {copy.body && (
         <div>
           <Textarea label={copy.body.label} rows={type === 'story' ? 10 : 4} maxLength={limit} value={body} disabled={locked} onChange={(e) => setBody(e.target.value)} placeholder={copy.body.placeholder} />
-          <p className="mt-1 text-right text-xs text-muted">{body.length} / {limit}</p>
+          <CharCount value={body.length} max={limit} />
         </div>
       )}
       {copy.context && <Input label={copy.context.label} maxLength={200} value={context} onChange={(e) => setContext(e.target.value)} placeholder={copy.context.placeholder} />}
       <p className="text-xs text-muted">Everyone signed in can see this, so leave out private details like your address or phone number.</p>
       {supply !== null && supply < FEW_HELPERS && (
-        <p className="rounded-md bg-warning/10 p-2.5 text-sm text-warning">Few people here can answer in {languageName} yet, so this may take a while. Your post stays open until someone does.</p>
+        <Notice tone="warning">Few people here can answer in {languageName} yet, so this may take a while. Your post stays open until someone does.</Notice>
       )}
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      <FormError>{error}</FormError>
       <Button type="submit" full loading={busy} disabled={!text.trim()}>{editing ? 'Save changes' : copy.send}</Button>
     </form>
   );

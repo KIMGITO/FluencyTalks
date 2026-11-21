@@ -19,6 +19,8 @@
 /discover  /app  200
 /messages  /app  200
 /messages/*  /app  200
+/calls  /app  200
+/call/*  /app  200
 /profile  /app  200
 /profile/*  /app  200
 /u/*  /app  200

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Modal, Textarea } from '@/components/ui';
+import { Button, Modal, Textarea, FormError } from '@/components/ui';
 import { useAction } from '@/hooks/useAction';
 import { adminSetUserStatus } from '@/services';
 import { refreshAdminCounts } from '@/store/adminStore';
@@ -26,7 +26,7 @@ export function ModerationDialog({ target, onClose, onDone }: { target: ModTarge
     <Modal open onClose={() => { if (!submit.busy) onClose(); }} title={`${c.title} ${target.name}?`}>
       <p className="text-sm text-muted">{c.hint}</p>
       <Textarea label={needsReason ? 'Reason (required)' : 'Note (optional)'} rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
-      {submit.error && <p role="alert" className="text-sm text-danger">{submit.error}</p>}
+      <FormError>{submit.error}</FormError>
       <div className="flex justify-end gap-2"><Button variant="ghost" disabled={submit.busy} onClick={onClose}>Cancel</Button>
         <Button variant={target.status === 'active' ? 'primary' : 'danger'} loading={submit.busy} disabled={needsReason && cleanText(reason).length < 3} onClick={() => void submit.run(target)}>{c.button}</Button></div>
     </Modal>

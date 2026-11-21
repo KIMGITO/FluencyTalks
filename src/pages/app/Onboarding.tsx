@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Card, Logo } from '@/components/ui';
+import { Card, Logo, FormError } from '@/components/ui';
 import { ProfileForm } from '@/components/features';
 import { useProfileStore } from '@/store/profileStore';
 export default function Onboarding() {
@@ -14,7 +14,7 @@ export default function Onboarding() {
         <p className="pb-2 text-muted">Tell people what you speak and what you're learning so they can find you.</p>
         <ProfileForm mode="onboarding" onDone={() => nav('/home')} onError={setGlobalError} />
       </Card>
-    {globalError && <p className="text-sm text-danger">{globalError}</p>}
+    <FormError>{globalError}</FormError>
     </div>
   );
 }

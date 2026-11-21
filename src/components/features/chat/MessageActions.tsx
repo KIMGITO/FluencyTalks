@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { Pin, Reply, Trash2, UserX, Languages } from 'lucide-react';
 import type { Message } from '@/types/db';
+import { MenuItem } from '@/components/ui';
 
 const QUICK = ['❤️', '😂', '😮', '😢', '👍'];
 
@@ -64,36 +65,36 @@ export function MessageActions({
 
         <div className="mt-3 flex flex-col gap-0.5 md:mt-0">
           {canReply && (
-            <button onClick={() => { onReply(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+            <MenuItem onClick={() => { onReply(); onClose(); }} className="gap-3 py-2.5 md:py-1.5">
               <Reply size={16} className="text-muted" /> 
               <span>Reply</span>
-            </button>
+            </MenuItem>
           )}
 
           {canTranslate && (
-            <button onClick={() => { onTranslate(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+            <MenuItem onClick={() => { onTranslate(); onClose(); }} className="gap-3 py-2.5 md:py-1.5">
               <Languages size={16} className="text-muted" /> 
               <span>Translate message</span>
-            </button>
+            </MenuItem>
           )}
 
-          <button onClick={() => { onPin(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 md:py-1.5 md:rounded-lg">
+          <MenuItem onClick={() => { onPin(); onClose(); }} className="gap-3 py-2.5 md:py-1.5">
             <Pin size={16} className="text-muted" /> 
             <span>{pinned ? 'Unpin' : 'Pin to top'}</span>
-          </button>
+          </MenuItem>
 
           <div className="my-1 border-t border-border" />
 
-          <button onClick={() => { onDeleteMe(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-surface-2 text-muted md:py-1.5 md:rounded-lg">
+          <MenuItem onClick={() => { onDeleteMe(); onClose(); }} quiet className="gap-3 py-2.5 md:py-1.5">
             <UserX size={16} /> 
             <span>Delete for me</span>
-          </button>
+          </MenuItem>
 
           {mine && (
-            <button onClick={() => { onDeleteAll(); onClose(); }} className="ft-menu-item flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition hover:bg-danger/10 text-danger md:py-1.5 md:rounded-lg">
+            <MenuItem onClick={() => { onDeleteAll(); onClose(); }} danger className="gap-3 py-2.5 md:py-1.5">
               <Trash2 size={16} /> 
               <span>Delete for everyone</span>
-            </button>
+            </MenuItem>
           )}
         </div>
       </div>

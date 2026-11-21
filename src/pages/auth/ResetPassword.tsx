@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
-import { Button, Input, Spinner } from '@/components/ui';
+import { Button, Input, Spinner, FormError } from '@/components/ui';
 import { MfaChallenge } from '@/components/features/admin/MfaForms';
 import { supabase } from '@/lib/supabase';
 import { myStaffStatus } from '@/services/admin';
@@ -68,7 +68,7 @@ export default function ResetPassword() {
         <Input id="pw" type="password" label="New password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
         <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
         <p className="text-xs text-muted">At least {staff ? 12 : 8} characters.</p>
-        {(problem || error) && <p className="text-sm text-danger">{problem || error}</p>}
+        {(problem || error) && <FormError>{problem || error}</FormError>}
         <Button type="submit" full loading={busy}>Save password</Button>
       </form>
     </AuthLayout>

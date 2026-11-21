@@ -16,7 +16,8 @@ export default {
     borderRadius: { none: '0', ...radii },
     fontFamily: { sans: fonts.sans.split(','), display: fonts.display.split(',') },
     boxShadow: { card: 'var(--shadow-card)', pop: 'var(--shadow-pop)' },
-    extend: { backgroundImage: { 'grad-brand': 'var(--grad-brand)', 'grad-spark': 'var(--grad-spark)', 'grad-hero': 'var(--grad-hero)' } },
+    // No gradient utilities: the design is flat colour only (docs/DESIGN_SYSTEM.md).
+    backgroundImage: { none: 'none' },
   },
   plugins: [],
 } satisfies Config;

@@ -39,7 +39,6 @@ export const BLOG_COLORS: { label: string; value: string }[] = [
   { label: 'Orange', value: 'var(--post-orange)' },
   { label: 'Green', value: 'var(--post-green)' },
   { label: 'Blue', value: 'var(--post-blue)' },
-  { label: 'Purple', value: 'var(--post-purple)' },
   { label: 'Grey', value: 'var(--post-grey)' },
 ];
 const FONT_VALUES = new Set(BLOG_FONTS.map((f) => f.value));

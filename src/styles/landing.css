@@ -1,29 +1,30 @@
 /* ==========================================================================
    Public pages: landing, legal, sign-in, 404. Everything is scoped under .lp.
 
-   COLOUR, 60-30-10
-     60%  paper   warm off-white: page background, cards, whitespace, reading text
-     30%  deep    indigo: header menu, the services band, speaker card, call to action, footer, tab/active states
-     10%  accent  coral: ONLY primary buttons, link underlines, the active-nav mark, the badge, focus rings
-   Accent is never used as decoration. Text on accent is always deep indigo (contrast 5.5:1).
-   Light and dark mode both work: dark swaps paper and deep, accent stays.
+   COLOUR, 60-30-10, flat only (no gradients anywhere)
+     60%  paper   cool off-white: page background, cards, whitespace
+     30%  deep    navy for text and bands; headlines in royal blue
+     10%  accent  red: primary buttons, star ratings, the short rule above a title, focus rings
+   Text on red is white (4.8:1). Red is never small text on paper.
+   Light and dark mode both work: dark swaps paper and navy, red stays.
 
-   MOOD: a university prospectus, hand set. Serif headlines, hairline rules, square-ish corners,
-   photos pinned at slight angles, layouts that do not repeat.
+   MOOD: an editorial print advert. Heavy condensed italic capitals for headlines, clean grotesque
+   body text, square corners, photos in plain frames, generous whitespace.
    ========================================================================== */
 
 .lp {
-  --paper: 250 246 238;            /* 60 */
-  --paper-2: 241 234 220;          /* a shade deeper, same family as the 60 */
-  --deep: 27 26 85;                /* 30 */
-  --on-deep: 250 246 238;
-  --accent: 255 106 77;            /* 10 */
-  --on-accent: 27 26 85;
-  --ink: 23 22 58;
-  --muted: 91 90 126;
+  --paper: 238 240 244;            /* 60 */
+  --paper-2: 226 231 238;          /* a shade deeper, same family as the 60 */
+  --deep: 14 32 72;                /* 30 */
+  --on-deep: 238 240 244;
+  --accent: 224 32 46;             /* 10 */
+  --on-accent: 255 255 255;
+  --royal: 23 78 210;
+  --ink: 14 32 72;
+  --muted: 74 86 106;
   --rule: rgb(var(--ink) / .16);
   /* Text colours a blog post can use. tests/unit/blogHtml.test.ts checks they stay readable on every background. */
-  --post-red: #b3261e; --post-orange: #a84a00; --post-green: #18703a; --post-blue: #1f54c4; --post-purple: #6b2fc0; --post-grey: #5f5e78;
+  --post-red: #b3261e; --post-orange: #a84a00; --post-green: #18703a; --post-blue: #1f54c4; --post-grey: #4a566a;
   --gutter: clamp(1.25rem, 5vw, 3rem);
   --hdr: 4rem;
   --ease: cubic-bezier(.2, .7, .2, 1);
@@ -35,14 +36,17 @@
 }
 .lp > main { flex: 1 0 auto; }
 :root[data-theme="dark"] .lp {
-  --paper: var(--c-bg); --paper-2: var(--c-surface); --deep: 36 35 94; --on-deep: 240 240 255; --accent: 255 129 102;
-  --ink: 240 240 255; --muted: 160 160 205;
-  --post-red: #ff9d94; --post-orange: #ffb570; --post-green: #6fdc9e; --post-blue: #9dbcff; --post-purple: #cdb0ff; --post-grey: #b5b5d2;
+  --paper: var(--c-bg); --paper-2: var(--c-surface); --deep: 25 41 74; --on-deep: 238 240 244; --accent: 240 56 70;
+  --royal: 84 150 245; --ink: 238 240 244; --muted: 160 172 192;
+  --post-red: #ff9d94; --post-orange: #ffb570; --post-green: #6fdc9e; --post-blue: #9dbcff; --post-grey: #b4bfd0;
   --lift: 0 18px 34px -18px rgb(0 0 0 / .7), 0 4px 10px -4px rgb(0 0 0 / .4);
 }
 
 /* Base resets use :where() (zero specificity) so one class can set its own margin or colour. */
-.lp :where(h1, h2, h3, h4) { font-family: var(--font-display); font-weight: 500; line-height: 1.12; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.lp :where(h1, h2, h3, h4) { font-family: var(--font-display); font-weight: 700; line-height: 1.05; letter-spacing: 0; margin: 0; text-wrap: balance; }
+/* Poster headlines, as in the reference advert: heavy condensed italic capitals in royal blue. */
+.lp :where(h1, h2) { font-weight: 800; font-style: italic; text-transform: uppercase; color: rgb(var(--royal)); line-height: 1; }
+.lp :where(.lp-cta, .lp-band, footer) :where(h1, h2) { color: inherit; }
 .lp :where(p, ul, ol, dl, dd, figure) { margin: 0; }
 .lp :where(p) { text-wrap: pretty; }
 .lp :where(a) { color: inherit; }
@@ -122,7 +126,7 @@
 .lp-hero { position: relative; padding-top: clamp(2rem, 8vw, 4rem); }
 .lp-hero__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
 .lp-hero__head { position: relative; z-index: 3; }
-.lp-hero__title { font-size: clamp(3rem, 14vw, 4.6rem); line-height: 1; letter-spacing: -.04em; margin-top: 1.1rem; }
+.lp-hero__title { font-size: clamp(3rem, 14vw, 4.6rem); line-height: 1; letter-spacing: 0; margin-top: 1.1rem; }
 /* the title sits on paper strips, so wherever it crosses a photograph it stays readable */
 .lp-strip { background: rgb(var(--paper)); padding: .02em .12em; margin-left: -.12em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .lp-hero__title em, .lp-statement em, .lp-cta h2 em { font-style: italic; }
@@ -174,7 +178,7 @@
 /* ---- intro + numbered timeline -------------------------------------------- */
 .lp-intro { padding-block: clamp(3.5rem, 12vw, 9rem) clamp(1rem, 3vw, 2.5rem); }
 .lp-intro__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
-.lp-statement { font-size: clamp(2.35rem, 8.5vw, 4.2rem); line-height: 1.04; letter-spacing: -.035em; }
+.lp-statement { font-size: clamp(2.35rem, 8.5vw, 4.2rem); line-height: 1.04; letter-spacing: 0; }
 .lp-intro__body .lp-lead { margin-top: 1.4rem; }
 .lp-steps { list-style: none; padding: 0; margin: clamp(2.5rem, 6vw, 4rem) 0 0; display: grid; gap: 0; }
 .lp-steps li { position: relative; display: grid; grid-template-columns: 4.25rem minmax(0, 1fr); gap: 0 1rem; padding-bottom: 2rem; }
@@ -218,7 +222,7 @@
 .lp-card--d { --w: 82vw; --o: 2.5rem; background: transparent; border: 1.5px solid rgb(var(--on-deep) / .55); color: rgb(var(--on-deep)); }
 .lp-card--d p { color: rgb(var(--on-deep) / .8); } .lp-card--d .lp-num { color: rgb(var(--on-deep) / .75); }
 .lp-card--e { --w: 66vw; --o: 1rem; }
-.lp-big { font: 500 clamp(4rem, 14vw, 5.5rem)/1 var(--font-display); letter-spacing: -.04em; margin-top: 1rem; color: rgb(var(--on-deep)); }
+.lp-big { font: italic 800 clamp(4rem, 14vw, 5.5rem)/1 var(--font-display); letter-spacing: -.04em; margin-top: 1rem; color: rgb(var(--on-deep)); }
 .lp-demo { margin-top: 1.25rem; padding: 1rem 1.1rem; border-left: 3px solid rgb(var(--deep)); background: rgb(var(--paper-2)); font: 500 clamp(1.25rem, 5vw, 1.7rem)/1.5 var(--font-display); }
 .lp-demo del, .lp-demo ins { white-space: nowrap; }
 .lp-demo del { color: rgb(var(--c-danger)); text-decoration-thickness: 2px; }
@@ -280,7 +284,7 @@
 .lp-cta { padding-block: clamp(3rem, 10vw, 8rem) clamp(2.5rem, 6vw, 5rem); }
 .lp-cta__block { background: rgb(var(--deep)); color: rgb(var(--on-deep)); padding: clamp(2.25rem, 7vw, 5rem) clamp(1.5rem, 6vw, 5rem); margin-right: clamp(0px, 9vw, 9rem); position: relative; border-radius: 0 4px 4px 0; margin-left: calc(var(--gutter) * -1); padding-left: calc(var(--gutter) + 1rem); }
 .lp-cta__block::after { content: ''; position: absolute; right: -.9rem; bottom: -.9rem; width: 38%; height: 55%; border-right: 1px solid rgb(var(--c-brand)); border-bottom: 1px solid rgb(var(--c-brand)); pointer-events: none; }
-.lp-cta h2 { font-size: clamp(2.5rem, 9vw, 4.6rem); max-width: 13ch; letter-spacing: -.035em; line-height: 1.02; }
+.lp-cta h2 { font-size: clamp(2.5rem, 9vw, 4.6rem); max-width: 13ch; letter-spacing: 0; line-height: 1.02; }
 .lp-cta p { margin-top: 1.1rem; max-width: 30rem; color: rgb(var(--on-deep) / .8); }
 .lp-cta .lp-btn { margin-top: 1.75rem; }
 @media (min-width: 56rem) { .lp-cta__block { margin-left: 0; padding-left: clamp(1.5rem, 6vw, 5rem); border-radius: 4px; } }
@@ -306,7 +310,7 @@
 
 /* ---- documents: privacy, terms, data deletion ---------------------------------- */
 .lp-doc__head { padding-block: clamp(2.5rem, 7vw, 5rem) clamp(1.25rem, 3vw, 2rem); }
-.lp-doc__head h1 { font-size: clamp(2.7rem, 11vw, 5.5rem); letter-spacing: -.04em; line-height: 1; margin-top: 1rem; }
+.lp-doc__head h1 { font-size: clamp(2.7rem, 11vw, 5.5rem); letter-spacing: 0; line-height: 1; margin-top: 1rem; }
 .lp-doc__meta { margin-top: 1rem; color: rgb(var(--muted)); font-size: .9375rem; }
 .lp-tabs { margin-top: 1.5rem; display: flex; gap: 1.5rem; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--rule); }
 .lp-tabs::-webkit-scrollbar { display: none; }
@@ -345,7 +349,7 @@
 /* ---- sign-in / account pages and 404 ------------------------------------------- */
 .lp-auth { display: grid; place-items: start center; padding: clamp(2rem, 8vw, 5rem) var(--gutter) clamp(2.5rem, 8vw, 5rem); }
 .lp-auth__card { width: 100%; max-width: 27rem; }
-.lp-auth__card > h1 { font-size: clamp(2.4rem, 9vw, 3.2rem); letter-spacing: -.035em; margin-bottom: 1.4rem; }
+.lp-auth__card > h1 { font-size: clamp(2.4rem, 9vw, 3.2rem); letter-spacing: 0; margin-bottom: 1.4rem; }
 .lp-auth__panel { background: rgb(var(--c-surface)); border: 1px solid var(--rule); border-radius: 4px; padding: clamp(1.25rem, 4vw, 1.75rem); display: grid; gap: 1rem; box-shadow: 0 1px 0 rgb(var(--ink) / .04); }
 /* the shared form controls come from the app; here they take the landing page's square-ish, accent-button look */
 .lp-auth .rounded-full { border-radius: 4px; }
@@ -373,7 +377,7 @@
 /* ---- blog ------------------------------------------------------------------ */
 .lp-blog__lead { margin-top: 1rem; }
 .lp-article { max-width: 44rem; }
-.lp-article .lp-doc__head h1 { font-size: clamp(2.2rem, 7vw, 3.6rem); letter-spacing: -.03em; line-height: 1.05; }
+.lp-article .lp-doc__head h1 { font-size: clamp(2.2rem, 7vw, 3.6rem); letter-spacing: 0; line-height: 1.05; }
 .lp-crumbs { font-size: .875rem; color: rgb(var(--muted)); margin-bottom: 1.25rem; }
 .lp-crumbs a { text-decoration: none; } .lp-crumbs a:hover { text-decoration: underline; }
 .lp-article__summary { font-size: clamp(1.15rem, 1.6vw, 1.3rem); line-height: 1.6; padding-left: 1.1rem; border-left: 3px solid rgb(var(--c-brand)); }
@@ -465,7 +469,7 @@ html { scroll-behavior: smooth; }
 
 .lp-post { --post-col: 44rem; padding-top: clamp(2rem, 5vw, 3.5rem); }
 .lp-post__head, .lp-post__col { max-width: var(--post-col); margin-inline: auto; }
-.lp-post__head h1 { font-size: clamp(2.1rem, 7vw, 3.6rem); letter-spacing: -.03em; line-height: 1.06; margin-top: .9rem; overflow-wrap: anywhere; }
+.lp-post__head h1 { font-size: clamp(2.1rem, 7vw, 3.6rem); letter-spacing: 0; line-height: 1.06; margin-top: .9rem; overflow-wrap: anywhere; }
 .lp-post__cover { max-width: 60rem; margin: clamp(1.5rem, 4vw, 2.5rem) auto 0; }
 .lp-post__cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; }
 .lp-post__col { padding-top: clamp(1.5rem, 4vw, 2.5rem); }

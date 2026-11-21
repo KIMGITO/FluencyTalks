@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
+import { AgeGateRoute } from '@/components/features/age/AgeGate';
 import { RouteError } from '@/components/ui';
 import { AppShell } from '@/components/layout';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -57,6 +58,7 @@ const routes: RouteObject[] = [
   { path: '/languages/:slug', element: <LanguagePage /> },
   { path: '/about', element: <About /> },
   { path: '/faq', element: <FaqPage /> },
+  { path: '/guardian', lazy: async () => ({ Component: (await import('@/pages/public/GuardianConsent')).default }) },
   {
     element: <ProtectedRoute />,
     children: [
@@ -67,6 +69,8 @@ const routes: RouteObject[] = [
     element: <ProtectedRoute />,
     children: [
       {
+        element: <AgeGateRoute />,
+        children: [{
         element: <AppShell />,
         children: [
           {
@@ -90,9 +94,15 @@ const routes: RouteObject[] = [
               { path: '/library/post/:id', element: <PostDetail /> },
               { path: '/notifications', element: <Notifications /> },
               { path: '/partners', element: <Partners /> },
+              // Loaded on its own, so the media SDK only downloads for a call.
+              { path: '/calls', lazy: async () => ({ Component: (await import('@/pages/app/CallHistory')).default }) },
+              { path: '/call/:id', lazy: async () => ({ Component: (await import('@/pages/app/Call')).default }) },
+              { path: '/path', lazy: async () => ({ Component: (await import('@/pages/app/Path')).default }) },
+              { path: '/path/assess/:callId', lazy: async () => ({ Component: (await import('@/pages/app/Assess')).default }) },
             ],
           },
         ],
+        }],
       },
     ],
   },

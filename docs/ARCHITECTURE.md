@@ -84,8 +84,11 @@ import { searchPeople, sendMessage } from '@/services';
 | `unsplash-proxy` | Image search, so the key stays on the server | Signed-in users |
 | `send-push` | Delivers one notification to the owner's devices | The database, after a row commits |
 | `archive-run` | Moves old rows to storage, copies to write-once storage, destroys expired files | The database, on a clock |
+| `call-token` | Signs a short-lived LiveKit token once `claim_call_join` allows it | A call member |
+| `call-control` | Hangs up or ends a call, then closes its LiveKit room | A call member |
+| `livekit-webhook` | Verifies LiveKit's signed events and records who really joined or left | LiveKit |
 
-`_shared/` holds the common code: `edge-gate.ts`, `notification-text.ts`, `archive-file.ts` and `worm.ts`.
+`_shared/` holds the common code: `edge-gate.ts`, `notification-text.ts`, `archive-file.ts`, `worm.ts`, `call-http.ts` and `media-provider.ts`. `media-provider.ts` is the only server file that knows the provider is LiveKit. It and `call-http.ts` are Deno-only, so the app's `tsc` excludes them.
 
 ## The Worker
 

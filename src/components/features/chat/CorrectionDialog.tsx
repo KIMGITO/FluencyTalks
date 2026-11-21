@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Input, Modal, Textarea } from '@/components/ui';
+import { Button, Input, Modal, Textarea, FormError } from '@/components/ui';
 import { DiffText } from './DiffText';
 import type { Message } from '@/types/db';
 import { useProfileStore } from '@/store/profileStore';
@@ -26,7 +26,7 @@ export function CorrectionDialog({ message, onClose, onSubmit }: { message: Mess
         <Textarea label="Corrected version" rows={3} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} disabled={!canEdit} />
         {!unchanged && <div className="rounded-md bg-surface-2 p-3 text-sm"><DiffText original={message.body} corrected={text} /></div>}
         <Input label="Why? (optional)" maxLength={500} value={note} placeholder="A short explanation helps them learn" onChange={(e) => setNote(e.target.value)} disabled={!canEdit} />
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <FormError>{error}</FormError>
         <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Cancel</Button><Button loading={busy} disabled={unchanged || !canEdit} onClick={submit}>Send correction</Button></div>
       </>)}
     </Modal>

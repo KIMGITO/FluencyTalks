@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { CircleAlert, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, ConfirmDialog, PartialError } from '@/components/ui';
+import { Button, Card, ConfirmDialog, PartialError, Notice } from '@/components/ui';
 import { waited } from '@/lib/format';
 import { appealRestriction, requestExtension, type OwedDecision } from '@/services/review';
 import { useAccountabilityStore } from '@/store/accountabilityStore';
@@ -51,9 +51,9 @@ export function DecisionQueue() {
         </Card>
       )}
       {warned && !restriction && (
-        <p className="ft-inset rounded-md bg-warning/10 p-2.5 text-sm font-semibold text-warning">
+        <Notice tone="warning" className="ft-inset font-semibold">
           {policy.restrict_after_overdue} or more decisions are overdue. New teaching posts pause in about {Math.max(1, Math.ceil((new Date(warned).getTime() + policy.restrict_notice_hours * 3_600_000 - Date.now()) / 86_400_000))} days unless you answer them or ask for more time.
-        </p>
+        </Notice>
       )}
       {items.length > 0 && (
         <Card pad={false} className="divide-y divide-border">

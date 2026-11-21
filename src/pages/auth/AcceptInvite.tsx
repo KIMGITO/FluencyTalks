@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
-import { Button, Input, Spinner } from '@/components/ui';
+import { Button, Input, Spinner, FormError } from '@/components/ui';
 import { useSeo } from '@/hooks/useSeo';
 import { friendlyAuthError } from '@/lib/authHelpers';
 import { supabase } from '@/lib/supabase';
@@ -57,7 +57,7 @@ export default function AcceptInvite() {
         <Input id="pw" type="password" label="Password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
         <Input id="pw2" type="password" label="Repeat password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
         <p className="text-xs text-muted">At least {MIN_PASSWORD} characters.</p>
-        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+        <FormError>{error}</FormError>
         <Button type="submit" full loading={busy}>Accept invitation</Button>
       </form>
     </AuthLayout>

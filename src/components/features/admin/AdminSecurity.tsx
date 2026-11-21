@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Circle, KeyRound, LifeBuoy, Plus, ShieldCheck, Smartphone, TriangleAlert } from 'lucide-react';
 import clsx from 'clsx';
-import { Button, ConfirmDialog, ErrorState, Input, RowListSkeleton } from '@/components/ui';
+import { Button, ConfirmDialog, ErrorState, Input, RowListSkeleton, FormError } from '@/components/ui';
 import { friendlyAuthError } from '@/lib/authHelpers';
 import { formatTime } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
@@ -91,7 +91,7 @@ export function AdminSecurity() {
             <Rule ok={pw.length >= MIN_PASSWORD}>{`At least ${MIN_PASSWORD} characters`}</Rule>
             <Rule ok={!!pw && pw === pw2}>Both passwords match</Rule>
           </ul>
-          {pwError && <p role="alert" className="text-sm text-danger">{pwError}</p>}
+          <FormError>{pwError}</FormError>
           <Button type="submit" size="sm" loading={pwBusy}>{pwBusy ? 'Changing…' : 'Change password'}</Button>
         </form>
       </Panel>

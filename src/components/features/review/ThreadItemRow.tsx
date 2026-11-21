@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { Bookmark, BookmarkPlus, Check, CornerDownRight, Flag, Heart, MessageCircle, MoreHorizontal, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Avatar, Button, ConfirmDialog } from '@/components/ui';
+import { Avatar, Button, ConfirmDialog, MenuItem } from '@/components/ui';
 import { DiffText } from '@/components/features/chat/DiffText';
 import { timeAgo, waited } from '@/lib/format';
 import { toast } from '@/store/toastStore';
@@ -182,7 +182,7 @@ export function ThreadBranch({ item, ctx, level = 0, branch = false }: { item: T
                 {menu && (
                   <div className="ft-menu right-0 mt-1" role="menu">
                     {(['accepted', 'declined', 'pending'] as const).filter((s) => s !== item.status).map((s) => (
-                      <button key={s} role="menuitem" className="ft-menu-item" onClick={() => { setMenu(false); setDialog(`override-${s}`); }}>Set to {s}</button>
+                      <MenuItem key={s} role="menuitem" onClick={() => { setMenu(false); setDialog(`override-${s}`); }}>Set to {s}</MenuItem>
                     ))}
                   </div>
                 )}

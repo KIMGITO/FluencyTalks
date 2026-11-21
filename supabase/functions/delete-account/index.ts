@@ -3,6 +3,7 @@
 // Portable alternative: a small authenticated endpoint on your own backend that calls the same admin API.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { edgeGate } from '../_shared/edge-gate.ts';
+import { deleteUserAndFiles } from '../_shared/delete-user.ts';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -27,13 +28,10 @@ Deno.serve(async (req) => {
   const { data: staff } = await admin.from('admin_accounts').select('user_id').eq('user_id', uid).maybeSingle();
   if (staff) return reply(403, { error: 'staff_account' });
 
-  const { data: files } = await admin.storage.from('avatars').list(uid);
-  if (files?.length) await admin.storage.from('avatars').remove(files.map((f) => `${uid}/${f.name}`));
-
   // Cascades remove profile, languages, follows, blocks, messages, notifications, etc.
-  const { error: delErr } = await admin.auth.admin.deleteUser(uid);
+  const delErr = await deleteUserAndFiles(admin, uid);
   if (delErr) {
-    await admin.from('app_logs').insert({ level: 'error', source: 'edge:delete-account', message: delErr.message.slice(0, 1000), user_id: uid });
+    await admin.from('app_logs').insert({ level: 'error', source: 'edge:delete-account', message: delErr.slice(0, 1000), user_id: uid });
     return reply(500, { error: 'failed' });
   }
   return reply(200, { ok: true });

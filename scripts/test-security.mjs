@@ -284,6 +284,45 @@ async function main() {
   assert.ok(audit.data.some((e) => e.action === 'app_paused') && audit.data.some((e) => e.action === 'app_resumed'), 'both are in the audit log');
   step('resuming restores everything, and both are in the audit log');
 
+  // Calls, through the real API: members only, no room names, no direct writes, nothing for signed-out visitors.
+  const ca = await learner('callera', 'eng', 'spa'); const cb = await learner('callerb', 'spa', 'eng'); const cs = await learner('callers', 'eng', 'spa');
+  let cr = await ca.c.rpc('start_conversation', { p_target: cb.id }); assert.equal(cr.error, null, `chat: ${cr.error?.message}`);
+  cr = await cb.c.rpc('respond_message_request', { p_conv: cr.data, p_accept: true }); assert.equal(cr.error, null);
+  cr = await ca.c.rpc('start_call', { p_callee: cb.id }); assert.equal(cr.error, null, `start_call: ${cr.error?.message}`);
+  const callId = cr.data;
+  assert.equal((await cs.c.rpc('start_call', { p_callee: cb.id })).error?.message, 'user_unavailable', 'a stranger cannot call');
+  assert.equal((await cs.c.from('calls').select('id').eq('id', callId)).data?.length, 0, 'a stranger cannot see the call');
+  assert.equal((await cs.c.from('call_participants').select('id').eq('call_id', callId)).data?.length, 0, 'or its members');
+  assert.equal((await cs.c.rpc('claim_call_join', { p_call: callId })).data?.ok, false, 'or join it');
+  assert.equal((await cb.c.from('calls').select('id').eq('id', callId)).data?.length, 1, 'the callee can see it');
+  assert.ok((await cb.c.from('calls').select('provider_room').eq('id', callId)).error, 'but not the room name');
+  assert.ok((await cb.c.from('call_participants').update({ role: 'host' }).eq('call_id', callId)).error, 'members cannot promote themselves');
+  assert.ok((await cb.c.from('calls').insert({ max_participants: 2, ring_expires_at: new Date().toISOString() })).error, 'or create calls directly');
+  assert.ok((await client().from('calls').select('id')).error, 'signed-out visitors cannot read calls');
+  assert.ok((await client().rpc('start_call', { p_callee: cb.id })).error, 'or start one');
+  cr = await cb.c.rpc('respond_call_invite', { p_call: callId, p_accept: true }); assert.equal(cr.error, null);
+  const join = await cb.c.rpc('claim_call_join', { p_call: callId });
+  assert.equal(join.data?.ok, true, `join: ${JSON.stringify(join.data)}`); assert.equal(join.data.identity, cb.id, 'joins as themselves');
+  await ca.c.rpc('leave_call', { p_call: callId });
+  step('calls: members only, room names hidden, no direct writes, signed-out refused');
+
+  // Live updates about a call reach its members only.
+  const seen = { member: 0, stranger: 0 };
+  await ca.c.realtime.setAuth((await ca.c.auth.getSession()).data.session.access_token);
+  await cs.c.realtime.setAuth((await cs.c.auth.getSession()).data.session.access_token);
+  const mCh = ca.c.channel('sec-call-m').on('postgres_changes', { event: '*', schema: 'public', table: 'call_participants' }, () => { seen.member += 1; });
+  const sCh = cs.c.channel('sec-call-s').on('postgres_changes', { event: '*', schema: 'public', table: 'call_participants' }, () => { seen.stranger += 1; });
+  assert.equal(await subscribed(mCh), 'SUBSCRIBED'); assert.equal(await subscribed(sCh), 'SUBSCRIBED');
+  await sleep(8000);
+  await service.from('calls').update({ created_at: new Date(Date.now() - 86_400_000).toISOString() }).eq('initiated_by', ca.id);   // past the repeat-call limit
+  const again = await ca.c.rpc('start_call', { p_callee: cb.id }); assert.equal(again.error, null, `second call: ${again.error?.message}`);
+  await cb.c.rpc('respond_call_invite', { p_call: again.data, p_accept: false });
+  await sleep(5000);
+  assert.ok(seen.member > 0, 'a member hears about their call');
+  assert.equal(seen.stranger, 0, 'a stranger hears nothing');
+  ca.c.removeChannel(mCh); cs.c.removeChannel(sCh);
+  step('calls: live updates reach members only');
+
   console.log(`\n${passed} checks passed`);
 }
 

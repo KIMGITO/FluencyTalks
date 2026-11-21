@@ -3,6 +3,7 @@ import { Button } from './Button';
 import { Modal } from './Modal';
 import { userMessage } from '@/lib/errors';
 import { cleanText, limitLength } from '@/lib/validate';
+import { FormError } from './FormError';
 
 /** Before something consequential: says what will happen. Stays open and shows the error if it fails. */
 export function ConfirmDialog({ open, title, children, confirmLabel, danger, reasonLabel, reasonRequired, onConfirm, onClose }: {
@@ -32,7 +33,7 @@ export function ConfirmDialog({ open, title, children, confirmLabel, danger, rea
             className="mt-1 w-full rounded-md border border-border bg-surface p-2.5 text-base font-normal text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
         </label>
       )}
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      <FormError>{error}</FormError>
       <div className="flex justify-end gap-2">
         <Button ref={first} variant="secondary" size="sm" disabled={busy} onClick={onClose}>Cancel</Button>
         <Button variant={danger ? 'danger' : 'primary'} size="sm" loading={busy} disabled={missing} onClick={go}>{confirmLabel}</Button>

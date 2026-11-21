@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, FormError } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useSeo } from '@/hooks/useSeo';
 import { EMAILS, mailto } from '@/lib/emails';
@@ -22,7 +22,7 @@ export default function ForgotPassword() {
       ) : (
         <form noValidate onSubmit={submit} className="space-y-3">
           <Input id="email" type="email" label="Email" autoComplete="email" error={problem} value={email} onChange={(e) => { setEmail(e.target.value); setProblem(''); }} />
-          {error && <p className="text-sm text-danger">{error}</p>}
+          <FormError>{error}</FormError>
           <Button type="submit" full loading={busy}>Send reset link</Button>
         </form>)}
       <p className="text-sm text-muted">Still stuck? Write to <a className="text-brand underline" href={mailto(EMAILS.support, { subject: 'Password reset help' })}>{EMAILS.support}</a>.</p>

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bookmark, BookmarkCheck, Flag, MessagesSquare, MoreVertical, Pencil, PencilLine, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
-import { Avatar, Button, ConfirmDialog, buttonClass } from '@/components/ui';
+import { Avatar, Button, ConfirmDialog, buttonClass, MenuItem } from '@/components/ui';
 import { canCorrect } from '@/lib/corrections';
 import { FIX_LABEL, isPractice, POST_TYPE_LABEL } from '@/lib/postTypes';
 import { CATEGORY_LOOK, LESSON_LOOK, PRACTICE_LOOK } from './postLooks';
@@ -206,27 +206,27 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
         <div className="ft-menu right-0 mt-1.5" role="menu">
           {isOwner ? (
             <>
-              <button role="menuitem" className="ft-menu-item" onClick={() => navigate(`/library/contribute?edit=${post.id}`)}>
+              <MenuItem role="menuitem" onClick={() => navigate(`/library/contribute?edit=${post.id}`)}>
                 <Pencil size={14} /> Edit post
-              </button>
-              <button role="menuitem" className="ft-menu-item" onClick={handlePin}>
+              </MenuItem>
+              <MenuItem role="menuitem" onClick={handlePin}>
                 {pinned ? <><PinOff size={14} /> Unpin from profile</> : <><Pin size={14} /> Pin to profile</>}
-              </button>
-              <button role="menuitem" className="ft-menu-item text-danger hover:bg-danger/10" onClick={() => { setMenuOpen(false); setConfirming('delete'); }}>
+              </MenuItem>
+              <MenuItem role="menuitem" danger onClick={() => { setMenuOpen(false); setConfirming('delete'); }}>
                 <Trash2 size={14} /> Delete post
-              </button>
+              </MenuItem>
             </>
           ) : (
             <>
-              <button role="menuitem" className="ft-menu-item" onClick={handleSave}>
+              <MenuItem role="menuitem" onClick={handleSave}>
                 {saved ? <><BookmarkCheck size={14} /> Remove from saved</> : <><Bookmark size={14} /> Save post</>}
-              </button>
-              <button role="menuitem" className="ft-menu-item" onClick={() => { setMenuOpen(false); setReporting(true); }}>
+              </MenuItem>
+              <MenuItem role="menuitem" onClick={() => { setMenuOpen(false); setReporting(true); }}>
                 <Flag size={14} /> Report post
-              </button>
-              <button role="menuitem" className="ft-menu-item text-danger hover:bg-danger/10" onClick={() => { setMenuOpen(false); setConfirming('block'); }}>
+              </MenuItem>
+              <MenuItem role="menuitem" danger onClick={() => { setMenuOpen(false); setConfirming('block'); }}>
                 <UserX size={14} /> Block {authorName}
-              </button>
+              </MenuItem>
             </>
           )}
         </div>
@@ -294,8 +294,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
           {(type === 'correct_me' || type === 'how_do_i_say') && (
             // Ruled lines sit on the same 1.75rem rhythm as the text, so words rest on them.
             <span
-              className="mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink"
-              style={type === 'correct_me' ? { backgroundImage: 'linear-gradient(to bottom, transparent calc(1.75rem - 1px), rgba(127, 127, 127, 0.3) calc(1.75rem - 1px))', backgroundSize: '100% 1.75rem' } : undefined}
+              className={clsx('mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink', type === 'correct_me' && 'ft-ruled')}
             >{post.phrase}</span>
           )}
           {post.source_context && <span className="mt-2 block text-sm text-muted">{(type === 'correct_me' || type === 'photo') && 'Trying to say: '}{post.source_context}</span>}
@@ -385,7 +384,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
                 className="aspect-[4/3] w-full object-cover"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-ink/30" />
             </>
           ) : (
             <div className="flex min-h-[9.6rem] items-center px-5 py-9">

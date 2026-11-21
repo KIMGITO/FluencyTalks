@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, CircleHelp, Eye, EyeOff, FilePen, Plus, Trash2 } from 'lucide-react';
-import { Button, Card, ConfirmDialog, EmptyState, ErrorState, Input, Modal, RowListSkeleton, Select, Textarea } from '@/components/ui';
+import { Button, Card, ConfirmDialog, EmptyState, ErrorState, Input, Modal, RowListSkeleton, Select, Textarea, FormError } from '@/components/ui';
 import { useAction } from '@/hooks/useAction';
 import { FAQ_SECTIONS } from '@/lib/blogHtml';
 import { adminFaqDelete, adminFaqList, adminFaqMove, adminFaqSave, type AdminFaqItem, type FaqDraft } from '@/services/faq';
@@ -107,7 +107,7 @@ function FaqForm({ item, onClose, onSaved }: { item: AdminFaqItem | null; onClos
           <Switch label="Show on the site" hint="Off keeps the text here without showing it to anyone." checked={draft.is_live} onChange={(is_live) => set({ is_live })} />
           <Switch label="Also on the home page" hint="Every question is on the FAQ page. This adds it to the home page too." checked={draft.on_home} onChange={(on_home) => set({ on_home })} />
         </div>
-        {save.error && <p role="alert" className="text-sm text-danger">{save.error}</p>}
+        <FormError>{save.error}</FormError>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" disabled={save.busy} onClick={onClose}>Cancel</Button>
           <Button type="submit" loading={save.busy}>{item ? 'Save' : 'Add question'}</Button>

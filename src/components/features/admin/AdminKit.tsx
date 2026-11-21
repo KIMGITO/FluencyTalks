@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { ChevronDown, MoreVertical, RefreshCw, type LucideIcon } from 'lucide-react';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, MenuItem } from '@/components/ui';
 
 /** Solid brand colours, each with the text colour that stays readable on it in both themes. */
 const SOLID = {
@@ -106,9 +106,9 @@ export function ActionMenu({ label, text, actions }: { label: string; text?: str
       {open && (
         <div role="menu" aria-label={label} className={clsx('ft-menu', text ? 'left-0' : 'right-0', up ? 'bottom-full mb-1.5' : 'mt-1.5')}>
           {actions.map(({ label: l, icon: Icon, danger, disabled, onSelect }) => (
-            <button key={l} type="button" role="menuitem" disabled={disabled} onClick={() => { setOpen(false); onSelect(); }} className={clsx('ft-menu-item disabled:cursor-not-allowed disabled:opacity-50', danger && 'text-danger hover:bg-danger/10')}>
+            <MenuItem key={l} role="menuitem" danger={danger} disabled={disabled} onClick={() => { setOpen(false); onSelect(); }} className="disabled:cursor-not-allowed disabled:opacity-50">
               {Icon && <Icon size={16} aria-hidden className="shrink-0" />}{l}
-            </button>
+            </MenuItem>
           ))}
         </div>
       )}

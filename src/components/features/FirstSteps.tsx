@@ -1,7 +1,8 @@
 import { Check, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getLevelProgress, type LevelProgress } from '@/services/levels';
+import { getMyPath, type MyPath } from '@/services/path';
+import { listConversations } from '@/services';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 
@@ -14,23 +15,24 @@ export function FirstSteps() {
   const languageName = useLanguageStore((s) => s.name);
   const key = `ft-first-steps:${me?.id}`;
   const [closed, setClosed] = useState(() => read(key));
-  const [progress, setProgress] = useState<LevelProgress | null>(null);
+  const [progress, setProgress] = useState<MyPath | null>(null);
+  const [chats, setChats] = useState(0);
 
   useEffect(() => {
     if (!me || closed) return;
     let live = true;
-    getLevelProgress().then((p) => { if (live) setProgress(p); }).catch(() => undefined);
+    getMyPath().then((p) => { if (live) setProgress(p); }).catch(() => undefined);
+    listConversations().then((c) => { if (live) setChats(c.length); }).catch(() => undefined);
     return () => { live = false; };
   }, [me?.id, closed]);
 
   if (!me || closed || !progress) return null;
   const learning = me.learning_language_id ? languageName(me.learning_language_id) : null;
-  const n = progress.needs;
-  const toFirstLevel = progress.next_level === 'A1' && n ? `${Math.min(progress.evidence?.messages ?? 0, n.min_messages)} of ${n.min_messages} done.` : '';
+  const first = progress.topics.find((t) => t.no === progress.current_topic);
   const steps = [
     { done: progress.contribution.posts > 0, to: '/library/contribute', title: learning ? `Write your first post in ${learning}` : 'Share your first post', text: learning ? 'A few words is enough, and mistakes are welcome. Native speakers are told so they can help.' : 'Teach something from your language, or ask a question.' },
-    { done: progress.conversations > 0, to: '/search?tab=people', title: 'Say hello to someone', text: 'Find someone who speaks what you want to practise.' },
-    ...(learning ? [{ done: !!progress.verified_level, to: '/profile/edit', title: 'Earn your first level', text: `Write 5 different messages or posts in ${learning}. ${toFirstLevel}` }] : []),
+    { done: chats > 0, to: '/search?tab=people', title: 'Say hello to someone', text: 'Find someone who speaks what you want to practise.' },
+    ...(learning ? [{ done: !!progress.verified_level, to: '/path', title: 'Pass your first topic', text: `Call ${progress.settings.partners_needed} different native speakers about “${first?.title ?? 'your first topic'}” in ${learning}. Each one scores the call.` }] : []),
   ];
   const left = steps.filter((s) => !s.done).length;
   if (!left) { remember(key); return null; }

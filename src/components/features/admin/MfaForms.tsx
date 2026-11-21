@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import qrcode from 'qrcode-generator';
 import { Copy } from 'lucide-react';
-import { Button, Card, Input, Select, Spinner } from '@/components/ui';
+import { Button, Card, Input, Select, Spinner, FormError } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { friendlyAuthError, totpSetupLink } from '@/lib/authHelpers';
 import { adminGenerateRecoveryCodes, redeemRecoveryCode, reportMfaFailure } from '@/services/admin';
@@ -52,7 +52,7 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
     onDone();
   };
 
-  if (!factor) return error ? <p role="alert" className="text-sm text-danger">{error}</p> : <div className="flex justify-center py-8"><Spinner /></div>;
+  if (!factor) return error ? <FormError>{error}</FormError> : <div className="flex justify-center py-8"><Spinner /></div>;
   return (
     <form noValidate onSubmit={submit} className="space-y-4">
       <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
@@ -67,7 +67,7 @@ export function MfaEnroll({ friendlyName, onDone, onCancel }: { friendlyName: st
         <Button type="button" size="sm" variant="ghost" className="mt-1" onClick={() => void copy(factor.secret, 'Setup key copied.')}><Copy size={14} aria-hidden /> Copy the key</Button>
       </details>
       <CodeInput id="enroll-code" value={code} onChange={setCode} />
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      <FormError>{error}</FormError>
       <div className="flex gap-2">
         {onCancel && <Button type="button" variant="secondary" full onClick={onCancel}>Cancel</Button>}
         <Button type="submit" full loading={busy} disabled={code.length !== 6}>Turn on</Button>
@@ -109,7 +109,7 @@ export function MfaChallenge({ onDone, onRecovered }: { onDone: () => void; onRe
     <form noValidate onSubmit={recover} className="space-y-4">
       <p className="text-sm text-muted">A recovery code removes your authenticators, signs out your other sessions, and takes you to a new QR code. Each code works once.</p>
       <Input id="recovery-code" label="Recovery code" autoComplete="off" autoFocus value={recovery} onChange={(e) => setRecovery(e.target.value)} />
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      <FormError>{error}</FormError>
       <Button type="submit" full loading={busy} disabled={!recovery.trim()}>Use recovery code</Button>
       <button type="button" className="w-full text-sm font-semibold text-brand" onClick={() => { setUseRecovery(false); setError(''); }}>Back to the 6-digit code</button>
     </form>
@@ -123,7 +123,7 @@ export function MfaChallenge({ onDone, onRecovered }: { onDone: () => void; onRe
         </Select>
       )}
       <CodeInput id="mfa-code" value={code} onChange={setCode} />
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      <FormError>{error}</FormError>
       <Button type="submit" full loading={busy} disabled={code.length !== 6}>Verify</Button>
       <button type="button" className="w-full text-sm font-semibold text-brand" onClick={() => { setUseRecovery(true); setError(''); }}>Lost your authenticator?</button>
     </form>
@@ -139,7 +139,7 @@ export function RecoveryCodes({ onDone }: { onDone: () => void }) {
     started.current = true;
     adminGenerateRecoveryCodes().then(setCodes).catch((e) => setError(userMessage(e)));
   }, []);
-  if (error) return <p role="alert" className="text-sm text-danger">{error}</p>;
+  if (error) return <FormError>{error}</FormError>;
   if (!codes) return <div className="flex justify-center py-8"><Spinner /></div>;
   return (
     <div className="space-y-4">

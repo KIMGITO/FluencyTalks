@@ -9,6 +9,7 @@
 | `npm run test:auth` | Password reset and auth helpers | Node 22 | After changing sign-in |
 | `npm run test:db` | Builds the database from scratch and replays the app's flows | A throwaway Postgres 15+ | After any migration or `src/services/*` change |
 | `npm run test:security` | Real API, Storage and Realtime access | The local stack | After any change to access rules |
+| `npm run test:calls` | Call tokens (who gets one, what it allows), hang-up, signed LiveKit webhooks (bad signature, replay, intruder) | The local stack, `supabase functions serve --env-file supabase/functions/.env`, LiveKit dev keys | After changing call functions |
 | `npm run test:admin` | Staff accounts and MFA: real Auth, TOTP, edge function and email | The local stack | After changing staff or login code |
 | `npm run build && npm run check:seo` | What a crawler sees on every public page | A build | After changing public pages or routes |
 | `npm run check:legal` | Published legal text matches its version | A build | After changing the privacy page or terms |

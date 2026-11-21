@@ -36,6 +36,19 @@ begin
   end;
   if not ok then raise exception 'expected an error containing "%" but it succeeded: %', needle, q; end if;
 end $$;
+-- Sign-up now asks for a date of birth: test users are adults unless a test sets it.
+create or replace function tt.adult_by_default() returns trigger language plpgsql as $$
+begin new.birth_date := coalesce(new.birth_date, date '1990-01-01'); return new; end $$;
+create trigger tt_adult_by_default before insert on public.profiles for each row execute function tt.adult_by_default();
+-- Levels come from the learning path. Where a test only needs someone at a level, this passes topics 1..upto directly.
+create or replace function tt.pass_topics(u uuid, lang text, upto int) returns void language plpgsql security definer set search_path = public as $$
+begin
+  insert into topic_progress (user_id, language_id, topic_no, passed_at, score_pct)
+  select u, lang, g, now(), 90 from generate_series(1, upto) g
+  on conflict (user_id, language_id, topic_no) do update set passed_at = now(), score_pct = 90;
+  if upto < 25 then insert into topic_progress (user_id, language_id, topic_no) values (u, lang, upto + 1) on conflict do nothing; end if;
+  perform public.evaluate_level(u);
+end $$;
 grant usage on schema tt to authenticated;
 grant execute on all functions in schema tt to authenticated;
 
@@ -561,10 +574,10 @@ select public.set_language_profile('eng', 'fra', 'C1'); select public.save_profi
 select tt.expect_error($q$select public.post_contribution('Bonjour à tous', null, 'fra', 'phrase', null, null)$q$, 'not_contribution_eligible');
 select tt.expect_error($q$update public.profiles set verified_level = 'C2' where id = auth.uid()$q$, 'permission denied');
 select tt.expect_error($q$select public.evaluate_level(auth.uid())$q$, 'permission denied');
-select tt.expect_error($q$select public.level_evidence('00000000-0000-0000-0000-0000000000a1', 'vie')$q$, 'permission denied');
+select tt.expect_error($q$select public.evaluate_topic(auth.uid(), 'fra', 1)$q$, 'permission denied');
 select public.set_language_profile('eng', 'fra', 'B2');
 select tt.expect_error($q$select public.set_language_profile('eng','fra','C1')$q$, 'level_must_be_earned');
-do $$ begin assert (public.my_level_progress()->>'verified_level') is null, 'a claim verifies nothing'; end $$;
+do $$ begin assert (public.my_path()->>'verified_level') is null, 'a claim verifies nothing'; end $$;
 
 reset role;
 create temp table lena_conv as select gen_random_uuid() as c1, gen_random_uuid() as c2; grant select on lena_conv to public;
@@ -584,31 +597,19 @@ insert into public.message_corrections (message_id, corrector_id, suggested_text
 insert into public.messages (conversation_id, sender_id, body, language_id) select c2, '00000000-0000-0000-0000-00000000e003', 'Tres bien', 'fra' from lena_conv;
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
-do $$ declare p jsonb := public.my_level_progress(); begin
-  assert (p->>'verified_level') = 'A1', 'new partners count toward A2, but every message corrected stays A1: ' || p::text;
-  assert (p->'evidence'->>'partners_any')::int = 2 and (p->'evidence'->>'partners')::int = 0 and (p->'evidence'->>'partners_settling')::int = 2, 'they wait for B1: ' || p::text;
-end $$;
-reset role;
-update public.profiles set created_at = now() - interval '30 days' where id in ('00000000-0000-0000-0000-00000000e002', '00000000-0000-0000-0000-00000000e003');
-set role authenticated;
-select tt.as_user('00000000-0000-0000-0000-00000000e001');
-do $$ declare p jsonb := public.my_level_progress(); begin
-  assert (p->>'verified_level') = 'A1', 'every message corrected: still A1';
-  assert (p->'evidence'->>'messages')::int = 101, 'identical messages count once';
-  assert (p->'evidence'->>'partners')::int = 2, 'two native partners replied';
-  assert (p->'evidence'->>'error_pct')::int = 98, 'latest 50 reviewed: 49 corrected, the one spam line was not';
+-- Chat, however much, no longer moves a level: only passed topics do.
+do $$ declare p jsonb := public.my_path(); begin
+  assert (p->>'verified_level') is null, 'chatting promotes nobody: ' || (p->>'verified_level');
+  assert (p->>'current_topic')::int = 13, 'a path starts at the band claimed at sign-up (B2: topic 13)';
+  assert (select state from jsonb_to_recordset(p->'topics') as x(no int, state text) where no = 12) = 'skipped';
 end $$;
 select tt.expect_error($q$select public.post_contribution('Bonjour à tous', null, 'fra', 'phrase', null, null)$q$, 'not_contribution_eligible');
--- Lena improves: 50 newer messages with no corrections. Her old errors drop out of the window.
 reset role;
-insert into public.messages (conversation_id, sender_id, body, language_id, created_at)
-  select c1, '00000000-0000-0000-0000-00000000e001', 'phrase sans erreur ' || g, 'fra', now() - interval '30 minutes' from lena_conv, generate_series(1, 50) g;
-insert into public.messages (conversation_id, sender_id, body, language_id) select c1, '00000000-0000-0000-0000-00000000e002', 'Parfait', 'fra' from lena_conv;
+select tt.pass_topics('00000000-0000-0000-0000-00000000e001', 'fra', 9);
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
-do $$ declare p jsonb := public.my_level_progress(); begin
-  assert (p->>'verified_level') = 'B1', 'fewer errors earn B1, not more: ' || p::text;
-  assert (p->>'next_level') = 'B2';
+do $$ declare p jsonb := public.my_path(); begin
+  assert (p->>'verified_level') = 'B1', 'a passed B1 topic verifies B1: ' || (p->>'verified_level');
   assert (select learning_level from public.profiles where id = auth.uid()) = 'B2', 'the claimed level is kept';
   assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'level_up' and data->>'level' = 'B1'), 'told about the promotion';
   assert (select count(*) from public.list_notifications() n where n.type = 'level_up' and n.data->>'level' = 'B1') = 1, 'a notification with no actor still lists';
@@ -632,7 +633,7 @@ select tt.expect_error($q$update public.message_corrections set feedback = 'not_
 do $$ begin
   assert (select feedback from public.message_corrections where id = (select id from lena_fix)) = 'helpful', 'a corrector cannot rewrite their rating';
   assert (select points_balance from public.profiles where id = auth.uid()) = 105, 'a verified B1 learner earns +5';
-  assert not (public.my_level_progress()->>'rewards_paused')::boolean;
+  assert not (public.my_path()->>'rewards_paused')::boolean;
 end $$;
 
 -- One annoyed person cannot pause rewards; 3 different people with mostly negative ratings can.
@@ -642,7 +643,7 @@ insert into public.message_corrections (message_id, corrector_id, suggested_text
   from (select id from public.messages where sender_id = '00000000-0000-0000-0000-00000000e002' limit 1) m, generate_series(1, 6);
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
-do $$ begin assert not (public.my_level_progress()->>'rewards_paused')::boolean, 'all from one person: not paused'; end $$;
+do $$ begin assert not (public.my_path()->>'rewards_paused')::boolean, 'all from one person: not paused'; end $$;
 reset role;
 insert into public.message_corrections (message_id, corrector_id, suggested_text, status, feedback, feedback_at)
   select m.id, '00000000-0000-0000-0000-00000000e001', 'x', 'accepted', 'not_helpful', now()
@@ -651,7 +652,7 @@ insert into public.message_corrections (message_id, corrector_id, suggested_text
     (select id from public.messages where sender_id = '00000000-0000-0000-0000-0000000000b2' limit 1));
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
-do $$ begin assert (public.my_level_progress()->>'rewards_paused')::boolean, '3 people, mostly negative: paused'; end $$;
+do $$ begin assert (public.my_path()->>'rewards_paused')::boolean, '3 people, mostly negative: paused'; end $$;
 select tt.as_user('00000000-0000-0000-0000-00000000e003');
 create temp table n2_msg2 as select (public.send_message((select c2 from lena_conv), 'Nous allons au cinema ce soir', null, 'fra')).id as id; grant select on n2_msg2 to public;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
@@ -694,57 +695,14 @@ insert into public.messages (conversation_id, sender_id, body, language_id)
   select c1, '00000000-0000-0000-0000-00000000e002', 'Merci numero ' || g, 'fra' from vera_conv, generate_series(1, 5) g;
 set role authenticated;
 
--- Native1 has barely talked to Vera; Lena is not a French native; Vera cannot vouch for herself.
-select tt.as_user('00000000-0000-0000-0000-00000000e002');
-select tt.expect_error($q$select public.vouch_for('00000000-0000-0000-0000-00000000f001')$q$, 'vouch_not_enough_chat');
-do $$ begin assert (public.vouch_status('00000000-0000-0000-0000-00000000f001')->>'blocker') = 'not_enough_chat'; end $$;
-select tt.as_user('00000000-0000-0000-0000-00000000f003');
-select tt.expect_error($q$select public.vouch_for('00000000-0000-0000-0000-00000000f001')$q$, 'vouch_not_native');
-do $$ begin assert public.vouch_status('00000000-0000-0000-0000-00000000f001') is null, 'nothing offered outside my language'; end $$;
-select tt.expect_error($q$insert into public.level_vouches (voucher_id, learner_id, language_id) values (auth.uid(), '00000000-0000-0000-0000-00000000f001', 'fra')$q$, 'permission denied');
-
+-- Vera passes topics 1 to 9 in French: B1, with the rights it brings. Her claim stays a claim.
 reset role;
-insert into public.messages (conversation_id, sender_id, body, language_id, created_at)
-  select c1, '00000000-0000-0000-0000-00000000f001', 'vraie phrase numero ' || g, 'fra', now() - (g % 3) * interval '1 day' - interval '1 hour' from vera_conv, generate_series(1, 15) g;
-insert into public.messages (conversation_id, sender_id, body, language_id, created_at)
-  select c2, '00000000-0000-0000-0000-00000000f001', 'autre phrase numero ' || g, 'fra', now() - (g % 3) * interval '1 day' - interval '1 hour' from vera_conv, generate_series(1, 15) g;
-insert into public.messages (conversation_id, sender_id, body, language_id)
-  select c2, '00000000-0000-0000-0000-00000000f002', 'Merci encore ' || g, 'fra' from vera_conv, generate_series(1, 5) g;
-set role authenticated;
-select tt.as_user('00000000-0000-0000-0000-00000000e002');
-select public.vouch_for('00000000-0000-0000-0000-00000000f001');
-select tt.as_user('00000000-0000-0000-0000-00000000f001');
-do $$ declare p jsonb := public.my_level_progress(); begin
-  assert (p->>'vouches')::int = 1 and (p->>'vouches_needed')::int = 2;
-  assert public.level_rank(p->>'verified_level') < public.level_rank('B1'), 'one vouch is not enough: ' || p::text;
-  assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'level_vouch'), 'told about the vouch';
-end $$;
--- Someone new can vouch straight away. It waits, by itself, until they've been here 7 days, so a second account can't promote the first.
-reset role;
-select set_config('app.bypass_protect', 'on', false);   -- test setup only
-update public.profiles set created_at = now() - interval '2 days' where id = '00000000-0000-0000-0000-00000000f002';
-select set_config('app.bypass_protect', 'off', false);
-set role authenticated;
-select tt.as_user('00000000-0000-0000-0000-00000000f002');
-do $$ begin assert (public.vouch_status('00000000-0000-0000-0000-00000000f001')->>'blocker') is null, 'being new blocks nothing'; end $$;
-select public.vouch_for('00000000-0000-0000-0000-00000000f001');
-select public.vouch_for('00000000-0000-0000-0000-00000000f001');   -- twice is harmless
-do $$ begin assert (public.vouch_status('00000000-0000-0000-0000-00000000f001')->>'counts_from')::timestamptz > now(), 'says when it starts counting'; end $$;
-select tt.as_user('00000000-0000-0000-0000-00000000f001');
-do $$ declare p jsonb := public.my_level_progress(); begin
-  assert (p->>'vouches')::int = 1 and (p->>'vouches_waiting')::int = 1, 'one counts, one waits: ' || p::text;
-  assert public.level_rank(p->>'verified_level') < public.level_rank('B1'), 'a waiting vouch promotes nobody: ' || p::text;
-end $$;
-reset role;
-select set_config('app.bypass_protect', 'on', false);   -- test setup only
-update public.profiles set created_at = now() - interval '30 days' where id = '00000000-0000-0000-0000-00000000f002';
-select set_config('app.bypass_protect', 'off', false);
+select tt.pass_topics('00000000-0000-0000-0000-00000000f001', 'fra', 9);
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000f001');
-select public.my_level_progress();   -- the week passed: opening progress applies it, nothing else needed
 do $$ begin
-  assert (select verified_level from public.profiles where id = auth.uid()) = 'B1', 'two vouches reach B1';
-  assert public.can_correct_language(auth.uid(), 'fra'), 'and bring the rights';
+  assert (select verified_level from public.profiles where id = auth.uid()) = 'B1', 'passing a B1 topic reaches B1';
+  assert public.can_correct_language(auth.uid(), 'fra'), 'and brings the rights';
   assert (select learning_level from public.profiles where id = auth.uid()) = 'C1', 'the claim stays a claim';
 end $$;
 -- Cards can tell the two apart.
@@ -753,18 +711,6 @@ do $$ declare l jsonb; begin
   select x into l from jsonb_array_elements(public.get_profile('vera')->'languages') x where x->>'role' = 'learning';
   assert l->>'level' = 'C1' and l->>'verified_level' = 'B1', 'a card sees claim and verified level: ' || l::text;
 end $$;
--- Withdrawing does not demote; the monthly limit holds.
-select tt.as_user('00000000-0000-0000-0000-00000000f002');
-select public.withdraw_vouch('00000000-0000-0000-0000-00000000f001');
-reset role;
-do $$ begin assert (select verified_level from public.profiles where id = '00000000-0000-0000-0000-00000000f001') = 'B1', 'a verified level never falls'; end $$;
-insert into public.level_vouches (voucher_id, learner_id, language_id) values
-  ('00000000-0000-0000-0000-00000000f002', '00000000-0000-0000-0000-0000000000a1', 'vie'),
-  ('00000000-0000-0000-0000-00000000f002', '00000000-0000-0000-0000-0000000000b2', 'swh'),
-  ('00000000-0000-0000-0000-00000000f002', '00000000-0000-0000-0000-0000000000c3', 'nld');
-set role authenticated;
-select tt.as_user('00000000-0000-0000-0000-00000000f002');
-select tt.expect_error($q$select public.vouch_for('00000000-0000-0000-0000-00000000f001')$q$, 'vouch_limit');
 
 -- Presence. Vera and native3 share an accepted chat; the stranger does not.
 select tt.as_user('00000000-0000-0000-0000-00000000f001');
@@ -1088,7 +1034,7 @@ set role authenticated;
 -- Search and export from the last round.
 select tt.as_user('00000000-0000-0000-0000-00000000d001');
 do $$ declare e jsonb := public.export_my_data(); begin
-  assert jsonb_array_length(e->'contributions') >= 2 and e ? 'decisions_owed' and e ? 'activity' and e ? 'vouches_received', 'export includes the new data';
+  assert jsonb_array_length(e->'contributions') >= 2 and e ? 'decisions_owed' and e ? 'activity' and e ? 'topic_progress', 'export includes the new data';
   assert not exists (select 1 from public.search_people(null, 'fra', 'learning', 'C1') s where s.username = 'vera'), 'a C1 claim is not found as C1';
   assert exists (select 1 from public.search_people(null, 'fra', 'learning', 'B1') s where s.username = 'vera'), 'found at the level she earned';
   assert (select p.review_status from public.search_posts('Habari gani') p limit 1) is not null, 'search carries the review status';
@@ -1405,8 +1351,6 @@ do $$ begin
   assert (select points_balance from public.profiles where id = '00000000-0000-0000-0000-0000fade0004') = 100, 'not helpful pays nothing';
   assert (select phrase = 'Watashi wa gakkou ni iku deshita' and current_phrase is null and accepted_item_id is null from public.contribution_posts where id = (select id from hp)), 'the original stays';
   assert (select feedback = 'helpful' from public.post_discussion where id = (select id from fix1)), 'the rating is kept';
-  assert ((public.level_evidence('00000000-0000-0000-0000-0000fade0002', 'jpn')->>'accepted_given')::int) = 1, 'a thanked fix counts for the helper';
-  assert ((public.level_evidence('00000000-0000-0000-0000-0000fade0001', 'jpn')->>'error_pct') is null), 'fixes stay out of the error rate';
 end $$;
 -- The accepted-version route can never touch a help post.
 do $$ begin
@@ -1434,13 +1378,11 @@ from public.contribution_posts c cross join (values ('00000000-0000-0000-0000-00
 where c.user_id = '00000000-0000-0000-0000-0000fade0003';
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-0000fade0003');
-do $$ declare p jsonb := public.my_level_progress(); begin
-  assert p->>'verified_level' = 'A2', format('posts reach A2 and stop there, got %s', p->>'verified_level');
-  assert (p->'evidence'->>'reviewed_any')::int = 100 and (p->'evidence'->>'reviewed')::int = 0, 'chat reviews are counted apart';
+do $$ declare p jsonb := public.my_path(); begin
+  assert p->>'verified_level' is null, format('posts never reach a level by themselves, got %s', p->>'verified_level');
 end $$;
 reset role;
 do $$ begin
-  assert exists (select 1 from public.notifications where user_id = '00000000-0000-0000-0000-0000fade0003' and type = 'level_up'), 'the learner hears about the promotion';
   assert not public.can_correct_language('00000000-0000-0000-0000-0000fade0003', 'jpn'), 'posts alone give no right to correct';
 end $$;
 set role authenticated;
@@ -1532,25 +1474,14 @@ select tt.expect_error($q$select public.update_contribution((select id from st),
 select tt.as_user('00000000-0000-0000-0000-0000c0de0005');
 select public.submit_discussion((select id from public.contribution_posts where user_id = '00000000-0000-0000-0000-0000c0de0001' and post_type = 'photo'), null, 'correction', 'Fresh account', 'Onze hond', null, gen_random_uuid());
 reset role;
-do $$ declare e jsonb := public.level_evidence('00000000-0000-0000-0000-0000c0de0001', 'nld'); begin
-  assert (e->>'partners_any')::int = 3, format('the native, the verified B2 and the new account all count toward A2, got %s', e);
-  assert (e->>'partners')::int = 0, format('nothing here counts toward B1 yet, got %s', e);
-  assert (e->>'reviewed_any')::int = 2, format('the story and the photo have been reviewed, got %s', e);
-  assert (e->>'messages')::int = 2, 'story and photo count as writing, a question does not';
-end $$;
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-0000c0de0003');
 select public.toggle_post_endorsement((select id from ph));
 reset role;
-do $$ declare e jsonb := public.level_evidence('00000000-0000-0000-0000-0000c0de0001', 'nld'); begin
-  assert (e->>'reviewed_any')::int = 2, format('a second review of the photo is still one reviewed post, got %s', e);
-  assert (select level_checked_at is not null from public.profiles where id = '00000000-0000-0000-0000-0000c0de0001'), 'being reviewed re-checks the level';
-end $$;
 insert into public.contribution_posts (user_id, language_id, phrase, post_type, created_at)
 select '00000000-0000-0000-0000-0000c0de0001', 'nld', 'Oefenzin nummer ' || g, 'correct_me', now() - interval '2 days' from generate_series(1, 3) g;
 do $$ begin
-  assert (select verified_level = 'A1' from public.profiles where id = '00000000-0000-0000-0000-0000c0de0001'), 'writing alone promotes to A1, with no chat message and no page load';
-  assert (select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-0000c0de0001' and type = 'level_up') = 1, 'and says so once';
+  assert (select verified_level is null from public.profiles where id = '00000000-0000-0000-0000-0000c0de0001'), 'reviews and writing alone verify nothing: the path does';
 end $$;
 -- Corrections given: an explanation counts in full, none counts half, and one friend can't carry it.
 insert into public.conversations (id, direct_key) values ('00000000-0000-0000-0000-0000c0de00c1', 'c0de-test');
@@ -1559,10 +1490,8 @@ insert into public.messages (id, conversation_id, sender_id, body, language_id)
 select ('00000000-0000-0000-0000-0000c0dea' || lpad(g::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000c0de00c1', '00000000-0000-0000-0000-0000c0de0001', 'Bericht nummer ' || g, 'nld' from generate_series(1, 30) g;
 insert into public.message_corrections (message_id, corrector_id, suggested_text, note, status, decided_at, created_at)
 select ('00000000-0000-0000-0000-0000c0dea' || lpad(g::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000c0de0003', 'Beter ' || g, case when g <= 1 then 'Why' end, 'accepted', now() - g * interval '1 day', now() - g * interval '1 day' from generate_series(1, 4) g;
-do $$ begin assert (public.level_evidence('00000000-0000-0000-0000-0000c0de0003', 'nld')->>'accepted_given')::int = 3, format('the thanked story fix + 1 explained + 3 unexplained / 2, got %s', public.level_evidence('00000000-0000-0000-0000-0000c0de0003', 'nld')); end $$;
 insert into public.message_corrections (message_id, corrector_id, suggested_text, note, status, decided_at, created_at)
 select ('00000000-0000-0000-0000-0000c0dea' || lpad(g::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000c0de0003', 'Beter ' || g, 'Why', 'accepted', now() - g * interval '1 day', now() - g * interval '1 day' from generate_series(5, 30) g;
-do $$ begin assert (public.level_evidence('00000000-0000-0000-0000-0000c0de0003', 'nld')->>'accepted_given')::int <= 10, 'no more than 10 from one person'; end $$;
 delete from public.message_corrections where corrector_id = '00000000-0000-0000-0000-0000c0de0003';
 delete from public.messages where conversation_id = '00000000-0000-0000-0000-0000c0de00c1';
 delete from public.conversations where id = '00000000-0000-0000-0000-0000c0de00c1';
@@ -1626,7 +1555,7 @@ delete from public.user_restrictions where user_id = '00000000-0000-0000-0000-00
 do $$ begin
   assert not has_function_privilege('authenticated', 'public.keep_correction(uuid, text, text, uuid)', 'execute'), 'nobody can write into someone else''s phrasebook';
   assert not has_function_privilege('authenticated', 'public.applied_body(uuid)', 'execute');
-  assert not has_function_privilege('authenticated', 'public.recheck_level(uuid, text)', 'execute');
+  assert not has_function_privilege('authenticated', 'public.evaluate_topic(uuid, text, integer)', 'execute');
 end $$;
 set role authenticated;
 
@@ -1966,5 +1895,403 @@ select set_config('app.staff_change', 'on', false);
 delete from public.admin_accounts where user_id = '00000000-0000-0000-0000-00000000ee09';
 select set_config('app.staff_change', 'off', false);
 
+reset role;
+-- ============ calls: one-to-one, invitation only ============
+-- f1 calls f2 (accepted chat). f3 is a stranger, f4 only sent a request, f5 blocked f1.
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000f1', 'call1@test.com'), ('00000000-0000-0000-0000-0000000000f2', 'call2@test.com'),
+  ('00000000-0000-0000-0000-0000000000f3', 'call3@test.com'), ('00000000-0000-0000-0000-0000000000f4', 'call4@test.com'),
+  ('00000000-0000-0000-0000-0000000000f5', 'call5@test.com');
+create temp table tc (k text primary key, id uuid);
+grant all on tc to authenticated;
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid; begin
+  c := public.start_conversation('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('chat12', c);
+  perform public.start_conversation('00000000-0000-0000-0000-0000000000f4');
+  c := public.start_conversation('00000000-0000-0000-0000-0000000000f5'); insert into tc values ('chat15', c);
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+select public.respond_message_request((select id from tc where k = 'chat12'), true);
+select tt.as_user('00000000-0000-0000-0000-0000000000f5');
+select public.respond_message_request((select id from tc where k = 'chat15'), true);
+select public.block_user('00000000-0000-0000-0000-0000000000f1');
+
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f1')$q$, 'cannot_call_self');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f3')$q$, 'user_unavailable');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f4')$q$, 'user_unavailable');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f5')$q$, 'user_unavailable');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000d4')$q$, 'user_unavailable');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000ff')$q$, 'user_unavailable');
+do $$ declare c uuid; r jsonb; begin
+  c := public.start_call('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('call1', c);
+  r := public.get_call(c);
+  assert r->>'status' = 'ringing', 'a new call rings';
+  assert jsonb_array_length(r->'participants') = 2, 'caller and callee';
+  assert not (r ? 'provider_room'), 'members never see the room name';
+  r := public.claim_call_join(c);
+  assert (r->>'ok')::boolean and r->>'identity' = '00000000-0000-0000-0000-0000000000f1' and r->>'room' like 'ftc_%', 'the caller may join while it rings';
+  perform public.report_call_connected(c);
+end $$;
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f2')$q$, 'already_in_call');
+select tt.expect_error($q$update public.calls set status = 'ended' where id is not null$q$, 'permission denied');
+select tt.expect_error($q$insert into public.calls (max_participants, ring_expires_at) values (2, now())$q$, 'permission denied');
+
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f1')$q$, 'already_in_call');
+select tt.expect_error($q$update public.call_participants set role = 'host' where id is not null$q$, 'permission denied');
+select tt.expect_error($q$insert into public.call_participants (call_id, user_id, role, invitation_status) select id, '00000000-0000-0000-0000-0000000000f3', 'participant', 'accepted' from tc where k = 'call1'$q$, 'permission denied');
+do $$ declare c uuid := (select id from tc where k = 'call1'); r jsonb; begin
+  assert (select count(*) from public.list_live_calls() where call_id = c and my_invitation = 'pending') = 1, 'the callee sees it ringing';
+  assert (select count(*) from public.list_notifications() n where n.type = 'call_incoming' and n.data->>'call_id' = c::text) = 1, 'and gets an incoming-call notification';
+  assert not (public.claim_call_join(c)->>'ok')::boolean, 'no media before answering';
+  perform public.respond_call_invite(c, true);
+  r := public.get_call(c);
+  assert r->>'status' = 'active' and r->>'started_at' is not null, 'answering starts the call';
+  r := public.claim_call_join(c);
+  assert (r->>'ok')::boolean and r->>'identity' = '00000000-0000-0000-0000-0000000000f2', 'the callee joins as themselves';
+  perform public.report_call_connected(c);
+  assert (select presence from public.call_participants where call_id = c and user_id = auth.uid()) = 'joined', 'connected';
+end $$;
+select tt.expect_error($q$select public.respond_call_invite((select id from tc where k = 'call1'), true)$q$, 'call_unavailable');
+
+select tt.as_user('00000000-0000-0000-0000-0000000000f3');
+do $$ declare c uuid := (select id from tc where k = 'call1'); begin
+  assert (select count(*) from public.calls where id = c) = 0, 'a stranger cannot see the call';
+  assert (select count(*) from public.call_participants where call_id = c) = 0, 'or who is in it';
+  assert not (public.claim_call_join(c)->>'ok')::boolean, 'or get into it';
+  assert public.claim_call_join(c)->>'code' = 'call_unavailable', 'with a generic refusal';
+end $$;
+select tt.expect_error($q$select public.get_call((select id from tc where k = 'call1'))$q$, 'call_unavailable');
+select tt.expect_error($q$select public.respond_call_invite((select id from tc where k = 'call1'), true)$q$, 'call_unavailable');
+select tt.expect_error($q$select public.end_call((select id from tc where k = 'call1'))$q$, 'call_unavailable');
+
+-- Capacity: a third accepted member (as a future invite would add) is refused while both seats are taken.
+reset role;
+insert into public.call_participants (call_id, user_id, role, invitation_status) select id, '00000000-0000-0000-0000-0000000000f3', 'participant', 'accepted' from tc where k = 'call1';
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000f3');
+do $$ begin assert not (public.claim_call_join((select id from tc where k = 'call1'))->>'ok')::boolean, 'a full call refuses another join'; end $$;
+reset role;
+delete from public.call_participants where user_id = '00000000-0000-0000-0000-0000000000f3';
+delete from public.call_join_failures where id is not null;
+set role authenticated;
+
+-- Only the host ends it for everyone; hanging up in a one-to-one call ends it too.
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+select tt.expect_error($q$select public.end_call((select id from tc where k = 'call1'))$q$, 'call_unavailable');
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid := (select id from tc where k = 'call1'); r jsonb; begin
+  perform public.leave_call(c);
+  r := public.get_call(c);
+  assert r->>'status' = 'ended' and r->>'end_reason' = 'hung_up', 'hanging up ends a one-to-one call';
+  assert (select count(*) from jsonb_array_elements(r->'participants') p where p->>'presence' in ('joining', 'joined')) = 0, 'nobody is left in it';
+  perform public.leave_call(c);   -- twice is harmless
+  assert not (public.claim_call_join(c)->>'ok')::boolean, 'an ended call takes no joins';
+  assert (select count(*) from public.list_call_history() h where h.call_id = c and h.outgoing and h.attended) = 1, 'in my history';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+do $$ begin
+  assert (select count(*) from public.list_call_history() h where h.call_id = (select id from tc where k = 'call1') and not h.outgoing) = 1, 'in theirs';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f3');
+do $$ begin assert (select count(*) from public.list_call_history()) = 0, 'not in a stranger''s'; end $$;
+
+-- Declined, cancelled and unanswered calls can't be joined.
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid; begin c := public.start_call('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('call2', c); end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+do $$ declare c uuid := (select id from tc where k = 'call2'); r jsonb; begin
+  perform public.respond_call_invite(c, false);
+  r := public.get_call(c);
+  assert r->>'status' = 'ended' and r->>'end_reason' = 'declined', 'declined';
+  assert not (public.claim_call_join(c)->>'ok')::boolean, 'a declined invitation cannot join';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid; begin
+  c := public.start_call('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('call3', c);
+  perform public.leave_call(c);
+  assert public.get_call(c)->>'status' = 'cancelled', 'the caller hanging up before an answer cancels';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+select tt.expect_error($q$select public.respond_call_invite((select id from tc where k = 'call3'), true)$q$, 'call_unavailable');
+reset role;
+update public.calls set created_at = created_at - interval '1 hour' where initiated_by = '00000000-0000-0000-0000-0000000000f1';
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid; begin c := public.start_call('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('call4', c); end $$;
+reset role;
+update public.calls set ring_expires_at = now() - interval '1 second' where id = (select id from tc where k = 'call4');
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+select tt.expect_error($q$select public.respond_call_invite((select id from tc where k = 'call4'), true)$q$, 'call_unavailable');
+do $$ declare r jsonb := public.get_call((select id from tc where k = 'call4')); begin
+  assert r->>'status' = 'expired' and r->>'end_reason' = 'no_answer', 'unanswered calls expire';
+  assert (select p->>'invitation_status' from jsonb_array_elements(r->'participants') p where p->>'user_id' = '00000000-0000-0000-0000-0000000000f2') = 'expired', 'and so does the invitation';
+end $$;
+
+-- Limits: the same person 3 times in 10 minutes, and failed joins.
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare i int; begin for i in 1..2 loop perform public.leave_call(public.start_call('00000000-0000-0000-0000-0000000000f2')); end loop; end $$;
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f2')$q$, 'rate_limited');
+select tt.as_user('00000000-0000-0000-0000-0000000000f3');
+do $$ declare i int; begin
+  for i in 1..10 loop perform public.claim_call_join((select id from tc where k = 'call1')); end loop;
+  assert public.claim_call_join((select id from tc where k = 'call1'))->>'code' = 'rate_limited', 'repeated failed joins are limited';
+end $$;
+reset role;
+update public.calls set created_at = created_at - interval '1 day' where initiated_by = '00000000-0000-0000-0000-0000000000f1';
+
+-- The kill switch.
+update public.call_settings set calls_enabled = false where id;
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+select tt.expect_error($q$select public.start_call('00000000-0000-0000-0000-0000000000f2')$q$, 'calls_disabled');
+reset role;
+update public.call_settings set calls_enabled = true where id;
+set role authenticated;
+
+-- A block during a call: no more joins, and the call disappears for both.
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid; begin c := public.start_call('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('call5', c); end $$;
+select tt.as_user('00000000-0000-0000-0000-0000000000f2');
+select public.respond_call_invite((select id from tc where k = 'call5'), true);
+select public.block_user('00000000-0000-0000-0000-0000000000f1');
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid := (select id from tc where k = 'call5'); begin
+  assert not (public.claim_call_join(c)->>'ok')::boolean, 'blocked: no join';
+  reset role; assert (select status from public.calls where id = c) = 'ended', 'a block ends the call'; set role authenticated;
+  assert (select count(*) from public.calls where id = c) = 0, 'blocked: hidden';
+  assert (select count(*) from public.list_call_history() where call_id = c) = 0, 'blocked: not in history';
+end $$;
+select tt.expect_error($q$select public.get_call((select id from tc where k = 'call5'))$q$, 'call_unavailable');
+
+-- Deleting an account mid-call ends the call for the other person.
+select tt.as_user('00000000-0000-0000-0000-0000000000f4');
+select public.respond_message_request((select conversation_id from public.conversation_members where user_id = '00000000-0000-0000-0000-0000000000f4' limit 1), true);
+select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+do $$ declare c uuid; begin c := public.start_call('00000000-0000-0000-0000-0000000000f4'); insert into tc values ('call6', c); end $$;
+reset role;
+delete from auth.users where id = '00000000-0000-0000-0000-0000000000f4';
+do $$ begin
+  assert (select end_reason from public.calls where id = (select id from tc where k = 'call6')) = 'account_gone', 'a deleted callee ends the call';
+  assert (select count(*) from public.call_participants where call_id = (select id from tc where k = 'call6')) = 1, 'only the caller''s row is left';
+end $$;
+do $$
+declare f2 uuid := '00000000-0000-0000-0000-0000000000f2';
+  k1 text := 'call:' || (select id from tc where k = 'call1'); k2 text := 'call:' || (select id from tc where k = 'call2');
+  k3 text := 'call:' || (select id from tc where k = 'call3'); k4 text := 'call:' || (select id from tc where k = 'call4');
+begin
+  assert (select count(*) from public.notifications where user_id = f2 and type = 'call_incoming') = 0, 'answered, declined or missed rings leave the bell';
+  assert not exists (select 1 from public.notifications where user_id = f2 and dedupe_key in (k1 || ':missed', k2 || ':missed')), 'answered or declined calls are not missed';
+  assert (select count(*) from public.notifications where user_id = f2 and dedupe_key = k3 || ':missed' and type = 'call_missed') = 1, 'a cancelled call is a missed call';
+  assert (select count(*) from public.notifications where user_id = f2 and dedupe_key = k4 || ':missed') = 1, 'an unanswered call is a missed call, once';
+  assert (select data->>'call_id' from public.notifications where user_id = f2 and dedupe_key = k4 || ':missed') = (select id from tc where k = 'call4')::text, 'it points at the call';
+end $$;
+do $$ begin
+  assert not has_table_privilege('anon', 'public.calls', 'select') and not has_table_privilege('anon', 'public.call_participants', 'select'), 'signed-out visitors see no calls';
+  assert not has_function_privilege('anon', 'public.start_call(uuid)', 'execute') and not has_function_privilege('anon', 'public.claim_call_join(uuid)', 'execute'), 'or start or join one';
+  assert not has_function_privilege('authenticated', 'public.expire_stale_calls()', 'execute') and not has_function_privilege('authenticated', 'public.finish_call(uuid, text)', 'execute'), 'internal call helpers stay internal';
+end $$;
+
+-- ============ learning path: topic calls, five assessors, 80% cumulative (docs/LEARNING_PATH.md) ============
+reset role;
+insert into auth.users (id, email) select ('00000000-0000-0000-0000-00000000aa' || lpad(g::text, 2, '0'))::uuid, 'path' || g || '@test.com' from generate_series(1, 9) g;
+set role authenticated;
+-- aa01 learns Spanish from A1; aa02..aa07 are Spanish natives; aa08 is a Spanish learner who passed only A1; aa09 is new and adult.
+select tt.as_user('00000000-0000-0000-0000-00000000aa01'); select public.set_language_profile('eng', 'spa', 'A1'); select public.save_profile('pathlearner', 'PL', '', 'Europe/London', false, null, null);
+do $$ declare g int; begin for g in 2..7 loop
+  perform tt.as_user(('00000000-0000-0000-0000-00000000aa' || lpad(g::text, 2, '0'))::uuid);
+  perform public.set_language_profile('spa', null, null); perform public.save_profile('pathnative' || g, 'PN' || g, '', 'Europe/Madrid', false, null, null);
+end loop; end $$;
+select tt.as_user('00000000-0000-0000-0000-00000000aa08'); select public.set_language_profile('eng', 'spa', 'A1'); select public.save_profile('pathpeer', 'PP', '', 'Europe/London', false, null, null);
+reset role;
+select tt.pass_topics('00000000-0000-0000-0000-00000000aa08', 'spa', 4);
+-- An accepted chat with each of them: calls need one.
+insert into public.conversations (id, direct_key) select ('00000000-0000-0000-0000-00000000ab' || lpad(g::text, 2, '0'))::uuid, 'path:' || g from generate_series(2, 8) g;
+insert into public.conversation_members (conversation_id, user_id)
+  select ('00000000-0000-0000-0000-00000000ab' || lpad(g::text, 2, '0'))::uuid, u from generate_series(2, 8) g,
+    lateral (values ('00000000-0000-0000-0000-00000000aa01'::uuid), (('00000000-0000-0000-0000-00000000aa' || lpad(g::text, 2, '0'))::uuid)) v(u);
+create table tt.path_calls (k int primary key, call_id uuid); grant all on tt.path_calls to authenticated;
+-- Both people joined the call `mins` minutes ago and it has just ended.
+create or replace function tt.finish_topic_call(c uuid, mins int) returns void language plpgsql security definer set search_path = public as $$
+begin
+  update call_participants set invitation_status = 'accepted', presence = 'joined', joined_at = now() - make_interval(mins => mins), responded_at = now() where call_id = c;
+  update calls set status = 'active', started_at = now() - make_interval(mins => mins) where id = c;
+  perform public.finish_call(c, 'hung_up');
+end $$;
+grant execute on function tt.finish_topic_call(uuid, int) to authenticated;
+set role authenticated;
+
+select tt.as_user('00000000-0000-0000-0000-00000000aa01');
+do $$ declare p jsonb := public.my_path(); begin
+  assert (p->>'current_topic')::int = 1 and p->>'verified_level' is null, 'an A1 path starts at topic 1: ' || p::text;
+  assert jsonb_array_length(p->'topics') = 25, '25 topics';
+  assert (p->'settings'->>'partners_needed')::int = 5 and (p->'settings'->>'pass_pct')::int = 80;
+end $$;
+do $$ begin assert (select count(*) from public.list_topic_partners()) = 6, 'the six natives can assess; a peer at the same band cannot'; end $$;
+select tt.expect_error($q$select public.start_topic_call('00000000-0000-0000-0000-00000000aa08')$q$, 'partner_not_eligible');
+-- A call that's too short can't be assessed.
+do $$ begin insert into tt.path_calls values (0, public.start_topic_call('00000000-0000-0000-0000-00000000aa02')); end $$;
+select tt.finish_topic_call((select call_id from tt.path_calls where k = 0), 4);
+select tt.as_user('00000000-0000-0000-0000-00000000aa02');
+select tt.expect_error($q$select public.submit_topic_assessment((select call_id from tt.path_calls where k = 0), 5, 5, 5, 5, 5)$q$, 'assessment_too_short');
+do $$ begin assert (public.get_topic_call((select call_id from tt.path_calls where k = 0))->>'assess_blocker') = 'too_short'; end $$;
+-- Five partners score 76% each: five people, but under 80%.
+do $$ declare g int; c uuid; begin for g in 2..6 loop
+  perform tt.as_user('00000000-0000-0000-0000-00000000aa01');
+  c := public.start_topic_call(('00000000-0000-0000-0000-00000000aa' || lpad(g::text, 2, '0'))::uuid);
+  insert into tt.path_calls values (g, c);
+  perform tt.finish_topic_call(c, 12);
+  perform tt.as_user(('00000000-0000-0000-0000-00000000aa' || lpad(g::text, 2, '0'))::uuid);
+  assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'topic_assess_due'), 'the partner is asked to assess';
+  perform public.submit_topic_assessment(c, 4, 4, 4, 4, 3, 'Bien hecho');
+end loop; end $$;
+select tt.as_user('00000000-0000-0000-0000-00000000aa02');
+select tt.expect_error($q$select public.submit_topic_assessment((select call_id from tt.path_calls where k = 2), 5, 5, 5, 5, 5)$q$, 'assessment_already_assessed');
+select tt.expect_error($q$select public.submit_topic_assessment((select call_id from tt.path_calls where k = 3), 5, 5, 5, 5, 5)$q$, 'assessment_not_partner');
+select tt.as_user('00000000-0000-0000-0000-00000000aa01');
+select tt.expect_error($q$select public.start_topic_call('00000000-0000-0000-0000-00000000aa02')$q$, 'partner_already_assessed');
+select tt.expect_error($q$select public.submit_topic_assessment((select call_id from tt.path_calls where k = 2), 5, 5, 5, 5, 5)$q$, 'assessment_not_partner');
+select tt.expect_error($q$insert into public.topic_assessments (learner_id, assessor_id, language_id, topic_no, basis, fluency, vocabulary, grammar, pronunciation, interaction) values (auth.uid(), '00000000-0000-0000-0000-00000000aa02', 'spa', 1, 'native', 5,5,5,5,5)$q$, 'permission denied');
+do $$ declare p jsonb := public.my_path(); begin
+  assert (p->>'current_topic')::int = 1, 'five people at 76% do not pass: ' || p::text;
+  assert (p->'current'->>'counting')::int = 5 and (p->'current'->>'score_pct')::numeric = 76;
+  assert (p->'current'->'criteria'->>'interaction')::numeric = 3;
+  assert jsonb_array_length(p->'current'->'comments') = 5 and not (p->'current'->'comments'->0 ? 'assessor_id'), 'comments without names';
+end $$;
+-- A sixth partner at 100% lifts the cumulative average to 80%: passed, topic 2 opens, level A1.
+do $$ declare c uuid; begin
+  c := public.start_topic_call('00000000-0000-0000-0000-00000000aa07'); insert into tt.path_calls values (7, c);
+  perform tt.finish_topic_call(c, 15);
+  perform tt.as_user('00000000-0000-0000-0000-00000000aa07');
+  perform public.submit_topic_assessment(c, 5, 5, 5, 5, 5, null);
+end $$;
+select tt.as_user('00000000-0000-0000-0000-00000000aa01');
+do $$ declare p jsonb := public.my_path(); begin
+  assert (p->>'current_topic')::int = 2, 'cumulative 80% passes: ' || p::text;
+  assert p->>'verified_level' = 'A1';
+  assert (select score_pct from public.topic_progress where user_id = auth.uid() and language_id = 'spa' and topic_no = 1) = 80;
+  assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'topic_passed'), 'told about the pass';
+end $$;
+reset role;
+do $$ begin
+  assert not has_function_privilege('authenticated', 'public.sweep_settling_topics()', 'execute');
+  assert not has_function_privilege('anon', 'public.my_path()', 'execute');
+end $$;
+
+-- ============ age: minimum 12, a guardian for 12 to 15, separation from adults ============
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-00000000ac01', 'kid1@test.com'), ('00000000-0000-0000-0000-00000000ac02', 'kid2@test.com'),
+  ('00000000-0000-0000-0000-00000000ac03', 'grown@test.com'), ('00000000-0000-0000-0000-00000000ac04', 'tiny@test.com');
+-- They sign up without a date of birth, as the app does.
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set birth_date = null where id in ('00000000-0000-0000-0000-00000000ac01', '00000000-0000-0000-0000-00000000ac02', '00000000-0000-0000-0000-00000000ac04');
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-00000000ac04');
+do $$ begin assert public.my_guardian_status()->>'gate' = 'birth_date_required'; end $$;
+select tt.expect_error($q$select public.set_birth_date((current_date - interval '14 years')::date, null)$q$, 'minor_rules_required');
+select tt.expect_error($q$select public.set_birth_date((current_date - interval '14 years')::date, '99')$q$, 'minor_rules_required');
+select tt.expect_error($q$select public.set_birth_date((current_date - interval '11 years')::date, '1')$q$, 'too_young');
+do $$ begin assert (select birth_date is null from public.profiles where id = auth.uid()), 'nothing stored for an under-12'; end $$;
+select tt.expect_error($q$select public.set_birth_date((current_date + 1), '1')$q$, 'invalid_birth_date');
+select tt.expect_error($q$update public.profiles set birth_date = '1990-01-01' where id = auth.uid()$q$, 'permission denied');
+select tt.as_user('00000000-0000-0000-0000-00000000ac01');
+select public.set_birth_date((current_date - interval '14 years')::date, '1');
+select tt.expect_error($q$select public.set_birth_date('1990-01-01', '1')$q$, 'birth_date_locked');
+do $$ begin assert exists (select 1 from public.consents where user_id = auth.uid() and kind = 'minor_rules' and version = '1'), 'the rules about minors are on record'; end $$;
+select public.set_language_profile('vie', 'eng', 'A1'); select public.save_profile('kidone', 'Kid1', '', 'Asia/Ho_Chi_Minh', false, null, null);
+do $$ declare g jsonb := public.my_guardian_status(); begin
+  assert g->>'gate' = 'guardian_pending' and (g->>'minor')::boolean and (g->>'age')::int = 14, 'a 14-year-old waits for a guardian: ' || g::text;
+  assert (select onboarding_done from public.profiles where id = auth.uid()), 'setup still completes';
+end $$;
+select tt.expect_error($q$select public.record_consent('guardian', '1')$q$, 'invalid_consent_kind');
+-- The request gate: while waiting, only setup paths get through.
+do $$ begin
+  perform set_config('request.path', '/rpc/get_my_profile', true); perform public.check_request();
+  perform set_config('request.path', '/rpc/send_message', true);
+  begin perform public.check_request(); assert false, 'send_message should be refused';
+  exception when others then assert sqlerrm = 'guardian_pending', 'refused as guardian_pending, got ' || sqlerrm; end;
+  perform set_config('request.path', '', true);
+end $$;
+reset role;
+create temp table kid_token as select public.svc_guardian_request('00000000-0000-0000-0000-00000000ac01', 'Mai Nguyen', 'mother', 'mai@test.com') as r;
+do $$ begin
+  assert (select status from public.guardian_requests where child_id = '00000000-0000-0000-0000-00000000ac01') = 'pending';
+  assert (select token_hash <> (select r->>'token' from kid_token) from public.guardian_requests where child_id = '00000000-0000-0000-0000-00000000ac01'), 'only a hash is stored';
+end $$;
+select tt.expect_error($q$select public.svc_guardian_request('00000000-0000-0000-0000-00000000ac01', 'X', 'mother', 'other@test.com')$q$, 'guardian_name_required');
+select tt.expect_error($q$select public.svc_guardian_request('00000000-0000-0000-0000-00000000ac01', 'Mai Nguyen', 'mother', 'kid1@test.com')$q$, 'guardian_email_is_yours');
+select tt.expect_error($q$select public.svc_guardian_decide((select r->>'token' from kid_token), 'confirm', 'Mai Nguyen', false)$q$, 'guardian_must_be_adult');
+select public.svc_guardian_decide((select r->>'token' from kid_token), 'confirm', 'Mai Nguyen', true);
+do $$ begin
+  assert public.age_gate('00000000-0000-0000-0000-00000000ac01') is null, 'the guardian agreed: open';
+  assert exists (select 1 from public.consents where user_id = '00000000-0000-0000-0000-00000000ac01' and kind = 'guardian');
+  assert exists (select 1 from public.consent_ledger where user_id = '00000000-0000-0000-0000-00000000ac01' and kind = 'guardian_identity' and email_hash = public.email_hash('mai@test.com')), 'proof names the guardian by hash';
+  assert (public.svc_guardian_view((select r->>'token' from kid_token))->>'status') = 'confirmed';
+  assert not has_function_privilege('authenticated', 'public.svc_guardian_decide(text, text, text, boolean)', 'execute'), 'only the edge function decides';
+end $$;
+-- A second minor (confirmed) and an adult.
+select set_config('app.bypass_protect', 'on', false);
+update public.profiles set birth_date = current_date - interval '13 years', guardian_status = 'confirmed' where id = '00000000-0000-0000-0000-00000000ac02';
+select set_config('app.bypass_protect', 'off', false);
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-00000000ac02'); select public.set_language_profile('eng', 'vie', 'A1'); select public.save_profile('kidtwo', 'Kid2', '', 'Europe/London', false, null, null);
+select tt.as_user('00000000-0000-0000-0000-00000000ac03'); select public.set_language_profile('eng', 'vie', 'A1'); select public.save_profile('grownup', 'Grown', '', 'Europe/London', false, null, null);
+-- Kid1 follows the adult; the adult's message is still a request.
+select tt.as_user('00000000-0000-0000-0000-00000000ac01'); select public.follow_user('00000000-0000-0000-0000-00000000ac03');
+select tt.as_user('00000000-0000-0000-0000-00000000ac03');
+do $$ declare c uuid := public.start_conversation('00000000-0000-0000-0000-00000000ac01'); begin
+  assert (select status from public.conversation_members where conversation_id = c and user_id = '00000000-0000-0000-0000-00000000ac01') = 'request', 'an adult''s first message to a minor is a request';
+  assert not exists (select 1 from public.search_people('kid') s where s.username in ('kidone', 'kidtwo')), 'adults do not find minors';
+end $$;
+select tt.as_user('00000000-0000-0000-0000-00000000ac01');
+select public.respond_message_request((select conversation_id from public.conversation_members where user_id = auth.uid() limit 1), true);
+do $$ begin
+  assert exists (select 1 from public.search_people('grown') s where s.username = 'grownup'), 'minors can find adults';
+  assert exists (select 1 from public.search_people('kidtwo') s), 'minors find each other';
+end $$;
+-- A minor may call an adult they talk to (so adults can assess them), but only with sound.
+do $$ declare c uuid; j jsonb; begin
+  assert public.call_voice_only_with('00000000-0000-0000-0000-00000000ac03'), 'a minor''s calls are voice only';
+  c := public.start_call('00000000-0000-0000-0000-00000000ac03');
+  j := public.claim_call_join(c);
+  assert (j->>'ok')::boolean and (j->>'voice_only')::boolean, 'the media token is told: no camera ' || j::text;
+  perform public.leave_call(c);
+  perform tt.as_user('00000000-0000-0000-0000-00000000ac03');
+  assert public.call_voice_only_with('00000000-0000-0000-0000-00000000ac01'), 'the adult''s side is voice only too';
+  assert not public.call_voice_only_with('00000000-0000-0000-0000-00000000ac02'), 'no answer about someone you can''t call';
+  perform tt.as_user('00000000-0000-0000-0000-00000000ac01');
+end $$;
+do $$ declare c uuid := public.start_conversation('00000000-0000-0000-0000-00000000ac02'); begin
+  perform tt.as_user('00000000-0000-0000-0000-00000000ac02');
+  perform public.respond_message_request(c, true);
+  perform tt.as_user('00000000-0000-0000-0000-00000000ac01');
+  perform public.leave_call(public.start_call('00000000-0000-0000-0000-00000000ac02'));
+end $$;
+-- Withdrawal closes it again, and hands the account to the edge function for deletion.
+reset role;
+do $$ declare v jsonb := public.svc_guardian_decide((select r->>'token' from kid_token), 'withdraw'); begin
+  assert v->>'delete_user' = '00000000-0000-0000-0000-00000000ac01' and v->>'status' = 'withdrawn', 'withdrawal deletes the account: ' || v::text;
+end $$;
+do $$ begin
+  assert public.age_gate('00000000-0000-0000-0000-00000000ac01') = 'guardian_declined';
+  assert not exists (select 1 from public.consents where user_id = '00000000-0000-0000-0000-00000000ac01' and kind = 'guardian');
+  assert not public.can_call('00000000-0000-0000-0000-00000000ac01', '00000000-0000-0000-0000-00000000ac02');
+end $$;
+select tt.expect_error($q$select public.svc_guardian_request('00000000-0000-0000-0000-00000000ac01', 'Mai Nguyen', 'mother', 'mai2@test.com')$q$, 'guardian_declined');
+-- A refusal: the account is handed over for deletion, and the refusal is on the ledger under the guardian's email.
+set role authenticated;
+select tt.as_user('00000000-0000-0000-0000-00000000ac04');
+select public.set_birth_date((current_date - interval '13 years')::date, '1');
+reset role;
+create temp table tiny_token as select public.svc_guardian_request('00000000-0000-0000-0000-00000000ac04', 'Lan Tran', 'father', 'lan@test.com') as r;
+do $$ declare v jsonb := public.svc_guardian_decide((select r->>'token' from tiny_token), 'decline'); begin
+  assert v->>'delete_user' = '00000000-0000-0000-0000-00000000ac04' and v->>'status' = 'declined', 'a refusal deletes the account: ' || v::text;
+  assert public.age_gate('00000000-0000-0000-0000-00000000ac04') = 'guardian_declined', 'shut until it is gone';
+  assert exists (select 1 from public.consent_ledger where user_id = '00000000-0000-0000-0000-00000000ac04' and event = 'ended' and kind = 'guardian_identity' and email_hash = public.email_hash('lan@test.com')), 'the refusal is on record';
+end $$;
 reset role;
 select 'ALL APP-FLOW CHECKS PASSED' as result;

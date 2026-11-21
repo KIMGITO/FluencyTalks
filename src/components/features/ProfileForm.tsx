@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { Avatar, Button, Input, Select, Textarea } from '@/components/ui';
+import { Navigate } from 'react-router-dom';
+import { Avatar, Button, Input, Select, Textarea, FormError } from '@/components/ui';
 import { LanguageSelect, type LanguageChoice, type LearnerLevel } from './LanguageSelect';
 import { CountryPicker } from './CountryPicker';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
@@ -8,7 +8,9 @@ import { resizeImage } from '@/lib/image';
 import { useAuthStore } from '@/store/authStore';
 import { useCountries } from '@/store/countryStore';
 import { useProfileStore } from '@/store/profileStore';
-import { recordConsent, uploadAvatar } from '@/services';
+import { ageOn, confirmBirthDate, deleteAccount, MIN_AGE, recordConsent, uploadAvatar } from '@/services';
+import { BirthDateInput, birthIso, emptyBirth, type BirthParts } from './age/BirthDateInput';
+import { AgeAgreements, agreementsProblem, noAgreements } from './age/AgeAgreements';
 import { LEGAL_VERSIONS } from '@/lib/legalVersions';
 import { userMessage } from '@/lib/errors';
 import { checkText, checkUsername, cleanText, firstProblem } from '@/lib/validate';
@@ -25,8 +27,9 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
   const [bio, setBio] = useState(me?.bio ?? ''); const [tz, setTz] = useState(me?.timezone ?? localTz); const [isPrivate, setPrivate] = useState(me?.is_private ?? false);
   
   const [country, setCountry] = useState<string | null>(me?.country_code ?? null);
-  const [langs, setLangs] = useState<LanguageChoice>({ native: me?.native_language_id ?? '', learning: me?.learning_language_id ?? '', level: (me?.learning_level as LearnerLevel | null) ?? 'A1' }); const [file, setFile] = useState<File | null>(null); const [adult, setAdult] = useState(mode === 'edit');
+  const [langs, setLangs] = useState<LanguageChoice>({ native: me?.native_language_id ?? '', learning: me?.learning_language_id ?? '', level: (me?.learning_level as LearnerLevel | null) ?? 'A1' }); const [file, setFile] = useState<File | null>(null); const [agreed, setAgreed] = useState(noAgreements);
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  const [birth, setBirth] = useState<BirthParts>(emptyBirth);
   const providerAvatar = useProviderAvatar();
   const [useProvider, setUseProvider] = useState(false);   // switch back from an uploaded photo to the Google one
   const fileUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
@@ -47,12 +50,20 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
     const problem = firstProblem(checkUsername(username), checkText(displayName, { label: 'Display name', max: 60 }), checkText(bio, { label: 'About you', max: 300 }));
     if (problem) return setError(problem);
     if (!langs.native) return setError('Choose the language you speak natively.');
-    if (!adult) return setError('You must be 16 or older to join.');
+    const iso = mode === 'onboarding' ? birthIso(birth) : null;
+    if (mode === 'onboarding' && !iso) return setError('Enter your full date of birth.');
+    const notAgreed = mode === 'onboarding' ? agreementsProblem(agreed, true) : null;
+    if (notAgreed) return setError(notAgreed);
     setBusy(true);
     try {
+      if (iso) {
+        // Under 12: refused, nothing stored, and the sign-in account is removed straight away.
+        if (ageOn(iso) < MIN_AGE) { await deleteAccount().catch(() => undefined); setError('You need to be 12 or older to join The Fluency Talks. Your sign-up has been removed.'); return; }
+        await confirmBirthDate(iso);
+      }
       const avatarUrl = file ? await uploadAvatar(user.id, file) : useProvider && providerAvatar ? providerAvatar : undefined;
       await save({ username, displayName: cleanText(displayName, { singleLine: true }) || username, bio: cleanText(bio), timezone: tz, isPrivate, avatarUrl, countryCode: country }, langs);
-      if (mode === 'onboarding') await Promise.all([recordConsent('age_18', LEGAL_VERSIONS.age_18), recordConsent('terms', LEGAL_VERSIONS.terms), recordConsent('privacy', LEGAL_VERSIONS.privacy)]);
+      if (mode === 'onboarding') await Promise.all([recordConsent('terms', LEGAL_VERSIONS.terms), recordConsent('privacy', LEGAL_VERSIONS.privacy)]);
       onDone();
     } catch (err) {
       const message = userMessage(err, 'Oops! Something went wrong. Please try again.');
@@ -77,8 +88,9 @@ export function ProfileForm({ mode, onDone, onError }: { mode: 'onboarding' | 'e
       <CountryPicker value={country} timezone={tz} onChange={setCountry} />
       <LanguageSelect value={langs} onChange={setLangs} />
       
-      {mode === 'onboarding' && <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={adult} onChange={(e) => setAdult(e.target.checked)} /><span>I'm 16 or older and agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</span></label>}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {mode === 'onboarding' && <BirthDateInput value={birth} onChange={setBirth} />}
+      {mode === 'onboarding' && <AgeAgreements value={agreed} onChange={setAgreed} withTerms />}
+      <FormError>{error}</FormError>
       <Button type="submit" full loading={busy}>{mode === 'onboarding' ? 'Finish setup' : 'Save changes'}</Button>
     </form>
   );

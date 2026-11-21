@@ -71,6 +71,7 @@ Rate limit counters already clean up after themselves (`rate_limit_cleanup`).
 These stay in the database for as long as the account exists, and go when it is deleted.
 
 - **Messages and chats.** The privacy policy says "your chats are yours" and that deleting an account removes them. Keeping a copy for years would contradict that, and nothing we've identified requires it. The only message text we keep is what a report captured as evidence.
+- **Call history** (`calls`, `call_participants`): who called whom, when, and how it ended. No media. It goes with the account, like messages.
 - **Everything else a member owns:** profile, posts, corrections, phrases, translation history, points and consents.
 
 ## How it works

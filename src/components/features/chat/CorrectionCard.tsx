@@ -7,6 +7,7 @@ import { toast } from '@/store/toastStore';
 import type { Correction } from '@/types/db';
 import { userMessage } from '@/lib/errors';
 import { cleanText, limitLength } from '@/lib/validate';
+import { FormError } from '@/components/ui';
 
 /** Older declined suggestions stay out of the chat: the question is only asked while it is fresh. */
 const RATE_DISMISSED_DAYS = 7;
@@ -84,7 +85,7 @@ export function CorrectionCard({ correction, original, isOwner, myId, bounty, on
       </div>
       {status !== 'dismissed' && <div className="text-ink"><DiffText original={original} corrected={correction.suggested_text} /></div>}
       {open && correction.note && <p className="mt-0.5 text-xs italic text-muted">{correction.note}</p>}
-      {error && <p className="text-xs text-danger" role="alert">{error}</p>}
+      <FormError small>{error}</FormError>
 
       {isOwner && pending && !declining && (
         <div className="-mx-1 mt-1 flex flex-wrap items-center gap-1">

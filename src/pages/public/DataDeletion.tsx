@@ -6,6 +6,7 @@ import { deleteAccount } from '@/services/account';
 import { useAuthStore } from '@/store/authStore';
 import { EMAILS, mailto } from '@/lib/emails';
 import { userMessage } from '@/lib/errors';
+import { Checkbox, FormError } from '@/components/ui';
 
 /**
  * Real deletion. Signed-in people delete their own account here (the same call as their profile page);
@@ -37,11 +38,8 @@ function DeleteAction() {
   return (
     <div>
       <P>You are logged in as <strong>{user.email}</strong>. Deleting is permanent and cannot be undone.</P>
-      <label style={{ display: 'flex', gap: '.75rem', alignItems: 'flex-start', margin: '1.1rem 0' }}>
-        <input type="checkbox" checked={sure} onChange={(e) => setSure(e.target.checked)} style={{ marginTop: '.4rem', width: '1.15rem', height: '1.15rem' }} />
-        <span>I understand that my account, messages and saved phrases will be deleted for good.</span>
-      </label>
-      {error && <p role="alert" style={{ color: 'rgb(var(--c-danger))', marginBottom: '.75rem' }}>{error}</p>}
+      <Checkbox className="my-4 text-base" checked={sure} onChange={setSure}>I understand that my account, messages and saved phrases will be deleted for good.</Checkbox>
+      <FormError className="mb-3 text-base">{error}</FormError>
       <button type="button" className="lp-btn lp-btn--danger" disabled={!sure || busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete my account now'}</button>
     </div>
   );

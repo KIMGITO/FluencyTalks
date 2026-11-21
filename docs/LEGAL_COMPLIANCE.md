@@ -14,6 +14,7 @@ What we keep and for how long is in [Data retention](DATA_RETENTION.md), along w
 - **Current legal versions** (`src/lib/legalVersions.ts`): privacy 3, terms 1, age 1. The exact text of each is in `supabase/legal/`.
 - **Hosting disclosure:** the privacy policy says the database is hosted outside Vietnam, in Ireland.
 - **Outside processors:** Supabase (hosting), Cloudflare (website), MyMemory (only text someone taps Translate on) and Unsplash (image searches).
+- **Not yet in the privacy policy: LiveKit,** for video calls (audio and video in transit, IP addresses, call timing; nothing recorded). Before calls go live: privacy v4 naming it, its `consent_documents` row, and the cross-border dossier covering it. See [Video calling](VIDEO_CALLING.md).
 
 ## Changing the privacy policy or terms
 

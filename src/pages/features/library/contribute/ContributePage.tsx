@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, AlignLeft, AlignCenter, AlignRight, Camera, Check, GraduationCap, Lock, Languages, MessageCircleQuestion, PencilLine, ScrollText, Sparkles, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Button, DeniedState, Select, Textarea, ThreadSkeleton, Input } from '@/components/ui';
+import { Button, DeniedState, Select, Textarea, ThreadSkeleton, Input, CharCount, Notice, Page } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
 import { qualifiedLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
@@ -136,7 +136,7 @@ export default function ContributePage() {
 
   if (!canContribute) {
     return (
-      <div className="mx-auto w-full max-w-3xl p-4">
+      <Page>
         <PageHeader title="Contribute" />
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning/10 text-4xl">🔒</div>
@@ -145,18 +145,18 @@ export default function ContributePage() {
           </p>
           <Button variant="secondary" onClick={() => navigate('/library')}>Go back to Library</Button>
         </div>
-      </div>
+      </Page>
     );
   }
-  if (loadingPost) return <div className="mx-auto w-full max-w-3xl p-4"><ThreadSkeleton /></div>;
+  if (loadingPost) return <Page><ThreadSkeleton /></Page>;
   // A pause only ever covers teaching posts. Asking for help stays open.
   if (restriction && !editId && type && !isPractice(type)) {
     return (
-      <div className="mx-auto w-full max-w-3xl p-4">
+      <Page>
         <PageHeader title="Contribute" />
         <DeniedState title="New teaching posts are paused" text={`${restriction.reason}. Answer them, ask for more time, or appeal, and teaching posts come back. Stories, questions and “Correct me” posts still work.`}
           action={<Link to="/notifications" className="font-semibold underline">See what's waiting</Link>} />
-      </div>
+      </Page>
     );
   }
 
@@ -168,11 +168,11 @@ export default function ContributePage() {
   if (helpPost || isPractice(type)) {
     const helpType = (helpPost?.post_type ?? type) as PracticeType;
     return (
-      <div className="mx-auto w-full max-w-3xl p-4 pb-24">
+      <Page withBar>
         {backButton}
         <PageHeader title={helpPost ? 'Edit post' : POST_TITLE[helpType]} />
         <HelpComposer type={helpType} editing={helpPost ?? undefined} onDone={goBack} />
-      </div>
+      </Page>
     );
   }
   // Choosing what to write comes first, and decides which form follows.
@@ -181,7 +181,7 @@ export default function ContributePage() {
     const choose = (t: string) => setParams({ type: t }, { replace: true });
     const shareIn = qualified.map((id) => languageName(id)).join(' or ');
     return (
-      <div className="mx-auto w-full max-w-3xl p-4 pb-24">
+      <Page withBar>
         {backButton}
         <PageHeader title="What do you want to post?" />
         {learning && (
@@ -198,7 +198,7 @@ export default function ContributePage() {
           <h2 className="ft-kicker">Teach{shareIn && ` in ${shareIn}`}</h2>
           {qualified.length > 0 ? (
             restriction
-              ? <p className="rounded-md bg-warning/10 p-2.5 text-sm text-warning">New teaching posts are paused. {restriction.reason}. <Link to="/notifications" className="font-semibold underline">See what's waiting</Link></p>
+              ? <Notice tone="warning">New teaching posts are paused. {restriction.reason}. <Link to="/notifications" className="font-semibold underline">See what's waiting</Link></Notice>
               : (
                 <>
                   <TypeOption icon={Sparkles} title="Phrase or expression" text="Share a phrase, idiom or useful sentence, with its meaning and an example." onClick={() => choose('library')} />
@@ -213,12 +213,12 @@ export default function ContributePage() {
             </p>
           )}
         </section>
-      </div>
+      </Page>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-4 pb-24">
+    <Page withBar>
       <button
         onClick={goBack}
         className="mb-4 flex items-center gap-1 text-sm text-muted hover:text-ink"
@@ -229,7 +229,7 @@ export default function ContributePage() {
       <PageHeader title={editId ? 'Edit post' : isLesson ? 'New lesson' : 'New phrase'} />
 
       <div className="space-y-4">
-        {locked && <p className="rounded-md bg-warning/10 p-2.5 text-sm text-warning">People are discussing this text, so the phrase, translation and language can't change. Corrections go through the discussion. You can still edit the rest.</p>}
+        {locked && <Notice tone="warning">People are discussing this text, so the phrase, translation and language can't change. Corrections go through the discussion. You can still edit the rest.</Notice>}
         <div>
           <Textarea
             label={isLesson ? 'Title *' : 'Phrase / idiom *'}
@@ -262,7 +262,7 @@ export default function ContributePage() {
         {isLesson && (
           <div>
             <Textarea label="Your lesson *" rows={12} maxLength={maxBody('lesson')} value={body} disabled={locked} onChange={(e) => setBody(e.target.value)} placeholder="Explain it the way you would to a friend. Examples help most." />
-            <p className="mt-1 text-right text-xs text-muted">{body.length} / {maxBody('lesson')}</p>
+            <CharCount value={body.length} max={maxBody('lesson')} />
           </div>
         )}
 
@@ -335,7 +335,7 @@ export default function ContributePage() {
           <Button size="lg" loading={busy} onClick={submit}>{editId ? 'Save changes' : isLesson ? 'Publish lesson' : 'Post to Library'}</Button>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 

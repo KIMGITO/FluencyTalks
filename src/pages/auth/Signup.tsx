@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthLayout } from '@/components/layout';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, FormError } from '@/components/ui';
 import { SocialButtons } from '@/components/features';
 import { useSeo } from '@/hooks/useSeo';
 import { useAuthStore } from '@/store/authStore';
@@ -56,7 +56,7 @@ export default function Signup() {
           value={password}
           onChange={(e) => { setPassword(e.target.value); setProblems((p) => ({ ...p, password: '' })); }}
         />
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <FormError>{error}</FormError>
         <Button type="submit" full loading={busy}>
           Sign up
         </Button>

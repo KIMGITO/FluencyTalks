@@ -28,6 +28,7 @@ There's one file per area, holding the final definition of everything in it. Con
 | `20261103101700_blog_posts.sql` | The published posts |
 | `20261103101800_faq.sql` | FAQ table and staff editor |
 | `20261103101900_faq_questions.sql` | The FAQ questions |
+| `20261121100000_calls.sql` | Private calls: settings, calls, participants, join refusals. See [Video calling audit](VIDEO_CALLING_AUDIT.md) |
 
 `supabase/seed.sql` adds the languages beyond the launch list, for local development only. `db push` never runs it, so anything production needs belongs in a migration.
 
@@ -50,6 +51,7 @@ There's one file per area, holding the final definition of everything in it. Con
 | Consent | `consents`, `consent_documents`, `consent_ledger` |
 | Archive | `retention_policies`, `archive_settings`, `archive_batches`, `archive_subjects`, `archive_legal_holds`, `archive_checkpoints` |
 | Content | `blog_posts`, `faq_items` |
+| Calls | `call_settings`, `calls`, `call_participants`, `call_join_failures` |
 
 ## Rules for changing the database
 
@@ -87,6 +89,9 @@ There's one file per area, holding the final definition of everything in it. Con
 | Discussion entries | 30 an hour, up to 1,000 characters, 12 levels deep |
 | Saved posts | 500 |
 | Reports | 10 an hour |
+| Calls to one person | 3 in 10 minutes, and 30 calls an hour in all |
+| Failed call joins | 10 in 10 minutes |
+| Call length | 120 minutes (`call_settings.max_call_minutes`) |
 | All writes by one person | 240 a minute |
 
 Request-level limits live in `rate_limit_rules` and can change with no deploy. See [Security](SECURITY.md#rate-limits).
@@ -101,6 +106,7 @@ These use pg_cron, which has to be enabled on the hosted project.
 | `ft-archive-purge` | Hourly | Deletes what isn't archived |
 | Accountability sweep | On a schedule, or from app activity if pg_cron is off | Reminders, overdue notices, escalations |
 | Heartbeat | Every minute | Fills the uptime history on the Health page |
+| `ft-call-sweep` | Every minute | Expires unanswered calls, ends empty or over-long ones. Without pg_cron, every call function runs it first |
 
 ## Reading production data
 

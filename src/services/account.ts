@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
 import { UserError } from '@/lib/errors';
 export const exportMyData = () => rpc<Record<string, unknown>>('export_my_data');
-export const recordConsent = (kind: 'terms' | 'privacy' | 'age_18', version: string) => rpc('record_consent', { p_kind: kind, p_version: version });
+export const recordConsent = (kind: 'terms' | 'privacy' | 'age', version: string) => rpc('record_consent', { p_kind: kind, p_version: version });
 export const markNotificationsRead = (ids?: string[]) => rpc('mark_notifications_read', { p_ids: ids ?? null });
 export const deleteNotifications = (ids?: string[]) => rpc('delete_notifications', { p_ids: ids ?? null });
 export async function deleteAccount() {

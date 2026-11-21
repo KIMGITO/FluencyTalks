@@ -1,7 +1,8 @@
 export const fonts = {
-  sans: "'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  display: "'Newsreader', Georgia, 'Times New Roman', serif",
-  serif: "'Newsreader', Georgia, 'Times New Roman', serif",
+  // Editorial poster type: a heavy condensed italic for headlines, a plain grotesque for reading.
+  sans: "'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  display: "'Barlow Condensed', 'Arial Narrow', Impact, system-ui, sans-serif",
+  serif: "'Barlow Condensed', 'Arial Narrow', Impact, system-ui, sans-serif",
   mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 } as const;
 
@@ -53,31 +54,28 @@ export const levelColors = { A1: 'lvl-a', A2: 'lvl-a', B1: 'lvl-b', B2: 'lvl-b',
 
 type Palette = Record<string, string>;
 export const themes: Record<'light' | 'dark', Palette> = {
+  // Off-white ground, royal-blue headlines, navy text, red for stars and calls to action. Flat colour only.
+  // No purple, violet or maroon: blues sit at a true blue hue (about 220°), reds are bright reds.
+  // Red is never small text on the ground (4.2:1); text on red is white (4.8:1). Small red text uses `danger`.
   light: {
-    bg: '250 246 238', surface: '255 255 255', 'surface-2': '241 234 220', border: '222 214 199',
-    ink: '23 22 58', muted: '91 90 126', 'on-brand': '255 255 255',
-    brand: '27 26 85', 'brand-soft': '232 229 242', accent: '255 106 77', aqua: '18 181 166',
-    sun: '255 200 61', deep: '27 26 85', 'on-deep': '250 246 238',
-    success: '18 104 66', danger: '200 36 58', warning: '150 92 8',
-    'lvl-a': '14 165 150', 'lvl-b': '27 26 85', 'lvl-c': '255 106 77', 'lvl-n': '240 170 20',
+    bg: '238 240 244', surface: '250 251 252', 'surface-2': '226 231 238', border: '206 213 224',
+    ink: '14 32 72', muted: '74 86 106', 'on-brand': '255 255 255',
+    brand: '23 78 210', 'brand-soft': '221 233 252', accent: '224 32 46', aqua: '23 78 210',
+    sun: '224 32 46', deep: '14 32 72', 'on-deep': '238 240 244',
+    success: '18 104 66', danger: '200 30 30', warning: '150 92 8',
+    'lvl-a': '74 86 106', 'lvl-b': '23 78 210', 'lvl-c': '224 32 46', 'lvl-n': '14 32 72',
   },
   dark: {
-    bg: '14 13 40', surface: '24 23 68', 'surface-2': '36 35 94', border: '56 55 120',
-    ink: '240 240 255', muted: '160 160 205', 'on-brand': '14 13 40',
-    brand: '124 122 240', 'brand-soft': '40 39 108', accent: '255 129 102', aqua: '45 212 198',
-    sun: '255 211 94', deep: '27 26 85',
-    success: '52 211 140', danger: '255 99 114', warning: '255 196 80',
-    'lvl-a': '45 212 198', 'lvl-b': '124 122 240', 'lvl-c': '255 129 102', 'lvl-n': '255 211 94',
-    'on-deep': '250 246 238',
+    bg: '9 17 36', surface: '16 28 54', 'surface-2': '25 41 74', border: '42 61 98',
+    ink: '238 240 244', muted: '160 172 192', 'on-brand': '255 255 255',
+    brand: '84 150 245', 'brand-soft': '22 44 90', accent: '240 56 70', aqua: '84 150 245',
+    sun: '240 56 70', deep: '14 32 72',
+    success: '52 211 140', danger: '255 112 112', warning: '255 196 80',
+    'lvl-a': '160 172 192', 'lvl-b': '84 150 245', 'lvl-c': '240 56 70', 'lvl-n': '238 240 244',
+    'on-deep': '238 240 244',
   },
 };
 
-// Flat on purpose: gradients read as template styling. The keys stay so existing var(--grad-*) references keep working.
-export const gradients = {
-  brand: 'linear-gradient(rgb(var(--c-deep)), rgb(var(--c-deep)))',
-  spark: 'linear-gradient(rgb(var(--c-accent)), rgb(var(--c-accent)))',
-  hero: 'none',
-  ring: 'linear-gradient(rgb(var(--c-deep)), rgb(var(--c-deep)))',
-} as const;
+// No gradients anywhere, by design: every surface is one flat colour.
 
 export const motion = { fast: '120ms', base: '200ms', slow: '320ms', ease: 'cubic-bezier(.2,.8,.2,1)' } as const;
