@@ -2,7 +2,8 @@ import { BRAND } from '@/lib/site';
 
 /** Why choose it: compared with kinds of alternatives, not named competitors. Every claim is something the app really does. */
 const ROWS = [
-  ['Real conversations with people', 'Yes, one to one', 'No', 'Yes'],
+  ['Real conversations with people', 'Yes, one-to-one video calls', 'No', 'Yes'],
+  ['Proof of your level', 'Rated by 5 different partners, A1 to C2', 'Streaks and scores', 'The tutor’s opinion'],
   ['Corrections', 'Inside the chat, saved to your phrasebook', 'Right or wrong answers only', 'Yes, in the lesson'],
   ['Native speakers', 'Matched by your language pair', 'No', 'Usually'],
   ['Cost', 'Free, no paid plans', 'Free with paid upgrades', 'Paid per hour'],

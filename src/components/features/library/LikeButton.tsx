@@ -6,8 +6,8 @@ import { useFeedCache } from '@/store/feedCache';
 import { toast } from '@/store/toastStore';
 import { userMessage } from '@/lib/errors';
 
-/** Like a post. Changes at once, then settles on what the server says; goes back if it failed. */
-export function LikeButton({ postId, liked: initialLiked, count: initialCount }: { postId: string; liked?: boolean; count?: number }) {
+/** A post's like, shared by the button and the phone menu. Changes at once, then settles on what the server says; goes back if it failed. */
+export function useLike(postId: string, initialLiked?: boolean, initialCount?: number) {
   const [liked, setLiked] = useState(!!initialLiked);
   const [count, setCount] = useState(initialCount ?? 0);
   const busy = useRef(false);
@@ -24,6 +24,10 @@ export function LikeButton({ postId, liked: initialLiked, count: initialCount }:
       useFeedCache.getState().patchEverywhere(postId, { liked: now, like_count: n });
     } catch (e) { setLiked(was); setCount(wasCount); toast.error(userMessage(e, 'Could not like this post.')); } finally { busy.current = false; }
   };
-  return <ReactionButton icon={ThumbsUp} label={liked ? 'Liked' : 'Like'} ariaLabel={liked ? 'Unlike this post' : 'Like this post'} hideLabel
-    count={count} active={liked} tone="accent" burst="sparks" onClick={() => void toggle()} />;
+  return { liked, count, toggle };
+}
+
+export function LikeButton({ like }: { like: ReturnType<typeof useLike> }) {
+  return <ReactionButton icon={ThumbsUp} label={like.liked ? 'Liked' : 'Like'} ariaLabel={like.liked ? 'Unlike this post' : 'Like this post'} hideLabel
+    count={like.count} active={like.liked} tone="accent" burst="sparks" onClick={() => void like.toggle()} />;
 }

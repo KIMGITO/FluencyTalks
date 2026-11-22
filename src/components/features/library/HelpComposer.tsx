@@ -103,7 +103,7 @@ export function HelpComposer({ type, editing, onDone }: { type: PracticeType; ed
     try {
       if (editing) await updateContribution(editing.id, cleanText(text), null, language, editing.category, cleanText(context) || null, imageUrl || null, 'left', cleanText(body) || null, layout);
       else await postHelpRequest(type, cleanText(text), cleanText(context) || null, { body: cleanText(body) || null, imageUrl: imageUrl || null, layout });
-      toast.success(editing ? 'Changes saved.' : 'Posted. You will be told as soon as someone answers.');
+      toast.success(editing ? 'Changes saved.' : 'Posted.');
       useFeedCache.getState().invalidate('posts:');
       onDone();
     } catch (e) {

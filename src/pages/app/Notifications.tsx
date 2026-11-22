@@ -2,39 +2,22 @@ import clsx from 'clsx';
 import { CheckCheck, Settings2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
-import { Avatar, Button, EmptyState, ErrorState, NotificationSkeleton, PartialError, Spinner, Tabs, Checkbox } from '@/components/ui';
-import { PushToggle } from '@/components/features/review/PushToggle';
+import { Avatar, Button, EmptyState, ErrorState, NotificationSkeleton, PartialError, Spinner, Tabs } from '@/components/ui';
+import { NotificationSettings } from '@/components/features/review/NotificationSettings';
 import { DecisionQueue } from '@/components/features/review/DecisionQueue';
 import { useNotificationFeed } from '@/hooks/useNotificationFeed';
 import { formatTime } from '@/lib/format';
 import { CATEGORY_LABEL, hasActor, notificationVerb } from '@/lib/notificationText';
-import { setNotificationPrefs } from '@/services/review';
-import { useProfileStore } from '@/store/profileStore';
-import { toast } from '@/store/toastStore';
-import { userMessage } from '@/lib/errors';
 
 type Filter = 'all' | 'corrections' | 'decisions' | 'reminders' | 'system';
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' }, { key: 'corrections', label: 'Corrections' }, { key: 'decisions', label: 'Decisions' }, { key: 'reminders', label: 'Reminders' }, { key: 'system', label: 'System' },
 ];
-const OPTIONAL: { key: string; label: string; hint: string }[] = [
-  { key: 'corrections', label: 'Corrections and replies', hint: 'Someone challenges your correction, replies, or confirms your post.' },
-  { key: 'decisions', label: 'Decisions', hint: 'Someone accepts or declines your correction.' },
-  { key: 'system', label: 'Notices', hint: 'Your path, levels and points.' },
-];
 
 export default function Notifications() {
-  const me = useProfileStore((s) => s.me);
-  const reloadMe = useProfileStore((s) => s.load);
   const [filter, setFilter] = useState<Filter>('all');
-  const [showPrefs, setShowPrefs] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(() => new URLSearchParams(window.location.search).has('settings'));
   const { items, groups, unread, failed, moreFailed, loadingMore, markingAll, sentinel, retry, more, open, toggleRead, remove, allRead } = useNotificationFeed(filter === 'all' ? null : filter);
-
-  const setPref = async (key: string, on: boolean) => {
-    if (!me) return;
-    try { await setNotificationPrefs({ ...(me.notification_prefs ?? {}), [key]: on }); await reloadMe(me.id); toast.success('Saved.'); }
-    catch (e) { toast.error(userMessage(e)); }
-  };
 
   return (
     <div className="mx-auto w-full max-w-3xl pb-24 md:pb-8">
@@ -45,15 +28,7 @@ export default function Notifications() {
       </>} />
       <DecisionQueue />
       {showPrefs && (
-        <div className="ft-card ft-card-pad mb-3 space-y-2">
-          <PushToggle />
-          <p className="text-xs text-muted">Decisions you have to make and restrictions always reach you.</p>
-          {OPTIONAL.map((o) => (
-            <Checkbox key={o.key} className="min-h-[2.75rem]" checked={me?.notification_prefs?.[o.key] !== false} onChange={(v) => void setPref(o.key, v)}>
-              <span className="font-semibold">{o.label}</span><span className="block text-xs text-muted">{o.hint}</span>
-            </Checkbox>
-          ))}
-        </div>
+        <div className="ft-card ft-card-pad mb-3"><NotificationSettings /></div>
       )}
       <div className="ft-inset mb-3 overflow-x-auto"><Tabs value={filter} onChange={setFilter} items={FILTERS} /></div>
 

@@ -7,7 +7,7 @@ There are two correction systems. They serve different things and are deliberate
 | | Library contributions | Chat messages |
 |---|---|---|
 | Table | `post_discussion` (+ `post_discussion_events` audit log) | `message_corrections` |
-| Who corrects | Native speakers or learners **verified** at B1+ in the post's language (`can_correct_language`) | Same rule |
+| Who corrects | Native speakers, or learners who passed a level above the author's (`can_correct_language` with the author) | Same rule |
 | Discussion | Threaded replies, challenges, clarifications (depth ≤ 12) | Reply to the message in the chat |
 | Decided by | Post owner; moderators once escalated. A practice post asks for no decision | Message sender |
 | Accountability | Teaching posts only: `decision_items` with deadlines, reminders, a warning and escalation (`accountability_policy`). See [Contribution system](CONTRIBUTION_SYSTEM.md#when-a-teaching-posts-author-goes-quiet) | Bounty answers get a reminder before the bounty expires |
@@ -44,7 +44,7 @@ No changes were needed here.
 9. **Nothing stopped invalid transitions** at the data level, e.g. `paid → open`.
 
 Eligibility itself was checked end to end and is correct. The asker's chat partner sees the bounty when
-they are a native speaker of the message's language, or verified at B1+. Self-reported levels do not
+they are a native speaker of the message's language, or have passed a level above the asker's (since 2026-11-22; it was B1+). Self-reported levels do not
 count; that is the earned-levels rule (`20261103101100_points_and_levels`) and is kept. A message is tagged with the
 language chosen in the composer (default: the language you are learning), and only people qualified
 in *that* language see the bounty. The new composer shows the tag as a tab, so it is visible.

@@ -10,7 +10,7 @@ import '@/styles/landing.css';
 export default function About() {
   useSeo({
     title: `About ${BRAND}: Who We Are`,
-    description: `${BRAND} is a free language exchange in ${LANGUAGES.length} languages, with corrections inside the chat. Why we built it and how to reach us.`,
+    description: `${BRAND} is a free language exchange in ${LANGUAGES.length} languages, with one-to-one video calls and levels rated by real partners. Why we built it and how to reach us.`,
     path: '/about',
   });
   const jsonLd = {
@@ -26,7 +26,7 @@ export default function About() {
             <p className="lp-kicker">About us</p>
             <h1>About {BRAND}</h1>
           </header>
-          <p className="lp-article__summary">{BRAND} is a free language exchange. You chat with people who speak the language you are learning, they correct your messages right inside the conversation, and you keep every correction in your own phrasebook.</p>
+          <p className="lp-article__summary">{BRAND} is a free language exchange. You talk on one-to-one video calls with people who speak the language you are learning, about topics that match your level. Your partners rate each topic call, and that is how you pass a level. Between calls you chat in writing, and every correction you accept goes into your own phrasebook.</p>
 
           <dl className="lp-langfacts">
             <div><dt>Languages</dt><dd>{LANGUAGES.length} at launch</dd></div>
@@ -36,8 +36,9 @@ export default function About() {
 
           <div className="lp-article__body">
             <h2>Why we built it</h2>
-            <p>Apps teach you words. People teach you to talk. Flashcards only go so far: fluency comes from real conversations with someone patient, curious and glad to help. We wanted a place built entirely around that conversation, with no followers, no likes and no popularity contest.</p>
-            <p>We also wanted the moment of correction to be useful. On most chat apps a correction is a message that scrolls away. Here, your partner edits your sentence where you wrote it, you see exactly what changed, and the phrase is saved for you to review.</p>
+            <p>Apps teach you words. People teach you to talk. Flashcards only go so far: fluency comes from real conversations with someone patient, curious and glad to help. We wanted a place built entirely around that conversation, with no popularity contest.</p>
+            <p>We also wanted a level to mean something. Here you can't just pick one: you pass it when 5 different partners, native speakers or people at a higher level, have rated your calls at 80% or more.</p>
+            <p>And we wanted the moment of correction to be useful. On most chat apps a correction is a message that scrolls away. Here, your partner edits your sentence where you wrote it, you see exactly what changed, and the phrase is saved for you to review.</p>
 
             <h2>Who we are</h2>
             <p>We build and run {BRAND} for people who want to practise a language with other people. If something breaks or you have an idea, tell us.</p>
@@ -46,7 +47,7 @@ export default function About() {
             <ul>
               <li><strong>Languages that are often left out.</strong> Alongside English, French, Spanish and Japanese, you can practise Vietnamese, Swahili, Amharic, Yoruba, Igbo, Hausa, Zulu, Tagalog and more. See <Link to="/languages">all {LANGUAGES.length} languages</Link>.</li>
               <li><strong>Helping is rewarded.</strong> Every accepted correction earns the helper points, and anyone stuck can post a bounty.</li>
-              <li><strong>Safety.</strong> New contacts arrive as requests you can decline. You can block or report anyone, and reports are reviewed by admins.</li>
+              <li><strong>Safety.</strong> New contacts arrive as requests you can decline, and calls are never recorded. You can block or report anyone, and reports are reviewed by admins. Members aged 12 to 15 join with a parent or guardian's agreement, and their calls are voice only.</li>
               <li><strong>Your data is yours.</strong> We do not sell it, and you can export or delete it at any time. Read our <Link to="/privacy">privacy policy</Link>.</li>
             </ul>
 

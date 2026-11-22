@@ -62,7 +62,7 @@ export default function PointsHistory() {
         <ul className="mt-1 list-disc space-y-0.5 pl-5">
           <li>+5 when your correction, in chat or on a post, is accepted: up to 10 a day, and 3 a day from the same person.</li>
           <li>Asking the community holds 50 points. Whoever you accept gets them; after 48 hours with no accepted answer they come back.</li>
-          <li>You correct and answer in your native language, or your learning language once your activity verifies you at B1.</li>
+          <li>You correct and answer in your native language, or in your learning language for learners below the level you have passed.</li>
           <li>The people you correct can rate it. If most recent ratings are “not helpful”, from at least 3 people, your corrections stop earning until that recovers.</li>
         </ul>
       </div>

@@ -61,8 +61,9 @@ const presence = async (call, user) => (await service.from('call_participants').
 
 async function main() {
   const a = await learner('a', 'eng', 'spa'); const b = await learner('b', 'spa', 'eng'); const s = await learner('s', 'eng', 'spa');
-  const conv = (await a.c.rpc('start_conversation', { p_target: b.id })).data;
-  await b.c.rpc('respond_message_request', { p_conv: conv, p_accept: true });
+  // Only partners call each other.
+  await a.c.rpc('request_connection', { p_user: b.id });
+  await b.c.rpc('respond_connection', { p_user: a.id, p_accept: true });
   const { data: call, error } = await a.c.rpc('start_call', { p_callee: b.id });
   assert.equal(error, null, `start_call: ${error?.message}`);
   const room = (await service.from('calls').select('provider_room').eq('id', call).single()).data.provider_room;

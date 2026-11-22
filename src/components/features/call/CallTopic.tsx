@@ -2,10 +2,10 @@
 // Type-only imports from the media layer, so nothing here pulls in the provider SDK.
 import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { ChevronDown, Lightbulb, Shuffle, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ChevronDown, Lightbulb, Shuffle, ThumbsDown, ThumbsUp, WifiOff } from 'lucide-react';
 import { FormError, Select } from '@/components/ui';
 import { listDevices, type DeviceKind } from '@/services/callMedia';
-import { myCallVote, voteCall } from '@/services/connections';
+import { myCallVote, voteCall, type CallVoteValue } from '@/services/connections';
 import { CATEGORY_LABEL, type TopicCategory } from '@/services/path';
 import { deviceErrorText } from '@/lib/callState';
 import { userMessage } from '@/lib/errors';
@@ -91,25 +91,28 @@ export function DeviceMenu({ open, voiceOnly, onClose, onPick }: { open: boolean
   );
 }
 
-/** Was it a good call? One tap, changeable. Only a count of good calls is ever shown, on their profile. */
+/** After a call: good, bad, or it didn't connect. One answer per call, kept once given. */
 export function CallVote({ callId, name }: { callId: string; name: string }) {
-  const [vote, setVote] = useState<'good' | 'bad' | null>(null);
+  const [vote, setVote] = useState<CallVoteValue | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => { myCallVote(callId).then(setVote).catch(() => undefined); }, [callId]);
-  const cast = async (v: 'good' | 'bad') => {
-    const was = vote; setVote(v); setError('');
-    try { await voteCall(callId, v); } catch (e) { setVote(was); setError(userMessage(e)); }
+  const cast = async (v: CallVoteValue) => {
+    if (vote || busy) return;
+    setBusy(true); setVote(v); setError('');
+    try { await voteCall(callId, v); } catch (e) { setVote(null); setError(userMessage(e)); } finally { setBusy(false); }
   };
-  const btn = (v: 'good' | 'bad', label: string, Icon: typeof ThumbsUp) => (
-    <button type="button" aria-pressed={vote === v} onClick={() => void cast(v)}
+  const picked: Record<CallVoteValue, string> = { good: 'border-go bg-go text-on-brand', bad: 'border-on-deep bg-on-deep text-deep', no_connect: 'border-danger bg-danger text-white' };
+  const btn = (v: CallVoteValue, label: string, Icon: typeof ThumbsUp) => (
+    <button type="button" aria-pressed={vote === v} disabled={!!vote || busy} onClick={() => void cast(v)}
       className={clsx('inline-flex min-h-[2.75rem] items-center gap-2 rounded-full border px-4 font-semibold transition-colors',
-        vote === v ? (v === 'good' ? 'border-go bg-go text-on-brand' : 'border-danger bg-danger text-on-brand') : 'border-on-deep/40 hover:bg-on-deep/10')}>
+        vote === v ? picked[v] : vote ? 'border-on-deep/20 opacity-40' : 'border-on-deep/40 hover:bg-on-deep/10')}>
       <Icon size={18} aria-hidden />{label}
     </button>);
   return (
     <div className="w-full space-y-2 rounded-md bg-on-deep/10 p-3">
       <p className="text-sm font-semibold">{vote ? 'Thanks for your feedback.' : `How was your call with ${name}?`}</p>
-      <div className="flex justify-center gap-2">{btn('good', 'Good', ThumbsUp)}{btn('bad', 'Bad', ThumbsDown)}</div>
+      <div className="flex flex-wrap justify-center gap-2">{btn('good', 'Good', ThumbsUp)}{btn('bad', 'Bad', ThumbsDown)}{btn('no_connect', "Didn't connect", WifiOff)}</div>
       {error && <p role="alert" className="text-xs">{error}</p>}
     </div>
   );

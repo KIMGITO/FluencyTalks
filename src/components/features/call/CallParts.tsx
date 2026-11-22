@@ -50,7 +50,7 @@ export function VideoTile({ video, audio, name, caption, avatar, mirrored, small
   caption?: string;
   avatar?: string | null; mirrored?: boolean; small?: boolean;
   micOn?: boolean; speaking?: boolean; level?: () => number; label?: string;
-  /** Said when there's no picture, e.g. "Camera off". Left out for a voice call, where no one has a camera. */
+  /** Shown as an icon when there's no picture; the text (e.g. "Camera off") is its screen-reader label. Left out for a voice call, where no one has a camera. */
   cameraNote?: string;
 }) {
   const v = useRef<HTMLVideoElement>(null); const a = useRef<HTMLAudioElement>(null);
@@ -67,7 +67,7 @@ export function VideoTile({ video, audio, name, caption, avatar, mirrored, small
               <Avatar name={name} src={avatar} size={small ? 'md' : 'xl'} />
             </span>
             {!small && <VoiceWave level={level} speaking={speaking && micOn} size="lg" />}
-            {!small && cameraNote && <span className="flex items-center gap-1.5 rounded-full bg-deep/70 px-3 py-1 text-xs text-on-deep/90"><VideoOff size={13} aria-hidden />{cameraNote}</span>}
+            {!small && cameraNote && <span role="img" aria-label={cameraNote} title={cameraNote} className="flex h-8 w-8 items-center justify-center rounded-full bg-deep/70 text-on-deep/90"><VideoOff size={15} aria-hidden /></span>}
           </div>)}
       {audio && <audio ref={a} autoPlay />}
       <figcaption className={clsx('absolute flex items-center gap-1.5 rounded-sm bg-deep/70 text-on-deep', small ? 'bottom-1 left-1 px-1.5 py-0.5 text-[0.7rem]' : 'bottom-2 left-2 px-2 py-1 text-xs')}>

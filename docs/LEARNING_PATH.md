@@ -15,7 +15,7 @@ Changed by the owner on 2026-11-21 (`20261121100600_levels_people_topics.sql`): 
 - **Passing a level**: at least `partners_needed` (5) different assessors and a **cumulative** average of at least `pass_pct` (80%) across all that level's topic calls. Passing opens the next level (`evaluate_band`).
 - **Anti-abuse**: from B1 up an assessor's score counts once their account is `settle_days` (7) old; an hourly sweep (`sweep_settling_levels`) picks these up. Assessments from suspended or banned accounts don't count.
 - **Anonymous**: learners see averages per criterion and comments, never who gave which score. After a call, the learner sees that call's score from their partner.
-- **Level** = the highest level passed in the language being learned (`evaluate_level`). B1+ rights follow it.
+- **Level** = the highest level passed in the language being learned (`evaluate_level`). Rights follow the call-rating rule: a passed level lets you correct learners working below it; teaching posts are for native speakers only.
 - **Placement**: progress starts at the level declared at sign-up; levels below are "skipped", not passed.
 - **Migration**: a level counts as passed if any of its topics was passed under the old 25-topic path, so nobody's verified level changed.
 

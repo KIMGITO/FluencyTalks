@@ -29,7 +29,11 @@ export function IncomingCallBanner() {
   }, []);
   const ringing = calls.find((c) => c.my_invitation === 'pending' && c.status === 'ringing' && Date.parse(c.ring_expires_at) > now);
   const stillIn = calls.find((c) => c.my_invitation === 'accepted' && c.status === 'active');
-  const shown = ringing ?? stillIn;
+  // Only the screen for this very call shows it itself. Every other page, the call-ended and rating screens
+  // included, gets the banner on top. Not while you're live in another call on its own screen, though.
+  const onScreen = (id?: string) => !!id && pathname === `/call/${id}`;
+  const busyHere = !!stillIn && onScreen(stillIn.call_id);
+  const shown = ringing && !onScreen(ringing.call_id) && !busyHere ? ringing : stillIn && !onScreen(stillIn.call_id) ? stillIn : undefined;
   useEffect(() => { if (!shown) return; const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, [shown]);
   // A background tab shows it in its title, since a banner can't be seen there.
   useEffect(() => {
@@ -37,8 +41,8 @@ export function IncomingCallBanner() {
     const before = document.title; document.title = `Incoming call from ${ringing.other_name ?? 'a partner'}`;
     return () => { document.title = before; };
   }, [ringing?.call_id]);
-  // It rings until it's answered, declined or runs out. The call screen rings on its own, so not there.
-  const ringsHere = !!ringing && !pathname.startsWith('/call/');
+  // It rings until it's answered, declined or runs out. That call's own screen rings on its own, so not there.
+  const ringsHere = !!ringing && shown === ringing;
   useEffect(() => (ringsHere ? ring('incoming') : undefined), [ringsHere, ringing?.call_id]);
   // Tell the caller it's ringing here, once per call.
   const told = useRef(new Set<string>());
@@ -48,14 +52,14 @@ export function IncomingCallBanner() {
   }, [ringing?.call_id]);
   const [busy, setBusy] = useState(false);
 
-  if (!shown || pathname.startsWith('/call/')) return null;
+  if (!shown) return null;
   const name = shown.other_name || shown.other_username || 'Your partner';
   // Answer goes straight into the call, camera and microphone on; Rejoin opens the screen first.
   const open = (answer: boolean) => nav(`/call/${shown.call_id}`, { state: { name, avatar: shown.other_avatar, answer } });
   const decline = () => { setBusy(true); setError(''); return respondCallInvite(shown.call_id, false).then(() => setCalls((c) => c.filter((x) => x.call_id !== shown.call_id))).catch((e) => setError(userMessage(e))).finally(() => setBusy(false)); };
   const hangUp = () => callControl(shown.call_id, 'leave').then(() => setCalls((c) => c.filter((x) => x.call_id !== shown.call_id))).catch((e) => setError(userMessage(e)));
-  if (ringing) {
-    const left = Math.max(0, Math.ceil((Date.parse(ringing.ring_expires_at) - now) / 1000));
+  if (shown === ringing) {
+    const left = Math.max(0, Math.ceil((Date.parse(shown.ring_expires_at) - now) / 1000));
     // A ringing call covers whatever page is open, like a phone's call screen.
     return createPortal(
       <div role="alertdialog" aria-modal="true" aria-live="assertive" aria-label={`${name} is calling you`}
@@ -122,7 +126,9 @@ export function CallLogEntry({ row, myId, userId, name, avatar, onHidden }: { ro
   const rowRef = useRef<HTMLDivElement>(null);
   // Like a message: a long press (or right click) offers to delete it. The bin button does the same.
   useMessageGestures(rowRef, { onSwipeRight: () => undefined, onLongPress: () => setConfirm(true) });
+  // Red for every call that didn't connect: missed, declined, cancelled or not answered.
   const missed = !row.outgoing && !row.attended;
+  const failed = !row.attended;
   const text = endedText({ status: row.status, end_reason: row.end_reason, started_at: row.started_at, ended_at: row.ended_at, initiated_by: row.outgoing ? myId ?? null : null }, myId, name);
   const length = row.attended && row.started_at && row.ended_at ? formatDuration((Date.parse(row.ended_at) - Date.parse(row.started_at)) / 1000) : '';
   const Icon = missed ? PhoneMissed : row.outgoing ? PhoneOutgoing : PhoneIncoming;
@@ -131,7 +137,7 @@ export function CallLogEntry({ row, myId, userId, name, avatar, onHidden }: { ro
   return (
     <div ref={rowRef} className="group my-2 flex items-center justify-center gap-1" onContextMenu={(e) => { e.preventDefault(); setConfirm(true); }}>
       <button type="button" onClick={() => nav(`/call/new?to=${userId}`, { state: { name, avatar } })} aria-label={`${title}${length ? `, ${length}` : ''}, ${at}. Call ${name} again`}
-        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs hover:bg-surface-2 ${missed ? 'border-danger/40 text-danger' : 'border-border text-muted'}`}>
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs hover:bg-surface-2 ${failed ? 'border-danger/40 text-danger' : 'border-border text-muted'}`}>
         <Icon size={14} aria-hidden />
         <span className="font-semibold">{title}</span>
         {length && <span>· {length}</span>}

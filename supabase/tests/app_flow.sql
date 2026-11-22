@@ -51,6 +51,21 @@ begin
   select u, lang, l.band from path_levels l where l.rank = public.band_rank(public.topic_band(upto)) + 1 on conflict do nothing;
   perform public.evaluate_level(u);
 end $$;
+-- Two people as partners (an accepted connection), as request_connection + respond_connection would leave them.
+create or replace function tt.connect(a uuid, b uuid) returns void language sql security definer set search_path = public as $$
+  insert into connections (requester_id, addressee_id, status, accepted_at) values (a, b, 'accepted', now()) on conflict do nothing $$;
+-- Chats that tests build straight into the tables stand for partners talking, so their members are made partners.
+create or replace function tt.chat_means_partners() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into connections (requester_id, addressee_id, status, accepted_at)
+  select new.user_id, m.user_id, 'accepted', now() from conversation_members m
+  where m.conversation_id = new.conversation_id and m.user_id <> new.user_id and not public.is_connected(new.user_id, m.user_id)
+  on conflict do nothing;
+  return null;
+end $$;
+create trigger tt_chat_means_partners after insert on public.conversation_members for each row execute function tt.chat_means_partners();
+create or replace function tt.ask(a uuid, b uuid) returns void language sql security definer set search_path = public as $$
+  insert into connections (requester_id, addressee_id) values (a, b) on conflict do nothing $$;
 grant usage on schema tt to authenticated;
 grant execute on all functions in schema tt to authenticated;
 
@@ -176,12 +191,15 @@ end $$;
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
 
 -- ============ 4. MESSAGING ============
+-- Like calls, only partners message each other.
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
+select tt.expect_error($q$select public.start_conversation('00000000-0000-0000-0000-0000000000b2')$q$, 'not_connected');
+select tt.connect('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b2');
 create temp table ctx as select public.start_conversation('00000000-0000-0000-0000-0000000000b2') as conv;
 grant select on ctx to public;
 select tt.as_user('00000000-0000-0000-0000-0000000000b2');
 do $$ begin
-  assert (select status from public.conversation_members where conversation_id = (select conv from ctx) and user_id = auth.uid()) = 'request', 'first message from a stranger is a request';
+  assert (select status from public.conversation_members where conversation_id = (select conv from ctx) and user_id = auth.uid()) = 'active', 'a partner''s chat opens straight away';
 end $$;
 select public.respond_message_request((select conv from ctx), true);
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
@@ -505,19 +523,21 @@ delete from public.conversations where id = '00000000-0000-0000-0000-0000000fee0
 do $$ begin assert (select last_chatted_at from public.home_feed(50, 50) where username = 'teacher') is null, 'never chatted: nothing to say'; end $$;
 set role authenticated;
 
--- A learner posts in their learning language only from B1; the native language always works.
+-- Teaching (Library posts) is for native speakers only: a learner's level, even verified B1, doesn't open it.
 select tt.expect_error($q$select public.post_contribution('Xin chào', null, 'vie', 'phrase', null, null)$q$, 'not_contribution_eligible');
 select public.post_contribution('Habari', null, 'swh', 'phrase', null, null);
 reset role; select set_config('app.bypass_protect', 'on', false);
 update public.profiles set verified_level = 'B1' where id = '00000000-0000-0000-0000-0000000000a1';   -- as if earned
 select set_config('app.bypass_protect', 'off', false); set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
-select public.post_contribution('Xin chào', null, 'vie', 'phrase', null, null);
-reset role; select set_config('app.bypass_protect', 'on', false);
+select tt.expect_error($q$select public.post_contribution('Xin chào', null, 'vie', 'phrase', null, null)$q$, 'not_contribution_eligible');
+reset role;
+insert into public.contribution_posts (user_id, language_id, phrase) values ('00000000-0000-0000-0000-0000000000a1', 'vie', 'Xin chào');   -- posted under the old B1 rule
+select set_config('app.bypass_protect', 'on', false);
 update public.profiles set verified_level = null where id = '00000000-0000-0000-0000-0000000000a1';
 select set_config('app.bypass_protect', 'off', false); set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-0000000000a1');
--- Below B1 again: the post may keep its language, but nothing moves into that language.
+-- An older post may keep its language, but nothing moves into that language.
 select public.update_contribution((select id from public.contribution_posts where phrase = 'Xin chào'), 'Xin chào bạn', null, 'vie', 'phrase', null, null, 'left');
 select tt.expect_error($q$select public.update_contribution((select id from public.contribution_posts where phrase = 'Habari'), 'Habari', null, 'vie', 'phrase', null, null, 'left')$q$, 'not_contribution_eligible');
 do $$ begin
@@ -568,8 +588,9 @@ insert into auth.users (id, email) values
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000e002');
 select public.set_language_profile('fra', null, null); select public.save_profile('native1', 'N1', '', 'Europe/Paris', false, null, null);
+-- native2 is a native German speaker beginning French (A1), so Lena, once past B1, may correct them.
 select tt.as_user('00000000-0000-0000-0000-00000000e003');
-select public.set_language_profile('fra', null, null); select public.save_profile('native2', 'N2', '', 'Europe/Paris', false, null, null);
+select public.set_language_profile('deu', 'fra', 'A1'); select public.save_profile('native2', 'N2', '', 'Europe/Berlin', false, null, null);
 -- Lena claims C1 in French on day one: that is allowed, and it unlocks nothing.
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
 select public.set_language_profile('eng', 'fra', 'C1'); select public.save_profile('lena', 'Lena', '', 'Europe/London', false, null, null);
@@ -616,11 +637,16 @@ do $$ declare p jsonb := public.my_path(); begin
   assert exists (select 1 from public.notifications where user_id = auth.uid() and type = 'level_up' and data->>'level' = 'B1'), 'told about the promotion';
   assert (select count(*) from public.list_notifications() n where n.type = 'level_up' and n.data->>'level' = 'B1') = 1, 'a notification with no actor still lists';
 end $$;
-select public.post_contribution('Bonjour à tous', null, 'fra', 'phrase', null, null);
+-- Passing B1 lets her correct learners below her level, but teaching stays with native speakers.
+select tt.expect_error($q$select public.post_contribution('Bonjour à tous', null, 'fra', 'phrase', null, null)$q$, 'not_contribution_eligible');
+do $$ begin
+  assert public.can_correct_language(auth.uid(), 'fra', '00000000-0000-0000-0000-00000000e003'), 'past B1, she may correct an A1 learner';
+  assert not public.can_correct_language(auth.uid(), 'fra', '00000000-0000-0000-0000-00000000e002'), 'but never a native speaker';
+end $$;
 select public.set_language_profile('eng', 'fra', 'A1');
 do $$ begin assert (select learning_level from public.profiles where id = auth.uid()) = 'B1', 'cannot go below what was earned'; end $$;
 
--- Helpfulness: Lena (B1) corrects native2's French. Ratings come from the message author only, after a reply.
+-- Helpfulness: Lena (B1) corrects native2's (A1) French. Ratings come from the message author only, after a reply.
 select tt.as_user('00000000-0000-0000-0000-00000000e003');
 create temp table n2_msg as select (public.send_message((select c2 from lena_conv), 'Je suis tres content de vous voir', null, 'fra')).id as id; grant select on n2_msg to public;
 select tt.as_user('00000000-0000-0000-0000-00000000e001');
@@ -704,7 +730,8 @@ set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000f001');
 do $$ begin
   assert (select verified_level from public.profiles where id = auth.uid()) = 'B1', 'passing a B1 topic reaches B1';
-  assert public.can_correct_language(auth.uid(), 'fra'), 'and brings the rights';
+  assert public.can_correct_language(auth.uid(), 'fra', '00000000-0000-0000-0000-00000000e003'), 'and brings the right to correct those below her';
+  assert not public.can_correct_language(auth.uid(), 'fra'), 'but not to teach';
   assert (select learning_level from public.profiles where id = auth.uid()) = 'C1', 'the claim stays a claim';
 end $$;
 -- Cards can tell the two apart.
@@ -1402,6 +1429,7 @@ update public.profiles set onboarding_done = true, native_language_id = 'swh', l
 update public.profiles set onboarding_done = true, native_language_id = 'nld', created_at = now() - interval '30 days' where id in ('00000000-0000-0000-0000-0000c0de0002', '00000000-0000-0000-0000-0000c0de0004');
 update public.profiles set onboarding_done = true, native_language_id = 'swh', learning_language_id = 'nld', learning_level = 'B2', verified_level = 'B2', created_at = now() - interval '30 days' where id = '00000000-0000-0000-0000-0000c0de0003';
 update public.profiles set onboarding_done = true, native_language_id = 'nld', created_at = now() where id = '00000000-0000-0000-0000-0000c0de0005';
+select tt.pass_topics('00000000-0000-0000-0000-0000c0de0003', 'nld', 56);   -- B2 passed on calls, as the level above says
 select set_config('app.bypass_protect', 'off', false);
 set role authenticated;
 
@@ -1882,7 +1910,7 @@ reset role; set role anon;
 do $$ begin
   assert (select count(*) from public.faq_items where question = 'Q flow?') = 0, 'a hidden question is not public';
   assert (select count(*) from public.faq_items where on_home) > 0, 'the home page has questions';
-  assert (select count(*) from public.faq_items) = 21, 'the seeded questions are public';
+  assert (select count(*) from public.faq_items) = 24, 'the seeded questions are public';
 end $$;
 reset role; set role authenticated;
 select tt.as_staff('00000000-0000-0000-0000-00000000ee09');
@@ -1899,7 +1927,7 @@ select set_config('app.staff_change', 'off', false);
 
 reset role;
 -- ============ calls: one-to-one, invitation only ============
--- f1 calls f2 (accepted chat). f3 is a stranger, f4 only sent a request, f5 blocked f1.
+-- f1 calls f2 (partners). f3 is a stranger, f4 only has a partner request, f5 blocked f1.
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'call1@test.com'), ('00000000-0000-0000-0000-0000000000f2', 'call2@test.com'),
   ('00000000-0000-0000-0000-0000000000f3', 'call3@test.com'), ('00000000-0000-0000-0000-0000000000f4', 'call4@test.com'),
@@ -1908,9 +1936,11 @@ create temp table tc (k text primary key, id uuid);
 grant all on tc to authenticated;
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-0000000000f1');
+select tt.connect('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000f2');
+select tt.connect('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000f5');
 do $$ declare c uuid; begin
   c := public.start_conversation('00000000-0000-0000-0000-0000000000f2'); insert into tc values ('chat12', c);
-  perform public.start_conversation('00000000-0000-0000-0000-0000000000f4');
+  perform tt.ask(auth.uid(), '00000000-0000-0000-0000-0000000000f4');   -- asked, not accepted
   c := public.start_conversation('00000000-0000-0000-0000-0000000000f5'); insert into tc values ('chat15', c);
 end $$;
 select tt.as_user('00000000-0000-0000-0000-0000000000f2');
@@ -2095,7 +2125,7 @@ select tt.expect_error($q$select public.get_call((select id from tc where k = 'c
 
 -- Deleting an account mid-call ends the call for the other person.
 select tt.as_user('00000000-0000-0000-0000-0000000000f4');
-select public.respond_message_request((select conversation_id from public.conversation_members where user_id = '00000000-0000-0000-0000-0000000000f4' limit 1), true);
+select public.respond_connection('00000000-0000-0000-0000-0000000000f1', true);
 select tt.as_user('00000000-0000-0000-0000-0000000000f1');
 do $$ declare c uuid; begin c := public.start_call('00000000-0000-0000-0000-0000000000f4'); insert into tc values ('call6', c); end $$;
 reset role;
@@ -2234,7 +2264,7 @@ do $$ declare s record; begin
   perform public.respond_connection('00000000-0000-0000-0000-00000000aa02', true);
   select * into s from public.person_status(array['00000000-0000-0000-0000-00000000aa02'::uuid]);
   assert s.connection = 'connected' and s.can_call and not s.in_call, 'connected people can call: ' || s::text;
-  assert (select count(*) from public.list_connections()) = 1;
+  assert exists (select 1 from public.list_connections() c where c.id = '00000000-0000-0000-0000-00000000aa02');
 end $$;
 select tt.as_user('00000000-0000-0000-0000-00000000aa02');
 do $$ begin
@@ -2251,11 +2281,11 @@ select tt.expect_error($q$insert into public.connections (requester_id, addresse
 select public.block_user('00000000-0000-0000-0000-00000000aa03');
 do $$ begin assert not exists (select 1 from public.connections where '00000000-0000-0000-0000-00000000aa03' in (requester_id, addressee_id) and '00000000-0000-0000-0000-00000000aa08' in (requester_id, addressee_id)); end $$;
 
--- Votes: only after a call both joined, one per person, changeable; profiles show a count of good calls.
+-- Votes: only after a call both joined, one per person and kept once given; profiles show a count of good calls.
 select tt.as_user('00000000-0000-0000-0000-00000000aa01');
 select tt.expect_error($q$select public.vote_call((select call_id from tt.path_calls where k = 7), 'meh')$q$, 'invalid_input');
-select public.vote_call((select call_id from tt.path_calls where k = 7), 'bad');
 select public.vote_call((select call_id from tt.path_calls where k = 7), 'good');
+select tt.expect_error($q$select public.vote_call((select call_id from tt.path_calls where k = 7), 'no_connect')$q$, 'call_already_rated');
 do $$ begin
   assert public.my_call_vote((select call_id from tt.path_calls where k = 7)) = 'good';
   assert (select good_calls from public.person_status(array['00000000-0000-0000-0000-00000000aa07'::uuid])) = 1, 'one good call';
@@ -2343,11 +2373,14 @@ select set_config('app.bypass_protect', 'off', false);
 set role authenticated;
 select tt.as_user('00000000-0000-0000-0000-00000000ac02'); select public.set_language_profile('eng', 'vie', 'A1'); select public.save_profile('kidtwo', 'Kid2', '', 'Europe/London', false, null, null);
 select tt.as_user('00000000-0000-0000-0000-00000000ac03'); select public.set_language_profile('eng', 'vie', 'A1'); select public.save_profile('grownup', 'Grown', '', 'Europe/London', false, null, null);
--- Kid1 follows the adult; the adult's message is still a request.
+-- Kid1 follows the adult; the adult still can't message them. Only once kid1 asks to be partners and the adult accepts.
 select tt.as_user('00000000-0000-0000-0000-00000000ac01'); select public.follow_user('00000000-0000-0000-0000-00000000ac03');
 select tt.as_user('00000000-0000-0000-0000-00000000ac03');
+select tt.expect_error($q$select public.start_conversation('00000000-0000-0000-0000-00000000ac01')$q$, 'not_connected');
+select tt.as_user('00000000-0000-0000-0000-00000000ac01'); select public.request_connection('00000000-0000-0000-0000-00000000ac03');
+select tt.as_user('00000000-0000-0000-0000-00000000ac03'); select public.respond_connection('00000000-0000-0000-0000-00000000ac01', true);
 do $$ declare c uuid := public.start_conversation('00000000-0000-0000-0000-00000000ac01'); begin
-  assert (select status from public.conversation_members where conversation_id = c and user_id = '00000000-0000-0000-0000-00000000ac01') = 'request', 'an adult''s first message to a minor is a request';
+  assert (select status from public.conversation_members where conversation_id = c and user_id = '00000000-0000-0000-0000-00000000ac01') = 'active', 'the minor chose the partnership, so the chat is open';
   assert not exists (select 1 from public.search_people('kid') s where s.username in ('kidone', 'kidtwo')), 'adults do not find minors';
 end $$;
 select tt.as_user('00000000-0000-0000-0000-00000000ac01');
@@ -2368,6 +2401,7 @@ do $$ declare c uuid; j jsonb; begin
   assert not public.call_voice_only_with('00000000-0000-0000-0000-00000000ac02'), 'no answer about someone you can''t call';
   perform tt.as_user('00000000-0000-0000-0000-00000000ac01');
 end $$;
+select tt.connect('00000000-0000-0000-0000-00000000ac01', '00000000-0000-0000-0000-00000000ac02');
 do $$ declare c uuid := public.start_conversation('00000000-0000-0000-0000-00000000ac02'); begin
   perform tt.as_user('00000000-0000-0000-0000-00000000ac02');
   perform public.respond_message_request(c, true);

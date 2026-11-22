@@ -1,6 +1,6 @@
 # The Fluency Talks
 
-> The Fluency Talks is a free language exchange web app. You choose the language you speak and the one you are learning, it shows you native speakers of the language you are learning and learners of the language you speak (a perfect two-way swap is ranked first but not required), and they correct your messages inside the chat. Accepted corrections are saved to your personal phrasebook.
+> The Fluency Talks is a free language exchange web app. You choose the language you speak and the one you are learning, it shows you native speakers of the language you are learning and learners of the language you speak (a perfect two-way swap is ranked first but not required). You add them as partners and talk on one-to-one video calls about topics that match your level. Partners rate your topic calls, and those ratings decide when you pass each level from A1 to C2. Between calls you chat in writing, partners correct your messages inside the chat, and accepted corrections are saved to your personal phrasebook.
 
 ## Key facts
 
@@ -8,25 +8,29 @@
 - Price: free. There are no paid plans.
 - Languages: 40 at launch: English, Swahili, Vietnamese, French, Spanish, German, Portuguese, Italian, Chinese, Cantonese, Japanese, Korean, Hindi, Arabic, Russian, Turkish, Indonesian, Thai, Dutch, Polish, Ukrainian, Greek, Hebrew, Persian, Bengali, Urdu, Tagalog, Malay, Tamil, Punjabi, Swedish, Czech, Romanian, Amharic, Somali, Yoruba, Igbo, Hausa, Zulu and Kinyarwanda. Full list: https://thefluencytalks.com/languages
 - Who it is for: language learners at any CEFR level from A1 to C2, and native or fluent speakers (B1 and above) who want to help others.
-- Practice format: one-to-one text chat with matched partners. There are no voice or video calls.
-- Platform: a web app that runs in the browser; there is nothing to download. You must be 16 or older.
-- Corrections: a native speaker, or a learner at B1 or above, edits your sentence where you wrote it; you see exactly what changed and accept it or not. Example: an English speaker learning Vietnamese writes "Tôi là đói" and a native speaker corrects it to "Tôi đói" ("I am hungry").
+- Practice format: one-to-one video calls with partners, plus one-to-one text chat. Calls are never recorded. Group calls are not available yet.
+- Topics: more than 80 conversation topics, 14 to 15 per level from A1 to C2, each with a summary, prompts and extra ideas. You can only pick a topic at or below the lowest level of the two people in the call.
+- Levels: a level is earned, not claimed. A topic call counts when both people talk for at least 10 minutes. The partner rates it on five criteria, and a learner passes a level once 5 different partners have rated them with a cumulative average of 80% or more. Raters are native speakers or people who passed a higher level. Ratings are anonymous.
+- Partners: you send a partner request; once accepted, you can call each other and see who is online or already on a call. After every call each person votes it good or bad, and profiles show only the number of good calls.
+- Platform: a web app that runs in the browser; there is nothing to download.
+- Age: 12 or older. Members aged 12 to 15 need a parent or guardian's agreement by email before they can use the app, are hidden from adults in search, and every call with them is voice only.
+- Corrections: a native speaker, or a learner who has passed a higher level, edits your sentence where you wrote it; you see exactly what changed and accept it or not. Example: an English speaker learning Vietnamese writes "Tôi là đói" and a native speaker corrects it to "Tôi đói" ("I am hungry").
 - Phrasebook and translation: accepted corrections are saved to your phrasebook automatically, you can save any other message, and you can translate any message; every translation is kept on your Learning page.
 - Matching: by language pair (your native language and the one you are learning), not by popularity. There are no followers or likes.
 - Points: every user starts with 100 points. An accepted correction earns the corrector 5 points. A bounty costs 50 points and puts a question in front of people qualified in that language; the helper gets the 50 points when the asker accepts the answer, and if no answer is accepted within 48 hours the points are refunded. Up to 3 open bounties at a time.
-- Community library: native speakers and learners at B1 or above can post phrases, idioms, usage notes and grammar tips, with an optional photo, for other members to read and save.
-- Safety: new contacts arrive as message requests you can decline; you can block or report anyone; reports are reviewed by admins.
+- Community library: native speakers can post phrases, idioms, usage notes and grammar tips, with an optional photo, for other members to read and save.
+- Safety: new contacts arrive as partner or message requests you can decline; you can block or report anyone; reports are reviewed by admins.
 
 ## How to start
 
 1. Create a free account: https://thefluencytalks.com/signup
 2. Choose your native language and the language (and level) you are learning.
-3. Message a suggested partner and start chatting.
+3. Add a suggested person as a partner, then call them and pick a topic at your level.
 
 ## Pages
 
 - [Home: what it is, how it works, FAQ](https://thefluencytalks.com/)
-- [How it works: FAQ on practice, corrections, points, bounties and safety](https://thefluencytalks.com/faq)
+- [How it works: FAQ on calls, levels, corrections, points, bounties and safety](https://thefluencytalks.com/faq)
 - [All 40 languages, each with its own page](https://thefluencytalks.com/languages)
 - [About The Fluency Talks](https://thefluencytalks.com/about)
 - [Blog: language learning guides](https://thefluencytalks.com/blog)

@@ -5,7 +5,8 @@ import { LanguageChip, languageEntry } from './LanguageChip';
 import { usePresenceOf } from '@/hooks/usePresence';
 import { CountryBadge } from './CountryBadge';
 import { MatchBadge } from './MatchBadge';
-import { MessageButton } from './MessageButton';
+import { MessageOrPartner } from './MessageButton';
+import type { PersonStatus } from '@/services/connections';
 import { UserMenu } from './UserMenu';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import type { FeedPerson, Person } from '@/types/db';
@@ -15,8 +16,12 @@ export function ProfileCard({
   person,
   match,
   onHidden,
+  status,
+  onStatus,
 }: {
   person: FeedPerson | Person;
+  status?: PersonStatus;
+  onStatus: (id: string, p: Partial<PersonStatus>) => void;
   match?: { kind: FeedPerson['match_kind']; language?: string | null };
   onHidden?: (id: string) => void;
 }) {
@@ -84,7 +89,7 @@ export function ProfileCard({
         />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-1.5">
-        <MessageButton userId={person.id} />
+        <MessageOrPartner userId={person.id} name={person.display_name ?? ''} status={status} onChange={onStatus} />
       </div>
     </Card>
   );

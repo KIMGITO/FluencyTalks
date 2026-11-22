@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { rpc } from '@/lib/api';
-import { qualifiedLanguages } from '@/lib/corrections';
+import { teachingLanguages } from '@/lib/corrections';
 import { PRACTICE_TYPES, REFERENCE_TYPES, type PracticeType } from '@/lib/postTypes';
 import type { ContributionPost, Person, SavedPartner } from '@/types/db';
 
@@ -109,5 +109,5 @@ export const getContribution = async (id: string): Promise<ContributionPost | nu
 export const deleteContribution = (id: string) => rpc<string>('delete_contribution', { p_id: id });
 
 
-/** Can this person post at all? Anyone with a language can: practice posts need no level. What they can teach is qualifiedLanguages' answer (the server checks too). */
-export const isContributionEligible = (me: Parameters<typeof qualifiedLanguages>[0]) => qualifiedLanguages(me).length > 0 || !!me?.learning_language_id;
+/** Can this person post at all? Anyone with a language can: practice posts need no level. What they can teach is teachingLanguages' answer (the server checks too). */
+export const isContributionEligible = (me: Parameters<typeof teachingLanguages>[0]) => teachingLanguages(me).length > 0 || !!me?.learning_language_id;

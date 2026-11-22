@@ -103,6 +103,9 @@ async function main() {
   assert.equal((await a.c.from('user_languages').select('*').eq('user_id', a.id)).data?.length, 2, 'own languages');
   step('language rows are private to their owner');
 
+  assert.equal((await a.c.rpc('start_conversation', { p_target: b.id })).error?.message, 'not_connected', 'only partners message');
+  await a.c.rpc('request_connection', { p_user: b.id });
+  assert.equal((await b.c.rpc('respond_connection', { p_user: a.id, p_accept: true })).error, null, 'partners');
   const conv = await a.c.rpc('start_conversation', { p_target: b.id });
   assert.equal(conv.error, null, `start_conversation: ${conv.error?.message}`);
   const convId = conv.data;
@@ -286,8 +289,8 @@ async function main() {
 
   // Calls, through the real API: members only, no room names, no direct writes, nothing for signed-out visitors.
   const ca = await learner('callera', 'eng', 'spa'); const cb = await learner('callerb', 'spa', 'eng'); const cs = await learner('callers', 'eng', 'spa');
-  let cr = await ca.c.rpc('start_conversation', { p_target: cb.id }); assert.equal(cr.error, null, `chat: ${cr.error?.message}`);
-  cr = await cb.c.rpc('respond_message_request', { p_conv: cr.data, p_accept: true }); assert.equal(cr.error, null);
+  await ca.c.rpc('request_connection', { p_user: cb.id });
+  let cr = await cb.c.rpc('respond_connection', { p_user: ca.id, p_accept: true }); assert.equal(cr.error, null, `partners: ${cr.error?.message}`);
   cr = await ca.c.rpc('start_call', { p_callee: cb.id }); assert.equal(cr.error, null, `start_call: ${cr.error?.message}`);
   const callId = cr.data;
   assert.equal((await cs.c.rpc('start_call', { p_callee: cb.id })).error?.message, 'user_unavailable', 'a stranger cannot call');

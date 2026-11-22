@@ -3,22 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronUp, MessageSquare, Mic, MicOff, Phone, RefreshCw, Settings2, SwitchCamera, Video, VideoOff, Volume2, WifiOff } from 'lucide-react';
+import { useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ChevronDown, ChevronUp, Clock, History, MessageCircle, MessageSquare, PhoneMissed, PhoneOff, X, Mic, MicOff, Phone, RefreshCw, Settings2, SwitchCamera, Video, VideoOff, Volume2, WifiOff } from 'lucide-react';
 import { Avatar, Button, Card, Modal, Spinner } from '@/components/ui';
 import { CallChat, CallStage, ControlButton, Dots, HangUpIcon, LayoutPicker, layoutFrom, VideoTile, type CallLayout, type Corner } from '@/components/features/call/CallParts';
 import { callControl, getCall, getCallPeer, getCallToken, reportCallConnected, reportCallRinging, respondCallInvite, startCall, subscribeToMyCalls } from '@/services/calls';
-import { CallMedia, canFlipCamera, Preview, type CallNote, type Facing, type MediaSnapshot } from '@/services/callMedia';
+import { CallMedia, canFlipCamera, Preview, type CallLevel, type CallNote, type Facing, type MediaSnapshot } from '@/services/callMedia';
 import { CallVote, DeviceMenu, TopicStrip, type ShownTopic } from '@/components/features/call/CallTopic';
 import { TopicPicker } from '@/components/features/call/TopicPicker';
 import { AssessForm } from '@/components/features/call/AssessForm';
 import { useProfileStore } from '@/store/profileStore';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { ring } from '@/lib/ringtone';
-import { getTopicCall, listTopics, startTopicCall, type Band, type Topic, type TopicCall } from '@/services/path';
+import { BANDS, getTopicCall, listTopics, startTopicCall, type Band, type Topic, type TopicCall } from '@/services/path';
 import { callVoiceOnlyWith } from '@/services/age';
 import { callPhase, deviceErrorText, endedText, formatDuration, isLive, me as myPart, others, type CallInfo, type CallPhase } from '@/lib/callState';
 import { userMessage, UserError } from '@/lib/errors';
+import { startConversation } from '@/services/messaging';
 import { ApiError } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useOnline } from '@/hooks/useOnline';
@@ -36,8 +37,22 @@ const remembered = (): { layout: CallLayout; corner: Corner } => {
 /** A mouse or trackpad as the main pointer: a laptop or desktop, where several cameras and speakers are common. */
 const PICK_DEVICES = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+/**
+ * One route serves every call, so React would keep the old call's state ("ended") when "Call again" moves to
+ * /call/new. A fresh screen for each call, except the move (a replace) from /call/new to the id it just created.
+ */
 export default function CallPage() {
-  const { id = '' } = useParams(); const [params] = useSearchParams(); const nav = useNavigate(); const hint = useLocation().state as PeerHint;
+  const { id = '' } = useParams(); const how = useNavigationType();
+  const gen = useRef(0); const prev = useRef(id);
+  // The screen's own move is a replace; answering another call from the incoming banner is a push, so it starts fresh.
+  if (id !== prev.current) { if (prev.current !== 'new' || how !== 'REPLACE') gen.current += 1; prev.current = id; }
+  return <CallScreen key={gen.current} />;
+}
+
+function CallScreen() {
+  const { id = '' } = useParams(); const [params] = useSearchParams(); const nav = useNavigate(); const loc = useLocation(); const hint = loc.state as PeerHint;
+  // Somewhere in the app to go back to (not opened straight from a link or a notification).
+  const canGoBack = loc.key !== 'default';
   const myId = useAuthStore((s) => s.user?.id);
   const online = useOnline();
   const isNew = id === 'new'; const to = params.get('to');
@@ -55,8 +70,28 @@ export default function CallPage() {
   const myName = meProfile?.display_name || meProfile?.username || 'You';
   const myAvatar = resolveAvatar(meProfile?.avatar_url, providerAvatar);
   const level = useProfileStore((s) => (s.me?.verified_level ?? s.me?.learning_level ?? null) as Band | null);
+  const myLearning = meProfile?.learning_language_id ?? null; const myNative = meProfile?.native_language_id ?? null;
+  // The partner's level, sent over the call.
+  const [partnerLevel, setPartnerLevel] = useState<CallLevel | null>(null);
 
   const [call, setCall] = useState<CallInfo | null>(null);
+  // Whoever calls is the one who wants to learn, so the conversation is built on the caller's level. When the other
+  // person is a perfect match (a native speaker of the caller's learning language, or at the caller's level or above
+  // in it) the topics are simply the caller's level, with no level to choose. Otherwise topics never go past the
+  // lower of the two levels: with an A1 partner, only A1 topics.
+  const topicLevel = ((): { band: Band | null; max: Band | null } => {
+    const isBand = (b: unknown): b is Band => BANDS.includes(b as Band);
+    const mine: CallLevel = { band: level, learning: myLearning, native: myNative };
+    const iCalled = isNew || (!!call && call.initiated_by === myId);
+    const learner = iCalled ? mine : partnerLevel; const helper = iCalled ? partnerLevel : mine;
+    if (!learner || !isBand(learner.band)) return { band: null, max: null };
+    if (!helper) return { band: learner.band, max: learner.band };
+    const sameLanguage = !!learner.learning && helper.learning === learner.learning;
+    const native = !!helper.native && helper.native === learner.learning;
+    if (native || (sameLanguage && isBand(helper.band) && BANDS.indexOf(helper.band) >= BANDS.indexOf(learner.band))) return { band: learner.band, max: learner.band };
+    const max = isBand(helper.band) && BANDS.indexOf(helper.band) < BANDS.indexOf(learner.band) ? helper.band : learner.band;
+    return { band: null, max };
+  })();
   const [loadError, setLoadError] = useState('');
   const [snap, setSnap] = useState<MediaSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -86,6 +121,8 @@ export default function CallPage() {
   const [peek, setPeek] = useState<CallNote | null>(null);
   const chatOpenRef = useRef(false); chatOpenRef.current = chatOpen;
   const autoAnswered = useRef(false);
+  // Answer was tapped already: in the in-app ringer, or on the phone's notification (?answer=1).
+  const wantsAnswer = !!hint?.answer || params.get('answer') === '1';
   useEffect(() => { if (isNew && to && !hint?.name) getCallPeer(to).then((p) => p && setPeer({ name: p.display_name || p.username, avatar: p.avatar_url })).catch(() => undefined); }, [isNew, to, hint?.name]);
   const preview = useRef(new Preview()); const media = useRef<CallMedia | null>(null);
   const previewStarted = useRef(false); const previewReady = useRef<Promise<unknown>>(Promise.resolve()); const alive = useRef(true); const callId = useRef(isNew ? '' : id);
@@ -164,6 +201,7 @@ export default function CallPage() {
       setNotes((all) => [...all, n].slice(-200));
       if (!chatOpenRef.current) { setUnread((u) => u + 1); setPeek(n); }
     });
+    m.onLevel(setPartnerLevel);
     m.onTopic((no) => { listTopics().then((all) => { const t = all.find((x) => x.no === no); if (t) setChosen(t); }).catch(() => undefined); });
     const tracks = preview.current.take(); setPreviewVideo(null);
     if (tracks.audio && !mic) await tracks.audio.mute(); if (tracks.video && !cam) await tracks.video.mute();
@@ -194,13 +232,13 @@ export default function CallPage() {
   const answer = () => act(async () => { await respondCallInvite(id, true); await refresh(); await join(id); }, 'Answering…');
   // Answered from the banner: go straight in, with the camera and microphone on, once we know if it's voice only.
   useEffect(() => {
-    if (phase !== 'incoming' || !hint?.answer || voiceOnly === null || autoAnswered.current) return;
+    if (phase !== 'incoming' || !wantsAnswer || voiceOnly === null || autoAnswered.current) return;
     autoAnswered.current = true; void answer();
-  }, [phase, hint?.answer, voiceOnly]);
+  }, [phase, wantsAnswer, voiceOnly]);
   // The phone rings for the person called, and the caller hears it ringing.
   // The caller hears ringing only once it really rings on the other side.
   const rang = !!other?.rang_at;
-  const sound = phase === 'incoming' && !hint?.answer ? 'incoming' : phase === 'ringing' && rang ? 'ringback' : null;
+  const sound = phase === 'incoming' && !wantsAnswer ? 'incoming' : phase === 'ringing' && rang ? 'ringback' : null;
   useEffect(() => { if (phase === 'incoming' && id && !isNew) reportCallRinging(id).catch(() => undefined); }, [phase === 'incoming', id]);
   useEffect(() => (sound ? ring(sound) : undefined), [sound]);
   useEffect(() => { if (!peek) return; const t = setTimeout(() => setPeek(null), 5000); return () => clearTimeout(t); }, [peek]);
@@ -220,6 +258,10 @@ export default function CallPage() {
   const pickTopic = (t: Topic) => { setChosen(t); void media.current?.sendTopic(t.no).catch(() => undefined); };
   // Someone who joins after the topic was picked is told which one is on.
   useEffect(() => { if (remotes > 0 && chosen && media.current) void media.current.sendTopic(chosen.no).catch(() => undefined); }, [remotes > 0]);
+  // Tell whoever joins our level, so both sides hold topics to the lower one.
+  useEffect(() => {
+    if (remotes > 0 && media.current) void media.current.sendLevel({ band: level, learning: myLearning, native: myNative }).catch(() => undefined);
+  }, [remotes > 0, level, myLearning, myNative]);
   const decline = () => act(async () => { stopEverything(); await respondCallInvite(id, false); await refresh(); }, 'Declining…');
   const rejoin = () => act(async () => {
     media.current = null; setSnap(null);
@@ -283,30 +325,48 @@ export default function CallPage() {
     const t = endedText(call, myId, name);
     const canRetry = !!other?.user_id;
     const talked = !!myPart(call, myId)?.joined_at && !!other?.joined_at;
+    const missed = call.end_reason === 'no_answer' || (call.end_reason === 'cancelled' && call.initiated_by !== myId);
+    const StatusIcon = missed ? PhoneMissed : PhoneOff;
+    const length = talked && call.started_at && call.ended_at ? formatDuration((Date.parse(call.ended_at) - Date.parse(call.started_at)) / 1000) : '';
+    const back = () => (canGoBack ? nav(-1) : nav('/messages', { replace: true }));
+    const roundTop = 'inline-flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full bg-on-deep/10 text-on-deep hover:bg-on-deep/20';
     return (
       <Screen>
+        <header className="flex items-center justify-between px-3 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]">
+          <button type="button" onClick={back} aria-label="Back" title="Back" className={roundTop}><ArrowLeft size={20} /></button>
+          <button type="button" onClick={() => nav('/calls', { replace: true })} aria-label="Call history" title="Call history" className={roundTop}><History size={20} /></button>
+        </header>
+
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-sm flex-col items-center gap-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] pt-[calc(env(safe-area-inset-top,0px)+2rem)] text-center">
-            {/* Unmistakable: a red hang-up badge lands on their picture, and the title says it plainly. */}
+          <div className="mx-auto flex min-h-full max-w-sm flex-col items-center justify-center gap-4 px-4 py-6 text-center">
+            {/* Their picture, with how it ended as a small red badge: ended, declined or missed. */}
             <span className="relative inline-flex" role="status" aria-live="assertive">
-              <span className="opacity-60 grayscale"><Avatar name={name} src={avatar} size="xl" /></span>
-              <span className="absolute -bottom-1 -right-1 inline-flex">
-                <span aria-hidden className="ft-end-ring absolute inset-0 rounded-full bg-danger" />
-                <span className="ft-end-in relative inline-flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full border-4 border-deep bg-danger text-on-brand"><HangUpIcon size={20} /></span>
-              </span>
+              <span className="rounded-full p-1 ring-2 ring-on-deep/15"><Avatar name={name} src={avatar} size="xl" /></span>
+              <span className={clsx('ft-end-in absolute -bottom-0.5 -right-0.5 inline-flex h-10 w-10 items-center justify-center rounded-full border-4 border-deep',
+                'bg-danger text-white')}><StatusIcon size={18} aria-hidden /></span>
             </span>
-            <h1 className="ft-end-in mt-2 font-display text-4xl font-bold text-on-deep">{t.title}</h1>
-            <p className="text-sm text-on-deep/70">{name}</p>
-            {t.detail && <p className="text-on-deep/80">{t.detail}</p>}
+            <div className="ft-end-in space-y-1">
+              <h1 className="font-display text-3xl font-bold leading-tight text-on-deep">{name}</h1>
+              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-danger">
+                {t.title}{length && <><span aria-hidden>·</span><Clock size={14} aria-hidden /><span>{length}</span></>}
+              </p>
+              {t.detail && !length && <p className="text-sm text-on-deep/70">{t.detail}</p>}
+            </div>
             {talked && <CallVote callId={call.id} name={name} />}
             {topic && <TopicEnded topic={topic} name={name} rated={rated} onRated={() => setRated(true)} />}
-            <div className="mt-2 flex flex-wrap justify-center gap-2">
-              {canRetry && <Button className="border-go bg-go text-on-brand" onClick={() => nav(`/call/new?to=${other.user_id}`, { state: { name, avatar } })}><Phone size={18} />{call.initiated_by === myId ? 'Call again' : 'Call back'}</Button>}
-              <Button variant="secondary" className="border-on-deep/40 bg-transparent text-on-deep" onClick={() => (window.history.length > 1 ? nav(-1) : nav('/messages'))}>Back</Button>
-            </div>
-            <button type="button" className="text-sm text-on-deep/80 underline underline-offset-4" onClick={() => nav('/calls', { replace: true })}>See call history</button>
           </div>
         </div>
+
+        {/* The next step, as big round buttons like the ones in the call. */}
+        <footer className="border-t border-on-deep/10 px-2 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+          <div className="mx-auto flex max-w-xs items-start justify-center gap-x-4">
+            {canRetry && <ControlButton label={`Message ${name}`} caption="Message" disabled={busy}
+              onClick={() => void act(async () => { nav(`/messages/${await startConversation(other.user_id)}`); }, 'Opening the chat…')}><MessageCircle size={22} /></ControlButton>}
+            {canRetry && <ControlButton label={`Call ${name} again`} caption={call.initiated_by === myId ? 'Call again' : 'Call back'} tone="go"
+              onClick={() => nav(`/call/new?to=${other.user_id}`, { state: { name, avatar } })}>{voiceOnly ? <Phone size={22} /> : <Video size={22} />}</ControlButton>}
+            <ControlButton label="Close" caption="Close" onClick={back}><X size={22} /></ControlButton>
+          </div>
+        </footer>
       </Screen>
     );
   }
@@ -340,6 +400,10 @@ export default function CallPage() {
       {/* Everything floats over a full-screen video: a slim see-through header on top, the buttons at the bottom. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 [text-shadow:0_1px_3px_rgb(0_0_0/0.55)] [&>*]:pointer-events-auto">
       <header className="flex items-center gap-2.5 px-3 pb-1 pt-[calc(env(safe-area-inset-top,0px)+0.4rem)]">
+        {/* Changed your mind before calling: a way out that also turns the camera and microphone off. */}
+        {(phase === 'preview' || phase === 'loading' || phase === 'failed') && (
+          <button type="button" aria-label="Back" title="Back" onClick={() => { stopEverything(); if (canGoBack) nav(-1); else nav('/messages', { replace: true }); }}
+            className="-ml-1 inline-flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center rounded-full bg-deep/30 hover:bg-deep/50"><ArrowLeft size={22} /></button>)}
         <Avatar name={name} src={avatar} size="xs" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold leading-tight">{name}</p>
@@ -389,10 +453,8 @@ export default function CallPage() {
             {deviceErrors.microphone && <p>{deviceErrors.microphone}</p>}
             {deviceErrors.camera && <p>{deviceErrors.camera}{!deviceErrors.microphone && ' You can still talk with sound only.'}</p>}
           </div>)}
-        {(phase === 'preview' || phase === 'incoming') && !deviceErrors.camera && !deviceErrors.microphone && (
-          <p className="text-center text-xs text-on-deep/80">{voiceOnly
-            ? 'Voice call: cameras stay off because a member under 16 is on this call. Nothing is recorded.'
-            : 'Your camera and microphone are used only for this call. Nothing is recorded.'}</p>)}
+        {voiceOnly && (phase === 'preview' || phase === 'incoming') && !deviceErrors.camera && !deviceErrors.microphone && (
+          <p className="text-center text-xs text-on-deep/80">Voice call: cameras stay off because a member under 16 is on this call.</p>)}
         {phase === 'preview' && snap?.ended === 'lost' && <p role="alert" className="text-center text-sm">Your connection dropped. Rejoin when you're back online.</p>}
         {phase === 'failed' && <p role="alert" className="text-center text-sm">{loadError || 'The call could not connect. Check your connection and try again.'}</p>}
         {snap?.needsAudioTap && (
@@ -430,7 +492,7 @@ export default function CallPage() {
         </div>
       </section>
 
-      <TopicPicker open={picking} startBand={level} title="What shall we talk about?" onClose={() => setPicking(false)} onPick={pickTopic} />
+      <TopicPicker open={picking} band={topicLevel.band} startBand={topicLevel.max ?? level} maxBand={topicLevel.max} title="What shall we talk about?" onClose={() => setPicking(false)} onPick={pickTopic} />
       <Modal open={confirmEnd} onClose={() => setConfirmEnd(false)} title="End the call now?">
         <p className="text-sm text-ink">You've talked {Math.floor(minutesTogether)} {Math.floor(minutesTogether) === 1 ? 'minute' : 'minutes'}. A topic call needs {topic?.min_minutes ?? 10} minutes together to be rated. Keep talking and the time keeps counting.</p>
         <div className="flex flex-wrap justify-end gap-2">

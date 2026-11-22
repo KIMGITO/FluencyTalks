@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, AlignLeft, AlignCenter, AlignRight, Camera, Check, GraduationCap, Lock, Languages, MessageCircleQuestion, PencilLine, ScrollText, Sparkles, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, AlignLeft, AlignCenter, AlignRight, Camera, Check, GraduationCap, Languages, MessageCircleQuestion, PencilLine, ScrollText, Sparkles, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Button, DeniedState, Select, Textarea, ThreadSkeleton, Input, CharCount, Notice, Page } from '@/components/ui';
 import { useLanguageStore } from '@/store/languageStore';
-import { qualifiedLanguages } from '@/lib/corrections';
+import { teachingLanguages } from '@/lib/corrections';
 import { useProfileStore } from '@/store/profileStore';
 import { getContribution, isContributionEligible, postContribution, updateContribution, type ContributionPost, type ImageLayout, type TextAlign } from '@/services/library';
 import { useFeedCache } from '@/store/feedCache';
@@ -59,13 +59,11 @@ export default function ContributePage() {
 
   const languageName = useLanguageStore((s) => s.name);
   const me = useProfileStore((s) => s.me);
-  const qualified = qualifiedLanguages(me);   // only languages you are qualified to teach (the server checks too)
+  const qualified = teachingLanguages(me);   // teaching is in your native language (the server checks too)
   // When editing, a post can keep its language even if you no longer qualify (the server allows that too).
   const languages = language && !qualified.includes(language) ? [language, ...qualified] : qualified;
-  // Your learning language before verified B1: shown locked, so its absence explains itself.
-  const lockedLearning = me?.learning_language_id && !languages.includes(me.learning_language_id) ? me.learning_language_id : null;
   const languageNote = (id: string) =>
-    id === me?.native_language_id ? 'Native' : id === me?.learning_language_id && qualified.includes(id) ? `Learning · verified ${me.verified_level}` : 'This post’s language';
+    id === me?.native_language_id ? 'Native' : 'This post’s language';
 
   // A new post starts in your native language.
   useEffect(() => { if (!editId && !language && qualified[0]) setLanguage(qualified[0]); }, [editId, language, qualified[0]]);
@@ -206,12 +204,6 @@ export default function ContributePage() {
                 </>
               )
           ) : null}
-          {lockedLearning && (
-            <p className="flex items-start gap-2 text-sm text-muted">
-              <Lock size={14} aria-hidden className="mt-1 shrink-0" />
-              <span>Teaching in {languageName(lockedLearning)} opens when you're verified at B1, so readers can trust what the Library says. <Link to="/profile/edit" className="underline hover:text-ink">See your progress</Link></span>
-            </p>
-          )}
         </section>
       </Page>
     );
@@ -287,16 +279,6 @@ export default function ContributePage() {
                 {language === id && <Check size={18} aria-hidden className="shrink-0 text-accent" />}
               </button>
             ))}
-            {lockedLearning && (
-              <div className="flex items-center gap-3 rounded-md border border-dashed border-border p-3 opacity-80">
-                <LanguageMark id={lockedLearning} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold text-muted">{languageName(lockedLearning)}</span>
-                  <span className="block text-xs text-muted">Teaching posts open at B1, and practice posts are open now. <Link to="/profile/edit" className="underline hover:text-ink">See your progress</Link></span>
-                </span>
-                <Lock size={16} aria-hidden className="shrink-0 text-muted" />
-              </div>
-            )}
           </div>
         </div>
 

@@ -23,7 +23,7 @@ const LOOK: Partial<Record<NotificationType, { icon: LucideIcon; tone: Tone }>> 
 /** Staff alerts. Learners have their own page, with their own tabs: the database gives each side only its own kind. */
 export function AdminNotifications() {
   const [filter, setFilter] = useState<Filter>('all');
-  const [showPrefs, setShowPrefs] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(() => new URLSearchParams(window.location.search).has('settings'));
   const overview = useAdminStore((s) => s.overview);
   const feed = useNotificationFeed(filter === 'all' ? null : filter);
   return (

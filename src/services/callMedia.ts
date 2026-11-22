@@ -90,6 +90,9 @@ export const canFlipCamera = () => listDevices('videoinput').then((d) => d.lengt
 const NOTES = 'note';
 /** The conversation topic someone picked during a call, by its number. Both sides show it. */
 const TOPIC = 'topic';
+/** Each side's level and languages, so topics can be held to the lower level of the two. Nothing is stored. */
+const LEVEL = 'level';
+export type CallLevel = { band: string | null; learning: string | null; native: string | null };
 const enc = new TextEncoder(); const dec = new TextDecoder();
 
 export class CallMedia {
@@ -108,6 +111,7 @@ export class CallMedia {
   });
   private noteListeners = new Set<(n: CallNote) => void>();
   private topicListeners = new Set<(no: number) => void>();
+  private levelListeners = new Set<(l: CallLevel) => void>();
   private facing: Facing = 'user';
   private listeners = new Set<(s: MediaSnapshot) => void>();
   private state: MediaState = 'idle';
@@ -135,6 +139,15 @@ export class CallMedia {
       RoomEvent.TrackMuted, RoomEvent.TrackUnmuted, RoomEvent.LocalTrackPublished, RoomEvent.LocalTrackUnpublished,
       RoomEvent.ActiveSpeakersChanged, RoomEvent.AudioPlaybackStatusChanged] as const) r.on(ev, emit);
     r.on(RoomEvent.DataReceived, (payload, from, _kind, topic) => {
+      if (topic === LEVEL && from) {
+        try {
+          const m = JSON.parse(dec.decode(payload)) as Record<string, unknown>;
+          const str = (v: unknown) => (typeof v === 'string' && v.length <= 20 ? v : null);
+          const l: CallLevel = { band: str(m.band), learning: str(m.learning), native: str(m.native) };
+          this.levelListeners.forEach((fn) => fn(l));
+        } catch { /* not a level */ }
+        return;
+      }
       if (topic === TOPIC && from) {
         try { const m = JSON.parse(dec.decode(payload)) as { no?: unknown }; if (typeof m.no === 'number' && Number.isInteger(m.no) && m.no > 0) this.topicListeners.forEach((fn) => fn(m.no as number)); } catch { /* not a topic */ }
         return;
@@ -150,6 +163,10 @@ export class CallMedia {
   }
 
   onNote(fn: (n: CallNote) => void) { this.noteListeners.add(fn); return () => { this.noteListeners.delete(fn); }; }
+  onLevel(fn: (l: CallLevel) => void) { this.levelListeners.add(fn); return () => { this.levelListeners.delete(fn); }; }
+  async sendLevel(l: CallLevel) {
+    await this.room.localParticipant.publishData(enc.encode(JSON.stringify(l)), { reliable: true, topic: LEVEL });
+  }
   onTopic(fn: (no: number) => void) { this.topicListeners.add(fn); return () => { this.topicListeners.delete(fn); }; }
   /** Tells the other side which topic is on. Nothing is stored. */
   async sendTopic(no: number) {

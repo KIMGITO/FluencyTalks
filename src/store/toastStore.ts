@@ -10,8 +10,8 @@ export const useToastStore = create<S>((set, get) => ({
   toasts: [],
   push: (kind, text, retry) => {
     const id = next++;
-    // The same message twice in a row is one toast, not a stack.
-    set((s) => ({ toasts: [...s.toasts.filter((t) => t.text !== text).slice(-2), { id, kind, text, retry }] }));
+    // One at a time: a new message replaces the one showing, so they never stack up the screen.
+    set({ toasts: [{ id, kind, text, retry }] });
     setTimeout(() => get().dismiss(id), kind === 'error' ? 7000 : 3500);
   },
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),

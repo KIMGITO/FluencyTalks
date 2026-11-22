@@ -221,7 +221,7 @@
 .lp-card--a { --w: 86vw; } .lp-card--b { --w: 70vw; --o: 1.75rem; } .lp-card--c { --w: 78vw; --o: .5rem; }
 .lp-card--d { --w: 82vw; --o: 2.5rem; background: transparent; border: 1.5px solid rgb(var(--on-deep) / .55); color: rgb(var(--on-deep)); }
 .lp-card--d p { color: rgb(var(--on-deep) / .8); } .lp-card--d .lp-num { color: rgb(var(--on-deep) / .75); }
-.lp-card--e { --w: 66vw; --o: 1rem; }
+.lp-card--e { --w: 66vw; --o: 1rem; } .lp-card--f { --w: 74vw; --o: 2rem; }
 .lp-big { font: italic 800 clamp(4rem, 14vw, 5.5rem)/1 var(--font-display); letter-spacing: -.04em; margin-top: 1rem; color: rgb(var(--on-deep)); }
 .lp-demo { margin-top: 1.25rem; padding: 1rem 1.1rem; border-left: 3px solid rgb(var(--deep)); background: rgb(var(--paper-2)); font: 500 clamp(1.25rem, 5vw, 1.7rem)/1.5 var(--font-display); }
 .lp-demo del, .lp-demo ins { white-space: nowrap; }
@@ -237,6 +237,7 @@
   .lp-card--a { grid-column: 1 / span 7; --o: 0; padding-block: 2.5rem; } .lp-card--b { grid-column: 8 / span 5; --o: 3.5rem; }
   .lp-card--c { grid-column: 1 / span 4; --o: 0; } .lp-card--d { grid-column: 5 / span 5; --o: 2.25rem; }
   .lp-card--e { grid-column: 10 / span 3; --o: 5rem; } .lp-card--e h3 { font-size: 1.35rem; }
+  .lp-card--f { grid-column: 4 / span 6; --o: 0; }
 }
 
 /* ---- languages: set as type; airy on a laptop, tighter on a phone ----------- */

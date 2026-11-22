@@ -4,10 +4,12 @@ import { timeAgo } from '@/lib/format';
 import { usePresenceOf } from '@/hooks/usePresence';
 import { useDisplayLocales, useLanguageStore } from '@/store/languageStore';
 import type { FeedPerson } from '@/types/db';
-import { MessageButton } from './MessageButton';
+import { MessageOrPartner } from './MessageButton';
+import { usePersonStatus } from '@/hooks/usePersonStatus';
+import type { PersonStatus } from '@/services/connections';
 
 /** Small and square, so it can't be mistaken for a post. The native language is what someone is here to find. */
-function PersonSquare({ person, online }: { person: FeedPerson; online: boolean }) {
+function PersonSquare({ person, online, status, onChange }: { person: FeedPerson; online: boolean; status?: PersonStatus; onChange: (id: string, p: Partial<PersonStatus>) => void }) {
   const labelOf = useLanguageStore((s) => s.labelOf);
   const locales = useDisplayLocales();
   const name = (role: string) => { const l = person.languages.find((x) => x.role === role); return l ? labelOf(l, locales) : null; };
@@ -24,18 +26,19 @@ function PersonSquare({ person, online }: { person: FeedPerson; online: boolean 
           <span className="block truncate text-xs text-muted">{note}</span>
         </span>
       </Link>
-      <div className="px-2.5 pb-2.5 [&>div]:flex [&_button]:w-full"><MessageButton userId={person.id} /></div>
+      <div className="px-2.5 pb-2.5 [&>div]:flex [&_button]:w-full"><MessageOrPartner userId={person.id} name={person.display_name ?? ''} status={status} onChange={onChange} /></div>
     </li>
   );
 }
 
 export function PeopleRow({ people }: { people: FeedPerson[] }) {
   const seen = usePresenceOf(people.map((p) => p.id));
+  const partners = usePersonStatus(people.map((p) => p.id));
   return (
     <section aria-label="People to practise with" className="min-w-0">
       <h2 className="ft-inset mb-2 text-sm font-semibold text-ink">People to practise with</h2>
       <ul className="ft-inset flex snap-x gap-2.5 overflow-x-auto pb-1 [scroll-padding-inline:0.75rem]">
-        {people.map((p) => <PersonSquare key={p.id} person={p} online={!!seen[p.id]?.online} />)}
+        {people.map((p) => <PersonSquare key={p.id} person={p} online={!!seen[p.id]?.online} status={partners.status[p.id]} onChange={partners.patch} />)}
       </ul>
     </section>
   );

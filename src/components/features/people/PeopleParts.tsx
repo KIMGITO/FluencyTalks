@@ -1,7 +1,8 @@
 // What every person row and profile shares: connect, call, and whether they're around right now.
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, PhoneCall, ThumbsUp, UserPlus, Video, X } from 'lucide-react';
+import { Check, Clock, PhoneCall, ThumbsUp, UserPlus, Video, X } from 'lucide-react';
+import { compactBtn, compactLabel } from '../ActionButtonStyle';
 import { Avatar, Button, Card, ConfirmDialog } from '@/components/ui';
 import { LanguageChip, languageEntry } from '../LanguageChip';
 import { CountryBadge } from '../CountryBadge';
@@ -27,7 +28,9 @@ export function GoodCalls({ count }: { count?: number }) {
 }
 
 /** Connect, cancel, accept or decline, or end a connection, depending on where the two of you stand. */
-export function ConnectButton({ userId, name, status, onChange, size = 'sm' }: { userId: string; name: string; status?: PersonStatus; onChange: Patch; size?: 'sm' | 'md' }) {
+export function ConnectButton({ userId, name, status, onChange, size = 'sm', compact }: { userId: string; name: string; status?: PersonStatus; onChange: Patch; size?: 'sm' | 'md'; compact?: boolean }) {
+  const cls = compact ? compactBtn : undefined;
+  const label = (text: string) => compact ? <span className={compactLabel}>{text}</span> : text;
   const [busy, setBusy] = useState(false);
   const run = async (fn: () => Promise<unknown>) => { setBusy(true); try { await fn(); } catch (e) { toast.error(userMessage(e)); } finally { setBusy(false); } };
   const state = status?.connection ?? 'none';
@@ -35,20 +38,20 @@ export function ConnectButton({ userId, name, status, onChange, size = 'sm' }: {
   if (state === 'incoming') {
     return (
       <span className="inline-flex gap-1.5">
-        <Button size={size} loading={busy} onClick={() => void run(async () => { await respondConnection(userId, true); onChange(userId, { connection: 'connected', can_call: true }); })}><Check size={15} aria-hidden />Accept</Button>
-        <Button size={size} variant="secondary" disabled={busy} aria-label={`Decline ${name}'s request`} onClick={() => void run(async () => { await respondConnection(userId, false); onChange(userId, { connection: 'none' }); })}><X size={15} aria-hidden /></Button>
+        <Button size={size} loading={busy} onClick={() => void run(async () => { await respondConnection(userId, true); onChange(userId, { connection: 'connected', can_call: true }); })} className={cls} title="Accept"><Check size={15} aria-hidden />{label('Accept')}</Button>
+        <Button size={size} variant="secondary" disabled={busy} className={cls} aria-label={`Decline ${name}'s request`} onClick={() => void run(async () => { await respondConnection(userId, false); onChange(userId, { connection: 'none' }); })}><X size={15} aria-hidden /></Button>
       </span>);
   }
   // Partners: nothing to show here. Message and Learn together take its place; removing a partner lives in the ⋮ menu.
   if (state === 'connected') return null;
   if (state === 'outgoing') {
-    return <Button size={size} variant="secondary" loading={busy} title="Tap to cancel the request" onClick={() => void run(async () => { await removeConnection(userId); onChange(userId, { connection: 'none' }); })}>Requested</Button>;
+    return <Button size={size} variant="secondary" loading={busy} className={cls} title="Requested · tap to cancel" onClick={() => void run(async () => { await removeConnection(userId); onChange(userId, { connection: 'none' }); })}>{compact && !busy && <Clock size={15} aria-hidden />}{label('Requested')}</Button>;
   }
   return (
-    <Button size={size} loading={busy} onClick={() => void run(async () => {
+    <Button size={size} loading={busy} className={cls} title="Add partner" onClick={() => void run(async () => {
       const r = await requestConnection(userId);
       onChange(userId, r === 'connected' ? { connection: 'connected', can_call: true } : { connection: 'outgoing' });
-    })}><UserPlus size={15} aria-hidden />Add partner</Button>);
+    })}>{!(compact && busy) && <UserPlus size={15} aria-hidden />}{label('Add partner')}</Button>);
 }
 
 /** Confirm ending a partnership. Opened from the profile's ⋮ menu. */
@@ -61,14 +64,15 @@ export function DisconnectDialog({ open, userId, name, onClose, onChange }: { op
 }
 
 /** Call a partner or someone you're chatting with. Says so when they're already on a call. */
-export function CallPersonButton({ person, status, size = 'sm' }: { person: { id: string; display_name?: string | null; username?: string | null; avatar_url?: string | null }; status?: PersonStatus; size?: 'sm' | 'md' }) {
+export function CallPersonButton({ person, status, size = 'sm', compact }: { person: { id: string; display_name?: string | null; username?: string | null; avatar_url?: string | null }; status?: PersonStatus; size?: 'sm' | 'md'; compact?: boolean }) {
   const nav = useNavigate();
   if (!status?.can_call) return null;
   const name = person.display_name || person.username;
   return (
-    <Button size={size} variant={status.in_call ? 'secondary' : 'primary'} disabled={status.in_call} title={status.in_call ? `${name} is on a call` : `Call ${name}`}
+    <Button size={size} variant={status.in_call ? 'secondary' : 'primary'} disabled={status.in_call} className={compact ? compactBtn : undefined} title={status.in_call ? `${name} is on a call` : `Call ${name}`}
       onClick={() => nav(`/call/new?to=${person.id}`, { state: { name, avatar: person.avatar_url } })}>
-      <Video size={15} aria-hidden />{status.in_call ? 'On a call' : 'Learn together'}
+      {status.in_call ? <PhoneCall size={15} aria-hidden /> : <Video size={15} aria-hidden />}
+      {compact ? <span className={compactLabel}>{status.in_call ? 'On a call' : 'Learn together'}</span> : status.in_call ? 'On a call' : 'Learn together'}
     </Button>);
 }
 

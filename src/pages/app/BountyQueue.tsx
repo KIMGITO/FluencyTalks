@@ -7,7 +7,7 @@ import { DiffText } from '@/components/features/chat/DiffText';
 import { PostCard } from '@/components/features/library';
 import { listPostsNeedingFix, type ContributionPost } from '@/services/library';
 import { answerBounty, BOUNTY_PAGE, listMyBounties, listMyBountyAnswers, listOpenBounties, type MyBounty, type MyBountyAnswer, type OpenBounty } from '@/services';
-import { qualifiedLanguages } from '@/lib/corrections';
+import { correctingLanguages } from '@/lib/corrections';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -52,7 +52,7 @@ export default function BountyQueue() {
       const [o, a, m] = await Promise.all([listOpenBounties(0), listMyBountyAnswers(), listMyBounties()]);
       setOpen(o); setAnswers(a); setMine(m); setMore(o.length < BOUNTY_PAGE ? 'done' : 'idle');
       // Fixes pay on a thank-you, not from escrow. A problem here must not hide the bounties.
-      if (myId) void listPostsNeedingFix(qualifiedLanguages(me), myId, HELP_QUEUE).then(setNeedFix).catch(() => undefined);
+      if (myId) void listPostsNeedingFix(correctingLanguages(me), myId, HELP_QUEUE).then(setNeedFix).catch(() => undefined);
       if (myId) await loadProfile(myId);   // refunds and rewards change the balance
     } catch (e) { setError(userMessage(e)); }
   }, [myId, loadProfile, me?.native_language_id, me?.learning_language_id, me?.verified_level]);
@@ -72,7 +72,6 @@ export default function BountyQueue() {
       setMore(next.length < BOUNTY_PAGE ? 'done' : 'idle');
     } catch (e) { setError(userMessage(e)); setMore('idle'); }
   };
-  const canAnswerIn = qualifiedLanguages(me).map(nameOf).join(' or ');
   const pendingAnswers = answers?.filter((a) => a.status === 'pending').length ?? 0;
 
   return (

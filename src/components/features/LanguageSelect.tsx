@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { ChevronRight, Lock, LockOpen } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { LEARNER_LEVELS, TEACHING_LEVELS } from '@/lib/constants';
+import { LEARNER_LEVELS } from '@/lib/constants';
 import { languageIn } from '@/lib/languages';
 import { useDisplayLocales, useLanguageStore, useLanguages } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -123,7 +123,7 @@ export function LanguageSelect({ value, onChange }: { value: LanguageChoice; onC
   // Same language as saved: the level can only go down by hand. A new language takes any starting point.
   const savedLanguage = !!value.learning && value.learning === me?.learning_language_id;
   const maxLevel = savedLanguage ? LEARNER_LEVELS.indexOf(me?.learning_level as LearnerLevel) : LEARNER_LEVELS.length - 1;
-  const canTeach = savedLanguage && TEACHING_LEVELS.includes(me?.verified_level ?? '');
+  const canCorrect = savedLanguage && !!me?.verified_level;
   // A promotion can land while this form is open: show it, and never submit below what was earned.
   useEffect(() => {
     const earned = LEARNER_LEVELS.indexOf(me?.verified_level as LearnerLevel);
@@ -161,10 +161,10 @@ export function LanguageSelect({ value, onChange }: { value: LanguageChoice; onC
             <span className="text-xs font-semibold text-ink">{LEVEL_NAMES[value.level]}</span>
           </div>
           <LevelPicker value={value.level} max={maxLevel} onChange={(level) => onChange({ ...value, level })} />
-          <Note icon={canTeach ? <LockOpen size={13} aria-hidden className="text-accent" /> : <Lock size={13} aria-hidden />}>
-            {canTeach
-              ? `You can correct messages, answer bounties, earn points and post in ${learningName}.`
-              : `This level is your own estimate. Correcting, answering bounties, earning points and posting in ${learningName} unlock once your activity verifies you at B1.`}
+          <Note icon={canCorrect ? <LockOpen size={13} aria-hidden className="text-accent" /> : <Lock size={13} aria-hidden />}>
+            {canCorrect
+              ? `You can correct ${learningName} learners below ${me?.verified_level}.`
+              : `This level is your own estimate. Pass a level on calls to correct ${learningName} learners below it.`}
           </Note>
           {savedLanguage && <LevelProgress language={learningName} />}
         </div>

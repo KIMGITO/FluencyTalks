@@ -169,7 +169,8 @@ Within a tier, people are ordered by the most recent day they were active, then 
 **How it helps.** Everyday conversation becomes a lesson, with a record of what changed and why.
 
 **How it works**
-- A person may correct a message if they are a native speaker of its language, or a learner **verified** at B1 or above (`can_correct_language`, with `qualifiedLanguages` and `canCorrect` in `src/lib/corrections.ts`).
+- A person may correct a message or practice post if they are a native speaker of the language, or a learner who has passed a level above the one the author is working on (the call-rating rule): `can_correct_language(user, language, author)`. Teaching posts (Library, lessons) are for native speakers only. `teachingLanguages`, `correctingLanguages` and `canCorrect` are in `src/lib/corrections.ts`; the server decides per author.
+- Only partners (an accepted connection) start a chat or send in one, as with calls (`start_conversation`, `send_message` raise `not_connected`).
 - `suggest_correction` stores a row in `message_corrections` with status `pending`. It refuses text that doesn't change anything.
 - `CorrectionDialog` and `CorrectionCard` show the change with `DiffText`, which renders a word-level diff, plus the helper's note.
 - `accept_correction` accepts and saves the phrase to the learner's phrasebook. `respond_correction` declines, and a reason is required and sent to the helper.

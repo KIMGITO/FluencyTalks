@@ -39,9 +39,34 @@ Deno.serve(async (req) => {
     call: n.type === 'call_incoming',
   });
 
+  if (n.type !== 'call_incoming') return reply(200, { sent: await deliver(db, subs, payload) });
+
   // A ring is only worth delivering while it rings: a phone that was offline must not ring an hour later.
-  return reply(200, { sent: await deliver(db, subs, payload, n.type === 'call_incoming' ? 60 : 86_400) });
+  const sent = await deliver(db, subs, payload, 60);
+  // Then ring again every few seconds until it's answered, declined, cancelled or times out. Each push sounds and
+  // vibrates again on the same banner, so a phone with the app closed rings instead of buzzing once.
+  // The database caller only waits a few seconds, so the repeats run after the reply.
+  if (n.data?.call_id) EdgeRuntime.waitUntil(ringAgain(db, n.data.call_id, n.user_id, payload));
+  return reply(200, { sent });
 });
+
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
+const RING_EVERY_MS = 5_000;
+
+async function ringAgain(db: Db, callId: string, userId: string, payload: string) {
+  for (let i = 0; i < 12; i++) {
+    await new Promise((r) => setTimeout(r, RING_EVERY_MS));
+    const { data: call } = await db.from('calls').select('status, ring_expires_at').eq('id', callId).maybeSingle();
+    const left = call ? new Date(call.ring_expires_at).getTime() - Date.now() : 0;
+    if (!call || call.status !== 'ringing' || left < 2_000) return;
+    // Answered or declined by this person (the call itself may still ring others later).
+    const { data: me } = await db.from('call_participants').select('invitation_status').eq('call_id', callId).eq('user_id', userId).maybeSingle();
+    if (me && me.invitation_status !== 'pending') return;
+    const { data: subs } = await db.from('push_subscriptions').select('*').eq('user_id', userId);
+    if (!subs?.length) return;
+    await deliver(db, subs as Sub[], payload, Math.max(1, Math.floor(left / 1000)));
+  }
+}
 
 type Db = ReturnType<typeof createClient>;
 type Sub = { id: string; endpoint: string; p256dh: string; auth: string };

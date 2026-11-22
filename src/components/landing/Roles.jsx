@@ -11,10 +11,11 @@ export default function Roles() {
           <article className="lp-role lp-role--learn" data-reveal>
             <p className="lp-kicker">If you are learning</p>
             <h3>Practise without pressure</h3>
-            <p>Ask questions, make mistakes, and get a friendly correction at the moment it helps.</p>
+            <p>Speak from day one, make mistakes, and get a friendly correction at the moment it helps.</p>
             <ul>
               <li>Choose the language and the level you are at, from A1 to C2</li>
-              <li>Message people who speak it natively</li>
+              <li>Video call people who speak it natively, on topics at your level</li>
+              <li>Pass each level with ratings from 5 different partners</li>
               <li>Save what you learn in your own phrasebook</li>
             </ul>
             <Link to={join.to} className="lp-btn lp-btn--accent">{join.signedIn ? 'Go to your account' : 'Join as a learner'}</Link>
@@ -22,8 +23,9 @@ export default function Roles() {
           <article className="lp-role lp-role--speak" data-reveal style={{ '--d': '.12s' }}>
             <p className="lp-kicker">If you speak it well</p>
             <h3>Share your language</h3>
-            <p>Help someone who is a few steps behind you.</p>
+            <p>Help someone who is a few steps behind you, and rate their calls.</p>
             <ul>
+              <li>Call learners and rate how they did, so their level means something</li>
               <li>Correct sentences and earn 5 points for each one accepted</li>
               <li>Answer bounties and earn 50 points when your answer is accepted</li>
               <li>Post phrases, idioms and grammar tips to the community library</li>

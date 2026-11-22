@@ -19,5 +19,6 @@ export const listConnectionRequests = () => rpc<(PersonLite & { created_at: stri
 export const listConnections = () => rpc<(PersonLite & { accepted_at: string })[]>('list_connections', { p_limit: 200 });
 export const getPersonStatus = (ids: string[]) => (ids.length ? rpc<PersonStatus[]>('person_status', { p_users: ids.slice(0, 100) }) : Promise.resolve([]));
 export const getHomePulse = () => rpc<HomePulse>('home_pulse');
-export const voteCall = (call: string, vote: 'good' | 'bad') => rpc('vote_call', { p_call: call, p_vote: vote });
-export const myCallVote = (call: string) => rpc<'good' | 'bad' | null>('my_call_vote', { p_call: call });
+export type CallVoteValue = 'good' | 'bad' | 'no_connect';
+export const voteCall = (call: string, vote: CallVoteValue) => rpc('vote_call', { p_call: call, p_vote: vote });
+export const myCallVote = (call: string) => rpc<CallVoteValue | null>('my_call_vote', { p_call: call });

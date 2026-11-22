@@ -11,7 +11,7 @@ import '@/styles/landing.css';
 export default function FaqPage() {
   useSeo({
     title: `How ${BRAND} Works: FAQ`,
-    description: 'How one-to-one language practice, chat corrections, points and bounties work on our free language exchange, in short and direct answers.',
+    description: 'How video calls, topics, level ratings, chat corrections and points work on our free language exchange, in short and direct answers.',
     path: '/faq',
   });
   const { faqs, failed } = useFaqs('/faq');
@@ -26,7 +26,7 @@ export default function FaqPage() {
             <p className="lp-kicker">Questions and answers</p>
             <h1>How {BRAND} works</h1>
           </header>
-          <p className="lp-article__summary">{BRAND} is a free language exchange. You chat one to one with people who speak the language you are learning, and they correct your messages inside the conversation.</p>
+          <p className="lp-article__summary">{BRAND} is a free language exchange. You talk one to one on video calls with people who speak the language you are learning, about topics at your level, and your partners' ratings decide when you pass a level.</p>
 
           <div className="lp-article__body">
             {!ssr && !faqs && <p className="lp-blog__note" role={failed ? 'alert' : 'status'}>{failed ? "We couldn't load the questions. Please refresh the page to try again." : 'Loading the questions…'}</p>}

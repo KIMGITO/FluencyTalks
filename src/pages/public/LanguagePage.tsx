@@ -13,7 +13,7 @@ export default function LanguagePage() {
   useSeo(l
     ? {
       title: `Practise ${l.name} with Native Speakers`,   // 60 characters or fewer with the brand, so Google does not cut it off
-      description: `Find a ${l.name} language exchange partner. Chat with native ${l.name} speakers, get your sentences corrected inside the conversation, and save every phrase. Free.`,
+      description: `Find a ${l.name} language exchange partner. Video call native ${l.name} speakers on topics for your level, get rated, and move up from A1 to C2. Free.`,
       path: `/languages/${l.slug}`,
     }
     : { title: 'Page not found', path: '/404', noIndex: true });
@@ -41,7 +41,7 @@ export default function LanguagePage() {
             <p className="lp-kicker">{l.region}</p>
             <h1>Practise {l.name} with native speakers</h1>
           </header>
-          <p className="lp-article__summary">Find a {l.name} language exchange partner on {BRAND}. Chat with people who speak {l.name} natively, get your sentences corrected inside the conversation, and keep every correction in your phrasebook. It is free.</p>
+          <p className="lp-article__summary">Find a {l.name} language exchange partner on {BRAND}. Talk on video calls with people who speak {l.name} natively, about topics that match your level, and pass each level with ratings from your partners. It is free.</p>
 
           <dl className="lp-langfacts">
             {l.native !== l.name && <div><dt>In {l.name}</dt><dd>{greet(l.native)}</dd></div>}
@@ -55,19 +55,22 @@ export default function LanguagePage() {
             <h2>How to practise {l.name} here</h2>
             <ol>
               <li><strong>Say who you are.</strong> Choose {l.name} as the language you are learning, and your level from A1 (beginner) to C2 (near-native).</li>
-              <li><strong>Meet a match.</strong> We suggest everyone who speaks {l.name} natively, even if they are learning nothing, and anyone learning your language. A perfect swap comes first but is never required. Send a message; they can accept or decline.</li>
-              <li><strong>Talk, get corrected, keep it.</strong> Your partner fixes a sentence right where you wrote it. Accept the change and the phrase goes into your phrasebook.</li>
+              <li><strong>Meet a match.</strong> We suggest everyone who speaks {l.name} natively, even if they are learning nothing, and anyone learning your language. A perfect swap comes first but is never required. Add them as a partner; they can accept or decline.</li>
+              <li><strong>Call and talk.</strong> Call your partner and pick one of the {l.name} topics at your level. Each comes with prompts and ideas.</li>
+              <li><strong>Get rated, move up.</strong> After a topic call of 10 minutes or more, your partner rates you. Ratings from 5 different partners at 80% or more pass your level.</li>
             </ol>
-            <p>Practice happens in text chat, so you can take your time, look words up, and read every correction again later. New to this? Read <Link to="/blog/what-is-a-language-exchange">what a language exchange is</Link> and <Link to="/blog/find-a-language-exchange-partner">how to find a good partner</Link>.</p>
+            <p>Between calls you can chat in writing: your partner fixes a sentence right where you wrote it, and accepted corrections go into your phrasebook. New to this? Read <Link to="/blog/what-is-a-language-exchange">what a language exchange is</Link> and <Link to="/blog/find-a-language-exchange-partner">how to find a good partner</Link>.</p>
 
             <h2>Already speak {l.name}?</h2>
-            <p>Choose {l.name} as your native language and help someone a few steps behind you. Each correction the learner accepts earns you 5 points, and a bounty answer they accept earns you 50. You can also post {l.name} phrases, idioms, usage notes and grammar tips to the community library.</p>
+            <p>Choose {l.name} as your native language and help someone a few steps behind you. Call learners and rate their topic calls, so their level means something. Each correction a learner accepts earns you 5 points, and a bounty answer they accept earns you 50. You can also post {l.name} phrases, idioms, usage notes and grammar tips to the community library.</p>
 
             <h2>Questions about practising {l.name}</h2>
             <ul>
               <li><strong>Is it free?</strong> Yes. {BRAND} has no paid plans.</li>
-              <li><strong>Do I need to be good already?</strong> No. Beginners are welcome; your partner corrects you as you go.</li>
-              <li><strong>Who can correct me?</strong> Native {l.name} speakers, and learners whose practice has verified them at B1 or above.</li>
+              <li><strong>Do I need to be good already?</strong> No. Beginners are welcome: A1 topics start with simple, everyday things.</li>
+              <li><strong>Do I have to turn my camera on?</strong> No. You can turn it off at any time, and calls are never recorded.</li>
+              <li><strong>Who can correct me?</strong> Native {l.name} speakers, and learners who have passed a higher level than yours.</li>
+              <li><strong>Who rates my calls?</strong> Native {l.name} speakers, and learners who have passed a higher level than yours.</li>
               <li><strong>Is it safe?</strong> New contacts arrive as requests you can decline, and you can block or report anyone.</li>
             </ul>
             <p>More advice: <Link to="/blog/corrections-from-native-speakers">how to get corrections from native speakers</Link>.</p>

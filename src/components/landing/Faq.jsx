@@ -16,7 +16,7 @@ export default function Faq() {
         </div>
         <div className="lp-faq__list" data-reveal style={{ '--d': '.1s' }} dangerouslySetInnerHTML={{ __html: ssr ? BLOG_MARK : faqHomeHtml(faqs ?? []) }} />
         <div className="lp-faq__head" data-reveal>
-          <p>More detail on points, bounties and corrections in <Link className="lp-link" to="/faq">the full FAQ</Link>.</p>
+          <p>More detail on calls, levels, points and corrections in <Link className="lp-link" to="/faq">the full FAQ</Link>.</p>
           <p>New to this? Read <Link className="lp-link" to="/blog/what-is-a-language-exchange">what a language exchange is</Link>.</p>
           <p>Something missing? <a className="lp-link" href={mailto(EMAILS.support, { subject: SUPPORT_SUBJECT })}>Ask us</a>.</p>
         </div>

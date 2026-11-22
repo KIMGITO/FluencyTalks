@@ -95,8 +95,8 @@ export default function UserProfile() {
             <span className="-mt-12 rounded-full bg-surface p-1 sm:-mt-14">
               <Avatar name={profile.display_name} src={r.is_me ? resolveAvatar(profile.avatar_url, providerAvatar) : profile.avatar_url} size="xl" online={!r.is_me && !!(st?.online || seen?.online)} busy={!r.is_me && !!st?.in_call} />
             </span>
-            <div className="flex flex-wrap items-center justify-end gap-1.5 pt-3">
-              {!r.is_me && !staff && <><ConnectButton userId={profile.id} name={profile.display_name} status={st} onChange={people.patch} /><MessageButton userId={profile.id} /><CallPersonButton person={profile} status={st} /><UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} onDisconnect={st?.connection === 'connected' ? () => setDisconnecting(true) : undefined} /></>}
+            <div className="flex items-center justify-end gap-1.5 pt-3">
+              {!r.is_me && !staff && <><ConnectButton compact userId={profile.id} name={profile.display_name} status={st} onChange={people.patch} /><MessageButton compact userId={profile.id} status={st} /><CallPersonButton compact person={profile} status={st} /><UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} onDisconnect={st?.connection === 'connected' ? () => setDisconnecting(true) : undefined} /></>}
             </div>
           </div>
 

@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bookmark, BookmarkCheck, Flag, MessageCircle, MoreVertical, Pencil, PencilLine, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Flag, MessageCircle, MoreVertical, Pencil, PencilLine, Pin, PinOff, Quote, ThumbsUp, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { Avatar, Button, ConfirmDialog, MenuItem } from '@/components/ui';
 import { canCorrect } from '@/lib/corrections';
 import { FIX_LABEL, isPractice, POST_TYPE_LABEL } from '@/lib/postTypes';
 import { CATEGORY_LOOK, LESSON_LOOK, PRACTICE_LOOK } from './postLooks';
 import { StatusPill } from '@/components/features/review/StatusPill';
-import { LikeButton } from './LikeButton';
+import { LikeButton, useLike } from './LikeButton';
 import { toast } from '@/store/toastStore';
 import { ReportDialog } from '@/components/features/ReportDialog';
 import { blockUser } from '@/services';
@@ -146,6 +146,7 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
     toast.success(`${authorName} is blocked.`);
   };
 
+  const like = useLike(post.id, post.liked, post.like_count);
   if (removed) return null;
 
   const username = post.author?.username;
@@ -165,6 +166,11 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const profileLink = (children: React.ReactNode, className?: string) =>
     username ? <Link to={`/u/${username}`} className={className}>{children}</Link> : <span className={className}>{children}</span>;
 
+  const practice = isPractice(post.post_type) ? post.post_type : null;
+  const kind = practice ? { icon: PRACTICE_LOOK[practice].icon, label: POST_TYPE_LABEL[practice] } : { icon: look.icon, label: category };
+  const canFix = !isOwner && !!practice && (practice === 'question' || canCorrect(me, post.language_id));
+
+  // On phones, Like and Fix live in this menu; from `sm` up they're icon buttons under the post.
   const menu = (
     <div className="relative" ref={menuRef}>
       <Button variant="ghost" size="sm" aria-label="Post options" aria-expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)}>
@@ -172,6 +178,13 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
       </Button>
       {menuOpen && (
         <div className="ft-menu right-0 mt-1.5" role="menu">
+          <MenuItem role="menuitem" className="sm:hidden" onClick={() => { setMenuOpen(false); void like.toggle(); }}>
+            <ThumbsUp size={14} /> {like.liked ? 'Unlike' : 'Like'}{like.count > 0 && ` · ${like.count}`}
+          </MenuItem>
+          {canFix && (
+            <MenuItem role="menuitem" className="sm:hidden" onClick={() => navigate(threadLink)}>
+              <PencilLine size={14} /> {FIX_LABEL[practice!]}
+            </MenuItem>)}
           {isOwner ? (
             <>
               <MenuItem role="menuitem" onClick={() => navigate(`/library/contribute?edit=${post.id}`)}>
@@ -216,9 +229,6 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
 
   // ---------- One layout for every post, like a social feed: avatar on the left, the post beside it,
   // an icon action bar underneath. Tapping the text or picture opens the discussion. ----------
-  const practice = isPractice(post.post_type) ? post.post_type : null;
-  const kind = practice ? { icon: PRACTICE_LOOK[practice].icon, label: POST_TYPE_LABEL[practice] } : { icon: look.icon, label: category };
-  const canFix = !isOwner && !!practice && (practice === 'question' || canCorrect(me, post.language_id));
   const answered = practice === 'question' || practice === 'how_do_i_say';
   const status = post.review_status ?? 'awaiting_feedback';
   const short = variant === 'compact';
@@ -290,26 +300,26 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
             {image && short && overlaid && <p className="mt-1.5 break-words text-[15px] text-ink">{caption}</p>}
           </div>
 
-          {/* Actions: reply, like, fix, save */}
-          <div className="-ml-2.5 mt-1 flex max-w-md items-center justify-between">
+          {/* Actions: like, fix and save on the left (in the ⋮ menu on phones), reply on the right */}
+          <div className="-mx-2.5 mt-1 flex items-center">
+            <div className="hidden items-center gap-1 sm:flex">
+              <LikeButton like={like} />
+              {canFix && (
+                <Link to={threadLink} title={FIX_LABEL[practice!]} aria-label={FIX_LABEL[practice!]}
+                  className="inline-flex min-h-10 items-center rounded-full px-2.5 text-muted transition hover:bg-surface-2 hover:text-ink">
+                  <PencilLine size={16} aria-hidden />
+                </Link>)}
+              {!isOwner && (
+                <button type="button" onClick={() => void handleSave()} title={saved ? 'Remove from saved' : 'Save'} aria-label={saved ? 'Remove from saved' : 'Save'} aria-pressed={saved}
+                  className={clsx('inline-flex min-h-10 items-center rounded-full px-2.5 transition hover:bg-surface-2', saved ? 'text-accent' : 'text-muted hover:text-ink')}>
+                  {saved ? <BookmarkCheck size={16} aria-hidden /> : <Bookmark size={16} aria-hidden />}
+                </button>)}
+            </div>
             <Link to={threadLink} title="Reply" aria-label={threadSize ? `${threadSize} replies` : 'Reply'}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
+              className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
+              {(post.open_corrections ?? 0) > 0 && <span className="font-normal">{post.open_corrections} open ·</span>}
               <MessageCircle size={16} aria-hidden />{threadSize > 0 && threadSize}
-              {(post.open_corrections ?? 0) > 0 && <span className="font-normal">· {post.open_corrections} open</span>}
             </Link>
-            <LikeButton postId={post.id} liked={post.liked} count={post.like_count} />
-            {canFix ? (
-              <Link to={threadLink} title={FIX_LABEL[practice!]}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
-                <PencilLine size={16} aria-hidden /><span className="hidden sm:inline">{FIX_LABEL[practice!]}</span>
-              </Link>
-            ) : <span aria-hidden className="w-10" />}
-            {!isOwner ? (
-              <button type="button" onClick={() => void handleSave()} title={saved ? 'Remove from saved' : 'Save'} aria-pressed={saved}
-                className={clsx('inline-flex min-h-10 items-center rounded-full px-2.5 transition hover:bg-surface-2', saved ? 'text-accent' : 'text-muted hover:text-ink')}>
-                {saved ? <BookmarkCheck size={16} aria-hidden /> : <Bookmark size={16} aria-hidden />}
-              </button>
-            ) : <span aria-hidden className="w-10" />}
           </div>
         </div>
       </div>

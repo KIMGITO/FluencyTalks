@@ -72,8 +72,10 @@ const lastCall = async (a) => (await service.from('calls').select('*').eq('initi
 
 async function main() {
   const A = await learner('a', 'eng', 'spa'); const B = await learner('b', 'spa', 'eng');
+  // Only partners message and call each other.
+  await A.c.rpc('request_connection', { p_user: B.id });
+  await B.c.rpc('respond_connection', { p_user: A.id, p_accept: true });
   const conv = (await A.c.rpc('start_conversation', { p_target: B.id })).data;
-  await B.c.rpc('respond_message_request', { p_conv: conv, p_accept: true });
   const a = await browserFor(A); const b = await browserFor(B);
   try {
     if (run(1)) {

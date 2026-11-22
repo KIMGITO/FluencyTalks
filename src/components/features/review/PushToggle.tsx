@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { BellRing } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
@@ -24,8 +25,8 @@ export function PushToggle() {
   const { state, turnOn, turnOff } = usePush();
   if (!state || state === 'unconfigured') return null;
   return (
-    <div className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border pb-2 text-sm">
-      <span className="min-w-0 flex-1 basis-48">
+    <div className="flex min-h-[2.75rem] flex-wrap items-center gap-x-3 gap-y-1 border-b border-border pb-2 text-sm">
+      <span className="min-w-0 flex-1 basis-[12rem]">
         <span className="font-semibold">Push on this device</span>
         <span className="block text-xs text-muted">
           {state === 'on' && 'Notifications reach you here when the app is closed.'}
@@ -41,21 +42,33 @@ export function PushToggle() {
   );
 }
 
-/** Reminders only help if they arrive, so ask where it matters: next to a decision that's waiting. Asked once a device. */
-const DISMISSED = 'ft-push-prompt-dismissed';
-const dismissed = () => { try { return localStorage.getItem(DISMISSED) === '1'; } catch { return false; } };
+const COPY = {
+  decisions: { ask: 'Want a reminder before a decision is overdue, even with the app closed?', key: 'ft-push-prompt-dismissed' },
+  device: { ask: 'Get notifications on this device, even when this tab is closed.', key: 'ft-push-prompt-device-dismissed' },
+  calls: { ask: 'Get calls even when the app or browser is closed. Your phone rings when a partner calls.', key: 'ft-push-prompt-calls-dismissed' },
+} as const;
+const dismissed = (key: string) => { try { return localStorage.getItem(key) === '1'; } catch { return false; } };
 
-export function PushPrompt() {
+/**
+ * Asks for push where it matters: next to a decision that's waiting, or where calls start. The browser's own
+ * permission question only appears after the tap. "Not now" hides it on this device. Blocked: say how to undo it.
+ */
+/** `flat`: inside another panel (the bell's dropdown), so no card of its own. */
+export function PushPrompt({ reason = 'decisions', flat = false }: { reason?: keyof typeof COPY; flat?: boolean }) {
   const { state, turnOn } = usePush();
-  const [hidden, setHidden] = useState(dismissed);
-  if (state !== 'off' || hidden) return null;
+  const copy = COPY[reason];
+  const [hidden, setHidden] = useState(() => dismissed(copy.key));
+  if (hidden || (state !== 'off' && !(state === 'blocked' && reason === 'calls'))) return null;
+  const hide = () => { try { localStorage.setItem(copy.key, '1'); } catch { /* fine: it asks again */ } setHidden(true); };
   return (
-    <div className="ft-card ft-card-pad flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+    <div className={clsx('flex flex-wrap items-center gap-x-3 gap-y-2 text-sm', flat ? 'border-b border-border px-4 py-3' : 'ft-card ft-card-pad')}>
       <BellRing size={18} aria-hidden className="shrink-0 text-muted" />
-      <span className="min-w-0 flex-1 basis-48">Want a reminder before a decision is overdue, even with the app closed?</span>
+      <span className="min-w-0 flex-1 basis-[12rem]">{state === 'blocked'
+        ? "Notifications are blocked, so calls can't reach you when the app is closed. Allow them in this site's settings (the icon next to the address)."
+        : copy.ask}</span>
       <div className="flex gap-1.5">
-        <Button size="sm" variant="ghost" onClick={() => { try { localStorage.setItem(DISMISSED, '1'); } catch { /* fine: it asks again */ } setHidden(true); }}>Not now</Button>
-        <Button size="sm" variant="secondary" loading={turnOn.busy} onClick={() => void turnOn.run()}>Turn on push</Button>
+        <Button size="sm" variant="ghost" onClick={hide}>Not now</Button>
+        {state === 'off' && <Button size="sm" variant="secondary" loading={turnOn.busy} onClick={() => void turnOn.run()}>Turn on</Button>}
       </div>
     </div>
   );

@@ -95,7 +95,7 @@ function Requests({ list, onDone }: { list: (PersonLite & { created_at: string }
               <Avatar name={name} src={p.avatar_url} size="md" online={!!status[p.id]?.online} />
               <span className="min-w-0"><span className="block truncate font-semibold text-ink">{name}</span><span className="block text-xs text-muted">wants to be your partner · {new Date(p.created_at).toLocaleDateString()}</span></span>
             </Link>
-            <ConnectButton userId={p.id} name={name} status={status[p.id]} onChange={(id, s) => { patch(id, s); if (s.connection !== 'incoming') onDone(id); }} />
+            <ConnectButton compact userId={p.id} name={name} status={status[p.id]} onChange={(id, s) => { patch(id, s); if (s.connection !== 'incoming') onDone(id); }} />
           </li>);
       })}
     </ul>
@@ -123,7 +123,7 @@ function Partners() {
               <Avatar name={name} src={p.avatar_url} size="md" online={!!status[p.id]?.online} />
               <span className="min-w-0"><span className="block truncate font-semibold text-ink">{name}</span><PresenceLine status={status[p.id]} /></span>
             </Link>
-            {status[p.id] ? <CallPersonButton person={p} status={status[p.id]} /> : <Spinner />}
+            {status[p.id] ? <CallPersonButton compact person={p} status={status[p.id]} /> : <Spinner />}
           </li>);
       })}
     </ul>

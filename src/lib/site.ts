@@ -10,7 +10,7 @@ export const TAGLINE = 'Practice Languages with Native Speakers & Fluent Learner
 
 export const DEFAULT_TITLE = `Free Language Exchange with Native Speakers | ${BRAND}` as const;
 export const DEFAULT_DESCRIPTION =
-  'Chat with native speakers in 40 languages and get your mistakes corrected inside the conversation. A free language exchange for A1 to C2 learners.' as const;
+  'Video call native speakers in 40 languages on topics that match your level, get rated by your partners, and move up from A1 to C2. A free language exchange.' as const;
 
 export const OG_IMAGE = `${SITE_URL}/og-image.png` as const;
 export const LOCALE = 'en_US' as const;

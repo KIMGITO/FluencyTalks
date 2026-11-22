@@ -10,7 +10,7 @@ const regionId = (region: string) => `region-${region.toLowerCase().replace(/[^a
 export default function LanguagesIndex() {
   useSeo({
     title: `Practise ${LANGUAGES.length} Languages with Native Speakers`,
-    description: 'Find a language exchange partner for Vietnamese, Swahili, English, French, Spanish, Japanese, Arabic and more. Free, with corrections in every chat.',
+    description: 'Find a language exchange partner for Vietnamese, Swahili, English, French, Spanish, Japanese, Arabic and more. Free one-to-one video calls on topics for your level.',
     path: '/languages',
   });
   return (
@@ -19,7 +19,7 @@ export default function LanguagesIndex() {
         <header className="lp-doc__head">
           <p className="lp-kicker">{LANGUAGES.length} languages at launch</p>
           <h1>Languages you can practise</h1>
-          <p className="lp-lead lp-blog__lead">Pick the language you speak and the one you are learning. We show you native speakers of your target language and learners of your own, and they correct you inside the chat.</p>
+          <p className="lp-lead lp-blog__lead">Pick the language you speak and the one you are learning. We show you native speakers of your target language and learners of your own, and you practise with them on one-to-one video calls.</p>
         </header>
         <nav className="lp-tabs lp-regions" aria-label="Jump to a region">
           {REGIONS.map((region) => <a key={region} href={`#${regionId(region)}`}>{region}</a>)}

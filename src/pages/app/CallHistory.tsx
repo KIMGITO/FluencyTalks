@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PhoneIncoming, PhoneMissed, PhoneOutgoing, Trash2, Video } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
+import { PushPrompt } from '@/components/features/review/PushToggle';
 import { Avatar, Button, EmptyState, ErrorState, Skeleton } from '@/components/ui';
 import { listCallHistory, type CallHistoryRow } from '@/services/calls';
 import { endedText } from '@/lib/callState';
@@ -22,13 +23,15 @@ export default function CallHistory() {
   return (
     <>
       <PageHeader title="Calls" />
+      <div className="mb-3"><PushPrompt reason="calls" /></div>
       {failed ? <ErrorState title="Couldn't load your calls" onRetry={load} />
         : !rows ? <div className="ft-inset space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>
-          : !rows.length ? <EmptyState title="No calls yet" action={<Link to="/messages" className="underline">Open a chat to start one</Link>} />
+          : !rows.length ? <EmptyState title="No calls yet" action={<Link to="/people" className="underline">Find a partner to call</Link>} />
             : (
               <ul className="ft-inset divide-y divide-border rounded-md border border-border bg-surface">
                 {rows.map((r) => {
                   const missed = !r.outgoing && !r.attended;
+                  const unanswered = !r.attended && r.status !== 'ringing' && r.status !== 'active';
                   const name = r.other_name || r.other_username || 'Former member';
                   const text = endedText({ status: r.status, end_reason: r.end_reason, started_at: r.started_at, ended_at: r.ended_at, initiated_by: r.outgoing ? myId ?? null : null }, myId, name);
                   const Icon = missed ? PhoneMissed : r.outgoing ? PhoneOutgoing : PhoneIncoming;
@@ -37,7 +40,7 @@ export default function CallHistory() {
                       <Avatar name={name} src={r.other_avatar} size="md" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold">{name}</p>
-                        <p className={missed ? 'flex items-center gap-1.5 text-sm text-danger' : 'flex items-center gap-1.5 text-sm text-muted'}>
+                        <p className={unanswered ? 'flex items-center gap-1.5 text-sm text-danger' : 'flex items-center gap-1.5 text-sm text-muted'}>
                           <Icon size={14} aria-hidden />
                           <span>{r.status === 'ringing' || r.status === 'active' ? 'In progress' : text.title}{text.detail && r.attended ? ` · ${text.detail.replace(/^It lasted /, '').replace(/\.$/, '')}` : ''}</span>
                         </p>

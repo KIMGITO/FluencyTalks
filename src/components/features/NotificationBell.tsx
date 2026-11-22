@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { hasActor, notificationLink, notificationVerb } from '@/lib/notificationText';
 import clsx from 'clsx';
-import { Bell, Trash2 } from 'lucide-react';
+import { Bell, Settings2, Trash2 } from 'lucide-react';
+import { PushPrompt } from '@/components/features/review/PushToggle';
 import { Avatar, Button, CountBadge } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import { useNotificationStore } from '@/store/notificationStore';
 import type { AppNotification } from '@/types/db';
 
-export function NotificationBell({ allTo = '/notifications' }: { allTo?: string }) {
+export function NotificationBell({ allTo = '/notifications', settingsTo = '/settings?tab=notifications' }: { allTo?: string; settingsTo?: string }) {
   const { items, unread, loaded, markRead, markAllRead, remove } = useNotificationStore(); const nav = useNavigate(); const [open, setOpen] = useState(false);
   const go = (n: AppNotification) => { setOpen(false); if (!n.read_at) markRead([n.id]).catch(() => {}); nav(notificationLink(n)); };
   const del = (e: React.MouseEvent, n: AppNotification) => { e.stopPropagation(); remove(n.id).catch(() => {}); };
@@ -22,8 +23,12 @@ export function NotificationBell({ allTo = '/notifications' }: { allTo?: string 
         <div className="ft-card fixed left-2 right-2 top-[calc(var(--layout-topbarH)+0.5rem)] z-40 shadow-pop sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)]">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <h2 className="font-semibold">Notifications</h2>
-            {items.length > 0 && <button className="text-sm text-brand hover:underline" onClick={() => markAllRead().catch(() => {})}>Mark all as read</button>}
+            <div className="flex items-center gap-1">
+              {items.length > 0 && <button className="text-sm text-brand hover:underline" onClick={() => markAllRead().catch(() => {})}>Mark all as read</button>}
+              <Link to={settingsTo} onClick={() => setOpen(false)} aria-label="Notification settings" title="Notification settings" className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"><Settings2 size={17} aria-hidden /></Link>
+            </div>
           </div>
+          <PushPrompt reason="device" flat />
           {!loaded ? <p className="p-4 text-sm text-muted">Loading…</p> : !items.length ? <p className="p-4 text-sm text-muted">You're all caught up.</p> : (
             <ul className="max-h-[50dvh] divide-y divide-border overflow-y-auto overscroll-contain sm:max-h-96">{items.map((n) => (
               <li key={n.id} className={clsx('flex w-full items-center gap-3 p-3 hover:bg-surface-2', !n.read_at && 'bg-brand-soft/40')}>

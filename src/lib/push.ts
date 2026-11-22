@@ -40,6 +40,22 @@ export async function enablePush(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Once permission is granted, keep this device's subscription saved on the server, without asking again.
+ * Runs on every visit: a server-side cleanup (or a browser that rotated its subscription) would otherwise leave
+ * the browser thinking push is on while nothing can reach it. Never prompts, never throws.
+ */
+export async function syncPush(): Promise<void> {
+  try {
+    if (!PUBLIC_KEY || !supported() || Notification.permission !== 'granted') return;
+    const reg = await registration();
+    await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toBytes(PUBLIC_KEY) });
+    const json = sub.toJSON();
+    await rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: json.keys?.p256dh, p_auth: json.keys?.auth });
+  } catch { /* tried again next visit */ }
+}
+
 export async function disablePush(): Promise<void> {
   if (!supported()) return;
   const sub = await existing();

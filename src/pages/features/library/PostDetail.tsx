@@ -228,8 +228,6 @@ export default function PostDetail() {
             {me.muted ? <BellOff size={16} aria-hidden /> : <Bell size={16} aria-hidden />}
           </button>}
         </div>
-        {helpType && me.is_owner && <p className="text-xs text-muted">Nothing here needs a decision from you, and there's no deadline. {takesFixes(helpType) && 'Fixes you thank go to your phrasebook.'}</p>}
-        {!readOnly && !me.can_review && !me.is_owner && <p className="text-xs text-muted">{helpType === 'question' ? 'Anyone can reply.' : `${helpType ? 'Fixes' : 'Corrections'} come from native speakers and learners verified at B1 in this language. Anyone can reply.`}</p>}
         {composer && (
           <Composer postId={id} parentId={null} kind={composer} currentPhrase={post.current_phrase ?? post.phrase} currentTranslation={post.current_translation ?? post.translation} helpType={composer === 'correction' && helpType && helpType !== 'question' ? helpType : undefined}
             target={composer === 'correction' && longBody ? sentence : null}
@@ -243,11 +241,7 @@ export default function PostDetail() {
           {helpType === 'question' ? 'Replies' : helpType ? 'Fixes and replies' : 'Discussion'} <span className="font-sans text-sm text-muted">{items.length}{!helpType && pending.length > 0 && ` · ${pending.length} open`}</span>
         </h2>
         <div className="px-3 py-2 md:px-4">
-        {roots.length === 0
-          ? <p className="py-6 text-center text-sm text-muted">{helpType
-              ? (me.is_owner ? 'Nobody has answered yet. You will be told as soon as someone does.' : helpType === 'question' ? 'No replies yet. You could be the first.' : me.can_review ? 'No fixes yet. You could be the first to help.' : 'No fixes yet.')
-              : me.is_owner ? 'Nobody has reviewed this yet. You will be told when they do.' : 'No corrections yet. Is it right? Confirm it, or propose a correction.'}</p>
-          : <ul className="ft-tree space-y-1">{roots.slice(0, shown).map((r) => <ThreadBranch key={r.id} item={r} ctx={threadCtx} />)}</ul>}
+        {roots.length > 0 && <ul className="ft-tree space-y-1">{roots.slice(0, shown).map((r) => <ThreadBranch key={r.id} item={r} ctx={threadCtx} />)}</ul>}
         {roots.length > shown && <Button size="sm" variant="secondary" full className="mt-2" onClick={() => setShown((n) => n + PAGE)}>Show more ({roots.length - shown})</Button>}
         </div>
       </section>

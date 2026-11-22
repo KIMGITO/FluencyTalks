@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { Ban, Download, Eye, KeyRound, LifeBuoy, Lock, Mail, Monitor, Moon, Palette, Pencil, Sun, UserRound, type LucideIcon } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Ban, Bell, Download, Eye, KeyRound, LifeBuoy, Lock, Mail, Monitor, Moon, Palette, Pencil, Sun, UserRound, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Avatar, Button, buttonClass, Card, Input, tabClass, tabsClass, Checkbox } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
@@ -11,6 +11,7 @@ import { isOAuthOnly } from '@/lib/session';
 import { useThemeStore } from '@/store/themeStore';
 import { exportMyData } from '@/services';
 import { AccountZone, BlockedList } from '@/components/features';
+import { NotificationSettings } from '@/components/features/review/NotificationSettings';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { SUPPORT_SUBJECT } from '@/lib/site';
 import { EMAILS, mailto } from '@/lib/emails';
@@ -18,10 +19,11 @@ import clsx from 'clsx';
 import { userMessage } from '@/lib/errors';
 import { checkEmail, checkPassword } from '@/lib/validate';
 
-type Tab = 'profile' | 'privacy' | 'appearance';
+type Tab = 'profile' | 'notifications' | 'privacy' | 'appearance';
 
 const tabs: { key: Tab; label: string; icon: typeof UserRound }[] = [
   { key: 'profile', label: 'Profile', icon: UserRound },
+  { key: 'notifications', label: 'Notifications', icon: Bell },
   { key: 'privacy', label: 'Privacy', icon: Lock },
   { key: 'appearance', label: 'Appearance', icon: Palette },
 ];
@@ -50,7 +52,8 @@ export default function Settings() {
   const reloadProfile = useProfileStore((s) => s.load);
   const providerAvatar = useProviderAvatar();
   const { mode, setMode } = useThemeStore();
-  const [tab, setTab] = useState<Tab>('profile');
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => tabs.find((t) => t.key === params.get('tab'))?.key ?? 'profile');
   const [pw, setPw] = useState(''); const [email, setEmail] = useState(''); const [msg, setMsg] = useState('');
   const changeActivity = async (show: boolean) => {
     setMsg('');
@@ -106,6 +109,10 @@ export default function Settings() {
             </div>
           </Section>
         </>)}
+
+        {tab === 'notifications' && (
+          <Section icon={Bell} title="Notifications"><NotificationSettings /></Section>
+        )}
 
         {tab === 'privacy' && (<>
           {oauthOnly ? (

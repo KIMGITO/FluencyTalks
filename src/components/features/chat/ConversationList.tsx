@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { Avatar, Button, EmptyState, tabClass, tabsClass } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import { useChatStore } from '@/store/chatStore';
+import { PushPrompt } from '@/components/features/review/PushToggle';
 import { usePresenceOf } from '@/hooks/usePresence';
 export function ConversationList() {
   const { active, requests } = useChatStore(); const [tab, setTab] = useState<'active' | 'request'>('active');
@@ -11,6 +12,7 @@ export function ConversationList() {
   const rows = tab === 'active' ? active : requests;
   return (
     <div className="space-y-3">
+      <PushPrompt reason="calls" />
       <div role="tablist" className={tabsClass}>{([['active', 'Chats'], ['request', `Requests${requests.length ? ` (${requests.length})` : ''}`]] as const).map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)} className={tabClass(tab === k)}>{label}</button>))}</div>
       {!rows.length ? <EmptyState title={tab === 'active' ? 'No chats yet' : 'No requests'} action={tab === 'active' ? <Link to="/search?tab=people"><Button size="sm">Find people</Button></Link> : undefined} /> : (

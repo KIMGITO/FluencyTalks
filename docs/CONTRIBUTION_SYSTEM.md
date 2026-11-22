@@ -18,7 +18,7 @@ They never feed each other. Being slow to answer can't lower a level, and helpin
 
 ## Post types
 
-There are two families. **Practice** is for learners and is always in the language you are learning, chosen by the server. **Teaching** claims to be right, so it needs a qualified author: a native speaker, or a learner verified at B1 or above in that language.
+There are two families. **Practice** is for learners and is always in the language you are learning, chosen by the server. **Teaching** claims to be right, so it needs a native speaker of that language (since 2026-11-22). Corrections follow the call-rating rule: a native speaker, or a learner who passed a level above the author's.
 
 | Type | Family | Who can post | Length | How readers respond |
 |---|---|---|---|---|

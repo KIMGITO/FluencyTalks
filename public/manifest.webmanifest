@@ -1,7 +1,7 @@
 {
   "name": "The Fluency Talks",
   "short_name": "Fluency Talks",
-  "description": "Practice languages with native speakers and fluent learners. Real conversation, corrections, and phrasebook.",
+  "description": "Practise languages on video calls with native speakers and fluent learners. Topics for your level, partner ratings, corrections and a phrasebook.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -4,7 +4,6 @@ import { ImagePlus } from 'lucide-react';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { mixFeed, weavePosts } from '@/lib/feedMix';
 import { PeopleRow } from '@/components/features';
-import { HomePulse } from '@/components/features/HomePulse';
 import {
   Avatar,
   Button,
@@ -58,14 +57,14 @@ export default function Home() {
   const firstLoad = feed.initialLoading || peopleList.initialLoading || needingFix.initialLoading;
 
   return (
-    <>
+    // One column, the composer the same width as the posts. Live numbers and partners are in the right column.
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
       <DecisionBanner />
-      <HomePulse />
       {/* Composer: looks like an input so it invites typing, but opens the contribute page */}
       <Link
         to="/library/contribute"
         aria-label="Create a post"
-        className="ft-card mb-4 flex items-center gap-3 p-3 transition-colors hover:bg-surface-2"
+        className="ft-card flex items-center gap-3 p-3 transition-colors hover:bg-surface-2"
       >
         <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="md" />
         <span className="min-w-0 flex-1 truncate rounded-full border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted">
@@ -77,7 +76,7 @@ export default function Home() {
       {firstLoad ? (
         <PostListSkeleton count={3} />
       ) : (
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+        <>
           {feed.error && <ErrorState title="Couldn't load posts" busy={feed.loading} onRetry={() => void feed.refresh()} />}
 
           {!items.length && !feed.error && (peopleList.error
@@ -112,8 +111,8 @@ export default function Home() {
             </Link>
           )}
           {feed.done && !!items.length && <p className="py-4 text-center text-xs text-muted">You're all caught up.</p>}
-        </div>
+        </>
       )}
-    </>
+    </div>
   );
 }

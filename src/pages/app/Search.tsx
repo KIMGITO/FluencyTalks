@@ -8,6 +8,7 @@ import { MessageResult, PersonResult, SearchBox, SearchFilters } from '@/compone
 import { Button, EmptyState, RowListSkeleton, Spinner, Tabs } from '@/components/ui';
 import { SEARCH_PAGE_SIZE } from '@/lib/constants';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { usePersonStatus } from '@/hooks/usePersonStatus';
 import { searchMessages, searchPeople, searchPhrases, searchPosts, type PhraseHit, type PostHit } from '@/services';
 import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
@@ -84,6 +85,7 @@ export default function Search() {
   const total = groups.reduce((n, g) => n + g.rows.length, 0);
   const idle = !typed && !filtered;
 
+  const partners = usePersonStatus(people.rows.map((p) => p.id));
   const hidePerson = (id: string) => people.setRows((p) => p.filter((x) => x.id !== id));
   const dropPost = (id: string) => posts.setRows((p) => p.filter((x) => x.id !== id));
   const exact = handle && people.rows[0]?.username?.toLowerCase() === handle ? people.rows[0] : null;
@@ -96,7 +98,7 @@ export default function Search() {
         ? people.rows.map((p) => <PersonResult key={p.id} person={p} />)
         : <>
             {exact && <PersonResult person={exact} />}
-            {people.rows.filter((p) => p.id !== exact?.id).map((p) => <ProfileCard key={p.id} person={p} onHidden={hidePerson} />)}
+            {people.rows.filter((p) => p.id !== exact?.id).map((p) => <ProfileCard key={p.id} person={p} onHidden={hidePerson} status={partners.status[p.id]} onStatus={partners.patch} />)}
           </>}
     </div>
   );

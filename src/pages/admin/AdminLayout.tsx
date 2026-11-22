@@ -77,7 +77,7 @@ export function AdminLayout() {
           <div className="flex min-w-0 items-center gap-1">
             <span className="mr-1"><Chip tone={tier === 'super' ? 'accent' : tier === 'admin' ? 'brand' : 'aqua'}>{TIER_LABEL[tier]}</Chip></span>
             <span className="hidden md:block"><ThemeToggle /></span>
-            <NotificationBell allTo="/admin/notifications" />
+            <NotificationBell allTo="/admin/notifications" settingsTo="/admin/notifications?settings=1" />
           </div>
         </header>
         {paused && <p role="status" className="flex items-center justify-center gap-2 bg-danger px-3 py-1.5 text-xs font-semibold text-surface"><CirclePause size={14} aria-hidden /> The app is paused for users. Only staff can use it.</p>}
