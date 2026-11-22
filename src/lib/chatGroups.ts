@@ -21,13 +21,18 @@ export function dayLabel(iso: string, now = new Date()): string {
 
 
 export function groupByDay(messages: Message[], now = new Date()): DayGroup[] {
-  const groups: DayGroup[] = [];
-  const index = new Map<string, DayGroup>();
-  for (const m of messages) {
-    const key = dayKey(m.created_at);
+  return groupItemsByDay(messages, (m) => m.created_at, now).map((g) => ({ key: g.key, label: g.label, messages: g.items }));
+}
+
+/** The same grouping for anything with a time, such as messages and calls together. Items must be in time order. */
+export function groupItemsByDay<T>(items: T[], at: (t: T) => string, now = new Date()): { key: string; label: string; items: T[] }[] {
+  const groups: { key: string; label: string; items: T[] }[] = [];
+  const index = new Map<string, (typeof groups)[number]>();
+  for (const it of items) {
+    const key = dayKey(at(it));
     let g = index.get(key);
-    if (!g) { g = { key, label: dayLabel(m.created_at, now), messages: [] }; index.set(key, g); groups.push(g); }
-    g.messages.push(m);
+    if (!g) { g = { key, label: dayLabel(at(it), now), items: [] }; index.set(key, g); groups.push(g); }
+    g.items.push(it);
   }
   return groups;
 }

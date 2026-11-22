@@ -34,6 +34,7 @@ async function learner(name, native, learning) {
   const c = createClient(API_URL, ANON_KEY, options);
   assert.equal((await c.auth.signInWithPassword({ email, password: PW })).error, null);
   await c.rpc('set_language_profile', { p_native: native, p_learning: learning, p_level: 'A2' });
+  assert.equal((await c.rpc('set_birth_date', { p_birth: '1995-01-01', p_minor_rules: '1' })).error, null, `birth date ${name}`);
   const token = (await c.auth.getSession()).data.session.access_token;
   return { id: data.user.id, c, token };
 }
@@ -87,7 +88,7 @@ async function main() {
   assert.equal(t.iss, lk.LIVEKIT_API_KEY);
   assert.equal(t.video.room, room, 'scoped to this room');
   assert.equal(t.video.roomJoin, true);
-  assert.equal(t.video.canPublishData, false);
+  assert.equal(t.video.canPublishData, true, 'in-call messages go over the room data channel');
   assert.deepEqual([...t.video.canPublishSources].sort(), ['camera', 'microphone'], 'camera and microphone only');
   for (const g of ['roomCreate', 'roomAdmin', 'roomList', 'roomRecord', 'recorder', 'ingressAdmin', 'hidden', 'agent']) assert.ok(!t.video[g], `no ${g}`);
   assert.ok(t.exp - t.nbf <= 600 && t.exp - t.nbf >= 60, `short-lived: ${t.exp - t.nbf}s`);

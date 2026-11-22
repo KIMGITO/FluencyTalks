@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bookmark, BookmarkCheck, Flag, MessagesSquare, MoreVertical, Pencil, PencilLine, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Flag, MessageCircle, MoreVertical, Pencil, PencilLine, Pin, PinOff, Quote, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
-import { Avatar, Button, ConfirmDialog, buttonClass, MenuItem } from '@/components/ui';
+import { Avatar, Button, ConfirmDialog, MenuItem } from '@/components/ui';
 import { canCorrect } from '@/lib/corrections';
 import { FIX_LABEL, isPractice, POST_TYPE_LABEL } from '@/lib/postTypes';
 import { CATEGORY_LOOK, LESSON_LOOK, PRACTICE_LOOK } from './postLooks';
 import { StatusPill } from '@/components/features/review/StatusPill';
+import { LikeButton } from './LikeButton';
 import { toast } from '@/store/toastStore';
 import { ReportDialog } from '@/components/features/ReportDialog';
 import { blockUser } from '@/services';
@@ -21,7 +22,7 @@ export interface PostCardProps {
   post: Omit<ContributionPost, 'author'> & {
     author?: { display_name?: string | null; username?: string; id?: string; avatar_url?: string | null } | null;
   };
-  /** `full` (Home, profiles) shows everything; `compact` (Library, Saved) is one tight row that expands on tap. */
+  /** `full` (Home, profiles) shows pictures; `compact` (Library, Saved, Search) leaves them out to keep lists tight. */
   variant?: 'full' | 'compact';
   /** Called when the card should leave the list: deleted, author blocked, or unsaved (with `removeOnUnsave`). */
   onRemoved?: (id: string) => void;
@@ -32,28 +33,6 @@ export interface PostCardProps {
 }
 
 const ALIGN = { left: 'text-left', center: 'text-center', right: 'text-right' } as const;
-
-/** Rough number of lines the text takes on a phone (~38 characters a line). */
-const lineCount = (text: string) =>
-  text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.trim().length / 38)), 0);
-
-/** Long text: past this many lines it is set as ordinary body text, like Facebook. */
-const LONG_LINES = 10;
-
-/** Facebook-style sizing: short text is big and bold, longer text steps down; very long text is plain. */
-function phraseSize(text: string, onPanel: boolean) {
-  if (lineCount(text) > LONG_LINES) return 'text-base font-normal';
-  const n = text.trim().length;
-  if (onPanel) {
-    if (n <= 30) return 'text-3xl md:text-4xl font-bold';
-    if (n <= 80) return 'text-2xl md:text-3xl font-bold';
-    if (n <= 160) return 'text-xl md:text-2xl font-bold';
-    return 'text-lg font-semibold';
-  }
-  if (n <= 40) return 'text-xl font-bold';
-  if (n <= 120) return 'text-lg font-bold';
-  return 'text-base font-semibold';
-}
 
 /** Shows at most 6 lines (the minimum card); a See more / See less toggle appears only when the text is cut off. */
 function ClampText({ children, className, align }: { children: React.ReactNode; className?: string; align?: string }) {
@@ -100,7 +79,6 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const [reporting, setReporting] = useState(false);
   const [saved, setSaved] = useState(!!post.saved);
   const [pinned, setPinned] = useState(!!post.pinned_at);
-  const [expanded, setExpanded] = useState(false);
   const [confirming, setConfirming] = useState<'delete' | 'block' | null>(null);
   const saving = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -176,15 +154,6 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const shownTranslation = post.current_translation ?? post.translation;
   const threadLink = `/library/post/${post.id}`;
   const threadSize = post.thread_count ?? 0;
-  const review = (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <StatusPill status={post.review_status ?? 'awaiting_feedback'} />
-      {post.accepted_item_id && <span className="min-w-0 truncate text-xs text-muted">Original: {post.phrase}</span>}
-      <Link to={threadLink} className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
-        <MessagesSquare size={14} aria-hidden /> {threadSize ? `Discussion · ${threadSize}` : 'Review'}{(post.open_corrections ?? 0) > 0 && ` · ${post.open_corrections} open`}
-      </Link>
-    </div>
-  );
   const language = post.language_id ? languageName(post.language_id) ?? post.language_id : null;
   const isLesson = post.post_type === 'lesson';
   const look = isLesson ? LESSON_LOOK : CATEGORY_LOOK[post.category] ?? CATEGORY_LOOK.phrase;
@@ -192,7 +161,6 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
   const overlaid = post.image_layout === 'overlay' && !!post.unsplash_image_url;
   const lessonText = post.current_body ?? post.body;
   const align = ALIGN[post.text_align ?? 'left'] ?? ALIGN.left;
-  const isLong = lineCount(post.current_phrase ?? post.phrase) > LONG_LINES;
 
   const profileLink = (children: React.ReactNode, className?: string) =>
     username ? <Link to={`/u/${username}`} className={className}>{children}</Link> : <span className={className}>{children}</span>;
@@ -246,190 +214,105 @@ export function PostCard({ post, variant = 'full', onRemoved, removeOnUnsave, on
     </>
   );
 
-  // ---------- Practice: a learner's own writing. Each type has its own page, the same in every list. ----------
-  if (isPractice(post.post_type)) {
-    const type = post.post_type;
-    const look = PRACTICE_LOOK[type];
-    const canFix = !isOwner && (type === 'question' || canCorrect(me, post.language_id));
-    const answered = type === 'question' || type === 'how_do_i_say';
-    const stamp = (
-      <span className={clsx('inline-flex w-fit -rotate-1 items-center gap-1 rounded-sm border-2 px-2 py-px text-2xs font-bold uppercase tracking-wide text-ink', look.stamp)}>
-        <look.icon size={11} aria-hidden /> {POST_TYPE_LABEL[type]}
-      </span>
-    );
-    return (
-      <article className="ft-card overflow-hidden p-3 md:p-4">
-        <header className="flex items-center gap-3 px-1">
-          {profileLink(<Avatar name={authorName} src={post.author?.avatar_url} size="md" />, 'flex shrink-0')}
-          <div className="min-w-0 flex-1">
-            {profileLink(authorName, 'block truncate font-semibold text-ink hover:underline')}
-            <p className="truncate text-xs text-muted">{pinned && 'Pinned · '}{timeAgo(post.created_at)}{language && ` · ${language}`}</p>
-          </div>
-          {menu}
-        </header>
-        <Link to={threadLink} aria-label={`Open post: ${post.phrase}`} className={clsx('mt-3 block rounded-md border border-border px-4 pb-4 pt-3 transition hover:border-ink/40', look.panel)}>
-          {stamp}
-          {type === 'story' && (
-            <>
-              <span className="mt-2 block break-words font-display text-xl font-semibold text-ink">{post.phrase}</span>
-              <span className="mt-1 line-clamp-4 whitespace-pre-line break-words font-display text-base leading-7 text-ink first-letter:text-2xl first-letter:font-bold">{post.current_body ?? post.body}</span>
-            </>
-          )}
-          {type === 'question' && (
-            <>
-              <span className="mt-2 block break-words text-lg font-semibold leading-snug text-ink">{post.phrase}</span>
-              {post.body && <span className="mt-1 line-clamp-3 whitespace-pre-line break-words text-sm text-muted">{post.body}</span>}
-            </>
-          )}
-          {type === 'photo' && post.unsplash_image_url && (
-            post.image_layout === 'overlay'
-              ? <span className="mt-2 block"><OverlayImage src={post.unsplash_image_url} text={post.phrase} /></span>
-              : (
-                <>
-                  <img src={post.unsplash_image_url} alt={post.phrase} loading="lazy" className="mt-2 aspect-[4/3] w-full rounded-md object-cover" />
-                  <span className="mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink">{post.phrase}</span>
-                </>
-              )
-          )}
-          {(type === 'correct_me' || type === 'how_do_i_say') && (
-            // Ruled lines sit on the same 1.75rem rhythm as the text, so words rest on them.
-            <span
-              className={clsx('mt-2 block whitespace-pre-line break-words text-lg leading-7 text-ink', type === 'correct_me' && 'ft-ruled')}
-            >{post.phrase}</span>
-          )}
-          {post.source_context && <span className="mt-2 block text-sm text-muted">{(type === 'correct_me' || type === 'photo') && 'Trying to say: '}{post.source_context}</span>}
-        </Link>
-        <div className="flex flex-wrap items-center gap-2 px-1 pt-2">
-          <StatusPill status={post.review_status ?? 'awaiting_feedback'} label={answered && post.review_status === 'corrections_received' ? 'Answers received' : undefined} />
-          {threadSize > 0 && <span className="text-xs text-muted">{threadSize} {threadSize === 1 ? 'response' : 'responses'}</span>}
-          <Link to={threadLink} className={clsx('ml-auto', canFix ? buttonClass('primary', 'sm') : buttonClass('ghost', 'sm'))}>
-            {canFix ? <><PencilLine size={14} aria-hidden /> {FIX_LABEL[type]}</> : 'See responses'}
-          </Link>
-        </div>
-        {extras}
-      </article>
-    );
-  }
+  // ---------- One layout for every post, like a social feed: avatar on the left, the post beside it,
+  // an icon action bar underneath. Tapping the text or picture opens the discussion. ----------
+  const practice = isPractice(post.post_type) ? post.post_type : null;
+  const kind = practice ? { icon: PRACTICE_LOOK[practice].icon, label: POST_TYPE_LABEL[practice] } : { icon: look.icon, label: category };
+  const canFix = !isOwner && !!practice && (practice === 'question' || canCorrect(me, post.language_id));
+  const answered = practice === 'question' || practice === 'how_do_i_say';
+  const status = post.review_status ?? 'awaiting_feedback';
+  const short = variant === 'compact';
+  const image = post.unsplash_image_url;
+  const caption = practice ? post.phrase : shownPhrase;
+  const openThread = (e: React.MouseEvent) => {
+    // Links, buttons and selecting text keep doing their own thing.
+    if ((e.target as HTMLElement).closest('a, button') || window.getSelection()?.toString()) return;
+    navigate(threadLink);
+  };
 
-  // ---------- Compact: one row — thumbnail, two lines of text, meta. Tap to expand to the full card. ----------
-  if (variant === 'compact' && !expanded) {
-    return (
-      <article className="ft-card p-3">
-        <div className="flex items-start gap-3">
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="flex min-w-0 flex-1 items-start gap-3 text-left"
-            aria-label={`Open post: ${shownPhrase}`}
-          >
-            <span className={clsx('flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md', look.panel)}>
-              {post.unsplash_image_url
-                ? <img src={post.unsplash_image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                : <look.icon size={22} aria-hidden className="text-ink" />}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{shownPhrase}</span>
-              {(shownTranslation || lessonText) && <span className="mt-0.5 line-clamp-1 text-xs text-muted">{shownTranslation ?? lessonText}</span>}
-              <span className="mt-1 block truncate text-2xs text-muted">
-                {pinned && '📌 '}{authorName} · {timeAgo(post.created_at)} · {category}{language && ` · ${language}`}
-              </span>
-            </span>
-          </button>
-          {menu}
-        </div>
-        <div className="mt-1.5">{review}</div>
-        {extras}
-      </article>
-    );
-  }
-
-  // ---------- Full ----------
   return (
-    <article className="ft-card overflow-hidden p-3 md:p-4">
-      {/* Author row */}
-      <header className="flex items-center gap-3 px-1">
-        {profileLink(
-          <span className="flex aspect-square rounded-full border-2 border-accent p-0.5">
-            <Avatar name={authorName} src={post.author?.avatar_url} size="md" />
-          </span>,
-          'flex shrink-0',
-        )}
-        <div className="min-w-0 flex-1">
-          {profileLink(authorName, 'block truncate font-semibold text-ink hover:underline')}
-          <p className="flex items-center gap-1 truncate text-xs text-muted">
-            {pinned && <><Pin size={11} className="shrink-0 text-accent" aria-hidden /><span className="font-semibold">Pinned</span> · </>}
-            {timeAgo(post.created_at)}
-            {language && ` · ${language}`}
-          </p>
-        </div>
-        {variant === 'compact' && (
-          <button type="button" onClick={() => setExpanded(false)} className="text-xs font-semibold text-muted hover:text-ink">
-            Show less
-          </button>
-        )}
-        {menu}
-      </header>
-
-      {/* Media: the image; for text-only posts the phrase on a tinted panel at least 6 lines tall,
-          or — when it runs past 10 lines — as ordinary text with no panel. */}
-      {post.unsplash_image_url || !isLong ? (
-        <div className={clsx('relative mt-3 overflow-hidden rounded-xl', look.panel)}>
-          {overlaid ? (
-            <OverlayImage src={post.unsplash_image_url!} text={shownPhrase} align={align} />
-          ) : post.unsplash_image_url ? (
-            <>
-              <img
-                src={post.unsplash_image_url}
-                alt={shownPhrase}
-                className="aspect-[4/3] w-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-ink/30" />
-            </>
-          ) : (
-            <div className="flex min-h-[9.6rem] items-center px-5 py-9">
-              <ClampText align={align} className={clsx('leading-snug text-ink', phraseSize(shownPhrase, true))}>{shownPhrase}</ClampText>
-            </div>
-          )}
-
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-sm bg-deep/85 px-2 py-px text-2xs font-bold text-on-deep">
-            <look.icon size={11} aria-hidden /> {category}
-          </span>
-
-          {post.language_id && (
-            <span className="absolute bottom-2 left-2 flex max-w-[70%] items-center gap-1.5 rounded-full bg-surface/85 px-2 py-px text-2xs font-semibold text-ink backdrop-blur-sm">
-              <span className="font-mono font-bold text-ink">{post.language_id.toUpperCase()}</span>
-              <span className="truncate">{language}</span>
-            </span>
-          )}
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-wrap items-center gap-2 px-1 text-xs">
-          <span className={clsx('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold text-ink', look.panel)}><look.icon size={12} aria-hidden /> {category}</span>
-          {post.language_id && (
-            <span className="rounded-full bg-accent/15 px-2.5 py-0.5 font-semibold text-ink">{language}</span>
-          )}
-        </div>
+    <article className="ft-card px-3 pb-1 pt-3 transition-colors hover:bg-surface-2/40 md:px-4">
+      {pinned && (
+        <p className="mb-1 flex items-center gap-1.5 pl-[3.25rem] text-xs font-semibold text-muted">
+          <Pin size={12} aria-hidden /> Pinned
+        </p>
       )}
-
-      {/* Caption */}
-      <div className={clsx('space-y-1.5 px-1 pt-3', align)}>
-        {(post.unsplash_image_url || isLong) && !overlaid && (
-          <ClampText className={clsx('leading-relaxed text-ink', phraseSize(shownPhrase, false))}>{shownPhrase}</ClampText>
-        )}
-        {lessonText && <ClampText className="font-display text-base leading-7 text-ink">{lessonText}</ClampText>}
-        {shownTranslation && <p className="whitespace-pre-line text-sm text-muted">{shownTranslation}</p>}
-        {post.source_context && (
-          <p className={clsx('flex gap-1.5 text-sm text-ink', post.text_align === 'center' && 'justify-center', post.text_align === 'right' && 'justify-end')}>
-            <Quote size={14} className="mt-0.5 shrink-0 text-accent" />
-            <span>
-              {username && <span className="mr-1 font-semibold">{username}</span>}
-              <span className="text-muted">{post.source_context}</span>
-            </span>
+      <div className="flex gap-3">
+        {profileLink(<Avatar name={authorName} src={post.author?.avatar_url} size="md" />, 'flex h-fit shrink-0')}
+        <div className="min-w-0 flex-1">
+          {/* Name · @handle · time, and the ⋮ menu at the end */}
+          <header className="flex items-start gap-1">
+            <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1 text-sm leading-5">
+              {profileLink(authorName, 'max-w-full truncate font-bold text-ink hover:underline')}
+              {username && <span className="min-w-0 truncate text-muted">@{username}</span>}
+              <span aria-hidden className="text-muted">·</span>
+              <Link to={threadLink} className="shrink-0 text-muted hover:underline">{timeAgo(post.created_at)}</Link>
+            </div>
+            <div className="-mr-2 -mt-1.5 shrink-0">{menu}</div>
+          </header>
+          <p className="flex items-center gap-1 text-xs text-muted">
+            <kind.icon size={12} aria-hidden /> {kind.label}{language && ` · ${language}`}
+            {status !== 'awaiting_feedback' && <StatusPill className="ml-1" status={status} label={answered && status === 'corrections_received' ? 'Answers received' : undefined} />}
           </p>
-        )}
+
+          <div onClick={openThread} className="cursor-pointer">
+            {/* Text */}
+            <div className="mt-1.5 space-y-1.5 text-[15px] leading-relaxed text-ink">
+              {practice === 'story' ? (
+                <>
+                  <p className="break-words font-semibold">{post.phrase}</p>
+                  <ClampText>{post.current_body ?? post.body}</ClampText>
+                </>
+              ) : practice === 'question' ? (
+                <>
+                  <ClampText className="font-semibold">{post.phrase}</ClampText>
+                  {post.body && <ClampText className="text-muted">{post.body}</ClampText>}
+                </>
+              ) : !overlaid && <ClampText>{caption}</ClampText>}
+              {!practice && lessonText && <ClampText>{lessonText}</ClampText>}
+              {!practice && shownTranslation && <p className="whitespace-pre-line text-sm text-muted">{shownTranslation}</p>}
+              {post.accepted_item_id && !practice && <p className="truncate text-xs text-muted">Original: {post.phrase}</p>}
+              {post.source_context && (
+                practice
+                  ? <p className="text-sm text-muted">{(practice === 'correct_me' || practice === 'photo') && 'Trying to say: '}{post.source_context}</p>
+                  : <p className="flex gap-1.5 text-sm text-muted"><Quote size={14} className="mt-0.5 shrink-0 text-accent" aria-hidden />{post.source_context}</p>
+              )}
+            </div>
+
+            {/* Picture */}
+            {image && !short && (
+              <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+                {overlaid
+                  ? <OverlayImage src={image} text={caption} align={align} />
+                  : <img src={image} alt={caption} loading="lazy" className="aspect-[4/3] w-full object-cover" />}
+              </div>
+            )}
+            {image && short && overlaid && <p className="mt-1.5 break-words text-[15px] text-ink">{caption}</p>}
+          </div>
+
+          {/* Actions: reply, like, fix, save */}
+          <div className="-ml-2.5 mt-1 flex max-w-md items-center justify-between">
+            <Link to={threadLink} title="Reply" aria-label={threadSize ? `${threadSize} replies` : 'Reply'}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
+              <MessageCircle size={16} aria-hidden />{threadSize > 0 && threadSize}
+              {(post.open_corrections ?? 0) > 0 && <span className="font-normal">· {post.open_corrections} open</span>}
+            </Link>
+            <LikeButton postId={post.id} liked={post.liked} count={post.like_count} />
+            {canFix ? (
+              <Link to={threadLink} title={FIX_LABEL[practice!]}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink">
+                <PencilLine size={16} aria-hidden /><span className="hidden sm:inline">{FIX_LABEL[practice!]}</span>
+              </Link>
+            ) : <span aria-hidden className="w-10" />}
+            {!isOwner ? (
+              <button type="button" onClick={() => void handleSave()} title={saved ? 'Remove from saved' : 'Save'} aria-pressed={saved}
+                className={clsx('inline-flex min-h-10 items-center rounded-full px-2.5 transition hover:bg-surface-2', saved ? 'text-accent' : 'text-muted hover:text-ink')}>
+                {saved ? <BookmarkCheck size={16} aria-hidden /> : <Bookmark size={16} aria-hidden />}
+              </button>
+            ) : <span aria-hidden className="w-10" />}
+          </div>
+        </div>
       </div>
-      <div className="px-1 pt-2">{review}</div>
       {extras}
     </article>
   );

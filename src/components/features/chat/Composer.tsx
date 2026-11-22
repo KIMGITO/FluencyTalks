@@ -53,7 +53,7 @@ export function Composer({ onSend, replyTo, onCancelReply, onType }: { onSend: (
         {hasOptions && (
           <div className="relative shrink-0" onKeyDown={(e) => { if (e.key === 'Escape') setOptionsOpen(false); }}>
             <button type="button" aria-label={`Message options: ${nameOf(language)}${isBounty ? ', bounty on' : ''}`} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(!optionsOpen)}
-              className={clsx('flex h-[44px] w-[44px] items-center justify-center rounded-md border text-xs font-bold tracking-wide transition active:scale-95', isBounty ? 'border-accent bg-accent text-deep' : 'border-border bg-surface-2 text-ink')}>
+              className={clsx('flex h-[44px] w-[44px] items-center justify-center rounded-md border text-xs font-bold tracking-wide transition active:scale-95', isBounty ? 'border-accent bg-accent text-on-brand' : 'border-border bg-surface-2 text-ink')}>
               {languageTabLabel(language)}
             </button>
             {optionsOpen && (<>

@@ -67,7 +67,7 @@ export function DecisionQueue() {
               </div>
               <div className="flex shrink-0 gap-1.5">
                 {i.extensions < policy.max_extensions && <Button size="sm" variant="ghost" onClick={() => setExtending(i)}>More time</Button>}
-                <Link to={`/library/post/${i.post_id}?item=${i.item_id}`} className="ft-btn inline-flex min-h-9 items-center justify-center rounded-md border border-accent bg-accent px-3 text-sm font-bold text-deep">Decide</Link>
+                <Link to={`/library/post/${i.post_id}?item=${i.item_id}`} className="ft-btn inline-flex min-h-9 items-center justify-center rounded-md border border-accent bg-accent px-3 text-sm font-bold text-on-brand">Decide</Link>
               </div>
             </div>
           ))}

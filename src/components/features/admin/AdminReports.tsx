@@ -20,7 +20,7 @@ export function AdminReports() {
       <div className="ft-inset"><Tabs value={filter} onChange={setFilter} items={[{ key: 'open', label: openCount ? `Open (${openCount})` : 'Open' }, { key: 'actioned', label: 'Actioned' }, { key: 'dismissed', label: 'Dismissed' }]} /></div>
       {failed ? <ErrorState title="Couldn't load the reports" onRetry={load} />
         : !items ? <RowListSkeleton label="Loading reports" />
-        : !items.length ? <EmptyState icon={filter === 'open' ? <IconTile icon={PartyPopper} tone="success" /> : undefined} title={filter === 'open' ? 'The queue is clear' : 'Nothing here yet'} text={filter === 'open' ? 'No report is waiting for a decision.' : undefined} />
+        : !items.length ? <EmptyState icon={filter === 'open' ? <IconTile icon={PartyPopper} tone="success" /> : undefined} title={filter === 'open' ? 'The queue is clear' : 'Nothing here yet'} />
         : <div className="space-y-3">{items.map((r) => <ReportCard key={r.id} report={r} onAct={(userId, name, status, reportId) => setTarget({ userId, name, status, reportId })} onResolved={load} />)}</div>}
       <ModerationDialog target={target} onClose={() => setTarget(null)} onDone={() => { setTarget(null); load(); }} />
     </div>

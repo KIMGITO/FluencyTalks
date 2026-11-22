@@ -60,7 +60,7 @@ export default function Notifications() {
       {failed ? <ErrorState title="Couldn't load your notifications" onRetry={retry} />
         : items === null ? <NotificationSkeleton />
         : !items.length ? (
-          <EmptyState title={filter === 'all' ? 'Nothing yet' : 'Nothing here'} text={filter === 'all' ? 'Corrections, decisions and replies about your posts will show up here.' : 'Try another filter, or look at All.'}
+          <EmptyState title={filter === 'all' ? 'Nothing yet' : 'Nothing here'}
             action={filter !== 'all' ? <Button size="sm" variant="secondary" onClick={() => setFilter('all')}>Show all</Button> : undefined} />
         ) : (
           <div className="space-y-3">

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { ImagePlus } from 'lucide-react';
 import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
 import { mixFeed, weavePosts } from '@/lib/feedMix';
-import { FirstSteps, PeopleRow } from '@/components/features';
+import { PeopleRow } from '@/components/features';
+import { HomePulse } from '@/components/features/HomePulse';
 import {
   Avatar,
   Button,
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui';
 import { homeFeed } from '@/services';
 import { useCountries } from '@/store/countryStore';
-import { useLanguageStore } from '@/store/languageStore';
 import { useProfileStore } from '@/store/profileStore';
 import type { FeedPerson } from '@/types/db';
 import { listHomePosts, listPostsNeedingFix, type ContributionPost } from '@/services/library';
@@ -25,11 +25,9 @@ const OTHERS_PREVIEW = 6;   // people with no shared language only fill in; the 
 
 export default function Home() {
   const { me, languages } = useProfileStore();
-  const languageName = useLanguageStore((s) => s.name);
   const providerAvatar = useProviderAvatar();
   useCountries();
 
-  const nameOf = (id?: string | null) => (id ? languageName(id) ?? id : null);
   // Posts of every type, mine too: cached and paged — shown instantly when coming back, next page loads on scroll.
   // Posts in my two languages come first; the key changes when those languages do.
   const feed = usePagedList(`posts:home:${me?.native_language_id ?? ''}:${me?.learning_language_id ?? ''}`, (offset, limit) => listHomePosts({ offset, limit }));
@@ -42,14 +40,6 @@ export default function Home() {
   // People: cached too; the key changes (and refetches) when my languages or country change.
   const peopleKey = `people:home:${languages.map((l) => `${l.language_id}.${l.role}`).sort().join(',')}:${me?.country_code ?? ''}:${me?.timezone ?? ''}`;
   const peopleList = usePagedList<FeedPerson>(peopleKey, async (offset) => (offset ? [] : homeFeed()), 10_000);
-
-  const nativeName = nameOf(me?.native_language_id);
-  const learningName = nameOf(me?.learning_language_id);
-  const emptyText = learningName
-    ? `Nobody matches yet. Anyone who speaks ${learningName} natively, and anyone learning ${nativeName}, will appear here as they join. They don't need to want what you offer. You can also search by name or @username.`
-    : nativeName
-      ? `Add a language you are learning in your profile to get matched. People learning ${nativeName} will appear here as they join, or search by name or @username.`
-      : 'Search for anyone by name or @username.';
 
   const { partners, others } = useMemo(() => {
     return {
@@ -70,7 +60,7 @@ export default function Home() {
   return (
     <>
       <DecisionBanner />
-      <FirstSteps />
+      <HomePulse />
       {/* Composer: looks like an input so it invites typing, but opens the contribute page */}
       <Link
         to="/library/contribute"
@@ -95,11 +85,11 @@ export default function Home() {
             : (
               <EmptyState
                 title="Nothing here yet"
-                text={emptyText}
+               
                 action={
                   <div className="flex flex-wrap justify-center gap-2">
                     <Link to="/library/contribute"><Button size="sm">Write a post</Button></Link>
-                    <Link to="/search"><Button size="sm" variant="secondary">Search people</Button></Link>
+                    <Link to="/people"><Button size="sm" variant="secondary">Find people</Button></Link>
                   </div>
                 }
               />
@@ -117,7 +107,7 @@ export default function Home() {
             </p>
           )}
           {(morePeople || others.length > OTHERS_PREVIEW) && feed.done && (
-            <Link to="/search?tab=people" className="ft-inset self-center text-sm font-semibold text-brand hover:underline">
+            <Link to="/people" className="ft-inset self-center text-sm font-semibold text-brand hover:underline">
               Find more people
             </Link>
           )}

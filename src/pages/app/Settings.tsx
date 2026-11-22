@@ -73,7 +73,7 @@ export default function Settings() {
   };
   return (
     <>
-      <PageHeader title="Settings" subtitle="Account, privacy and appearance" />
+      <PageHeader title="Settings" />
       {/* Who you are, at a glance */}
       <Card className="mb-3 flex items-center gap-3">
         <Avatar name={me?.display_name ?? 'U'} src={resolveAvatar(me?.avatar_url, providerAvatar)} size="lg" ring />

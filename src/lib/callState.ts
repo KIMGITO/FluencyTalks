@@ -6,6 +6,8 @@ export interface CallParticipant {
   user_id: string; username: string | null; display_name: string | null; avatar_url: string | null;
   role: 'host' | 'participant'; invitation_status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
   presence: 'invited' | 'joining' | 'joined' | 'left' | 'removed'; joined_at: string | null; left_at: string | null;
+  /** When the call reached one of their devices, so the caller can be told it is ringing. */
+  rang_at?: string | null;
 }
 export interface CallInfo {
   id: string; status: CallStatus; host_id: string | null; initiated_by: string | null; created_at: string; ring_expires_at: string;

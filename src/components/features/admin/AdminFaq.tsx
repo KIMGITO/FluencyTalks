@@ -34,7 +34,7 @@ export function AdminFaq() {
         <Button size="sm" onClick={() => setEditing('new')}><Plus size={16} aria-hidden /> New question</Button>
         <RefreshButton busy={refresh.busy} onClick={() => void refresh.run()} />
       </Toolbar>
-      {!items.length && <EmptyState icon={<IconTile icon={CircleHelp} />} title="No questions yet" text="Add the first one. It shows on the FAQ page straight away." />}
+      {!items.length && <EmptyState icon={<IconTile icon={CircleHelp} />} title="No questions yet" />}
       {FAQ_SECTIONS.map((s) => {
         const rows = items.filter((f) => f.section === s.id);
         if (!rows.length) return null;

@@ -41,9 +41,12 @@ export const LevelTag = ({
 export const LanguageChip = ({
   languages,
   className,
+  inline,
 }: {
   languages: LanguageEntry[];
   className?: string;
+  /** All levels side by side on one wrapping row instead of one row per level. */
+  inline?: boolean;
 }) => {
   const groups = new Map<Level, string[]>();
   const verifiedOf = new Map<Level, boolean | undefined>();
@@ -64,12 +67,12 @@ export const LanguageChip = ({
   return (
     <dl
       className={clsx(
-        'm-0 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1',
+        inline ? 'm-0 flex flex-wrap items-center gap-x-4 gap-y-1.5' : 'm-0 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1',
         className,
       )}
     >
       {rows.map((level) => (
-        <div key={level} className="contents">
+        <div key={level} className={inline ? 'flex items-center gap-1.5' : 'contents'}>
           <dt className="flex">
             <LevelTag level={level} verified={verifiedOf.get(level)} className="w-full " />
           </dt>

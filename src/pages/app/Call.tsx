@@ -2,28 +2,59 @@
 // so the media SDK only downloads when someone actually calls. /call/new?to=<user> starts a call; /call/<id> is one.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import clsx from 'clsx';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Mic, MicOff, Phone, PhoneOff, RefreshCw, Settings2, Video, VideoOff, Volume2, WifiOff } from 'lucide-react';
-import { Avatar, Button, Modal, Select, Spinner, FormError } from '@/components/ui';
-import { ControlButton, VideoTile } from '@/components/features/call/CallParts';
-import { callControl, getCall, getCallPeer, getCallToken, reportCallConnected, respondCallInvite, startCall, subscribeToMyCalls } from '@/services/calls';
-import { CallMedia, listDevices, Preview, type DeviceKind, type MediaSnapshot } from '@/services/callMedia';
-import { getTopicCall, startTopicCall, type TopicCall } from '@/services/path';
+import { ChevronDown, ChevronUp, MessageSquare, Mic, MicOff, Phone, RefreshCw, Settings2, SwitchCamera, Video, VideoOff, Volume2, WifiOff } from 'lucide-react';
+import { Avatar, Button, Card, Modal, Spinner } from '@/components/ui';
+import { CallChat, CallStage, ControlButton, Dots, HangUpIcon, LayoutPicker, layoutFrom, VideoTile, type CallLayout, type Corner } from '@/components/features/call/CallParts';
+import { callControl, getCall, getCallPeer, getCallToken, reportCallConnected, reportCallRinging, respondCallInvite, startCall, subscribeToMyCalls } from '@/services/calls';
+import { CallMedia, canFlipCamera, Preview, type CallNote, type Facing, type MediaSnapshot } from '@/services/callMedia';
+import { CallVote, DeviceMenu, TopicStrip, type ShownTopic } from '@/components/features/call/CallTopic';
+import { TopicPicker } from '@/components/features/call/TopicPicker';
+import { AssessForm } from '@/components/features/call/AssessForm';
+import { useProfileStore } from '@/store/profileStore';
+import { resolveAvatar, useProviderAvatar } from '@/lib/avatar';
+import { ring } from '@/lib/ringtone';
+import { getTopicCall, listTopics, startTopicCall, type Band, type Topic, type TopicCall } from '@/services/path';
 import { callVoiceOnlyWith } from '@/services/age';
-import { callPhase, deviceErrorText, endedText, formatDuration, isLive, others, type CallInfo, type CallPhase } from '@/lib/callState';
-import { userMessage } from '@/lib/errors';
+import { callPhase, deviceErrorText, endedText, formatDuration, isLive, me as myPart, others, type CallInfo, type CallPhase } from '@/lib/callState';
+import { userMessage, UserError } from '@/lib/errors';
+import { ApiError } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useOnline } from '@/hooks/useOnline';
 
-type PeerHint = { name?: string | null; avatar?: string | null } | null;
+/** From the banner or chat: who it is, and `answer` when they already tapped Answer. */
+type PeerHint = { name?: string | null; avatar?: string | null; answer?: boolean } | null;
+
+// The chosen layout and corner are remembered on this device.
+const LAYOUT_KEY = 'ft.call.layout';
+const remembered = (): { layout: CallLayout; corner: Corner } => {
+  try { const v = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? 'null'); if (v?.layout && v?.corner) return { layout: layoutFrom(v.layout), corner: v.corner }; } catch { /* none */ }
+  return { layout: 'them', corner: 'br' };
+};
+
+/** A mouse or trackpad as the main pointer: a laptop or desktop, where several cameras and speakers are common. */
+const PICK_DEVICES = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 export default function CallPage() {
   const { id = '' } = useParams(); const [params] = useSearchParams(); const nav = useNavigate(); const hint = useLocation().state as PeerHint;
   const myId = useAuthStore((s) => s.user?.id);
   const online = useOnline();
-  const isNew = id === 'new'; const to = params.get('to'); const topicMode = params.get('topic') === '1';
+  const isNew = id === 'new'; const to = params.get('to');
+  // ?topic=<number> starts a rated topic call about that topic; ?topic=1 from older links lets the server pick one.
+  const topicParam = params.get('topic'); const topicMode = topicParam != null; const topicNo = topicParam && topicParam !== '1' ? Number(topicParam) || null : null;
   const [topic, setTopic] = useState<TopicCall | null>(null);
-  const [topicOpen, setTopicOpen] = useState(true);
+  // On an ordinary call, the topic one of us picked; both sides see it.
+  const [chosen, setChosen] = useState<Topic | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [rated, setRated] = useState(false);
+  // My own tile shows my photo, or my initials, when my camera is off: never initials made from "You".
+  const meProfile = useProfileStore((s) => s.me);
+  const providerAvatar = useProviderAvatar();
+  const myName = meProfile?.display_name || meProfile?.username || 'You';
+  const myAvatar = resolveAvatar(meProfile?.avatar_url, providerAvatar);
+  const level = useProfileStore((s) => (s.me?.verified_level ?? s.me?.learning_level ?? null) as Band | null);
 
   const [call, setCall] = useState<CallInfo | null>(null);
   const [loadError, setLoadError] = useState('');
@@ -36,6 +67,18 @@ export default function CallPage() {
   const [settings, setSettings] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [peer, setPeer] = useState<PeerHint>(hint);
+  const [view, setView] = useState(remembered);
+  const arrange = (next: Partial<typeof view>) => setView((v) => { const n = { ...v, ...next }; try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(n)); } catch { /* fine */ } return n; });
+  const [canFlip, setCanFlip] = useState(false);
+  const [facing, setFacing] = useState<Facing>('user');
+  const [notes, setNotes] = useState<CallNote[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
+  // Tap the video (or the arrow) to hide the call buttons and see more; tap again to bring them back.
+  const [controlsHidden, setControlsHidden] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [peek, setPeek] = useState<CallNote | null>(null);
+  const chatOpenRef = useRef(false); chatOpenRef.current = chatOpen;
+  const autoAnswered = useRef(false);
   useEffect(() => { if (isNew && to && !hint?.name) getCallPeer(to).then((p) => p && setPeer({ name: p.display_name || p.username, avatar: p.avatar_url })).catch(() => undefined); }, [isNew, to, hint?.name]);
   const preview = useRef(new Preview()); const media = useRef<CallMedia | null>(null);
   const previewStarted = useRef(false); const previewReady = useRef<Promise<unknown>>(Promise.resolve()); const alive = useRef(true); const callId = useRef(isNew ? '' : id);
@@ -81,6 +124,7 @@ export default function CallPage() {
       setDeviceErrors({ camera: errs.camera ? deviceErrorText(errs.camera, 'camera') : undefined, microphone: errs.microphone ? deviceErrorText(errs.microphone, 'microphone') : undefined });
       if (errs.camera) setCam(false); if (errs.microphone) setMic(false);
       setPreviewVideo(preview.current.videoRef());
+      canFlipCamera().then(setCanFlip).catch(() => undefined);
     });
   }, [wantsPreview, voiceOnly]);
 
@@ -109,33 +153,79 @@ export default function CallPage() {
     await previewReady.current;   // a tap before the camera finished starting must not leave it running
     if (voice_only) { setVoiceOnly(true); setCam(false); await preview.current.setVideo(false); }
     const m = new CallMedia(); media.current = m; m.subscribe(setSnap);
+    m.onNote((n) => {
+      setNotes((all) => [...all, n].slice(-200));
+      if (!chatOpenRef.current) { setUnread((u) => u + 1); setPeek(n); }
+    });
+    m.onTopic((no) => { listTopics().then((all) => { const t = all.find((x) => x.no === no); if (t) setChosen(t); }).catch(() => undefined); });
     const tracks = preview.current.take(); setPreviewVideo(null);
     if (tracks.audio && !mic) await tracks.audio.mute(); if (tracks.video && !cam) await tracks.video.mute();
     await m.connect(url, token, tracks);
     reportCallConnected(cid).catch(() => undefined);
     void refresh();
   };
-  const act = async (fn: () => Promise<void>) => {
-    setBusy(true); setError('');
-    try { await fn(); } catch (e) { setError(userMessage(e)); } finally { setBusy(false); }
+  // What is happening right now, said on screen until it's done ("Answering…", "Ending the call…").
+  const [doing, setDoing] = useState('');
+  const act = async (fn: () => Promise<void>, label = '') => {
+    setBusy(true); setError(''); setDoing(label);
+    try { await fn(); } catch (e) { setError(userMessage(e)); } finally { setBusy(false); setDoing(''); }
   };
   const begin = () => act(async () => {
     if (!to) throw new Error('missing');
-    const cid = topicMode ? await startTopicCall(to) : await startCall(to); callId.current = cid;
+    let cid: string;
+    try { cid = topicMode ? await startTopicCall(to, topicNo) : await startCall(to); }
+    catch (e) {
+      // Said with their name, so it's clear the call didn't go out and why.
+      if (e instanceof ApiError && e.code === 'user_busy') throw new UserError(`${name} is on another call right now. Try again in a few minutes, or send a message.`);
+      if (e instanceof ApiError && e.code === 'user_unavailable') throw new UserError(`${name} can't be called right now.`);
+      throw e;
+    }
+    callId.current = cid;
     nav(`/call/${cid}`, { replace: true, state: peer });
     await refresh(); await join(cid);
-  });
-  const answer = () => act(async () => { await respondCallInvite(id, true); await refresh(); await join(id); });
-  const decline = () => act(async () => { stopEverything(); await respondCallInvite(id, false); await refresh(); });
+  }, 'Starting the call…');
+  const answer = () => act(async () => { await respondCallInvite(id, true); await refresh(); await join(id); }, 'Answering…');
+  // Answered from the banner: go straight in, with the camera and microphone on, once we know if it's voice only.
+  useEffect(() => {
+    if (phase !== 'incoming' || !hint?.answer || voiceOnly === null || autoAnswered.current) return;
+    autoAnswered.current = true; void answer();
+  }, [phase, hint?.answer, voiceOnly]);
+  // The phone rings for the person called, and the caller hears it ringing.
+  // The caller hears ringing only once it really rings on the other side.
+  const rang = !!other?.rang_at;
+  const sound = phase === 'incoming' && !hint?.answer ? 'incoming' : phase === 'ringing' && rang ? 'ringback' : null;
+  useEffect(() => { if (phase === 'incoming' && id && !isNew) reportCallRinging(id).catch(() => undefined); }, [phase === 'incoming', id]);
+  useEffect(() => (sound ? ring(sound) : undefined), [sound]);
+  useEffect(() => { if (!peek) return; const t = setTimeout(() => setPeek(null), 5000); return () => clearTimeout(t); }, [peek]);
+
+  const flip = async () => {
+    try {
+      if (media.current && snap?.state === 'connected') await media.current.flip();
+      else { await preview.current.flip(); setPreviewVideo(preview.current.videoRef()); }
+      setFacing((f) => (f === 'user' ? 'environment' : 'user'));
+    } catch (e) { setDeviceErrors((d) => ({ ...d, camera: deviceErrorText(e, 'camera') })); }
+  };
+  const sendNote = async (text: string) => {
+    const m = media.current; if (!m) throw new Error('not connected');
+    const n = await m.sendNote(text); setNotes((all) => [...all, n].slice(-200));
+  };
+  const openChat = () => { setChatOpen(true); setUnread(0); setPeek(null); };
+  const pickTopic = (t: Topic) => { setChosen(t); void media.current?.sendTopic(t.no).catch(() => undefined); };
+  // Someone who joins after the topic was picked is told which one is on.
+  useEffect(() => { if (remotes > 0 && chosen && media.current) void media.current.sendTopic(chosen.no).catch(() => undefined); }, [remotes > 0]);
+  const decline = () => act(async () => { stopEverything(); await respondCallInvite(id, false); await refresh(); }, 'Declining…');
   const rejoin = () => act(async () => {
     media.current = null; setSnap(null);
     if (!preview.current.audio && !preview.current.video) await preview.current.start({ audio: mic, video: cam });
     await join(id);
-  });
+  }, 'Rejoining…');
   const hangUp = () => act(async () => {
     const cid = callId.current; stopEverything();
     if (cid) await callControl(cid, 'leave'); await refresh();
-  });
+  }, phase === 'ringing' ? 'Cancelling…' : 'Ending the call…');
+  // A topic call under the minimum can't be rated, so ending it early asks first. Keeping on keeps the timer running.
+  const minutesTogether = call?.started_at ? (now - Date.parse(call.started_at)) / 60000 : 0;
+  const endTapped = () => { if (topic && phase === 'active' && minutesTogether < topic.min_minutes) setConfirmEnd(true); else void hangUp(); };
 
   const toggleMic = async () => {
     const next = !mic; setMic(next);
@@ -154,13 +244,13 @@ export default function CallPage() {
     } catch (e) { setCam(!next); setDeviceErrors((d) => ({ ...d, camera: deviceErrorText(e, 'camera') })); }
   };
 
-  const status = (() => {
+  const status = doing || (() => {
     switch (phase) {
       case 'loading': return 'Loading…';
       case 'preview': return isNew ? `Ready to call ${name}` : snap?.ended === 'lost' ? 'Connection lost' : `You're in a call with ${name}`;
       case 'incoming': return `${name} is calling you`;
       case 'connecting': return 'Connecting…';
-      case 'ringing': return `Calling ${name}…`;
+      case 'ringing': return rang ? `Ringing ${name}…` : `Trying to reach ${name}…`;
       case 'waiting': return `Waiting for ${name} to join…`;
       case 'active': return call?.started_at ? formatDuration((now - Date.parse(call.started_at)) / 1000) : 'Connected';
       case 'reconnecting': return 'Reconnecting…';
@@ -168,6 +258,11 @@ export default function CallPage() {
       default: return '';
     }
   })();
+  // While reaching them, the word animates: "Calling…", "Ringing…".
+  const calling = phase === 'ringing' ? (rang ? 'Ringing' : 'Calling') : phase === 'connecting' ? 'Connecting' : phase === 'waiting' ? 'Waiting' : phase === 'reconnecting' ? 'Reconnecting' : null;
+  const waitingText = phase === 'ringing'
+    ? (rang ? 'Ringing on their device. They can answer any moment.' : `Trying to reach ${name}. Their device hasn't shown the call yet.`)
+    : phase === 'waiting' ? `${name} hasn't joined yet.` : '';
 
   // Topic calls carry their prompts, and after they end the partner is asked to assess.
   useEffect(() => {
@@ -180,16 +275,29 @@ export default function CallPage() {
   if (phase === 'ended' && call) {
     const t = endedText(call, myId, name);
     const canRetry = !!other?.user_id;
+    const talked = !!myPart(call, myId)?.joined_at && !!other?.joined_at;
     return (
       <Screen>
-        <div className="m-auto flex max-w-sm flex-col items-center gap-3 px-4 text-center">
-          <Avatar name={name} src={avatar} size="xl" />
-          <h1 className="font-display text-2xl">{t.title}</h1>
-          {t.detail && <p className="text-on-deep/80">{t.detail}</p>}
-          {topic && <TopicEnded topic={topic} name={name} onAssess={() => nav(`/path/assess/${id}`)} />}
-          <div className="mt-2 flex flex-wrap justify-center gap-2">
-            {canRetry && <Button onClick={() => nav(`/call/new?to=${other.user_id}`, { state: { name, avatar } })}><Phone size={18} />{call.initiated_by === myId ? 'Call again' : 'Call back'}</Button>}
-            <Button variant="secondary" className="border-on-deep/40 bg-transparent text-on-deep" onClick={() => (window.history.length > 1 ? nav(-1) : nav('/messages'))}>Back</Button>
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex max-w-sm flex-col items-center gap-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] pt-[calc(env(safe-area-inset-top,0px)+2rem)] text-center">
+            {/* Unmistakable: a red hang-up badge lands on their picture, and the title says it plainly. */}
+            <span className="relative inline-flex" role="status" aria-live="assertive">
+              <span className="opacity-60 grayscale"><Avatar name={name} src={avatar} size="xl" /></span>
+              <span className="absolute -bottom-1 -right-1 inline-flex">
+                <span aria-hidden className="ft-end-ring absolute inset-0 rounded-full bg-danger" />
+                <span className="ft-end-in relative inline-flex h-11 w-11 items-center justify-center rounded-full border-4 border-deep bg-danger text-on-brand"><HangUpIcon size={20} /></span>
+              </span>
+            </span>
+            <h1 className="ft-end-in mt-2 font-display text-4xl font-bold text-on-deep">{t.title}</h1>
+            <p className="text-sm text-on-deep/70">{name}</p>
+            {t.detail && <p className="text-on-deep/80">{t.detail}</p>}
+            {talked && <CallVote callId={call.id} name={name} />}
+            {topic && <TopicEnded topic={topic} name={name} rated={rated} onRated={() => setRated(true)} />}
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
+              {canRetry && <Button className="border-go bg-go text-on-brand" onClick={() => nav(`/call/new?to=${other.user_id}`, { state: { name, avatar } })}><Phone size={18} />{call.initiated_by === myId ? 'Call again' : 'Call back'}</Button>}
+              <Button variant="secondary" className="border-on-deep/40 bg-transparent text-on-deep" onClick={() => (window.history.length > 1 ? nav(-1) : nav('/messages'))}>Back</Button>
+            </div>
+            <button type="button" className="text-sm text-on-deep/80 underline underline-offset-4" onClick={() => nav('/calls', { replace: true })}>See call history</button>
           </div>
         </div>
       </Screen>
@@ -201,40 +309,74 @@ export default function CallPage() {
   const localVideo = media.current ? snap?.local.video ?? null : previewVideo;
   const micOn = media.current && snap?.state === 'connected' ? !!snap.local.micOn : mic;
   const camOn = media.current && snap?.state === 'connected' ? !!snap.local.camOn : cam && !!previewVideo;
+  const connected = !!media.current && snap?.state === 'connected';
+  const offNote = voiceOnly ? undefined : 'Camera off';
+  const mine = (
+    <VideoTile video={localVideo} name={myName} caption="You" avatar={myAvatar} mirrored={facing === 'user'} label={voiceOnly ? 'You' : 'Your camera'} micOn={micOn}
+      speaking={snap?.local.speaking} level={snap?.local.level} cameraNote={offNote} />);
+  const theirs = remote
+    ? <VideoTile video={remote.video} audio={remote.audio} name={name} avatar={avatar} micOn={remote.micOn} speaking={remote.speaking} level={remote.level}
+        cameraNote={voiceOnly ? undefined : `${name}'s camera is off`} />
+    : (
+      <div className="flex h-full flex-col items-center justify-center gap-4 rounded-md bg-on-deep/5">
+        <span className="relative inline-flex">
+          {phase === 'ringing' && rang && <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-go/40" />}
+          <span className={phase === 'ringing' && !rang ? 'animate-pulse' : undefined}><Avatar name={name} src={avatar} size="xl" /></span>
+        </span>
+        {calling && <p className="font-display text-2xl font-semibold text-on-deep"><Dots>{calling}</Dots></p>}
+        {waitingText && <p className="max-w-xs px-4 text-center text-sm text-on-deep/85">{waitingText}</p>}
+        {!calling && phase !== 'active' && <Spinner />}
+      </div>);
 
   return (
     <Screen>
-      <header className="flex items-center gap-3 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)]">
-        <Avatar name={name} src={avatar} size="sm" />
+      {/* Everything floats over a full-screen video: a slim see-through header on top, the buttons at the bottom. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 [text-shadow:0_1px_3px_rgb(0_0_0/0.55)] [&>*]:pointer-events-auto">
+      <header className="flex items-center gap-2.5 px-3 pb-1 pt-[calc(env(safe-area-inset-top,0px)+0.4rem)]">
+        <Avatar name={name} src={avatar} size="xs" />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{name}</p>
-          <p className="text-xs text-on-deep/80" aria-live="polite">{status}</p>
+          <p className="truncate text-sm font-semibold leading-tight">{name}</p>
+          <p className="text-xs leading-tight text-on-deep/85" aria-live="polite">{calling && !doing ? <Dots>{calling}</Dots> : status}</p>
         </div>
         {!online && <span className="flex items-center gap-1 text-xs text-on-deep/80"><WifiOff size={14} />Offline</span>}
+        {inCall && <LayoutPicker value={view.layout} onChange={(layout) => arrange({ layout })} />}
+        {/* Laptops and desktops only: a phone already uses its own microphone, speaker and camera (flip is in the controls). */}
+        {PICK_DEVICES && (
+          <div className="relative">
+            <button type="button" data-device-menu-toggle onClick={() => setSettings(!settings)} aria-expanded={settings}
+              aria-label={voiceOnly ? 'Microphone and speaker settings' : 'Camera and microphone settings'} title="Settings"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-deep/30 hover:bg-deep/50"><Settings2 size={18} /></button>
+            <DeviceMenu open={settings} voiceOnly={!!voiceOnly} onClose={() => setSettings(false)}
+              onPick={async (kind, deviceId) => {
+                if (media.current && snap?.state === 'connected') await media.current.switchDevice(kind, deviceId);
+                else if (kind !== 'audiooutput') { await preview.current.switchDevice(kind, deviceId); setPreviewVideo(preview.current.videoRef()); }
+              }} />
+          </div>)}
       </header>
+      {inCall && !chatOpen && <TopicStrip topic={topic ?? chosen} canChange={!topic && connected} onChange={() => setPicking(true)} />}
+      </div>
 
-      <main className="relative min-h-0 flex-1 px-2 sm:px-4">
+      <main className="absolute inset-0" onClick={(e) => {
+        if (!inCall || chatOpen || (e.target as HTMLElement).closest('button, a, input, [role="button"], [role="dialog"]')) return;
+        setControlsHidden((h) => !h);
+      }}>
         {phase === 'loading' && <div className="flex h-full items-center justify-center"><Spinner /></div>}
         {phase !== 'loading' && (
-          <div className="relative h-full overflow-hidden rounded-md">
-            {inCall && remote
-              ? <VideoTile video={remote.video} audio={remote.audio} name={name} avatar={avatar} micOn={remote.micOn} speaking={remote.speaking} />
-              : (inCall
-                ? <div className="flex h-full flex-col items-center justify-center gap-4"><Avatar name={name} src={avatar} size="xl" />{phase !== 'active' && <Spinner />}</div>
-                : <VideoTile video={localVideo} name="You" mirrored label={voiceOnly ? "You" : "Your camera preview"} micOn={micOn} />)}
-            {inCall && (
-              <div className="absolute bottom-3 right-3"><VideoTile small video={localVideo} name="You" mirrored micOn={micOn} label={voiceOnly ? "You" : "Your camera"} /></div>)}
+          <div className="relative h-full overflow-hidden">
+            {inCall
+              ? <CallStage layout={view.layout} corner={view.corner} onCorner={(corner) => arrange({ corner })}
+                  onSwap={() => arrange({ layout: view.layout === 'me' ? 'them' : 'me' })}
+                  main={view.layout === 'me' ? mine : theirs} side={view.layout === 'me' ? theirs : mine} />
+              : <VideoTile video={localVideo} name={myName} caption="You" avatar={myAvatar} mirrored={facing === 'user'} label={voiceOnly ? 'You' : 'Your camera preview'} micOn={micOn} cameraNote={offNote} />}
+            {inCall && peek && !chatOpen && (
+              <button type="button" onClick={openChat} className="absolute inset-x-3 top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-20 mx-auto block max-w-sm rounded-md bg-deep/90 px-3 py-2 text-left text-sm shadow-pop">
+                <span className="font-semibold">{name}: </span><span className="line-clamp-2">{peek.text}</span>
+              </button>)}
+            {inCall && chatOpen && <CallChat notes={notes} name={name} onSend={sendNote} onClose={() => setChatOpen(false)} />}
           </div>)}
       </main>
 
-      <section className="space-y-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
-        {topic && inCall && (
-          <div className="rounded-md border-l-4 border-accent bg-on-deep/10 p-3 text-sm">
-            <button type="button" className="flex w-full items-center justify-between gap-2 text-left" aria-expanded={topicOpen} onClick={() => setTopicOpen(!topicOpen)}>
-              <span className="font-display text-lg uppercase italic">Topic {topic.topic} · {topic.title}</span><span className="text-xs text-on-deep/80">{topicOpen ? 'Hide' : 'Show'}</span>
-            </button>
-            {topicOpen && <ol className="mt-2 list-decimal space-y-1 pl-5 text-on-deep/90">{topic.prompts.map((p) => <li key={p}>{p}</li>)}</ol>}
-          </div>)}
+      <section className={clsx('pointer-events-none absolute inset-x-0 bottom-0 z-30 space-y-3 px-4 [&>*]:pointer-events-auto', !(chatOpen && inCall) && 'pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-2')}>
         {(deviceErrors.camera || deviceErrors.microphone) && !inCall && (
           <div role="status" className="space-y-1 rounded-md bg-on-deep/10 p-3 text-sm">
             {deviceErrors.microphone && <p>{deviceErrors.microphone}</p>}
@@ -249,80 +391,95 @@ export default function CallPage() {
         {snap?.needsAudioTap && (
           <div className="flex justify-center"><Button size="sm" onClick={() => void media.current?.startAudio()}><Volume2 size={16} />Tap to hear {name}</Button></div>)}
         {inCall && snap?.deviceError && <p role="status" className="text-center text-sm">{snap.deviceError}</p>}
-        {error && <p role="alert" className="text-center text-sm">{error}</p>}
+        {error && <p role="alert" className="mx-auto max-w-md rounded-md bg-danger/25 px-3 py-2 text-center text-sm font-semibold">{error}</p>}
 
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <ControlButton label={micOn ? 'Turn microphone off' : 'Turn microphone on'} pressed={micOn} onClick={() => void toggleMic()}>{micOn ? <Mic size={22} /> : <MicOff size={22} />}</ControlButton>
-          {!voiceOnly && <ControlButton label={camOn ? 'Turn camera off' : 'Turn camera on'} pressed={camOn} onClick={() => void toggleCam()}>{camOn ? <Video size={22} /> : <VideoOff size={22} />}</ControlButton>}
-          <ControlButton label={voiceOnly ? 'Microphone and speaker settings' : 'Camera and microphone settings'} onClick={() => setSettings(true)}><Settings2 size={22} /></ControlButton>
+        {inCall && !chatOpen && controlsHidden && (
+          <div className="flex justify-center">
+            <button type="button" onClick={() => setControlsHidden(false)} aria-label="Show call buttons" title="Show call buttons"
+              className="inline-flex h-7 w-12 items-center justify-center rounded-full bg-deep/25 text-on-deep backdrop-blur-[2px] hover:bg-deep/40"><ChevronUp size={18} /></button>
+          </div>)}
+        {/* Always one row: buttons never wrap onto a second line. */}
+        <div className={clsx('flex flex-nowrap items-start justify-center gap-x-2 sm:gap-x-3', inCall && (chatOpen || controlsHidden) && 'hidden')}>
+          <ControlButton label={micOn ? 'Turn microphone off' : 'Turn microphone on'} caption={micOn ? 'Mic on' : 'Muted'} pressed={micOn} tone={micOn ? undefined : 'off'}
+            onClick={() => void toggleMic()}>{micOn ? <Mic size={22} /> : <MicOff size={22} />}</ControlButton>
+          {!voiceOnly && <ControlButton label={camOn ? 'Turn camera off' : 'Turn camera on'} caption={camOn ? 'Camera on' : 'Camera off'} pressed={camOn} tone={camOn ? undefined : 'off'}
+            onClick={() => void toggleCam()}>{camOn ? <Video size={22} /> : <VideoOff size={22} />}</ControlButton>}
+          {!voiceOnly && canFlip && <ControlButton label={facing === 'user' ? 'Switch to the back camera' : 'Switch to the front camera'} caption={facing === 'user' ? 'Front' : 'Back'}
+            onClick={() => void flip()}><SwitchCamera size={22} /></ControlButton>}
+          {inCall && <ControlButton label={chatOpen ? 'Close messages' : 'Open messages'} caption="Messages" pressed={chatOpen} badge={unread} disabled={!connected}
+            onClick={() => (chatOpen ? setChatOpen(false) : openChat())}><MessageSquare size={22} /></ControlButton>}
           {phase === 'incoming' && <>
-            <ControlButton label="Decline" danger disabled={busy} onClick={() => void decline()}><PhoneOff size={22} /></ControlButton>
-            <ControlButton label="Answer" primary disabled={busy} onClick={() => void answer()}><Phone size={22} /></ControlButton></>}
+            <ControlButton label="Decline" caption="Decline" tone="end" disabled={busy} onClick={() => void decline()}><HangUpIcon size={22} /></ControlButton>
+            <ControlButton label="Accept and join the call" caption="Accept" tone="go" disabled={busy} onClick={() => void answer()}><Phone size={22} /></ControlButton></>}
           {phase === 'preview' && (isNew
-            ? <ControlButton label={`Call ${name}`} primary disabled={busy || !to} onClick={() => void begin()}><Phone size={22} /></ControlButton>
+            ? <ControlButton label={`Call ${name}`} caption="Call" tone="go" disabled={busy || !to} onClick={() => void begin()}><Phone size={22} /></ControlButton>
             : <>
-              <ControlButton label="Hang up" danger disabled={busy} onClick={() => void hangUp()}><PhoneOff size={22} /></ControlButton>
-              <ControlButton label="Rejoin the call" primary disabled={busy} onClick={() => void rejoin()}><RefreshCw size={22} /></ControlButton></>)}
-          {phase === 'failed' && !isNew && call && <ControlButton label="Try again" primary disabled={busy} onClick={() => void rejoin()}><RefreshCw size={22} /></ControlButton>}
-          {(inCall || phase === 'failed') && <ControlButton label={phase === 'ringing' ? 'Cancel call' : 'Hang up'} danger disabled={busy} onClick={() => void hangUp()}><PhoneOff size={22} /></ControlButton>}
+              <ControlButton label="Hang up" caption="Leave" tone="end" disabled={busy} onClick={() => void hangUp()}><HangUpIcon size={22} /></ControlButton>
+              <ControlButton label="Rejoin the call" caption="Rejoin" tone="go" disabled={busy} onClick={() => void rejoin()}><RefreshCw size={22} /></ControlButton></>)}
+          {phase === 'failed' && !isNew && call && <ControlButton label="Try again" caption="Try again" tone="go" disabled={busy} onClick={() => void rejoin()}><RefreshCw size={22} /></ControlButton>}
+          {(inCall || phase === 'failed') && <ControlButton label={phase === 'ringing' ? 'Cancel call' : 'Hang up'} caption={phase === 'ringing' ? 'Cancel' : 'End'} tone="end" disabled={busy}
+            onClick={phase === 'failed' ? () => void hangUp() : endTapped}><HangUpIcon size={22} /></ControlButton>}
           {phase === 'failed' && isNew && <Button variant="secondary" onClick={() => nav(-1)}>Back</Button>}
+          {inCall && <ControlButton label="Hide call buttons" caption="Hide" onClick={() => setControlsHidden(true)}><ChevronDown size={18} /></ControlButton>}
         </div>
       </section>
 
-      <DeviceSettings open={settings} voiceOnly={!!voiceOnly} onClose={() => setSettings(false)}
-        onPick={async (kind, deviceId) => {
-          if (media.current && snap?.state === 'connected') await media.current.switchDevice(kind, deviceId);
-          else if (kind !== 'audiooutput') { await preview.current.switchDevice(kind, deviceId); setPreviewVideo(preview.current.videoRef()); }
-        }} />
+      <TopicPicker open={picking} startBand={level} title="What shall we talk about?" onClose={() => setPicking(false)} onPick={pickTopic} />
+      <Modal open={confirmEnd} onClose={() => setConfirmEnd(false)} title="End the call now?">
+        <p className="text-sm text-ink">You've talked {Math.floor(minutesTogether)} {Math.floor(minutesTogether) === 1 ? 'minute' : 'minutes'}. A topic call needs {topic?.min_minutes ?? 10} minutes together to be rated. Keep talking and the time keeps counting.</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="secondary" onClick={() => { setConfirmEnd(false); void hangUp(); }}>End anyway</Button>
+          <Button onClick={() => setConfirmEnd(false)}>Keep talking</Button>
+        </div>
+      </Modal>
     </Screen>
   );
 }
 
 /** Full screen and modal: rendered outside the app, which is made inert so keyboard focus can't wander behind it. */
+/** Fixed: the page behind never scrolls, and when the keyboard opens the screen shrinks to the part still visible
+ *  instead of sliding up, so the call stays put while typing. */
 function Screen({ children }: { children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const root = document.getElementById('root'); if (!root) return;
-    root.inert = true; return () => { root.inert = false; };
+    const root = document.getElementById('root');
+    if (root) root.inert = true;
+    const html = document.documentElement; const body = document.body;
+    const was = { html: html.style.overflow, body: body.style.overflow, overscroll: body.style.overscrollBehavior };
+    html.style.overflow = 'hidden'; body.style.overflow = 'hidden'; body.style.overscrollBehavior = 'none';
+    const vv = window.visualViewport;
+    const fit = () => {
+      const el = box.current; if (!el || !vv) return;
+      el.style.height = `${vv.height}px`; el.style.transform = `translateY(${vv.offsetTop}px)`;
+      if (window.scrollY) window.scrollTo(0, 0);
+    };
+    fit();
+    vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit);
+    return () => {
+      if (root) root.inert = false;
+      html.style.overflow = was.html; body.style.overflow = was.body; body.style.overscrollBehavior = was.overscroll;
+      vv?.removeEventListener('resize', fit); vv?.removeEventListener('scroll', fit);
+    };
   }, []);
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label="Call" className="fixed inset-0 z-[60] flex flex-col bg-deep text-on-deep">{children}</div>,
+    <div ref={box} role="dialog" aria-modal="true" aria-label="Call" className="fixed inset-x-0 top-0 z-[60] flex h-[100dvh] flex-col overflow-hidden overscroll-none bg-deep text-on-deep">{children}</div>,
     document.body);
 }
 
-function DeviceSettings({ open, voiceOnly, onClose, onPick }: { open: boolean; voiceOnly: boolean; onClose: () => void; onPick: (kind: DeviceKind, id: string) => Promise<void> }) {
-  const [devices, setDevices] = useState<Record<DeviceKind, MediaDeviceInfo[]>>({ audioinput: [], videoinput: [], audiooutput: [] });
-  const [error, setError] = useState('');
-  useEffect(() => {
-    if (!open) return;
-    Promise.all((['audioinput', 'videoinput', 'audiooutput'] as const).map(listDevices))
-      .then(([audioinput, videoinput, audiooutput]) => setDevices({ audioinput, videoinput, audiooutput }));
-  }, [open]);
-  const pick = (kind: DeviceKind) => (e: React.ChangeEvent<HTMLSelectElement>) => { setError(''); onPick(kind, e.target.value).catch((err) => setError(deviceErrorText(err, kind === 'videoinput' ? 'camera' : 'microphone'))); };
-  const rows = ([['audioinput', 'Microphone'], ['videoinput', 'Camera'], ['audiooutput', 'Speaker']] as [DeviceKind, string][])
-    .filter(([k]) => !voiceOnly || k !== 'videoinput');
-  return (
-    <Modal open={open} onClose={onClose} title={voiceOnly ? 'Microphone and speaker' : 'Camera and microphone'}>
-      <div className="space-y-3">
-        {rows.filter(([k]) => devices[k].length).map(([kind, label]) => (
-          <Select key={kind} label={label} onChange={pick(kind)} defaultValue="">
-            <option value="" disabled>Choose a {label.toLowerCase()}</option>
-            {devices[kind].map((d, i) => <option key={d.deviceId || i} value={d.deviceId}>{d.label || `${label} ${i + 1}`}</option>)}
-          </Select>))}
-        {!devices.audioinput.length && !devices.videoinput.length && <p className="text-sm text-muted">No camera or microphone found. Your browser may need permission first.</p>}
-        <FormError>{error}</FormError>
-      </div>
-    </Modal>
-  );
-}
-
-function TopicEnded({ topic, name, onAssess }: { topic: TopicCall; name: string; onAssess: () => void }) {
-  const short = topic.minutes < topic.min_minutes;
+/** After a topic call: the partner rates it right here; the learner sees the score once it's in. */
+function TopicEnded({ topic, name, rated, onRated }: { topic: TopicCall; name: string; rated: boolean; onRated: () => void }) {
+  const mins = Math.round(topic.minutes);
   if (topic.i_am === 'partner') {
-    if (!topic.assess_blocker) return <div className="mt-2 space-y-2"><p className="text-sm text-on-deep/90">This was {name}'s topic call: “{topic.title}”. Your scores help them move on.</p><Button onClick={onAssess}>Assess {name}</Button></div>;
-    if (topic.assess_blocker === 'too_short') return <p className="text-sm text-on-deep/80">You talked {Math.round(topic.minutes)} minutes. A topic call needs {topic.min_minutes} minutes together to be assessed.</p>;
+    if (rated) return <p className="text-sm text-on-deep/90">Thanks. Your rating counts toward {name}'s {topic.band} level.</p>;
+    if (!topic.assess_blocker) return (
+      <Card className="w-full text-left">
+        <p className="mb-2 font-display text-lg text-ink">Rate {name} on “{topic.title}”</p>
+        <AssessForm topic={topic} onDone={onRated} />
+      </Card>);
+    if (topic.assess_blocker === 'too_short') return <p className="text-sm text-on-deep/80">You talked {mins} {mins === 1 ? 'minute' : 'minutes'}. A topic call needs {topic.min_minutes} minutes together to be rated.</p>;
     return null;
   }
-  return <p className="text-sm text-on-deep/80">{short
-    ? `You talked ${Math.round(topic.minutes)} minutes. A topic call needs ${topic.min_minutes} minutes together to count, so try again.`
-    : `${name} has been asked to assess your topic call. You'll see the result on your path.`}</p>;
+  if (topic.minutes < topic.min_minutes) return <p className="text-sm text-on-deep/80">You talked {mins} {mins === 1 ? 'minute' : 'minutes'}. A topic call needs {topic.min_minutes} minutes together to count, so try again.</p>;
+  if (topic.score_pct != null) return <p className="text-sm text-on-deep/90">{name} rated this call {topic.score_pct}%. It counts toward your {topic.band} level.</p>;
+  return <p className="text-sm text-on-deep/80">{name} has been asked to rate this call. You'll see the score on your profile.</p>;
 }

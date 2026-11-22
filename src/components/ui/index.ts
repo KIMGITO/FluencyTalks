@@ -4,5 +4,5 @@ export * from './Tabs'; export * from './Select'; export * from './Textarea'; ex
 export * from './Skeleton'; export * from './ErrorState'; export * from './ConfirmDialog'; export * from './Toaster';
 export * from './Divider'; export * from './EmailLink'; export * from './CountBadge';
 export { CrashBoundary, RouteError } from './RouteError';
-export * from './FormError'; export * from './Checkbox'; export * from './Notice'; export * from './Page'; export * from './CharCount';
+export * from './Chip'; export * from './FormError'; export * from './Checkbox'; export * from './Notice'; export * from './Page'; export * from './CharCount';
 export * from './MenuItem';

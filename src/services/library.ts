@@ -8,11 +8,12 @@ export type { ContributionPost, SavedPartner };
 
 // The author FK is named explicitly: saved_posts also links posts to profiles (many-to-many),
 // so a bare `profiles(...)` embed is ambiguous and PostgREST rejects it (PGRST201).
-const POST_SELECT = '*, user:profiles!contribution_posts_user_id_fkey(id, username, display_name, avatar_url), saved:saved_posts(post_id)';
-type PostRow = Omit<ContributionPost, 'saved'> & { user: Person; saved: { post_id: string }[] | boolean };
-const toPost = ({ user, saved, ...p }: PostRow) => ({
+const POST_SELECT = '*, user:profiles!contribution_posts_user_id_fkey(id, username, display_name, avatar_url), saved:saved_posts(post_id), liked:post_likes(post_id)';
+type PostRow = Omit<ContributionPost, 'saved' | 'liked'> & { user: Person; saved: { post_id: string }[] | boolean; liked?: { post_id: string }[] | boolean };
+const toPost = ({ user, saved, liked, ...p }: PostRow) => ({
   ...p,
   saved: Array.isArray(saved) ? saved.length > 0 : !!saved,   // saved_posts RLS only returns my own rows
+  liked: Array.isArray(liked) ? liked.length > 0 : !!liked,   // so does post_likes
   author: { ...user, languages: [] },
 });
 
@@ -99,6 +100,7 @@ export const helpSupply = (language: string) => rpc<number>('help_supply', { p_l
 export const pinContribution = (id: string, pinned: boolean) => rpc<void>('pin_contribution', { p_id: id, p_pinned: pinned });
 /** Returns the new state: true = saved. */
 export const toggleSavedPost = (id: string) => rpc<boolean>('toggle_saved_post', { p_post: id });
+export const toggleLike = (id: string) => rpc<boolean>('toggle_post_like', { p_post: id });
 export const getContribution = async (id: string): Promise<ContributionPost | null> => {
   const { data, error } = await supabase.from('contribution_posts').select('*').eq('id', id).maybeSingle();
   if (error) throw error;

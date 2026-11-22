@@ -54,24 +54,27 @@ export const levelColors = { A1: 'lvl-a', A2: 'lvl-a', B1: 'lvl-b', B2: 'lvl-b',
 
 type Palette = Record<string, string>;
 export const themes: Record<'light' | 'dark', Palette> = {
-  // Off-white ground, royal-blue headlines, navy text, red for stars and calls to action. Flat colour only.
-  // No purple, violet or maroon: blues sit at a true blue hue (about 220°), reds are bright reds.
-  // Red is never small text on the ground (4.2:1); text on red is white (4.8:1). Small red text uses `danger`.
+  // Off-white ground, royal-blue headlines, navy text. Flat colour only. No purple, violet or maroon.
+  // Each colour means one thing: blue = act / highlight (accent is the brand blue), green (go, success) = call,
+  // answer, online, done; amber (warning, sun) = pending, busy, attention; red (danger) = destructive or failed, only.
   light: {
     bg: '238 240 244', surface: '250 251 252', 'surface-2': '226 231 238', border: '206 213 224',
     ink: '14 32 72', muted: '74 86 106', 'on-brand': '255 255 255',
-    brand: '23 78 210', 'brand-soft': '221 233 252', accent: '224 32 46', aqua: '23 78 210',
-    sun: '224 32 46', deep: '14 32 72', 'on-deep': '238 240 244',
+    brand: '23 78 210', 'brand-soft': '221 233 252', accent: '23 78 210', aqua: '23 78 210',
+    sun: '214 150 0', deep: '14 32 72', 'on-deep': '238 240 244',
     success: '18 104 66', danger: '200 30 30', warning: '150 92 8',
-    'lvl-a': '74 86 106', 'lvl-b': '23 78 210', 'lvl-c': '224 32 46', 'lvl-n': '14 32 72',
+    // Answer and start a call. White on it is 5:1, in both themes.
+    go: '21 128 61',
+    'lvl-a': '74 86 106', 'lvl-b': '23 78 210', 'lvl-c': '13 116 128', 'lvl-n': '14 32 72',
   },
   dark: {
     bg: '9 17 36', surface: '16 28 54', 'surface-2': '25 41 74', border: '42 61 98',
     ink: '238 240 244', muted: '160 172 192', 'on-brand': '255 255 255',
-    brand: '84 150 245', 'brand-soft': '22 44 90', accent: '240 56 70', aqua: '84 150 245',
-    sun: '240 56 70', deep: '14 32 72',
+    brand: '84 150 245', 'brand-soft': '22 44 90', accent: '84 150 245', aqua: '84 150 245',
+    sun: '250 196 50', deep: '14 32 72',
     success: '52 211 140', danger: '255 112 112', warning: '255 196 80',
-    'lvl-a': '160 172 192', 'lvl-b': '84 150 245', 'lvl-c': '240 56 70', 'lvl-n': '238 240 244',
+    go: '21 128 61',
+    'lvl-a': '160 172 192', 'lvl-b': '84 150 245', 'lvl-c': '45 190 200', 'lvl-n': '238 240 244',
     'on-deep': '238 240 244',
   },
 };

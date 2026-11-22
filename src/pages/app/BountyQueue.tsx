@@ -77,7 +77,7 @@ export default function BountyQueue() {
 
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <PageHeader title="Bounties" subtitle="Help others with their writing and earn points, or ask the community for help" />
+      <PageHeader title="Bounties" />
       <div className="ft-inset mb-4 flex flex-wrap items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={TABS.map((t) => (t.key === 'answers' && pendingAnswers ? { ...t, label: `${t.label} (${pendingAnswers})` } : t))} />
         <Link to="/points-history" className="text-sm text-brand">Points history</Link>
@@ -93,19 +93,17 @@ export default function BountyQueue() {
             </section>
           )}
           {open === null ? <RowListSkeleton label="Loading bounties" />
-          : !open.length ? <EmptyState title="No open bounties" text={canAnswerIn
-              ? `Bounties written in ${canAnswerIn} show up here. You can answer in languages you speak natively, or are verified at B1 or above in.`
-              : 'Set your native language in your profile to answer bounties.'} />
+          : !open.length ? <EmptyState title="No open bounties" />
           : <div className="space-y-3">
               {open.map((b) => <OpenCard key={b.message_id} bounty={b} language={nameOf(b.language_id)} onAnswered={() => void refresh()} />)}
               {more !== 'done' && <div className="flex justify-center"><Button variant="secondary" size="sm" loading={more === 'loading'} onClick={loadMore}>Load more</Button></div>}
             </div>}</>)
         : tab === 'answers' ? (
           answers === null ? <RowListSkeleton label="Loading your answers" />
-          : !answers.length ? <EmptyState title="No answers yet" text="Answers you send to bounties appear here, with the asker's decision." />
+          : !answers.length ? <EmptyState title="No answers yet" />
           : <div className="space-y-3">{answers.map((a) => <AnswerCard key={a.correction_id} answer={a} language={a.language_id ? nameOf(a.language_id) : ''} />)}</div>)
         : (mine === null ? <RowListSkeleton label="Loading bounties" />
-          : !mine.length ? <EmptyState title="No bounties yet" text="In a chat, tap the coin next to the message box before sending. It costs 50 points, refunded if you don't accept an answer within 48 hours." />
+          : !mine.length ? <EmptyState title="No bounties yet" />
           : <div className="space-y-3">{mine.map((b) => <MineCard key={b.message_id} bounty={b} language={b.language_id ? nameOf(b.language_id) : ''} />)}</div>)}
     </div>
   );

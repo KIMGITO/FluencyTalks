@@ -52,7 +52,7 @@ export function AdminLayout() {
                   <NavLink key={to} to={to} title={label} aria-current={section?.to === to ? 'page' : undefined} className={clsx('flex items-center justify-center gap-3 rounded-md p-2.5 text-sm font-bold transition-colors lg:justify-start', section?.to === to ? 'ft-nav-active bg-on-deep/10 text-on-deep' : 'text-on-deep/65 hover:bg-on-deep/10 hover:text-on-deep')}>
                     <span className="relative"><Icon size={20} aria-hidden /><CountBadge count={badgeFor(to, overview)} label="waiting" ring="ring-deep" className="-right-2.5 -top-1.5 lg:hidden" /></span>
                     <span className="hidden flex-1 lg:inline">{label}</span>
-                    {badgeFor(to, overview) > 0 && <span aria-hidden className="hidden rounded-full bg-accent px-1.5 text-xs font-bold tabular-nums text-deep lg:inline">{badgeFor(to, overview)}</span>}
+                    {badgeFor(to, overview) > 0 && <span aria-hidden className="hidden rounded-full bg-accent px-1.5 text-xs font-bold tabular-nums text-on-brand lg:inline">{badgeFor(to, overview)}</span>}
                   </NavLink>
                 ))}
               </div>

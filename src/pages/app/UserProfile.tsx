@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ChevronRight, Clock4Icon, Coins, GraduationCap, Pencil, Settings } from 'lucide-react';
-import { Avatar, Button, buttonClass, Card, EmptyState, ErrorState, PostListSkeleton, ProfileSkeleton, Spinner } from '@/components/ui';
+import { BookOpen, ChevronRight, Clock4Icon, Coins, GraduationCap, Phone, Settings } from 'lucide-react';
+import { Avatar, Button, Card, EmptyState, ErrorState, PostListSkeleton, ProfileSkeleton, Spinner } from '@/components/ui';
 import {
   CountryBadge,
   LanguageChip,
@@ -21,6 +21,9 @@ import { PostCard } from '@/components/features/library';
 import { useInfiniteScroll, usePagedList } from '@/store/feedCache';
 import { usePresenceOf } from '@/hooks/usePresence';
 import { activityLabel } from '@/lib/format';
+import { usePersonStatus } from '@/hooks/usePersonStatus';
+import { CallPersonButton, ConnectButton, DisconnectDialog, GoodCalls } from '@/components/features/people/PeopleParts';
+import { LevelCard } from '@/components/features/LevelCard';
 
 export default function UserProfile() {
   const { username = '' } = useParams();
@@ -32,6 +35,7 @@ export default function UserProfile() {
   );
   const [loadFailed, setLoadFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [disconnecting, setDisconnecting] = useState(false);
   useEffect(() => {
     setProfile(undefined);
     setLoadFailed(false);
@@ -44,6 +48,8 @@ export default function UserProfile() {
   const myPoints = useProfileStore((s) => s.me?.points_balance);
   const providerAvatar = useProviderAvatar();
   const seen = usePresenceOf([profile?.id])[profile?.id ?? ''];
+  const people = usePersonStatus([profile && !profile.relationship.is_me ? profile.id : null]);
+  const st = profile ? people.status[profile.id] : undefined;
   // Cached and paged like Home: instant when you come back, more as you scroll.
   const postList = usePagedList<ContributionPost>(profile?.id ? `posts:user:${profile.id}` : null,
     async (offset, limit) => (await listUserContributionPosts(profile!.id, { offset, limit })).posts);
@@ -62,7 +68,7 @@ export default function UserProfile() {
     return (
       <EmptyState
         title="Profile unavailable"
-        text="This profile doesn't exist or isn't available."
+       
         action={
           <Link to={staff ? '/admin/people' : '/search'}>
             <Button>Search people</Button>
@@ -72,9 +78,12 @@ export default function UserProfile() {
     );
   const r = profile.relationship;
   const shortcuts = [
+    { to: '/library', label: 'Library', hint: 'Posts, lessons and questions from the community', icon: BookOpen },
+    { to: '/bounty-queue', label: 'Bounties', hint: 'Answer questions and earn points', icon: Coins },
+    { to: '/calls', label: 'Calls', hint: 'Your call history', icon: Phone },
     { to: '/learning', label: 'Learning', hint: 'Your phrasebook and progress', icon: GraduationCap },
     { to: '/points-history', label: 'Points', hint: myPoints !== undefined ? `${myPoints} points · history` : 'History', icon: Coins },
-    { to: '/settings', label: 'Settings', hint: 'Account, privacy and appearance', icon: Settings },
+    { to: '/settings', label: 'Settings', hint: 'Edit profile, account, privacy and appearance', icon: Settings },
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -84,12 +93,10 @@ export default function UserProfile() {
         <div className="ft-card-pad pt-0">
           <div className="flex items-end justify-between gap-3">
             <span className="-mt-12 rounded-full bg-surface p-1 sm:-mt-14">
-              <Avatar name={profile.display_name} src={r.is_me ? resolveAvatar(profile.avatar_url, providerAvatar) : profile.avatar_url} size="xl" online={!r.is_me && !!seen?.online} />
+              <Avatar name={profile.display_name} src={r.is_me ? resolveAvatar(profile.avatar_url, providerAvatar) : profile.avatar_url} size="xl" online={!r.is_me && !!(st?.online || seen?.online)} busy={!r.is_me && !!st?.in_call} />
             </span>
-            <div className="flex items-center gap-1.5 pt-3">
-              {r.is_me
-                ? <Link to="/profile/edit" className={buttonClass('secondary', 'sm')}><Pencil size={15} aria-hidden /> Edit profile</Link>
-                : !staff && <><MessageButton userId={profile.id} /><UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} /></>}
+            <div className="flex flex-wrap items-center justify-end gap-1.5 pt-3">
+              {!r.is_me && !staff && <><ConnectButton userId={profile.id} name={profile.display_name} status={st} onChange={people.patch} /><MessageButton userId={profile.id} /><CallPersonButton person={profile} status={st} /><UserMenu userId={profile.id} name={profile.display_name} onBlocked={() => setProfile(null)} onDisconnect={st?.connection === 'connected' ? () => setDisconnecting(true) : undefined} /></>}
             </div>
           </div>
 
@@ -97,8 +104,10 @@ export default function UserProfile() {
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
             <span className="truncate">@{profile.username}</span>
             <CountryBadge code={profile.country_code} timezone={profile.timezone} showName />
-            {profile.timezone && <span className="flex items-center gap-1 text-xs"><Clock4Icon size={13} aria-hidden /> {profile.timezone}</span>}
-            {!r.is_me && seen && activityLabel(seen) && <span className="text-xs">{activityLabel(seen)}</span>}
+            {/* Online / on a call shows as the dot on the avatar; only "last seen" is spelled out here. */}
+            {!r.is_me && !st?.in_call && !st?.online && seen && activityLabel(seen) && <span className="text-xs">{activityLabel(seen)}</span>}
+            <GoodCalls count={st?.good_calls} />
+            {profile.timezone && <span className="ml-auto flex items-center gap-1 text-xs"><Clock4Icon size={13} aria-hidden /> {profile.timezone}</span>}
           </div>
 
           {profile.bio && <p className="mt-3 max-w-prose whitespace-pre-line text-sm leading-relaxed text-ink">{profile.bio}</p>}
@@ -106,12 +115,13 @@ export default function UserProfile() {
           {profile.languages.length > 0 && (
             <div className="mt-4 border-t border-border pt-3">
               <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted">Languages</p>
-              <div className="ft-chips"><LanguageChip languages={profile.languages.map((l) => languageEntry(l, labelOf(l, locales)))} /></div>
+              <div className="ft-chips"><LanguageChip inline languages={profile.languages.map((l) => languageEntry(l, labelOf(l, locales)))} /></div>
             </div>
           )}
         </div>
       </Card>
 
+      {r.is_me && <LevelCard />}
       {r.is_me && (
         <Card pad={false} className="divide-y divide-border overflow-hidden">
           {shortcuts.map(({ to, label, hint, icon: Icon }) => (
@@ -123,12 +133,11 @@ export default function UserProfile() {
           ))}
         </Card>
       )}
-      <div className="space-y-4">
+      {/* No contributions: leave the space blank, no heading and no "none yet" line. */}
+      {posts?.length !== 0 && <div className="space-y-4">
         <h3 className="px-1 font-bold text-lg text-ink">Contributions</h3>
         {posts === null ? (
           <PostListSkeleton count={2} />
-        ) : posts.length === 0 ? (
-          <p className="px-1 text-sm text-muted italic">No contributions yet.</p>
         ) : (
           posts.map((p) => (
             <PostCard
@@ -147,7 +156,9 @@ export default function UserProfile() {
         )}
         <div ref={sentinel} aria-hidden />
         {postList.loading && posts && <div className="flex justify-center p-4"><Spinner /></div>}
-      </div>
+      </div>}
+
+      {!r.is_me && <DisconnectDialog open={disconnecting} userId={profile.id} name={profile.display_name} onClose={() => setDisconnecting(false)} onChange={people.patch} />}
 
       {r.is_me && <div className="mt-4"><AccountZone /></div>}
 

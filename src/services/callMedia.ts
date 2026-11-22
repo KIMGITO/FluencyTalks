@@ -2,14 +2,22 @@
 // can be swapped without touching the UI. Imported only by the call page, which is loaded on its own, so the SDK
 // never reaches other pages. Nothing here is recorded or stored.
 import {
-  ConnectionState, createLocalAudioTrack, createLocalVideoTrack, DisconnectReason, LocalAudioTrack, LocalVideoTrack,
-  Room, RoomEvent, Track, type Participant,
+  AudioPresets, ConnectionState, createLocalAudioTrack, createLocalVideoTrack, DisconnectReason, LocalAudioTrack, LocalVideoTrack,
+  Room, RoomEvent, Track, VideoPresets, type Participant,
 } from 'livekit-client';
 import type { MediaState } from '@/lib/callState';
 
 /** Something a <video> or <audio> element can show, without exposing the provider's track type. */
 export interface MediaRef { attach(el: HTMLMediaElement): void; detach(el: HTMLMediaElement): void }
-export interface PersonMedia { id: string; video: MediaRef | null; audio: MediaRef | null; micOn: boolean; camOn: boolean; speaking: boolean }
+export interface PersonMedia {
+  id: string; video: MediaRef | null; audio: MediaRef | null; micOn: boolean; camOn: boolean; speaking: boolean;
+  /** How loud they are right now, 0 to 1. Read it each frame; it is not part of the snapshot. */
+  level: () => number;
+}
+export type Facing = 'user' | 'environment';
+/** A line typed during the call. Sent straight to the other person over the call connection; never stored. */
+export interface CallNote { id: string; mine: boolean; text: string; at: number }
+export const NOTE_MAX = 500;
 export interface MediaSnapshot {
   state: MediaState; local: PersonMedia; remotes: PersonMedia[];
   /** The browser blocked sound until a tap (autoplay rules). */
@@ -17,6 +25,8 @@ export interface MediaSnapshot {
   /** Why the connection ended: the other side closed it, we left, or it was lost. */
   ended: 'closed' | 'left' | 'lost' | null;
   deviceError: string | null;
+  /** Which way the camera faces. Only phones and tablets can turn it. */
+  facing: Facing;
 }
 export type DeviceKind = 'audioinput' | 'videoinput' | 'audiooutput';
 
@@ -30,9 +40,14 @@ const ref = (t: Track | undefined | null): MediaRef | null => {
 };
 
 /** Camera and microphone before joining. Each can fail on its own; the call can go ahead without either. */
+// 720p at 24 frames is plenty for a face, and leaves room on a slow line. Simulcast sends 180p and 360p copies
+// too, so a small tile or a weak connection gets a smaller picture instead of a frozen one.
+const CAPTURE = { resolution: { ...VideoPresets.h720.resolution, frameRate: 24 } };
+
 export class Preview {
   audio: LocalAudioTrack | null = null;
   video: LocalVideoTrack | null = null;
+  facing: Facing = 'user';
   async start(want: { audio: boolean; video: boolean; audioId?: string; videoId?: string }) {
     const errors: { camera?: unknown; microphone?: unknown } = {};
     if (want.audio && !this.audio) {
@@ -40,7 +55,7 @@ export class Preview {
       catch (e) { errors.microphone = e; }
     }
     if (want.video && !this.video) {
-      try { this.video = await createLocalVideoTrack({ deviceId: want.videoId, resolution: { width: 1280, height: 720, frameRate: 24 } }); }
+      try { this.video = await createLocalVideoTrack({ ...CAPTURE, ...(want.videoId ? { deviceId: want.videoId } : { facingMode: this.facing }) }); }
       catch (e) { errors.camera = e; }
     }
     return errors;
@@ -54,18 +69,46 @@ export class Preview {
     this.audio?.stop(); this.audio = null; return undefined;
   }
   async switchDevice(kind: 'audioinput' | 'videoinput', id: string) {
-    await (kind === 'audioinput' ? this.audio : this.video)?.restartTrack({ deviceId: id });
+    await (kind === 'audioinput' ? this.audio : this.video)?.restartTrack(kind === 'videoinput' ? { ...CAPTURE, deviceId: id } : { deviceId: id });
+  }
+  /** Front to back camera, or back to front. */
+  async flip() {
+    const next: Facing = this.facing === 'user' ? 'environment' : 'user';
+    if (this.video) await this.video.restartTrack({ ...CAPTURE, facingMode: next });
+    this.facing = next;
   }
   videoRef = () => ref(this.video);
   /** Hands the tracks to the call, or stops them. Either way this preview no longer owns them. */
-  take() { const t = { audio: this.audio, video: this.video }; this.audio = null; this.video = null; return t; }
+  take() { const t = { audio: this.audio, video: this.video, facing: this.facing }; this.audio = null; this.video = null; return t; }
   stop() { this.audio?.stop(); this.video?.stop(); this.audio = null; this.video = null; }
 }
 
 export const listDevices = (kind: DeviceKind) => Room.getLocalDevices(kind, false).catch(() => [] as MediaDeviceInfo[]);
+/** More than one camera, so there is something to switch to. */
+export const canFlipCamera = () => listDevices('videoinput').then((d) => d.length > 1);
+
+const NOTES = 'note';
+/** The conversation topic someone picked during a call, by its number. Both sides show it. */
+const TOPIC = 'topic';
+const enc = new TextEncoder(); const dec = new TextDecoder();
 
 export class CallMedia {
-  private room = new Room({ adaptiveStream: true, dynacast: true, disconnectOnPageLeave: true });
+  private room = new Room({
+    // Only the size each video is shown at is downloaded, and nothing for a hidden tab. Layers nobody is
+    // watching aren't sent at all (dynacast).
+    adaptiveStream: { pixelDensity: 'screen' }, dynacast: true, disconnectOnPageLeave: true,
+    videoCaptureDefaults: CAPTURE,
+    publishDefaults: {
+      simulcast: true, videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+      videoEncoding: { maxBitrate: 1_500_000, maxFramerate: 24 }, degradationPreference: 'balanced',
+      // Speech settings: silence costs almost nothing (dtx), and a lost packet is covered by the next one (red).
+      audioPreset: AudioPresets.speech, dtx: true, red: true,
+    },
+    audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  });
+  private noteListeners = new Set<(n: CallNote) => void>();
+  private topicListeners = new Set<(no: number) => void>();
+  private facing: Facing = 'user';
   private listeners = new Set<(s: MediaSnapshot) => void>();
   private state: MediaState = 'idle';
   private ended: MediaSnapshot['ended'] = null;
@@ -91,11 +134,38 @@ export class CallMedia {
     for (const ev of [RoomEvent.ParticipantConnected, RoomEvent.ParticipantDisconnected, RoomEvent.TrackSubscribed, RoomEvent.TrackUnsubscribed,
       RoomEvent.TrackMuted, RoomEvent.TrackUnmuted, RoomEvent.LocalTrackPublished, RoomEvent.LocalTrackUnpublished,
       RoomEvent.ActiveSpeakersChanged, RoomEvent.AudioPlaybackStatusChanged] as const) r.on(ev, emit);
+    r.on(RoomEvent.DataReceived, (payload, from, _kind, topic) => {
+      if (topic === TOPIC && from) {
+        try { const m = JSON.parse(dec.decode(payload)) as { no?: unknown }; if (typeof m.no === 'number' && Number.isInteger(m.no) && m.no > 0) this.topicListeners.forEach((fn) => fn(m.no as number)); } catch { /* not a topic */ }
+        return;
+      }
+      if (topic !== NOTES || !from) return;
+      try {
+        const m = JSON.parse(dec.decode(payload)) as { id?: unknown; text?: unknown };
+        if (typeof m.id !== 'string' || typeof m.text !== 'string' || !m.text.trim()) return;
+        const note: CallNote = { id: m.id.slice(0, 40), mine: false, text: m.text.slice(0, NOTE_MAX), at: Date.now() };
+        this.noteListeners.forEach((fn) => fn(note));
+      } catch { /* not a note */ }
+    });
+  }
+
+  onNote(fn: (n: CallNote) => void) { this.noteListeners.add(fn); return () => { this.noteListeners.delete(fn); }; }
+  onTopic(fn: (no: number) => void) { this.topicListeners.add(fn); return () => { this.topicListeners.delete(fn); }; }
+  /** Tells the other side which topic is on. Nothing is stored. */
+  async sendTopic(no: number) {
+    await this.room.localParticipant.publishData(enc.encode(JSON.stringify({ no })), { reliable: true, topic: TOPIC });
+  }
+  /** Sends a line to everyone in the call. Resolves with the note as sent, or throws if it couldn't go. */
+  async sendNote(text: string): Promise<CallNote> {
+    const note: CallNote = { id: crypto.randomUUID(), mine: true, text: text.trim().slice(0, NOTE_MAX), at: Date.now() };
+    await this.room.localParticipant.publishData(enc.encode(JSON.stringify({ id: note.id, text: note.text })), { reliable: true, topic: NOTES });
+    return note;
   }
 
   subscribe(fn: (s: MediaSnapshot) => void) { this.listeners.add(fn); fn(this.snapshot); return () => { this.listeners.delete(fn); }; }
 
-  async connect(url: string, token: string, tracks: { audio: LocalAudioTrack | null; video: LocalVideoTrack | null }) {
+  async connect(url: string, token: string, tracks: { audio: LocalAudioTrack | null; video: LocalVideoTrack | null; facing?: Facing }) {
+    this.facing = tracks.facing ?? 'user';
     this.state = 'connecting'; this.emit();
     try {
       await this.room.connect(url, token);
@@ -111,7 +181,7 @@ export class CallMedia {
     // A device that can't be shared doesn't end the call: try once more, then carry on and say which one.
     const publish = async (t: LocalAudioTrack | LocalVideoTrack, what: 'microphone' | 'camera') => {
       for (let attempt = 0; attempt < 2 && !this.left; attempt += 1) {
-        try { await this.room.localParticipant.publishTrack(t, what === 'camera' ? { simulcast: true } : {}); this.emit(); return; }
+        try { await this.room.localParticipant.publishTrack(t); this.emit(); return; }
         catch { await new Promise((r) => setTimeout(r, 1000)); }
       }
       t.stop();
@@ -121,8 +191,23 @@ export class CallMedia {
   }
 
   async setMic(on: boolean) { this.deviceError = null; await this.room.localParticipant.setMicrophoneEnabled(on); this.emit(); }
-  async setCamera(on: boolean) { this.deviceError = null; await this.room.localParticipant.setCameraEnabled(on); this.emit(); }
+  async setCamera(on: boolean) {
+    this.deviceError = null;
+    const pub = await this.room.localParticipant.setCameraEnabled(on, { ...CAPTURE, facingMode: this.facing });
+    // Turned the other way while it was off: a camera coming back on restarts as it was, so point it now.
+    if (on && this.flippedWhileOff) { this.flippedWhileOff = false; await (pub?.track as LocalVideoTrack | undefined)?.restartTrack({ ...CAPTURE, facingMode: this.facing }); }
+    this.emit();
+  }
+  private flippedWhileOff = false;
   async switchDevice(kind: DeviceKind, id: string) { await this.room.switchActiveDevice(kind, id); this.emit(); }
+  /** Front to back camera, or back to front. A camera that is off turns on facing the new way. */
+  async flip() {
+    const next: Facing = this.facing === 'user' ? 'environment' : 'user';
+    const cam = this.room.localParticipant.getTrackPublication(Track.Source.Camera)?.track as LocalVideoTrack | undefined;
+    const live = !!cam && !this.room.localParticipant.getTrackPublication(Track.Source.Camera)?.isMuted;
+    if (live) await cam!.restartTrack({ ...CAPTURE, facingMode: next }); else this.flippedWhileOff = !this.flippedWhileOff;
+    this.facing = next; this.emit();
+  }
   startAudio() { return this.room.startAudio().then(() => this.emit()); }
 
   /** Disconnects and stops the camera and microphone. Safe to call more than once. */
@@ -140,12 +225,13 @@ export class CallMedia {
       video: cam && !cam.isMuted ? ref(cam.track) : null,
       audio: local ? null : ref(mic?.track),
       camOn: !!cam && !cam.isMuted, micOn: !!mic && !mic.isMuted, speaking: p.isSpeaking,
+      level: () => (mic && !mic.isMuted ? p.audioLevel : 0),
     };
   }
   private build(): MediaSnapshot {
     const r = this.room;
     return {
-      state: this.state, ended: this.ended, deviceError: this.deviceError,
+      state: this.state, ended: this.ended, deviceError: this.deviceError, facing: this.facing,
       local: this.person(r.localParticipant, true),
       remotes: [...r.remoteParticipants.values()].map((p) => this.person(p, false)),
       needsAudioTap: this.state === 'connected' && !r.canPlaybackAudio,

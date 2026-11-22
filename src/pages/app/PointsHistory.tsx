@@ -70,7 +70,7 @@ export default function PointsHistory() {
       {ledger?.length === 0 ? (
         <EmptyState
           title="No points activity yet"
-          text="Points will appear here as you earn them through corrections and bounties."
+         
         />
       ) : (
         <div className="mt-4 overflow-x-auto">

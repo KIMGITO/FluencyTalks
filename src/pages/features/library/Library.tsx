@@ -73,10 +73,7 @@ export default function Library() {
 
   return (
     <div className="mx-auto w-full max-w-3xl py-4 pb-24 md:p-4">
-      <PageHeader
-        title="Community Library"
-        subtitle={view === 'practice' ? 'Stories, questions and first attempts from learners. Mistakes are welcome here.' : 'Browse phrases, idioms and lessons contributed by the community'}
-      />
+      <PageHeader title="Community Library" />
 
       <div className="ft-inset mb-3">
         <Tabs
@@ -189,15 +186,7 @@ export default function Library() {
       ) : !displayed.length ? (
         <EmptyState
           title={searchText || hasFilters ? 'No matching posts' : view === 'saved' ? 'No saved posts' : view === 'practice' ? 'Nobody has asked yet' : 'Nothing here yet'}
-          text={
-            searchText || hasFilters
-              ? 'Try different filters or search terms.'
-              : view === 'saved'
-                ? 'Use “Save post” in a post’s ⋮ menu to keep it here.'
-                : view === 'practice'
-                  ? 'Be the first. Write something in the language you are learning and people will help you with it.'
-                : 'Be the first to share a phrase, idiom or lesson.'
-          }
+         
           action={
             me && eligible && view !== 'saved' ? (
               <Link

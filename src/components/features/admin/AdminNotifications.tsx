@@ -15,12 +15,6 @@ type Filter = 'all' | 'reports' | 'escalations' | 'security';
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' }, { key: 'reports', label: 'Reports' }, { key: 'escalations', label: 'Appeals and escalations' }, { key: 'security', label: 'Security' },
 ];
-const EMPTY: Record<Filter, string> = {
-  all: 'New reports, appeals, escalated decisions and security alerts will show up here.',
-  reports: 'A new report from the community will show up here.',
-  escalations: 'Appeals and decisions that have gone overdue will show up here.',
-  security: 'Recovery code use and site pauses will show up here.',
-};
 const LOOK: Partial<Record<NotificationType, { icon: LucideIcon; tone: Tone }>> = {
   admin_report: { icon: Flag, tone: 'accent' }, admin_appeal: { icon: Scale, tone: 'sun' }, action_escalated: { icon: Clock, tone: 'danger' },
   admin_security: { icon: ShieldAlert, tone: 'danger' }, admin_site: { icon: ShieldAlert, tone: 'danger' },
@@ -50,7 +44,7 @@ export function AdminNotifications() {
       <div className="ft-inset overflow-x-auto"><Tabs value={filter} onChange={setFilter} items={FILTERS} /></div>
       {feed.failed ? <ErrorState title="Couldn't load your notifications" onRetry={feed.retry} />
         : feed.items === null ? <NotificationSkeleton />
-        : !feed.items.length ? <EmptyState title="Nothing here" text={EMPTY[filter]} />
+        : !feed.items.length ? <EmptyState title="Nothing here" />
         : (
           <div className="space-y-3">
             {feed.groups.map((g) => (

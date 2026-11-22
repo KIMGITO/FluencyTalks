@@ -97,7 +97,8 @@ const routes: RouteObject[] = [
               // Loaded on its own, so the media SDK only downloads for a call.
               { path: '/calls', lazy: async () => ({ Component: (await import('@/pages/app/CallHistory')).default }) },
               { path: '/call/:id', lazy: async () => ({ Component: (await import('@/pages/app/Call')).default }) },
-              { path: '/path', lazy: async () => ({ Component: (await import('@/pages/app/Path')).default }) },
+              { path: '/path', element: <Navigate to='/profile' replace /> },
+              { path: '/people', lazy: async () => ({ Component: (await import('@/pages/app/People')).default }) },
               { path: '/path/assess/:callId', lazy: async () => ({ Component: (await import('@/pages/app/Assess')).default }) },
             ],
           },

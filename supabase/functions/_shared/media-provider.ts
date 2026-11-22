@@ -16,14 +16,15 @@ export const providerConfigured = () => { try { env(); return true; } catch { re
 export const providerUrl = () => env().url;
 
 /**
- * A short-lived token for one room, as one identity: camera and microphone only, no data, no admin, no recording.
+ * A short-lived token for one room, as one identity: camera, microphone and in-call messages (the data channel,
+ * which only reaches the people in this room and is never stored). No admin, no recording.
  * `voiceOnly` (a call with a member under 16) leaves the camera out, so the provider refuses any video.
  */
 export async function issueToken(room: string, identity: string, ttlSeconds: number, voiceOnly: boolean): Promise<string> {
   const { key, secret } = env();
   const at = new AccessToken(key, secret, { identity, ttl: ttlSeconds });
   at.addGrant({
-    room, roomJoin: true, canSubscribe: true, canPublish: true, canPublishData: false, canUpdateOwnMetadata: false,
+    room, roomJoin: true, canSubscribe: true, canPublish: true, canPublishData: true, canUpdateOwnMetadata: false,
     canPublishSources: voiceOnly ? [TrackSource.MICROPHONE] : [TrackSource.CAMERA, TrackSource.MICROPHONE],
   });
   return at.toJwt();

@@ -204,9 +204,9 @@ export default function PostDetail() {
         <div className="flex flex-wrap items-center gap-2">
           {helpType && me.can_review && !readOnly && !me.is_owner && takesFixes(helpType) && (
             <>
-              {!longBody && <Button size="sm" aria-expanded={composer === 'correction'} onClick={() => setComposer(composer === 'correction' ? null : 'correction')}><PencilLine size={14} aria-hidden /> {FIX_LABEL[helpType]}</Button>}
+              {!longBody && <Button size="sm" variant="ghost" aria-expanded={composer === 'correction'} onClick={() => setComposer(composer === 'correction' ? null : 'correction')}><PencilLine size={14} aria-hidden /> {FIX_LABEL[helpType]}</Button>}
               {helpType !== 'how_do_i_say' && (
-                <Button size="sm" variant={me.endorsed ? 'primary' : 'secondary'} aria-pressed={me.endorsed} onClick={endorse}>
+                <Button size="sm" variant="ghost" className={me.endorsed ? '!text-success' : undefined} aria-pressed={me.endorsed} onClick={endorse}>
                   <ThumbsUp size={14} aria-hidden className={me.endorsed ? 'ft-pop' : undefined} /> {me.endorsed ? 'You confirmed' : 'This is correct'}{(post.endorse_count ?? 0) > 0 && ` · ${post.endorse_count}`}
                 </Button>
               )}
@@ -214,10 +214,10 @@ export default function PostDetail() {
           )}
           {!helpType && me.can_review && !readOnly && (
             <>
-              <Button size="sm" variant={me.endorsed ? 'primary' : 'secondary'} aria-pressed={me.endorsed} onClick={endorse}>
+              <Button size="sm" variant="ghost" className={me.endorsed ? '!text-success' : undefined} aria-pressed={me.endorsed} onClick={endorse}>
                 <ThumbsUp size={14} aria-hidden className={me.endorsed ? 'ft-pop' : undefined} /> {me.endorsed ? 'You confirmed' : 'This is correct'}{(post.endorse_count ?? 0) > 0 && ` · ${post.endorse_count}`}
               </Button>
-              {!longBody && <Button size="sm" variant="secondary" aria-expanded={composer === 'correction'} onClick={() => setComposer(composer === 'correction' ? null : 'correction')}><PencilLine size={14} aria-hidden /> Correct</Button>}
+              {!longBody && <Button size="sm" variant="ghost" aria-expanded={composer === 'correction'} onClick={() => setComposer(composer === 'correction' ? null : 'correction')}><PencilLine size={14} aria-hidden /> Correct</Button>}
               <Button size="sm" variant="ghost" aria-expanded={composer === 'clarification'} onClick={() => setComposer(composer === 'clarification' ? null : 'clarification')}>Ask</Button>
             </>
           )}

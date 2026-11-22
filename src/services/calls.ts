@@ -23,6 +23,13 @@ export const startCall = (callee: string) => rpc<string>('start_call', { p_calle
 export const respondCallInvite = (call: string, accept: boolean) => rpc('respond_call_invite', { p_call: call, p_accept: accept });
 export const getCall = (call: string) => rpc<CallInfo>('get_call', { p_call: call });
 export const reportCallConnected = (call: string) => rpc('report_call_connected', { p_call: call });
+/** Tells the caller the call reached this device, so they see "Ringing" instead of "Trying to reach". */
+export const reportCallRinging = (call: string) => rpc('report_call_ringing', { p_call: call });
+export interface CallLogRow { call_id: string; status: CallStatus; end_reason: string | null; created_at: string; started_at: string | null; ended_at: string | null; outgoing: boolean; attended: boolean }
+/** Finished calls with one person, newest first, for the chat with them. */
+export const listCallsWith = (other: string, limit = 50) => rpc<CallLogRow[]>('list_calls_with', { p_other: other, p_limit: limit });
+/** Removes a finished call from my chat and call history. The other person still sees it. */
+export const hideCall = (call: string) => rpc('hide_call', { p_call: call });
 export const listLiveCalls = () => rpc<LiveCall[]>('list_live_calls');
 export const listCallHistory = (limit = 30, before?: string | null) => rpc<CallHistoryRow[]>('list_call_history', { p_limit: limit, p_before: before ?? null });
 

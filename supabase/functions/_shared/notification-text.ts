@@ -2,7 +2,7 @@
 export interface NotificationLike {
   type: string;
   actor_username?: string | null;
-  data: { reason?: string; conversation_id?: string; points?: number; level?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; paused?: boolean; waiting?: boolean | number; overdue?: number; hours?: number; bounty?: boolean; call_id?: string; topic?: number; score?: number; decision?: string };
+  data: { reason?: string; conversation_id?: string; points?: number; level?: string; post_id?: string; item_id?: string; phrase?: string; note?: string; status?: string; granted?: boolean; paused?: boolean; waiting?: boolean | number; overdue?: number; hours?: number; bounty?: boolean; call_id?: string; topic?: number; band?: string; next?: string | null; score?: number; decision?: string };
 }
 
 /** The sentence after the actor's name; system notices have no actor. */
@@ -19,9 +19,11 @@ export const notificationVerb = (n: NotificationLike): string => {
     case 'correction_superseded': return 'chose another answer to their bounty';
     case 'bounty_reminder': return `Your bounty has ${n.data.waiting ?? 'some'} answer${n.data.waiting === 1 ? '' : 's'} waiting and expires soon. Accept one or it is refunded`;
     case 'level_up': return `You're now verified at ${n.data.level}`;
-    case 'topic_assess_due': return `talked with you about topic ${n.data.topic ?? ''}. Give your assessment while the call is fresh`;
-    case 'topic_assessed': return `Someone assessed your topic ${n.data.topic ?? ''} call`;
-    case 'topic_passed': return `You passed topic ${n.data.topic ?? ''}${n.data.score != null ? ` with ${n.data.score}%` : ''}. The next topic is open`;
+    case 'topic_assess_due': return 'had a topic call with you. Rate it while the call is fresh';
+    case 'topic_assessed': return `Your partner rated your topic call${n.data.band ? ` (${n.data.band})` : ''}`;
+    case 'topic_passed': return `You passed ${n.data.band ?? 'your level'}${n.data.score != null ? ` with ${n.data.score}%` : ''}.${n.data.next ? ` ${n.data.next} topics are open` : ''}`;
+    case 'connection_request': return 'wants to be your partner';
+    case 'connection_accepted': return 'accepted your partner request. You can learn together now';
     case 'guardian_decided': return n.data.decision === 'confirm' ? 'Your parent or guardian agreed. Welcome to The Fluency Talks' : 'Your parent or guardian has not agreed, so your account is paused';
     case 'post_correction': return `proposed a correction to your post${about}. It needs your decision`;
     case 'post_clarification': return `asked for clarification on your post${about}`;
@@ -64,7 +66,8 @@ export const notificationLink = (n: NotificationLike): string => {
   if (n.type === 'admin_site') return '/admin';
   if (n.data.post_id) return `/library/post/${n.data.post_id}${n.data.item_id ? `?item=${n.data.item_id}` : ''}`;
   if (n.type === 'topic_assess_due' && n.data.call_id) return `/path/assess/${n.data.call_id}`;
-  if (n.type === 'level_up' || n.type === 'topic_assessed' || n.type === 'topic_passed') return '/path';
+  if (n.type === 'level_up' || n.type === 'topic_assessed' || n.type === 'topic_passed') return '/profile';
+  if (n.type === 'connection_request') return '/people?tab=requests';
   if (n.type === 'guardian_decided') return '/home';
   // A bounty helper is usually not in the asker's chat: their answers page shows the outcome.
   if (n.type === 'bounty_paid' || n.type === 'correction_superseded' || (n.type === 'correction_declined' && !n.data.conversation_id)) return '/bounty-queue?tab=answers';

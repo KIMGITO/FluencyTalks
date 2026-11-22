@@ -31,7 +31,7 @@ export function AdminBlog() {
         <Button size="sm" onClick={() => navigate('/admin/blog/new')}><Plus size={16} aria-hidden /> New post</Button>
         <RefreshButton busy={refresh.busy} onClick={() => void refresh.run()} />
       </Toolbar>
-      {!posts.length ? <EmptyState icon={<IconTile icon={Newspaper} />} title="No posts yet" text="Write the first one. It stays private until you publish it." /> : (
+      {!posts.length ? <EmptyState icon={<IconTile icon={Newspaper} />} title="No posts yet" /> : (
         <Card pad={false}>
           <ul className="divide-y divide-border">
             {posts.map((p) => {

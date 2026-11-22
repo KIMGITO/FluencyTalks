@@ -10,8 +10,8 @@ export function TopBar() {
       <span className="sm:hidden"><Logo to="/home" compact /></span>
       <span className="hidden sm:block"><Logo to="/home" /></span>
       <div className="ml-auto flex items-center">
-        {/* Phones: search lives here; from md up it's in the sidebar */}
-        <Link to="/search" aria-label="Search" className={`${buttonClass('ghost', 'sm')} h-10 w-10 px-0 md:hidden`}><Search size={20} aria-hidden /></Link>
+        {/* Search lives here on every screen size */}
+        <Link to="/search" aria-label="Search" className={`${buttonClass('ghost', 'sm')} h-10 w-10 px-0`}><Search size={20} aria-hidden /></Link>
         <NotificationBell />
       </div>
     </header>

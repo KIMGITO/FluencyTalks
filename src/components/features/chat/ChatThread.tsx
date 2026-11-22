@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pin, X } from 'lucide-react';
 import { Avatar, Button, ChatSkeleton, EmptyState, ErrorState } from '@/components/ui';
 import { UserMenu } from '../UserMenu';
-import { CallButton } from '../call/IncomingCall';
+import { CallButton, CallLogEntry } from '../call/IncomingCall';
+import { listCallsWith, subscribeToMyCalls, type CallLogRow } from '@/services/calls';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
 import { CorrectionDialog } from './CorrectionDialog';
 import { blockUser, getPeerReadAt, saveTranslation, subscribeToReceipts } from '@/services';
-import { groupByDay, isClusterStart } from '@/lib/chatGroups';
+import { groupItemsByDay, isClusterStart } from '@/lib/chatGroups';
 import type { Message } from '@/types/db';
 import type { TickState } from './MessageBubble';
 import { useAuthStore } from '@/store/authStore';
@@ -36,6 +37,15 @@ export function ChatThread({ id }: { id: string }) {
   const [peerReadAt, setPeerReadAt] = useState<string | null>(null);
   useEffect(() => { setPeerReadAt(null); getPeerReadAt(id).then(setPeerReadAt).catch(() => undefined); }, [id]);
   useEffect(() => (myId ? subscribeToReceipts(id, myId, setPeerReadAt) : undefined), [id, myId]);
+  // Calls with this person sit in the conversation at the time they ended. Refreshed when a call changes.
+  const [calls, setCalls] = useState<CallLogRow[]>([]);
+  useEffect(() => {
+    setCalls([]); if (!peerId) return;
+    let on = true;
+    const load = () => { listCallsWith(peerId).then((r) => { if (on) setCalls(r); }).catch(() => undefined); };
+    load(); const off = subscribeToMyCalls(load);
+    return () => { on = false; off(); };
+  }, [peerId]);
   const [loadFailed, setLoadFailed] = useState(false);
   useEffect(() => { setLoadFailed(false); open(id).catch(() => setLoadFailed(true)); return close; }, [id]);
   const visible = (list ?? []).filter((m) => !hidden[m.id] && !isGone(m));
@@ -52,7 +62,7 @@ export function ChatThread({ id }: { id: string }) {
   const pinnedMsgs = pinnedIds.map((pid) => byId.get(pid)).filter((m): m is Message => !!m && !isGone(m));
   const rawReply = drafts[id] ?? null;
   const replyTarget = rawReply && isGone(rawReply) ? null : rawReply;
-  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [visible.length, replyTarget?.id, peerTyping]);
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [visible.length, calls.length, replyTarget?.id, peerTyping]);
 
   // The keyboard (or a taller message box) changes this list's height: the newest messages stay where they are.
   const threadRef = useRef<HTMLDivElement>(null);
@@ -67,7 +77,10 @@ export function ChatThread({ id }: { id: string }) {
 
   if (!list) return loadFailed ? <ErrorState title="Couldn't load this chat" onRetry={() => { setLoadFailed(false); open(id).catch(() => setLoadFailed(true)); }} /> : <ChatSkeleton />;
   if (!row) return <EmptyState title="Conversation unavailable" action={<Button onClick={() => nav('/messages')}>Back to messages</Button>} />;
-  const days = groupByDay(visible);
+  type Item = { kind: 'message'; at: string; m: Message } | { kind: 'call'; at: string; c: CallLogRow };
+  const timeline: Item[] = [...visible.map((m): Item => ({ kind: 'message', at: m.created_at, m })), ...calls.map((c): Item => ({ kind: 'call', at: c.ended_at ?? c.created_at, c }))]
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  const days = groupItemsByDay(timeline, (t) => t.at);
   const waitingForThem = row.other_status === 'request' && visible.some((m) => m.sender_id === myId) && !visible.some((m) => m.sender_id !== myId);
   const jumpTo = (mid: string) => { setShowPins(false); document.getElementById(`msg-${mid}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
   return (
@@ -103,21 +116,25 @@ export function ChatThread({ id }: { id: string }) {
             </div>))}
         </div>)}
       <div ref={threadRef} className="ft-thread" role="log" aria-label={`Conversation with ${row.other_name}`}>
-        {!visible.length && <p className="py-6 text-center text-sm text-muted">Say hello in the language you're practising.</p>}
+        {!visible.length && !calls.length && <p className="py-6 text-center text-sm text-muted">Say hello in the language you're practising.</p>}
         {days.map((day) => (
           <section key={day.key} aria-label={day.label}>
             <div className="ft-daybadge my-2">{day.label}</div>
-            {day.messages.map((m, i) => (
+            {day.items.map((item, i) => {
+              if (item.kind === 'call') return <CallLogEntry key={`call-${item.c.call_id}`} row={item.c} myId={myId} userId={row.other_user_id} name={row.other_name} avatar={row.other_avatar} onHidden={(cid) => setCalls((c) => c.filter((x) => x.call_id !== cid))} />;
+              const m = item.m; const before = day.items[i - 1];
+              return (
               <div key={m.id} id={`msg-${m.id}`}>
                 <MessageBubble message={m} mine={m.sender_id === myId} myId={myId!} corrections={corrections[m.id] ?? []} reactions={reactions[m.id] ?? []} otherName={row.other_name} otherId={peerId}
-                  pinned={pinnedIds.includes(m.id)} saved={!!saved[phraseKey(m.body)]} canReply={!isRequest} showTail={isClusterStart(i === 0 ? undefined : day.messages[i - 1], m)} replyTo={m.reply_to ? byId.get(m.reply_to) ?? null : null}
+                  pinned={pinnedIds.includes(m.id)} saved={!!saved[phraseKey(m.body)]} canReply={!isRequest} showTail={isClusterStart(before?.kind === 'message' ? before.m : undefined, m)} replyTo={m.reply_to ? byId.get(m.reply_to) ?? null : null}
                   tick={m.sender_id === myId ? tickFor(m) : undefined}
                   translateTo={translateTo} translateApi={translateApi}
                   onCorrect={setCorrecting} onSave={toggleSaved} onReact={(msg, emoji) => react(msg.id, emoji)} onAccept={accept} onDecline={decline}
                   onReply={(msg) => setReply(id, msg)} onPin={(msg) => togglePin(id, msg.id)}
                   onDeleteMe={(msg) => hideForMe(msg.id)} onDeleteAll={(msg) => deleteForEveryone(id, msg.id)}
                   onTranslated={(msg, out, lang) => { saveTranslation({ source: msg.body, translated: out, languageCode: lang, sourceMessageId: msg.id }).catch(() => undefined); }} />
-              </div>))}
+              </div>);
+            })}
           </section>))}
         {peerTyping && (
           <div className="mt-1 flex" aria-hidden>

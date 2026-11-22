@@ -40,6 +40,20 @@ Browser ── rpc ──────────────► Postgres: calls
 - **Hanging up closes the LiveKit room**, so every device is disconnected, not just told to leave.
 - `livekit-client` 2.23.0 is used directly, without `@livekit/components-react`. It's smaller, and the UI uses the app's own components.
 
+## 1a. On the call screen
+
+| Feature | How it works |
+|---|---|
+| Incoming call | Covers whatever page is open, rings (Web Audio tones in `src/lib/ringtone.ts`, no files) and vibrates. **Answer** joins at once with camera and microphone on. Browsers allow sound only after one tap on the page, so before that it only vibrates |
+| Caller feedback | "Trying to reach…" until the callee's device shows the call (`report_call_ringing` sets `call_participants.rang_at`), then "Ringing…" with a ringback tone. Busy, unavailable, declined, missed and ended each get their own words |
+| Layouts | Them in front, me in front, or side by side (stacked on a phone held upright). Tap the small window to swap, drag it (or use the arrow keys) to any corner. Remembered on the device |
+| Camera flip | Front or back, shown only when the device has more than one camera |
+| Messages | Typed lines sent over the LiveKit data channel to the other person only. Never stored; they disappear when the call ends. 500 characters each |
+| Voice waves | Bars follow each person's audio level; the tile outline turns green while they talk |
+| Controls | Each button says its state underneath ("Muted", "Camera off"); off is red with a crossed icon, hang up is a wide red button, answer and call are green |
+| Video quality | 720p at 24 fps with 180p and 360p simulcast layers, adaptive stream at the screen's pixel density, dynacast, speech audio with DTX and RED |
+| Call log | Finished calls appear in the chat with that person (`list_calls_with`) and at `/calls` |
+
 ## 2. Database
 
 | Table | What it holds | Client access |
@@ -66,7 +80,7 @@ The status of a call is `ringing`, `active`, `ended`, `cancelled` or `expired`. 
 | `get_call`, `list_live_calls`, `list_call_history` | Members | Blocks hide calls from both sides |
 | `apply_call_provider_event` | Service role only | Called by `livekit-webhook` after it checks the signature |
 
-**The token** is scoped to one room and one identity (the user's id from their verified session). It lasts 10 minutes and allows camera and microphone only. It has no data channel, no admin rights, no recording rights and no room creation. It is never stored, logged or put in a notification.
+**The token** is scoped to one room and one identity (the user's id from their verified session). It lasts 10 minutes and allows camera, microphone and the room's data channel, which carries the in-call messages (section 1a). It has no admin rights, no recording rights and no room creation. It is never stored, logged or put in a notification.
 
 **Blocks** end any live call between the two people at once (`block_ends_calls` trigger).
 

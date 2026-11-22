@@ -38,7 +38,7 @@ function AppLogs() {
         </Select></div>
         <RefreshButton busy={refresh.busy} onClick={() => void refresh.run()} />
       </Toolbar>
-      {failed ? <ErrorState title="Couldn't load the logs" onRetry={load} /> : !items ? <RowListSkeleton label="Loading the logs" /> : !items.length ? <EmptyState icon={<IconTile icon={FileSearch} />} title="Nothing logged" text="Browser errors and edge function failures appear here. Logs are kept for 30 days." /> : (
+      {failed ? <ErrorState title="Couldn't load the logs" onRetry={load} /> : !items ? <RowListSkeleton label="Loading the logs" /> : !items.length ? <EmptyState icon={<IconTile icon={FileSearch} />} title="Nothing logged" /> : (
         <Card pad={false} className="divide-y divide-border">
           {items.map((l) => (
             <details key={l.id} className="group p-3 text-sm md:px-4">
@@ -90,7 +90,7 @@ function SignIns() {
   return (
     <div className="space-y-3">
       <Toolbar><p className="min-w-0 flex-1 basis-[14rem] self-center text-xs text-muted">As recorded by Supabase Auth, for everyone. Wrong passwords aren't recorded here: see Logs → Auth in the Supabase dashboard.</p><RefreshButton busy={refresh.busy} onClick={() => void refresh.run()} /></Toolbar>
-      {!items.length ? <EmptyState icon={<IconTile icon={KeyRound} />} title="No sign-in records" text="Supabase may have database audit logging turned off for this project." /> : (
+      {!items.length ? <EmptyState icon={<IconTile icon={KeyRound} />} title="No sign-in records" /> : (
         <Card pad={false} className="divide-y divide-border">
           {items.map((e) => (
             <div key={e.id} className="flex items-center gap-3 p-3 text-sm md:px-4">

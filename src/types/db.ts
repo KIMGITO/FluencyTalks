@@ -65,6 +65,8 @@ export interface ContributionPost {
   review_status?: 'awaiting_feedback' | 'corrections_received' | 'under_review' | 'reviewed'; open_corrections?: number; thread_count?: number; endorse_count?: number;
   text_align: 'left' | 'center' | 'right'; pinned_at: string | null;
   saved?: boolean;   // whether the current user saved it
+  liked?: boolean;   // whether the current user liked it
+  like_count?: number;
   author?: Person | null;
 }
 

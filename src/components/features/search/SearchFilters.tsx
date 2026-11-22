@@ -60,7 +60,7 @@ export function SearchFilters({ value, onChange }: { value: SearchFiltersValue; 
         title={n ? chips.map((c) => c.label).join(' · ') : 'Filters'}
         className={clsx('relative inline-flex h-8 w-8 items-center justify-center rounded-sm border transition', n || open ? 'border-brand bg-brand-soft text-brand' : 'border-border bg-surface text-muted hover:text-ink')}>
         <SlidersHorizontal size={15} aria-hidden />
-        {n > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-2xs font-bold text-on-deep">{n}</span>}
+        {n > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-2xs font-bold text-on-brand">{n}</span>}
       </button>
       {open && (
         <div role="dialog" aria-label="Search filters" className="ft-menu right-0 mt-1.5 w-[min(15rem,calc(100vw-1.5rem))] px-3 py-2">

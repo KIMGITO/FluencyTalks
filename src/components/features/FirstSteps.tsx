@@ -28,11 +28,10 @@ export function FirstSteps() {
 
   if (!me || closed || !progress) return null;
   const learning = me.learning_language_id ? languageName(me.learning_language_id) : null;
-  const first = progress.topics.find((t) => t.no === progress.current_topic);
   const steps = [
     { done: progress.contribution.posts > 0, to: '/library/contribute', title: learning ? `Write your first post in ${learning}` : 'Share your first post', text: learning ? 'A few words is enough, and mistakes are welcome. Native speakers are told so they can help.' : 'Teach something from your language, or ask a question.' },
-    { done: chats > 0, to: '/search?tab=people', title: 'Say hello to someone', text: 'Find someone who speaks what you want to practise.' },
-    ...(learning ? [{ done: !!progress.verified_level, to: '/path', title: 'Pass your first topic', text: `Call ${progress.settings.partners_needed} different native speakers about “${first?.title ?? 'your first topic'}” in ${learning}. Each one scores the call.` }] : []),
+    { done: chats > 0, to: '/people', title: 'Find a partner', text: 'Find someone who speaks what you want to practise, and add them as a partner so you can call.' },
+    ...(learning ? [{ done: !!progress.verified_level, to: '/profile', title: `Pass ${progress.current_band ?? 'your first level'}`, text: `Have topic calls in ${learning} with ${progress.settings.partners_needed} different native speakers. Pick any ${progress.current_band ?? ''} topic; each partner rates the call.` }] : []),
   ];
   const left = steps.filter((s) => !s.done).length;
   if (!left) { remember(key); return null; }

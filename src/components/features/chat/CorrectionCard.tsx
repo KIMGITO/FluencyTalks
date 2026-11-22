@@ -89,7 +89,7 @@ export function CorrectionCard({ correction, original, isOwner, myId, bounty, on
 
       {isOwner && pending && !declining && (
         <div className="-mx-1 mt-1 flex flex-wrap items-center gap-1">
-          <button type="button" disabled={busy} onClick={() => run(() => onAccept(correction))} className={clsx(iconBtn, 'bg-accent text-deep hover:brightness-105')}>
+          <button type="button" disabled={busy} onClick={() => run(() => onAccept(correction))} className={clsx(iconBtn, 'bg-accent text-on-brand hover:brightness-105')}>
             <Check size={14} aria-hidden /> Accept
           </button>
           <button type="button" disabled={busy} onClick={() => setDeclining(true)} className={clsx(iconBtn, 'text-muted hover:bg-surface-2 hover:text-ink')}>

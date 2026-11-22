@@ -51,7 +51,7 @@ export function AdminDecisions() {
   const empty = !data.escalated.length && !data.appeals.length && !data.restrictions.length;
   return (
     <div className="space-y-4">
-      {empty && <EmptyState icon={<IconTile icon={CircleCheck} tone="success" />} title="Nothing needs you" text="Overdue decisions, appeals and restrictions land here." />}
+      {empty && <EmptyState icon={<IconTile icon={CircleCheck} tone="success" />} title="Nothing needs you" />}
       {data.appeals.length > 0 && (
         <Panel title="Appeals" icon={Scale} tone="sun" count={data.appeals.length} pad={false}>
           <div className="divide-y divide-border">

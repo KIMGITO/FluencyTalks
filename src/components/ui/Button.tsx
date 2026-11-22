@@ -4,7 +4,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | '
 // The same roles as the public pages: coral = the one thing to press (text on it is always deep indigo, 5.5:1),
 // outlined = everything else. Corners are square-ish and the button lifts a little on hover (see .ft-btn).
 const variants = {
-  primary: 'border border-accent bg-accent text-deep hover:brightness-105',
+  primary: 'border border-accent bg-accent text-on-brand hover:brightness-105',
   secondary: 'border border-ink/30 bg-transparent text-ink hover:bg-surface-2',
   ghost: 'border border-transparent text-muted hover:bg-surface-2 hover:text-ink',
   danger: 'border border-danger bg-transparent text-danger hover:bg-danger/10',

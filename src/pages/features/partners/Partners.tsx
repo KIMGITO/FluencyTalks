@@ -63,7 +63,7 @@ export default function Partners() {
 
   return (
     <div className="mx-auto w-full max-w-3xl py-4 md:p-4">
-      <PageHeader title="Saved Partners" subtitle="Manage your language partner list" />
+      <PageHeader title="Saved Partners" />
 
       <div className="ft-inset mb-3 flex gap-2">
         <Tabs<'saved' | 'browse'> value={tab} onChange={setTab} items={[{ key: 'saved', label: 'Saved' }, { key: 'browse', label: 'Browse people' }]} />
@@ -74,7 +74,7 @@ export default function Partners() {
           {loading ? (
             <RowListSkeleton label="Loading partners" />
           ) : !partners?.length ? (
-            <EmptyState title="No saved partners yet" text="Save a language partner from the Browse tab to see them here." />
+            <EmptyState title="No saved partners yet" />
           ) : (
             <div className="space-y-2">{partners.map((p) => (
               <div key={p.partner_id} className="ft-card flex items-center justify-between bg-surface-2 p-3">
@@ -97,7 +97,7 @@ export default function Partners() {
             </select>
             <Button variant="secondary" onClick={load}>Filter</Button>
           </div>
-          <EmptyState title="No partners found" text="Try a broader search or different language." />
+          <EmptyState title="No partners found" />
         </>
       )}
     </div>

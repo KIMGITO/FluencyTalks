@@ -33,6 +33,7 @@ async function learner(name, native, learning) {
   const c = createClient(API_URL, ANON_KEY, options);
   const { data: s } = await c.auth.signInWithPassword({ email, password: PW });
   for (const kind of ['age_18', 'terms', 'privacy']) await c.rpc('record_consent', { p_kind: kind, p_version: kind === 'privacy' ? '3' : '1' });
+  assert.equal((await c.rpc('set_birth_date', { p_birth: '1995-01-01', p_minor_rules: '1' })).error, null, `birth date ${name}`);
   assert.equal((await c.rpc('set_language_profile', { p_native: native, p_learning: learning, p_level: 'A2' })).error, null);
   const r = await c.rpc('save_profile', { p_username: `callui_${name}`, p_display_name: `Caller ${name.toUpperCase()}`, p_bio: '', p_timezone: 'UTC', p_is_private: false, p_avatar_url: null, p_country: null });
   assert.equal(r.error, null, `profile: ${r.error?.message}`);
@@ -83,7 +84,7 @@ async function main() {
     await a.page.waitForURL(/\/call\/new\?to=/);
     await waitFor(async () => (await playingVideos(a.page)) >= 1, 'the caller\'s preview');
     await a.page.getByRole('button', { name: `Call ${B.name}` }).click();
-    await a.page.getByText(`Calling ${B.name}…`).waitFor({ timeout: 20_000 });
+    await a.page.getByText(/^(Calling|Ringing)\.\.\.$/).first().waitFor({ timeout: 20_000 });
     step('the caller opens a preview from the chat, then rings');
 
     const banner = b.page.getByRole('alertdialog', { name: `${A.name} is calling you` });

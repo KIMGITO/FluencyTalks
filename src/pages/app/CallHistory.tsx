@@ -1,11 +1,12 @@
 // Your calls: who, when, how long, and how each ended. Only calls you were part of (the database decides).
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PhoneIncoming, PhoneMissed, PhoneOutgoing, Video } from 'lucide-react';
+import { PhoneIncoming, PhoneMissed, PhoneOutgoing, Trash2, Video } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Avatar, Button, EmptyState, ErrorState, Skeleton } from '@/components/ui';
 import { listCallHistory, type CallHistoryRow } from '@/services/calls';
 import { endedText } from '@/lib/callState';
+import { DeleteCallDialog } from '@/components/features/call/IncomingCall';
 import { useAuthStore } from '@/store/authStore';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -14,12 +15,13 @@ export default function CallHistory() {
   const myId = useAuthStore((s) => s.user?.id); const nav = useNavigate();
   const [rows, setRows] = useState<CallHistoryRow[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [deleting, setDeleting] = useState<CallHistoryRow | null>(null);
   const load = () => { setFailed(false); listCallHistory(50).then(setRows).catch(() => setFailed(true)); };
   useEffect(load, []);
 
   return (
     <>
-      <PageHeader title="Calls" subtitle="Video calls you made or were invited to. Nothing is recorded." />
+      <PageHeader title="Calls" />
       {failed ? <ErrorState title="Couldn't load your calls" onRetry={load} />
         : !rows ? <div className="ft-inset space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>
           : !rows.length ? <EmptyState title="No calls yet" action={<Link to="/messages" className="underline">Open a chat to start one</Link>} />
@@ -46,9 +48,15 @@ export default function CallHistory() {
                           onClick={() => nav(`/call/new?to=${r.other_id}`, { state: { name, avatar: r.other_avatar } })}>
                           <Video size={18} />
                         </Button>)}
+                      {r.status !== 'ringing' && r.status !== 'active' && (
+                        <Button size="sm" variant="ghost" className="h-10 w-10 px-0 text-muted hover:text-danger" aria-label={`Delete this call with ${name}`} title="Delete for me" onClick={() => setDeleting(r)}>
+                          <Trash2 size={17} />
+                        </Button>)}
                     </li>);
                 })}
               </ul>)}
+      <DeleteCallDialog open={!!deleting} callId={deleting?.call_id ?? ''} name={deleting?.other_name || deleting?.other_username || 'The other person'}
+        onClose={() => setDeleting(null)} onHidden={(cid) => setRows((rs) => rs?.filter((x) => x.call_id !== cid) ?? null)} />
     </>
   );
 }

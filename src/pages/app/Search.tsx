@@ -147,11 +147,11 @@ export default function Search() {
     </>
   );
 
-  const needsText = (what: string) => <EmptyState title={`Type to search ${what}`} text="Enter a word, a name or an @username above." />;
+  const needsText = (what: string) => <EmptyState title={`Type to search ${what}`} />;
 
   return (
     <>
-      <PageHeader title="Search" subtitle="People, posts, your chats and your phrasebook" />
+      <PageHeader title="Search" />
       <div className="ft-inset mb-2"><SearchBox value={text} onChange={(v) => patch({ q: v })} /></div>
       <div className="sticky top-[var(--layout-topbarH)] z-10 mb-2 flex items-center gap-2 bg-bg/95 px-3 py-1.5 backdrop-blur md:-mx-1 md:px-1">
         <div className="min-w-0 flex-1 overflow-x-auto"><Tabs value={tab} onChange={(key) => patch({ tab: key })} items={tabs} /></div>
@@ -172,21 +172,21 @@ export default function Search() {
           {group('messages', 'Messages', MessageCircle, hits, hitRows)}
           {group('phrases', 'My phrases', BookMarked, phrases, phraseRows)}
           {!busy && !total && !errors.length && (
-            <EmptyState title="No results" text={typed ? `Nothing matches “${typed}”. Try fewer letters, or drop a filter.` : 'Nothing matches these filters. Try removing one.'} />
+            <EmptyState title="No results" />
           )}
         </>
       ) : tab === 'people' ? (
         idle ? needsText('people') : single(people, personRows, isMe
-          ? <EmptyState title="That's you" text={`@${me?.username} is your own profile.`} action={<Link to="/profile"><Button size="sm">Your profile</Button></Link>} />
-          : <EmptyState title="No one matches" text={filtered ? 'Try removing a filter or searching a different language.' : `Nobody matches “${typed}”. Try part of their name or @username.`} />)
+          ? <EmptyState title="That's you" action={<Link to="/profile"><Button size="sm">Your profile</Button></Link>} />
+          : <EmptyState title="No one matches" />)
       ) : tab === 'posts' ? (
         !typed && !language ? needsText('posts') : single(posts, postRows,
-          <EmptyState title="No posts match" text={typed ? `No library post mentions “${typed}”.` : 'No posts in this language yet.'} action={<Link to="/library"><Button size="sm" variant="secondary">Browse the library</Button></Link>} />)
+          <EmptyState title="No posts match" action={<Link to="/library"><Button size="sm" variant="secondary">Browse the library</Button></Link>} />)
       ) : tab === 'messages' ? (
-        !typed ? needsText('your messages') : single(hits, hitRows, <EmptyState title="No messages match" text={`Nothing in your chats contains “${typed}”.`} />)
+        !typed ? needsText('your messages') : single(hits, hitRows, <EmptyState title="No messages match" />)
       ) : (
         !typed ? needsText('your phrasebook') : single(phrases, phraseRows,
-          <EmptyState title="No saved phrases match" text={`None of your saved phrases contain “${typed}”.`} action={<Link to="/learning"><Button size="sm" variant="secondary">Open Learning</Button></Link>} />)
+          <EmptyState title="No saved phrases match" action={<Link to="/learning"><Button size="sm" variant="secondary">Open Learning</Button></Link>} />)
       )}
     </>
   );

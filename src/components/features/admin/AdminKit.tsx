@@ -6,7 +6,7 @@ import { Button, Card, MenuItem } from '@/components/ui';
 
 /** Solid brand colours, each with the text colour that stays readable on it in both themes. */
 const SOLID = {
-  brand: 'bg-brand text-on-brand', accent: 'bg-accent text-deep', aqua: 'bg-aqua text-deep', sun: 'bg-sun text-deep',
+  brand: 'bg-brand text-on-brand', accent: 'bg-accent text-on-brand', aqua: 'bg-aqua text-deep', sun: 'bg-sun text-deep',
   success: 'bg-success text-surface', danger: 'bg-danger text-surface', muted: 'bg-surface-2 text-ink',
 };
 export type Tone = keyof typeof SOLID;

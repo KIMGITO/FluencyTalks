@@ -62,7 +62,7 @@ export default function Learning() {
 
   return (
     <>
-      <PageHeader title="Learning" subtitle="Phrases you saved, corrections and translations." />
+      <PageHeader title="Learning" />
       <div className="ft-inset mb-3 flex flex-wrap items-center justify-between gap-2">
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ key: 'phrases', label: 'Phrases' }, { key: 'corrections', label: 'Corrections' }, { key: 'translations', label: 'Translations' }]} />
         <div className="flex w-full items-center gap-2 mt-2">
@@ -79,7 +79,7 @@ export default function Learning() {
       </div>
 
       {tab === 'phrases' && (failed.phrases ? <ErrorState title="Couldn't load your phrases" onRetry={loadPhrases} /> : !phrasesData ? <Loading /> : !phrasesData.phrases.length
-        ? <EmptyState title="Nothing saved yet" text="Tap “Save phrase” under any message, or accept a correction, and it will show up here." />
+        ? <EmptyState title="Nothing saved yet" />
         : <div className="flex flex-col gap-1.5">{phrasesData.phrases.map((p) => (
             <div key={p.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
               <div className="ft-selectable min-w-0 flex-1">
@@ -91,7 +91,7 @@ export default function Learning() {
             </div>))}</div>)}
 
       {tab === 'corrections' && (failed.corrections ? <ErrorState title="Couldn't load your corrections" onRetry={loadCorrections} /> : !corrections ? <Loading /> : !corrections.length
-        ? <EmptyState title="No corrections yet" text="When someone corrects your message it is stored here with the original wording, the suggestion and the outcome." />
+        ? <EmptyState title="No corrections yet" />
         : <div className="flex flex-col gap-1.5">{corrections.map((c) => (
             <div key={c.id} className={clsx('ft-card ft-card-pad flex flex-col gap-1', sizeClass[size])}>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -107,7 +107,7 @@ export default function Learning() {
             </div>))}</div>)}
 
       {tab === 'translations' && (failed.translations ? <ErrorState title="Couldn't load your translations" onRetry={loadTranslations} /> : !translations ? <Loading /> : !translations.length
-        ? <EmptyState title="No translations yet" text="Every message you translate is stored here automatically, traceable to the chat it came from." />
+        ? <EmptyState title="No translations yet" />
         : <div className="flex flex-col gap-1.5">{translations.map((t) => (
             <div key={t.id} className={clsx('ft-card ft-card-pad flex items-start gap-2.5', sizeClass[size])}>
               <div className="ft-selectable min-w-0 flex-1">

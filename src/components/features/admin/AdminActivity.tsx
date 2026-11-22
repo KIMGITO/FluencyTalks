@@ -47,7 +47,7 @@ export function AdminActivity() {
         </Select></div>
         <RefreshButton busy={refresh.busy} onClick={() => void refresh.run()} />
       </Toolbar>
-      {!shown.length ? <EmptyState icon={<IconTile icon={History} />} title={items.length ? 'Nothing of this kind' : 'No moderation activity yet'} text={items.length ? 'Pick another filter to see the rest.' : 'Suspensions, bans and dismissed reports will appear here.'} /> : days.map(({ day, items: rows }) => (
+      {!shown.length ? <EmptyState icon={<IconTile icon={History} />} title={items.length ? 'Nothing of this kind' : 'No moderation activity yet'} /> : days.map(({ day, items: rows }) => (
         <section key={day} className="space-y-2">
           <h2 className="ft-kicker ft-inset !font-sans"><span aria-hidden className="h-px w-5 bg-accent" />{day}</h2>
           <Card>

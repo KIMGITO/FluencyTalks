@@ -1,13 +1,9 @@
-import { Home, Search, MessageCircle, GraduationCap, Route, Coins, User, Settings, BookOpen, type LucideIcon } from 'lucide-react';
+import { Home, Users, MessageCircle, User, type LucideIcon } from 'lucide-react';
 export interface NavItem { to: string; label: string; icon: LucideIcon; desktopOnly?: boolean; mobileOnly?: boolean; fabOnly?: boolean }
+// Four tabs. Library, Bounties, Learning and Settings are reached from Home and the profile; search is in the top bar.
 export const navItems: NavItem[] = [
   { to: '/home', label: 'Home', icon: Home },
-  { to: '/search', label: 'Search', icon: Search, desktopOnly: true },   // phones reach it from the top bar
+  { to: '/people', label: 'People', icon: Users },
   { to: '/messages', label: 'Messages', icon: MessageCircle },
-  { to: '/library', label: 'Library', icon: BookOpen },
-  { to: '/path', label: 'Path', icon: Route },
-  { to: '/learning', label: 'Learning', icon: GraduationCap, desktopOnly: true },   // phones reach it from the profile page
-  { to: '/bounty-queue', label: 'Bounties', icon: Coins },
   { to: '/profile', label: 'Profile', icon: User },   // last phone tab: the conventional bottom-right spot
-  { to: '/settings', label: 'Settings', icon: Settings, desktopOnly: true },   // phones reach it from the profile page
 ];

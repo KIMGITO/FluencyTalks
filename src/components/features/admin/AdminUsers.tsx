@@ -46,7 +46,7 @@ export function AdminUsers() {
       </div>
       {failed && !users ? <ErrorState title="Couldn't load people" onRetry={() => setTick((n) => n + 1)} busy={searching} />
         : !shown ? <RowListSkeleton label="Loading people" />
-        : !shown.length ? <EmptyState icon={<IconTile icon={UserSearch} />} title="No one found" text={query || status !== 'all' ? 'Try another name, or change the filter.' : undefined} />
+        : !shown.length ? <EmptyState icon={<IconTile icon={UserSearch} />} title="No one found" />
         : (
           <>
             <p className="ft-inset text-xs text-muted" aria-live="polite">{shown.length} {shown.length === 1 ? 'person' : 'people'}{users!.length === LIMIT && ' from the first 50 matches. Search to narrow it down.'}</p>
