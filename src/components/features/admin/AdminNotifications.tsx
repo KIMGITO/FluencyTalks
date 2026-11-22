@@ -28,7 +28,11 @@ export function AdminNotifications() {
   const feed = useNotificationFeed(filter === 'all' ? null : filter);
   return (
     <div className="space-y-4">
-      <PageHeader title="Staff notifications" subtitle={feed.unread ? `${feed.unread} unread` : "You're all caught up"} />
+      <PageHeader title="Staff notifications" subtitle={feed.unread ? `${feed.unread} unread` : "You're all caught up"}
+        actions={<>
+        <Button size="sm" variant="ghost" className="h-9 min-w-[2.25rem] !px-0 sm:!px-3" aria-label="Mark all as read" title="Mark all as read" loading={feed.markingAll} disabled={!feed.unread} onClick={feed.allRead}><CheckCheck size={18} aria-hidden /><span className="hidden sm:inline">Mark all as read</span></Button>
+        <Button size="sm" variant="ghost" className="h-9 w-9 !px-0" aria-label="Notification settings" title="Notification settings" aria-expanded={showPrefs} onClick={() => setShowPrefs((s) => !s)}><Settings2 size={18} aria-hidden /></Button>
+      </>} />
       {overview && (
         <div className="grid grid-cols-3 gap-2 px-3 sm:gap-3 md:px-0">
           <StatTile label="Open reports" value={overview.reports_open} icon={Flag} tone="accent" to="/admin/reports" />
@@ -36,10 +40,6 @@ export function AdminNotifications() {
           <StatTile label="Escalated" value={overview.decisions_escalated} icon={Clock} tone="danger" to="/admin/decisions" />
         </div>
       )}
-      <div className="ft-inset flex items-center justify-end gap-1">
-        <Button size="sm" variant="ghost" loading={feed.markingAll} disabled={!feed.unread} onClick={feed.allRead}><CheckCheck size={15} aria-hidden /> Mark all as read</Button>
-        <Button size="sm" variant="ghost" aria-label="Notification settings" aria-expanded={showPrefs} onClick={() => setShowPrefs((s) => !s)}><Settings2 size={15} aria-hidden /></Button>
-      </div>
       {showPrefs && <div className="ft-card ft-card-pad"><PushToggle /><p className="mt-2 text-xs text-muted">Staff alerts always arrive here. This only adds your phone or computer.</p></div>}
       <div className="ft-inset overflow-x-auto"><Tabs value={filter} onChange={setFilter} items={FILTERS} /></div>
       {feed.failed ? <ErrorState title="Couldn't load your notifications" onRetry={feed.retry} />

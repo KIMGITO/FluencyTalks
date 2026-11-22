@@ -75,6 +75,13 @@ export default function CallPage() {
   const [chatOpen, setChatOpen] = useState(false);
   // Tap the video (or the arrow) to hide the call buttons and see more; tap again to bring them back.
   const [controlsHidden, setControlsHidden] = useState(false);
+  // Height of the bottom bar, so the videos end above it and their name tags never sit under the buttons.
+  const bar = useRef<HTMLElement>(null); const [barH, setBarH] = useState(0);
+  useEffect(() => {
+    const el = bar.current; if (!el) return;
+    const ro = new ResizeObserver(() => setBarH(el.offsetHeight)); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [unread, setUnread] = useState(0);
   const [peek, setPeek] = useState<CallNote | null>(null);
   const chatOpenRef = useRef(false); chatOpenRef.current = chatOpen;
@@ -285,7 +292,7 @@ export default function CallPage() {
               <span className="opacity-60 grayscale"><Avatar name={name} src={avatar} size="xl" /></span>
               <span className="absolute -bottom-1 -right-1 inline-flex">
                 <span aria-hidden className="ft-end-ring absolute inset-0 rounded-full bg-danger" />
-                <span className="ft-end-in relative inline-flex h-11 w-11 items-center justify-center rounded-full border-4 border-deep bg-danger text-on-brand"><HangUpIcon size={20} /></span>
+                <span className="ft-end-in relative inline-flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full border-4 border-deep bg-danger text-on-brand"><HangUpIcon size={20} /></span>
               </span>
             </span>
             <h1 className="ft-end-in mt-2 font-display text-4xl font-bold text-on-deep">{t.title}</h1>
@@ -345,7 +352,7 @@ export default function CallPage() {
           <div className="relative">
             <button type="button" data-device-menu-toggle onClick={() => setSettings(!settings)} aria-expanded={settings}
               aria-label={voiceOnly ? 'Microphone and speaker settings' : 'Camera and microphone settings'} title="Settings"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-deep/30 hover:bg-deep/50"><Settings2 size={18} /></button>
+              className="inline-flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full bg-deep/30 hover:bg-deep/50"><Settings2 size={20} /></button>
             <DeviceMenu open={settings} voiceOnly={!!voiceOnly} onClose={() => setSettings(false)}
               onPick={async (kind, deviceId) => {
                 if (media.current && snap?.state === 'connected') await media.current.switchDevice(kind, deviceId);
@@ -356,7 +363,7 @@ export default function CallPage() {
       {inCall && !chatOpen && <TopicStrip topic={topic ?? chosen} canChange={!topic && connected} onChange={() => setPicking(true)} />}
       </div>
 
-      <main className="absolute inset-0" onClick={(e) => {
+      <main className="absolute inset-x-0 top-0 transition-[bottom] duration-200" style={{ bottom: chatOpen && inCall ? 0 : barH }} onClick={(e) => {
         if (!inCall || chatOpen || (e.target as HTMLElement).closest('button, a, input, [role="button"], [role="dialog"]')) return;
         setControlsHidden((h) => !h);
       }}>
@@ -376,7 +383,7 @@ export default function CallPage() {
           </div>)}
       </main>
 
-      <section className={clsx('pointer-events-none absolute inset-x-0 bottom-0 z-30 space-y-3 px-4 [&>*]:pointer-events-auto', !(chatOpen && inCall) && 'pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-2')}>
+      <section ref={bar} className={clsx('pointer-events-none absolute inset-x-0 bottom-0 z-30 space-y-2 px-2 [&>*]:pointer-events-auto', !(chatOpen && inCall) && 'pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-2')}>
         {(deviceErrors.camera || deviceErrors.microphone) && !inCall && (
           <div role="status" className="space-y-1 rounded-md bg-on-deep/10 p-3 text-sm">
             {deviceErrors.microphone && <p>{deviceErrors.microphone}</p>}
@@ -393,13 +400,13 @@ export default function CallPage() {
         {inCall && snap?.deviceError && <p role="status" className="text-center text-sm">{snap.deviceError}</p>}
         {error && <p role="alert" className="mx-auto max-w-md rounded-md bg-danger/25 px-3 py-2 text-center text-sm font-semibold">{error}</p>}
 
-        {inCall && !chatOpen && controlsHidden && (
+        {inCall && !chatOpen && (
           <div className="flex justify-center">
-            <button type="button" onClick={() => setControlsHidden(false)} aria-label="Show call buttons" title="Show call buttons"
-              className="inline-flex h-7 w-12 items-center justify-center rounded-full bg-deep/25 text-on-deep backdrop-blur-[2px] hover:bg-deep/40"><ChevronUp size={18} /></button>
+            <button type="button" onClick={() => setControlsHidden(!controlsHidden)} aria-label={controlsHidden ? 'Show call buttons' : 'Hide call buttons'} title={controlsHidden ? 'Show call buttons' : 'Hide call buttons'}
+              className="inline-flex h-8 w-16 items-center justify-center rounded-full bg-on-deep/15 text-on-deep hover:bg-on-deep/25">{controlsHidden ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</button>
           </div>)}
         {/* Always one row: buttons never wrap onto a second line. */}
-        <div className={clsx('flex flex-nowrap items-start justify-center gap-x-2 sm:gap-x-3', inCall && (chatOpen || controlsHidden) && 'hidden')}>
+        <div className={clsx('mx-auto flex max-w-md flex-nowrap items-start justify-center gap-x-1 sm:gap-x-3', inCall && (chatOpen || controlsHidden) && 'hidden')}>
           <ControlButton label={micOn ? 'Turn microphone off' : 'Turn microphone on'} caption={micOn ? 'Mic on' : 'Muted'} pressed={micOn} tone={micOn ? undefined : 'off'}
             onClick={() => void toggleMic()}>{micOn ? <Mic size={22} /> : <MicOff size={22} />}</ControlButton>
           {!voiceOnly && <ControlButton label={camOn ? 'Turn camera off' : 'Turn camera on'} caption={camOn ? 'Camera on' : 'Camera off'} pressed={camOn} tone={camOn ? undefined : 'off'}
@@ -420,7 +427,6 @@ export default function CallPage() {
           {(inCall || phase === 'failed') && <ControlButton label={phase === 'ringing' ? 'Cancel call' : 'Hang up'} caption={phase === 'ringing' ? 'Cancel' : 'End'} tone="end" disabled={busy}
             onClick={phase === 'failed' ? () => void hangUp() : endTapped}><HangUpIcon size={22} /></ControlButton>}
           {phase === 'failed' && isNew && <Button variant="secondary" onClick={() => nav(-1)}>Back</Button>}
-          {inCall && <ControlButton label="Hide call buttons" caption="Hide" onClick={() => setControlsHidden(true)}><ChevronDown size={18} /></ControlButton>}
         </div>
       </section>
 

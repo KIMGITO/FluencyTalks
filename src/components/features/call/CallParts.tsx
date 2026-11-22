@@ -1,7 +1,7 @@
 // Pieces of the call screen. Type-only imports from the media layer, so nothing here pulls in the provider SDK.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { Check, MicOff, Send, VideoOff, X, Phone } from 'lucide-react';
+import { MicOff, Send, VideoOff, X, Phone } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { NOTE_MAX, type CallNote, type MediaRef } from '@/services/callMedia';
 
@@ -99,18 +99,18 @@ export function ControlButton({ label, caption, onClick, pressed, tone, disabled
   label: string; caption?: string; onClick: () => void; pressed?: boolean; tone?: 'off' | 'end' | 'go'; disabled?: boolean; badge?: number; children: ReactNode;
 }) {
   return (
-    <div className="flex w-12 flex-col items-center gap-0.5">
+    <div className="flex min-w-0 max-w-[4.5rem] flex-1 flex-col items-center gap-1">
       <button type="button" onClick={onClick} disabled={disabled} aria-label={label} title={label} aria-pressed={pressed}
-        className={clsx('relative inline-flex h-11 shrink-0 items-center justify-center rounded-full transition [&_svg]:h-[18px] [&_svg]:w-[18px] disabled:cursor-not-allowed disabled:opacity-50',
+        className={clsx('relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition [&_svg]:h-[22px] [&_svg]:w-[22px] disabled:cursor-not-allowed disabled:opacity-50',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-deep',
-          tone === 'end' ? 'w-12 bg-danger/90 text-on-brand hover:bg-danger'
-            : tone === 'go' ? 'w-12 bg-go/90 text-on-brand hover:bg-go'
-              : tone === 'off' ? 'w-11 bg-on-deep/80 text-deep hover:bg-on-deep/90'
-                : 'w-11 bg-deep/20 text-on-deep backdrop-blur-[2px] hover:bg-deep/40')}>
+          tone === 'end' ? 'bg-danger text-on-brand hover:bg-danger/90'
+            : tone === 'go' ? 'bg-go text-on-brand hover:bg-go/90'
+              : tone === 'off' ? 'bg-on-deep text-deep hover:bg-on-deep/90'
+                : 'bg-on-deep/15 text-on-deep hover:bg-on-deep/25')}>
         {children}
         {!!badge && <span className="absolute -right-0.5 -top-0.5 min-w-[1.1rem] rounded-full bg-go px-1 text-[0.65rem] font-bold leading-[1.1rem] text-on-brand" aria-label={`${badge} new`}>{badge > 9 ? '9+' : badge}</span>}
       </button>
-      {caption && <span aria-hidden className="whitespace-nowrap text-[0.65rem] text-on-deep [text-shadow:0_1px_3px_rgb(0_0_0/0.6)]">{caption}</span>}
+      {caption && <span aria-hidden className="max-w-full truncate text-xs text-on-deep/90">{caption}</span>}
     </div>
   );
 }
@@ -145,49 +145,18 @@ export function LayoutIcon({ layout, size = 22 }: { layout: CallLayout; size?: n
     </svg>);
 }
 
-/** The layout button in the call header: opens the four choices, each drawn, the current one ticked. */
+/** The layout button in the call header: each tap moves to the next of the four layouts, round and round. */
 export function LayoutPicker({ value, onChange }: { value: CallLayout; onChange: (l: CallLayout) => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('pointerdown', close); document.addEventListener('keydown', esc);
-    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc); };
-  }, [open]);
-  const cur = LAYOUTS.find((l) => l.id === value) ?? LAYOUTS[0];
+  const i = Math.max(0, LAYOUTS.findIndex((l) => l.id === value));
+  const cur = LAYOUTS[i]; const next = LAYOUTS[(i + 1) % LAYOUTS.length];
   return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="true" aria-label={`Screen layout: ${cur.label}`} title="Screen layout"
-        className={clsx('inline-flex h-9 w-9 items-center justify-center rounded-full', open ? 'bg-on-deep text-deep' : 'bg-deep/30 hover:bg-deep/50')}>
-        <LayoutIcon layout={value} />
-      </button>
-      {open && (
-        <div role="group" aria-label="Screen layout" className="absolute right-0 top-12 z-30 w-[17rem] rounded-lg bg-surface p-2 text-ink shadow-pop">
-          <p className="px-1.5 pb-1.5 pt-0.5 text-xs font-bold uppercase tracking-wide text-muted">Screen layout</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {LAYOUTS.map((l) => {
-              const on = l.id === value;
-              return (
-                <button key={l.id} type="button" aria-pressed={on} title={l.detail} onClick={() => { onChange(l.id); setOpen(false); }}
-                  className={clsx('relative flex flex-col items-center gap-1.5 rounded-md border-2 px-2 py-2.5 text-xs font-semibold transition-colors',
-                    on ? 'border-brand bg-brand-soft text-ink' : 'border-transparent bg-surface-2 text-muted hover:text-ink')}>
-                  {on && <Check size={14} aria-hidden className="absolute right-1.5 top-1.5 text-brand" />}
-                  <span className={on ? 'text-brand' : undefined}><LayoutIcon layout={l.id} size={34} /></span>
-                  {l.label}
-                </button>);
-            })}
-          </div>
-          <p className="mt-2 flex items-center justify-center gap-3 text-2xs text-muted">
-            <span className="inline-flex items-center gap-1"><span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-ink/80" />Partner</span>
-            <span className="inline-flex items-center gap-1"><span aria-hidden className="h-2.5 w-2.5 rounded-sm border-[1.5px] border-ink/80" />You</span>
-          </p>
-        </div>)}
-    </div>);
+    <button type="button" onClick={() => onChange(next.id)} aria-label={`Screen layout: ${cur.label}. Tap for ${next.label}`} title={`Switch to ${next.label}`}
+      className="inline-flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full bg-deep/30 hover:bg-deep/50">
+      <LayoutIcon layout={value} />
+    </button>);
 }
 
-const CORNERS: Record<Corner, string> = { tl: 'left-3 top-[calc(env(safe-area-inset-top,0px)+3.75rem)]', tr: 'right-3 top-[calc(env(safe-area-inset-top,0px)+3.75rem)]', bl: 'bottom-[calc(env(safe-area-inset-bottom,0px)+6rem)] left-3', br: 'bottom-[calc(env(safe-area-inset-bottom,0px)+6rem)] right-3' };
+const CORNERS: Record<Corner, string> = { tl: 'left-3 top-[calc(env(safe-area-inset-top,0px)+3.75rem)]', tr: 'right-3 top-[calc(env(safe-area-inset-top,0px)+3.75rem)]', bl: 'bottom-3 left-3', br: 'bottom-3 right-3' };
 
 /**
  * The two videos, arranged by `layout`. In the "in front" layouts the small window can be dragged to any corner,
@@ -263,26 +232,26 @@ export function CallChat({ notes, name, onSend, onClose }: { notes: CallNote[]; 
     // The aside lets taps through to the video (drag the small window etc.); only its pieces catch them.
     <aside aria-label="Messages in this call" className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end">
       <button type="button" onClick={onClose} aria-label="Close messages"
-        className="pointer-events-auto absolute right-2 top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-deep/60 text-on-deep hover:bg-deep/80"><X size={18} /></button>
+        className="pointer-events-auto absolute right-2 top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-10 inline-flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full bg-deep/60 text-on-deep hover:bg-deep/80"><X size={18} /></button>
       {/* Short, scrollable, and see-through: bubbles fade away into the video at the top edge. */}
-      <ol ref={list} className="ft-fade-top pointer-events-auto max-h-[min(40%,15rem)] min-h-0 space-y-1 overflow-y-auto overscroll-contain px-3 pb-2 pt-8" aria-live="polite">
+      <ol ref={list} className="ft-fade-top pointer-events-auto ml-auto max-h-[min(40%,15rem)] min-h-0 w-full max-w-[min(80%,22rem)] space-y-1 overflow-y-auto overscroll-contain px-3 pb-2 pt-8" aria-live="polite">
         {notes.map((n, i) => {
           const tail = notes[i - 1]?.mine !== n.mine;
           return (
             <li key={n.id} className={clsx('flex', n.mine ? 'justify-end pr-2' : 'justify-start pl-2', tail && i > 0 && 'pt-1.5')}>
-              <p className={clsx('ft-bubble relative max-w-[80%] whitespace-pre-wrap shadow-pop', n.mine ? 'ft-bubble-out' : 'ft-bubble-in', tail && 'ft-tail')}>
+              <p className={clsx('ft-bubble relative max-w-[90%] whitespace-pre-wrap shadow-pop', n.mine ? 'ft-bubble-out' : 'ft-bubble-in', tail && 'ft-tail')}>
                 <span className="sr-only">{n.mine ? 'You: ' : `${name}: `}</span>{n.text}
               </p>
             </li>);
         })}
       </ol>
       {error && <p role="alert" className="pointer-events-auto mx-3 mb-1 self-start rounded-md bg-danger px-2 py-1 text-xs text-on-brand">{error}</p>}
-      <form className="pointer-events-auto flex items-center gap-2 px-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]" noValidate onSubmit={(e) => { e.preventDefault(); void send(); }}>
+      <form className="pointer-events-auto flex items-center gap-2 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]" noValidate onSubmit={(e) => { e.preventDefault(); void send(); }}>
         <input ref={input} value={text} onChange={(e) => setText(e.target.value.slice(0, NOTE_MAX))} aria-label={`Message ${name}`} placeholder="Message"
           enterKeyHint="send" autoComplete="off"
-          className="h-11 min-w-0 flex-1 rounded-full border border-on-deep/20 bg-deep/60 px-4 text-[16px] text-on-deep outline-none placeholder:text-on-deep/60 focus:border-on-deep/50" />
+          className="h-12 min-w-0 flex-1 rounded-full border border-on-deep/20 bg-deep/60 px-4 text-[16px] text-on-deep outline-none placeholder:text-on-deep/60 focus:border-on-deep/50" />
         <button type="submit" disabled={!text.trim() || sending} aria-label="Send"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand disabled:opacity-40"><Send size={18} /></button>
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand disabled:opacity-40"><Send size={22} /></button>
       </form>
     </aside>
   );

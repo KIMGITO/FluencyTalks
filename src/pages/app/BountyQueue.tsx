@@ -78,9 +78,9 @@ export default function BountyQueue() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <PageHeader title="Bounties" />
-      <div className="ft-inset mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="ft-inset mb-4 flex items-center justify-between gap-3">
         <Tabs<Tab> value={tab} onChange={setTab} items={TABS.map((t) => (t.key === 'answers' && pendingAnswers ? { ...t, label: `${t.label} (${pendingAnswers})` } : t))} />
-        <Link to="/points-history" className="text-sm text-brand">Points history</Link>
+        <Link to="/points-history" className="shrink-0 whitespace-nowrap text-sm text-brand">Points history</Link>
       </div>
       {error && open !== null && <p className="ft-inset mb-3 text-sm text-danger">{error}</p>}
       {error && (open === null || mine === null || answers === null) ? <ErrorState title="Couldn't load bounties" onRetry={() => void refresh()} />

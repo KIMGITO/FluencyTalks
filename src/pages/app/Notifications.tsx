@@ -38,12 +38,12 @@ export default function Notifications() {
 
   return (
     <div className="mx-auto w-full max-w-3xl pb-24 md:pb-8">
-      <PageHeader title="Notifications" subtitle={unread ? `${unread} unread` : "You're all caught up"} />
+      <PageHeader title="Notifications" subtitle={unread ? `${unread} unread` : "You're all caught up"}
+        actions={<>
+        <Button size="sm" variant="ghost" className="h-9 min-w-[2.25rem] !px-0 sm:!px-3" aria-label="Mark all as read" title="Mark all as read" loading={markingAll} disabled={!unread} onClick={allRead}><CheckCheck size={18} aria-hidden /><span className="hidden sm:inline">Mark all as read</span></Button>
+        <Button size="sm" variant="ghost" className="h-9 w-9 !px-0" aria-label="Notification settings" title="Notification settings" aria-expanded={showPrefs} onClick={() => setShowPrefs((s) => !s)}><Settings2 size={18} aria-hidden /></Button>
+      </>} />
       <DecisionQueue />
-      <div className="ft-inset mb-2 flex items-center justify-end gap-1">
-        <Button size="sm" variant="ghost" loading={markingAll} disabled={!unread} onClick={allRead}><CheckCheck size={15} aria-hidden /> Mark all as read</Button>
-        <Button size="sm" variant="ghost" aria-label="Notification settings" aria-expanded={showPrefs} onClick={() => setShowPrefs((s) => !s)}><Settings2 size={15} aria-hidden /></Button>
-      </div>
       {showPrefs && (
         <div className="ft-card ft-card-pad mb-3 space-y-2">
           <PushToggle />
